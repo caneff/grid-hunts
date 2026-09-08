@@ -249,14 +249,3 @@ r1c5–r2c5, r9c5–r9c6): after sudoku stalls, the finish is the circled 6 at
 r9c9. Its rectangle already holds r8–9 c8–9, cannot extend to r9c7 (the 8 has
 no bigger infected neighbour), so r7c8 and r7c9 are infected; r7c8's only
 possible source is r7c9, so r7c9 > r7c8 gives 5/3, and the rest is sudoku.
-
-### Settled d1 puzzle and the r9c1 test
-
-Chris settled on the d1 fill with circles r6c2, r6c8, r7c4, r7c6, r9c2, r9c7,
-r9c9 and white dots r1c5–r2c5, r3c2–r3c3, r3c5–r4c5, r4c6–r5c6, r9c5–r9c6
-(`unique/pair99digits_UI_d1_settled.json` and `.png`). That is a superset of
-the proven 8-clue minimal set, so it is unique; the r3c1 circle was dropped.
-Circling r9c1 (the 9) instead of r9c2 (the 3) is **not** unique: a 1/3 deadly
-rectangle on r7c2, r7c8, r9c2, r9c8 swaps with identical shading, and the
-size-9 pocket at r9c1 holds in both (`unique/pair99digits_UI_d1_r9c1_two_solutions.png`).
-`tools/checkset.py <fill> <clues...>` tests any clue set in about 20 s.
