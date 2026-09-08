@@ -249,3 +249,21 @@ r1c5–r2c5, r9c5–r9c6): after sudoku stalls, the finish is the circled 6 at
 r9c9. Its rectangle already holds r8–9 c8–9, cannot extend to r9c7 (the 8 has
 no bigger infected neighbour), so r7c8 and r7c9 are infected; r7c8's only
 possible source is r7c9, so r7c9 > r7c8 gives 5/3, and the rest is sudoku.
+
+### Final d1 clue set
+
+Chris's final set on the d1 fill: circles r6c2, r6c8, r7c4, r7c6, r9c2, r9c7,
+r9c9 and white dots r1c5–r2c5, r3c5–r4c5, r4c6–r5c6, r8c1–r8c2, r9c5–r9c6
+(`unique/pair99digits_UI_d1_final.json` and `.png`). It replaces the earlier
+settled set: the r3c2–r3c3 dot is out, and a new r8c1–r8c2 dot (the 5/6 pair,
+both uninfected) is in. Verified UNIQUE in 11 s.
+
+The r3c2–r3c3 dot was redundant. Dropping it with no replacement is also
+UNIQUE (30 s), so r8c1–r8c2 is a solve-path and aesthetic clue, not a
+uniqueness requirement.
+
+Both checks ran under `tools/checkset.py`, which 89b89c8 reverted out of the
+tree; recover it with `git show
+4420e63:docs/research/zombo-brainanas/tools/checkset.py`. Its paths, and
+`tools/render_unique.py`'s, are hardcoded to the `tang` worktree — repoint
+them before running.
