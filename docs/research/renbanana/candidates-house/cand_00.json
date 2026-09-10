@@ -1,0 +1,102 @@
+{
+ "objective": "circles",
+ "value": 22,
+ "seed": 0,
+ "grid": [
+  "826475139",
+  "351829467",
+  "479163258",
+  "635947821",
+  "298351746",
+  "714682395",
+  "567238914",
+  "142796583",
+  "983514672"
+ ],
+ "shading": [
+  "CCbbbbCbC",
+  "bbCbCCbbb",
+  "bCbCbbCbb",
+  "CbbCbbCbC",
+  "bCbCbCbCb",
+  "bCbbCbbCb",
+  "bbCbCbbCb",
+  "CbCbCbbCb",
+  "CbbCbbCbb"
+ ],
+ "circles": [
+  [
+   0,
+   1
+  ],
+  [
+   0,
+   6
+  ],
+  [
+   1,
+   2
+  ],
+  [
+   1,
+   4
+  ],
+  [
+   4,
+   3
+  ],
+  [
+   2,
+   6
+  ],
+  [
+   3,
+   8
+  ],
+  [
+   4,
+   5
+  ],
+  [
+   4,
+   7
+  ],
+  [
+   6,
+   4
+  ],
+  [
+   7,
+   2
+  ]
+ ],
+ "profile": {
+  "shapes": [
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x2",
+   "1x2",
+   "1x2",
+   "1x2",
+   "1x2",
+   "1x2",
+   "1x3",
+   "1x3",
+   "1x4"
+  ],
+  "chocolate_cells": 31,
+  "chocolate_groups": 18,
+  "largest_rectangle": 4,
+  "circleable_groups": 11,
+  "banana_groups": 8
+ },
+ "house_circles": 6,
+ "hunt": "tools/max_house_circles.py --house row5 --level 5"
+}

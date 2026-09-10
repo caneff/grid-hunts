@@ -1,0 +1,77 @@
+{
+ "objective": "two-circled-rectangles",
+ "value": 5,
+ "seed": "prove_pair[[2, 2, 0, 2], [3, 2, 2, 5]]",
+ "grid": [
+  "279413856",
+  "563982714",
+  "814657239",
+  "458231967",
+  "732896145",
+  "691574328",
+  "346728591",
+  "185369472",
+  "927145683"
+ ],
+ "shading": [
+  "CbCCbCCbb",
+  "bbCCbbbCb",
+  "CCbbbCCbC",
+  "bbCCbCCbb",
+  "CbCCbCCbb",
+  "bCbbCbbCb",
+  "bbCbbbCbC",
+  "CbbCbCbbb",
+  "bbbbCbbbb"
+ ],
+ "circles": [
+  [
+   0,
+   3
+  ],
+  [
+   1,
+   7
+  ],
+  [
+   4,
+   5
+  ],
+  [
+   6,
+   8
+  ],
+  [
+   7,
+   0
+  ]
+ ],
+ "profile": {
+  "shapes": [
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x2",
+   "1x2",
+   "2x2",
+   "2x2",
+   "2x3"
+  ],
+  "chocolate_cells": 32,
+  "chocolate_groups": 19,
+  "largest_rectangle": 6,
+  "circleable_groups": 5,
+  "banana_groups": 8
+ }
+}

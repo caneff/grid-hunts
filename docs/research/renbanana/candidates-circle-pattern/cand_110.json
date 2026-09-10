@@ -1,0 +1,86 @@
+{
+ "objective": "circles",
+ "value": 13,
+ "seed": 110,
+ "grid": [
+  "973681542",
+  "628457139",
+  "541329678",
+  "816294753",
+  "735168924",
+  "294735861",
+  "457812396",
+  "389546217",
+  "162973485"
+ ],
+ "shading": [
+  "CbCbbCbbC",
+  "bbCbbbCbC",
+  "CbCbCCbCb",
+  "bbCbCCbbb",
+  "CbbCbbCCb",
+  "bCCbbCbbC",
+  "bbbCbbCbC",
+  "bbCbbCbbb",
+  "bbCbCbbCb"
+ ],
+ "circles": [
+  [
+   0,
+   5
+  ],
+  [
+   0,
+   8
+  ],
+  [
+   1,
+   6
+  ],
+  [
+   3,
+   5
+  ],
+  [
+   4,
+   3
+  ],
+  [
+   4,
+   7
+  ],
+  [
+   8,
+   2
+  ]
+ ],
+ "profile": {
+  "shapes": [
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x2",
+   "1x2",
+   "1x2",
+   "1x2",
+   "1x2",
+   "1x4",
+   "2x2"
+  ],
+  "chocolate_cells": 31,
+  "chocolate_groups": 20,
+  "largest_rectangle": 4,
+  "circleable_groups": 7,
+  "banana_groups": 7
+ }
+}

@@ -1,0 +1,4 @@
+docs/research/renbanana/candidates-walk/cand_20.json
+docs/research/renbanana/candidates-2x4/cand_00.json
+docs/research/renbanana/candidates/cand_00.json
+docs/research/renbanana/candidates-circled/cand_000.json

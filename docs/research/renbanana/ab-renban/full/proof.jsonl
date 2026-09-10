@@ -1,0 +1,40 @@
+{"pair": [[2, 2, 0, 2], [2, 2, 2, 5]], "verdict": "hit", "seed": 0, "renban": true, "seconds": 37.2, "cuts": 0, "grid": ["163982745", "759463182", "284571963", "531629478", "928734651", "476815239", "842157396", "395246817", "617398524"], "shading": ["CbCCbCCbb", "bbCCbbbCb", "CCbbbCCbb", "bbCCbCCbb", "bCbbCbbCb", "bCbCbbbbC", "CbbbCbCCb", "bbbCbCbbb", "CCCbbbCbC"], "violations": ["rule 6: banana group at (3, 0) is not consecutive: [5, 3, 9, 4]", "rule 6: banana group at (6, 8) is not consecutive: [6, 8, 1, 7, 2]", "rule 6: banana group at (7, 4) is not consecutive: [4, 3, 9, 8]"]}
+{"pair": [[2, 2, 0, 2], [2, 2, 2, 6]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 2, 2, 7]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 2, 3, 5]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 2, 4, 5]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 2, 5, 4]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 2, 5, 5]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 2, 5, 6]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 2, 5, 7]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 2, 6, 5]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 2, 7, 5]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 0, 5]], "verdict": "infeasible", "seed": 0, "renban": true, "seconds": 0.6, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 1, 5]], "verdict": "infeasible", "seed": 0, "renban": true, "seconds": 6.9, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 2, 4]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 2, 5]], "verdict": "infeasible", "seed": 0, "renban": true, "seconds": 0.7, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 2, 6]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 3, 1]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 3, 2]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 3, 4]], "verdict": "hit", "seed": 0, "renban": true, "seconds": 52.0, "cuts": 0, "grid": ["672913845", "159468237", "384752916", "428371659", "563829174", "791645328", "815294763", "947136582", "236587491"], "shading": ["bbCCbCCbb", "CbCCbCCbC", "bCbbbbbCb", "bbCbCCCbb", "bbCbCCCbb", "bCbCbbbCb", "bCbbCCbbC", "CbCCbbCbb", "bbbbCbbCC"], "violations": ["rule 6: banana group at (5, 2) is not consecutive: [1, 5, 2]", "rule 6: banana group at (7, 4) is not consecutive: [3, 6, 7, 4]"]}
+{"pair": [[2, 2, 0, 2], [2, 3, 3, 5]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 4, 1]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 4, 2]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 4, 4]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 4, 5]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 5, 0]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 5, 1]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 5, 2]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.5, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 5, 3]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 55.3, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 5, 4]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 57.8, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 5, 5]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 57.8, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 5, 6]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 57.8, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 6, 1]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 57.8, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 6, 2]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 57.8, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 6, 4]], "verdict": "hit", "seed": 0, "renban": true, "seconds": 56.7, "cuts": 0, "grid": ["179245863", "584936721", "632718594", "461892375", "825173946", "793654218", "947581632", "356427189", "218369457"], "shading": ["CbCCbbbCb", "bbCCbbCbb", "bCbbbCbCb", "CbCCbCbbC", "bbbbCbCbb", "bbbCbbbCb", "CbCbCCCbC", "bCbbCCCbC", "bbCCbbbbb"], "violations": []}
+{"pair": [[2, 2, 0, 2], [2, 3, 6, 5]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 57.8, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 7, 1]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 57.8, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 7, 2]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 57.9, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 7, 4]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 57.8, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [2, 3, 7, 5]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 57.8, "cuts": 0}
+{"pair": [[2, 2, 0, 2], [3, 2, 0, 5]], "verdict": "unknown", "seed": 0, "renban": true, "seconds": 57.8, "cuts": 0}

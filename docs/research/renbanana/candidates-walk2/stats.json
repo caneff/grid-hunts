@@ -1,0 +1,8 @@
+{
+ "kept": 22,
+ "same_puzzle_up_to_symmetry": 2,
+ "rejected_as_too_close": 3,
+ "refused_illegal": 0,
+ "walk_rows": 27,
+ "pool_held_before": 56
+}

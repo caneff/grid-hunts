@@ -1,0 +1,84 @@
+{
+ "objective": "walk",
+ "value": 7,
+ "seed": "candidates-multi2/cand_00+1",
+ "grid": [
+  "265179384",
+  "314825769",
+  "978643125",
+  "542798613",
+  "639251847",
+  "187436592",
+  "491567238",
+  "726384951",
+  "853912476"
+ ],
+ "shading": [
+  "bbbbbCbbb",
+  "bCbCCbbbb",
+  "CbCbbCbbC",
+  "bbCbbbCCb",
+  "bCbCbCbbb",
+  "CbbbCbbCC",
+  "bCCbbCCbb",
+  "bbbCCbbbb",
+  "bbbCCbCbb"
+ ],
+ "circles": [
+  [
+   1,
+   1
+  ],
+  [
+   1,
+   4
+  ],
+  [
+   3,
+   2
+  ],
+  [
+   4,
+   5
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   5,
+   8
+  ],
+  [
+   6,
+   6
+  ]
+ ],
+ "profile": {
+  "shapes": [
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x1",
+   "1x2",
+   "1x2",
+   "1x2",
+   "1x2",
+   "1x2",
+   "1x2",
+   "2x2"
+  ],
+  "chocolate_cells": 27,
+  "chocolate_groups": 18,
+  "largest_rectangle": 4,
+  "circleable_groups": 7,
+  "banana_groups": 8
+ }
+}
