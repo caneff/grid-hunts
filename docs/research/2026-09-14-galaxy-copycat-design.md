@@ -107,7 +107,7 @@ Why this shape:
 | Case | Effect | Fix in the recommended rules |
 |------|--------|------------------------------|
 | Copycat on a circle cell | copies itself, value = digit | forbidden |
-| Copycat opposite a copycat | values swap, definition recurses | impossible: at most one per galaxy |
+| Copycat opposite a copycat | allowed in Scojo's 2024 rule (digits are copied, so the two just show each other's digits); cannot arise here anyway | at most one per galaxy |
 | Partner has the same digit as the copycat | value = digit, copycat invisible | allowed (Scojo allows it); the setter avoids it or uses it as a trap |
 | Galaxy of size 1 or 2 | can hold a copycat only in the size-2 edge-centred case | allowed; small galaxies simply spend no copycat |
 | Exactly nine galaxies wanted | a random spread of nine centres almost never partitions the grid symmetrically (1 of 100 random sets in a quick check) | do not require it; "at most one per galaxy" works for any galaxy count |
@@ -259,9 +259,12 @@ value from the mirror cell, which lies on B. So:
   copycat's own digit is the unmatched one, and the value it shows is B's
   digit at the mirror position. Counting digits on the pair therefore proves
   the copycat and names its cell.
-- A perfect digit match means no copycat on the pair, or two copycats at
-  mirror positions swapping each other. Forbid "a copycat opposite a copycat"
-  to keep the reading single-valued.
+- Copycats opposite each other are allowed (Scojo's 2024 wording copies the
+  digit, so two opposite copycats simply show each other's digits). On a
+  mirrored pair that is a third pattern: A's digits and B's digits differ by
+  a double swap (A carries two extra copies of the copycat's digit relative
+  to B, B two extra of its partner's), distinguishable from the one-swap and
+  no-swap cases by counting.
 - Sudoku bites: the mirror cell is normally in another row, column and box,
   so the copied digit is often one line A could not carry directly. The pair
   ends up sharing a digit one of them is forbidden.
