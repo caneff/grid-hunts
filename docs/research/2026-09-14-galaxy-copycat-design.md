@@ -619,3 +619,10 @@ shared-box values and must avoid its rows, columns and box.
 r4-6c7 + r1-3c6. INFEASIBLE through column 7 only (L1's box-3 segment
 repeats L2's r4-6c7). Repairs tested: L1's top segment at r1-3c8 (a
 straight column-8 line) or r1-3c9 both feasible, 3000+ solutions.
+
+**Board 5** (`boards/board5-box6-row4.json`): L1 = r7-9c9 + r4-6c8, L2 =
+r4-6c7 + r4c4-6. FEASIBLE, 3000+ solutions, sample sum 18. Shared box 6
+makes L2's row-4 segment r4c4-6 repeat L1's r4-6c8 values, and r4c8 is
+in row 4, so a copycat is forced among r4c8, r4c4, r4c5, r4c6 (checker:
+all four as non-copycats is infeasible; r4c8 alone as non-copycat is
+fine). Likewise L1's box-9 segment r7-9c9 repeats r4-6c7, no shared line.
