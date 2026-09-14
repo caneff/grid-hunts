@@ -233,3 +233,49 @@ how many it touches.
 No CP-SAT model, no generated puzzle, no uniqueness check; the prototype
 started in `2026-09-14-galaxy-copycat/` is untracked and abandoned at the
 user's request.
+
+## Second candidate: Copycat cells + Copycat lines
+
+Recorded 2026-09-14 after the galaxy direction cooled. Scojo's cells plus
+Phistomefel's lines, two mechanics that share a name and have never met.
+(Scojo's own "Copycat Copycat", 2023, is Doublers plus copycats; not this.)
+
+> Normal sudoku rules apply.
+>
+> **Copycat cells:** Place nine copycat cells, one in every row, column and
+> 3x3 box, containing nine different digits. The value of a copycat is the
+> digit in the cell rotationally opposite it (180° about the grid centre).
+> Every other cell's value is its digit.
+>
+> **Copycat lines:** Lines come in pairs. The two lines of a pair contain
+> the same multiset of *values*, in any order. Each line pair is drawn as
+> the 180° image of itself: line B is the mirror of line A.
+
+Mechanism. Because B is A's mirror, a copycat on A at cell c takes its
+value from the mirror cell, which lies on B. So:
+
+- With no copycat on the pair, A and B hold the same digits.
+- With one copycat on A, A's digits differ from B's by exactly one swap: the
+  copycat's own digit is the unmatched one, and the value it shows is B's
+  digit at the mirror position. Counting digits on the pair therefore proves
+  the copycat and names its cell.
+- A perfect digit match means no copycat on the pair, or two copycats at
+  mirror positions swapping each other. Forbid "a copycat opposite a copycat"
+  to keep the reading single-valued.
+- Sudoku bites: the mirror cell is normally in another row, column and box,
+  so the copied digit is often one line A could not carry directly. The pair
+  ends up sharing a digit one of them is forbidden.
+
+Why it is easier to like than Copycat Galaxies: nothing is drawn or
+constructed, the symmetry is given, and every deduction is counting digits
+on two visible lines. Phistomefel's Copycat Confusion supplies the natural
+twist (line types to be deduced), giving two competing explanations for a
+mismatch.
+
+Variant: non-mirrored pairs. The lines share values but are not images of
+each other, so a copycat pulls a digit in from anywhere in the grid. Looser,
+closer to Phistomefel's original; the copycat is a wildcard both lines must
+accept.
+
+First puzzle: three mirrored pairs, no other constraints, copycat rule as
+above; see whether counting alone reaches the nine copycats.
