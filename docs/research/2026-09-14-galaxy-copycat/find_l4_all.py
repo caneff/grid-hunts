@@ -2,13 +2,16 @@ import json
 import sys
 import time
 from collections import Counter
+from pathlib import Path
 
 sys.path.insert(0, "docs/research/2026-09-14-galaxy-copycat")
 from copycat_rsl_solver import Collector, build, segments
 from ortools.sat.python import cp_model
 
-base = json.load(
-    open("docs/research/2026-09-14-galaxy-copycat/boards/board1-three-lines.json")
+base = json.loads(
+    Path(
+        "docs/research/2026-09-14-galaxy-copycat/boards/board1-three-lines.json"
+    ).read_text()
 )
 used = {
     (int(c[1]) - 1, int(c[3]) - 1) for cells in base["lines"].values() for c in cells
@@ -44,7 +47,7 @@ print(
 if "--count" in sys.argv:
     sys.exit()
 LIMIT = 2
-out = open("docs/research/2026-09-14-galaxy-copycat/boards/board1-l4-search.log", "a")
+LOG = Path("docs/research/2026-09-14-galaxy-copycat/boards/board1-l4-search.log")
 for i, (p, st) in enumerate(sorted(cands.items())):
     cells = [f"r{r + 1}c{c + 1}" for r, c in p]
     setup = {
@@ -65,9 +68,10 @@ for i, (p, st) in enumerate(sorted(cands.items())):
         if s == cp_model.UNKNOWN and n == 0
         else ("FEASIBLE" if n else "infeasible")
     )
-    print(
-        f"{i + 1}/{len(cands)} {tag} {time.time() - t:.1f}s {st} {'-'.join(cells)}",
-        file=out,
-        flush=True,
-    )
-print("DONE", file=out, flush=True)
+    with LOG.open("a") as out:
+        print(
+            f"{i + 1}/{len(cands)} {tag} {time.time() - t:.1f}s {st} {'-'.join(cells)}",
+            file=out,
+        )
+with LOG.open("a") as out:
+    print("DONE", file=out)
