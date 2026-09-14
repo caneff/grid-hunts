@@ -579,3 +579,19 @@ whose structure the segment model allows against (1,4,1), i.e. (2,4),
 20 (1,4,1), 2 (4,1,1). Straight (3,3) lines all fail; the feasible (3,3)
 ones bend. Full list in `boards/board1-l4-feasible.txt`, log in
 `boards/board1-l4-search.log`.
+
+**Board 1, L2-L3 pair by sum.** Segment model for (3,3) vs (4,2): sums 11
+to 17 need no copycat (15 to 22 multisets each), 8 to 10 and 18 force one,
+7 forces two. On the grid (L1 present, unpaired):
+- S = 7: one multiset survives, {1,1,2,3,3,4}. L2's row-6 segment cannot
+  hold a duplicate (a copycat there copies box 5 itself), so it is {1,2,4};
+  L2's column-7 segment is {1,3,3} with a copycat; L3's box-9 quad is
+  {1,1,2,3} with a copycat; L3's box-8 pair is {3,4}. Every value pinned,
+  two copycats placed to a segment. Most forcing, but needs a clue to
+  set S = 7.
+- S = 8: {1,1,2,3,4,5}, {1,2,2,3,3,5}, {1,2,2,3,4,4} survive; the box-9
+  quad always holds a copycat.
+- S = 18: five multisets, all {.,.,.,.,9,9}; the 9,9 is always L3's box-8
+  pair r9c5-r9c6, so that copycat is pinned to one of two cells with value
+  9 and the other cell digit 9.
+- S = 9, 10: open, 300+ distinct line fills.
