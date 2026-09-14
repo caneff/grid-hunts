@@ -560,3 +560,13 @@ r6c4-r6c7-r4c7 is (3,3); L3 = r8c9-r8c8-r9c8-r9c7-r9c6-r9c5 is (4,2).
   {8,2,2}: a copycat in r6c4-6 copies r4c4-6, the same box, so the copied
   2 and the digit 2 would share box 5. L3 fails the same way through its
   box-9 quad, whose opposites lie in box 1 with L1's singles.
+
+**Board 1, fourth line for L1.** With L2-L3 paired, searched every straight
+(3,3) placement and every U-shaped (1,4,1) placement (a 2x2 block with two
+singles across a border) that avoids the three lines: 31 candidates. All
+straight lines infeasible. Four U-shapes feasible, each 3000+ solutions:
+- r6c2-r7c2-r8c2-r8c1-r7c1-r6c1 (block in box 7, singles r6c1-2 in box 4; sample sums 9 / 11)
+- r8c4-r8c3-r8c2-r7c2-r7c3-r7c4 (block in box 7, singles in box 8; 8 / 14)
+- r8c7-r8c6-r8c5-r7c5-r7c6-r7c7 (block in box 8, singles in box 9; 8 / 11)
+- r9c4-r9c3-r9c2-r8c2-r8c3-r8c4 (block in box 7, singles in box 8; 8 / 11)
+Other 6-cell shapes (hooks, (2,4) bends) not searched.
