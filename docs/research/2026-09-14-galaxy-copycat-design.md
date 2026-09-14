@@ -352,3 +352,65 @@ What survives:
 - Any grid where regions and galaxies are allowed to differ, i.e. Galactic
   Union's arrangement: galaxies are cages or extra constraints laid across
   the regions, not the regions themselves.
+
+## Chosen for setting: Copycat cells + mirrored Copycat Region Sum Lines
+
+Chosen 2026-09-14 as the puzzle to set within a few days. Renban rejected
+(no-repeat clause too strong); whispers and entropic considered; Region Sum
+Lines chosen.
+
+> Normal sudoku rules apply.
+>
+> **Copycat cells:** Place 9 Copycat Cells into the grid so that there is
+> exactly one Copycat Cell in each row, column, and 3x3 box. Each Copycat
+> Cell must contain a different digit. The value of a Copycat Cell is the
+> digit in the cell rotationally opposite itself in the grid (180° rotation
+> about the center of the grid). Every other cell's value is its digit.
+>
+> **Region Sum Lines:** Box borders divide each blue line into segments.
+> The values on every segment of a line sum to the same total.
+>
+> **Copycat lines:** Blue lines come in pairs. The two lines of a pair are
+> 180° rotations of each other about the grid centre, and they contain the
+> same multiset of values, in any order.
+
+What the combination gives:
+
+- **Shared segment total.** The box grid is 180° symmetric, so line B's
+  segments are line A's segments in reverse order with the same lengths.
+  Equal value multisets give equal line totals, hence the same number of
+  segments, hence one segment sum S for the whole pair. Solving S on one
+  line solves it on both.
+- **Repeats are the tell.** A segment lies inside one box, so its digits
+  are distinct. Two equal values inside a segment prove one of them is a
+  copycat. Repeats are allowed on RSLs, so this is a clue, not a
+  contradiction.
+- **One-swap counting.** With one copycat on A at cell c borrowing digit d
+  from its mirror cell p on B: values(A) = values(B), so digits(A) and
+  digits(B) differ by exactly one swap (A's own digit x out, d in). The
+  unmatched digit on A names c; the mirror cell on B holds d.
+- **Mirror single cells.** A one-cell segment shows value S, and its mirror
+  on the other line is also a one-cell segment showing S. If either is a
+  copycat, the other's digit is S exactly. Strongest opening pattern.
+- **Sudoku pushes back.** d must be legal as a digit in p's units, x in c's
+  units, while the segment sums use d at c. The copycat lets a segment
+  "contain" a digit its box forbids.
+- **Double swap.** Copycats at mirror positions on both lines are allowed
+  (Scojo 2024 wording); the pair's digit multisets then differ by a double
+  swap. A third countable pattern, keep for the hardest pair.
+
+Setting recipe:
+
+1. Three pairs, one in each of the box pairings (1,9), (2,8), (3,7) or
+   (4,6); avoid lines through box 5 across the centre, which would be their
+   own mirror and make the pair rule vacuous.
+2. Each line crosses two or three boxes; include one pair with a one-cell
+   segment (the opening) and one pair with none (the closer).
+3. Fill the solution first, then choose the nine copycats last so that:
+   pair 1 has no copycat (pure RSL start, gives S), pair 2 has one copycat
+   on one line, pair 3 has copycats on both lines at non-mirror cells or at
+   mirror cells for the double-swap finish.
+4. Glue: a few Kropki dots on values. No cages with "different digits"
+   clauses.
+5. Uniqueness: CP-SAT model is 81 copycat bools, one value channel per
+   cell, one sum per segment, nine count-equalities per pair. Small.
