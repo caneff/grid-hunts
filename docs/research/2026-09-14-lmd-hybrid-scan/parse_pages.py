@@ -40,8 +40,16 @@ for f in sorted(PAGES.glob("*.html")):
     title = html.unescape(re.search(r"<title>([^<]*)", h).group(1))
     title = re.split(r" — | &mdash; ", title)[0].strip()
     page_tags = dict(re.findall(r'tag_id=(\d+)"[^>]*>([^<]+)', h))
-    text = re.sub(r"<[^>]+>", " ", h)
-    rules_hit = bool(re.search(r"doku", text, re.I))
+    # title + rules block only: the page chrome says "Sudoku Championships",
+    # the solver list has "doku" user names, comments mention SudokuPad links.
+    body = re.search(
+        r'class="rp_titel".*?(?:Solution code|L&ouml;sungscode|Lösungscode|class="rp_aenderdatum"|class="rightcolumn")',
+        h,
+        re.S,
+    )
+    text = re.sub(r"<[^>]+>", " ", body.group(0) if body else "")
+    text = re.sub(r"\(Published on[^)]*\)", " ", text)  # author names like SudokuExplorer
+    rules_hit = bool(re.search(r"doku(?!\s?pad|maker|\s+like)", text, re.I))
     tagged = "1001" in page_tags
     if not (tagged or rules_hit):
         continue
