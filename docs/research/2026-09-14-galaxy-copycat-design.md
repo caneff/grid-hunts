@@ -595,3 +595,10 @@ to 17 need no copycat (15 to 22 multisets each), 8 to 10 and 18 force one,
   pair r9c5-r9c6, so that copycat is pinned to one of two cells with value
   9 and the other cell digit 9.
 - S = 9, 10: open, 300+ distinct line fills.
+
+**Board 1, digit coverage.** With L1's pair at {8,8,1,2,2,3} (pinned when
+its partner is (2,4) or (3,3)), the L2-L3 pair covers the most new digits
+at S = 16 with {1,4,5,6,7,9}: all nine digits across the four lines, the
+only multiset at any sum that does. Feasible on the grid, no copycat
+forced. S = 12, 13, 14, 15, 17, 18 reach eight digits; the pair alone
+reaches six distinct values only for S = 11 to 17.
