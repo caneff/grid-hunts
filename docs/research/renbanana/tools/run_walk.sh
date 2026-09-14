@@ -24,7 +24,7 @@ else
   # shellcheck disable=SC2086
   ls $SEEDS
 fi | xargs -P "$PROCS" -I{} uv run --with ortools \
-      docs/research/renbanana/tools/probe_walk.py \
+      finders/renbanana/tools/probe_walk.py \
       --source {} --budget "$BUDGET" --seconds 20 --workers 1 \
       --want "$WANT" --floor "$FLOOR" --climb "$CLIMB" \
       --small-max "$SMALLMAX" --out "$OUT"

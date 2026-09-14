@@ -192,7 +192,7 @@ witnesses came out of that pipeline. Anyone reviving the encoding must first
 make labels canonical, so that at most one component can claim a label.
 
 Scripts live in the repo, not a session scratchpad (#380). The pipeline above
-is `docs/research/renbanana_cpsat.py`, with `renbanana_render.py` for pictures
+is `finders/renbanana_cpsat.py`, with `renbanana_render.py` for pictures
 and `renbanana_verify.py` — the checker written from the six rules rather than
 from the solver's encoding — for the from-scratch re-check every candidate goes
 through.

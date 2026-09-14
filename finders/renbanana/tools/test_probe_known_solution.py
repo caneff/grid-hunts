@@ -7,7 +7,7 @@ solution, `prove_unique` runs exactly one solve and hands it the whole budget.
 The solver is stubbed, so the real CP-SAT model is never solved here -- what
 is under test is the control flow, not the constraints.
 
-    uv run --with ortools docs/research/renbanana/tools/test_probe_known_solution.py
+    uv run --with ortools finders/renbanana/tools/test_probe_known_solution.py
 """
 
 import contextlib
@@ -19,11 +19,16 @@ from ortools.sat.python import cp_model as cp
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import probe_circle_pattern as pcp  # noqa: E402
-import renbanana_verify as rv  # noqa: E402
+import probe_circle_pattern as pcp
+import renbanana_verify as rv
 
 CAND = (
-    Path(__file__).resolve().parents[1] / "candidates-fully-circled" / "cand_00.json"
+    Path(__file__).resolve().parents[3]
+    / "docs"
+    / "research"
+    / "renbanana"
+    / "candidates-fully-circled"
+    / "cand_00.json"
 )
 REAL_SOLVER = cp.CpSolver
 
@@ -118,13 +123,15 @@ def test_a_supplied_solution_is_checked_against_the_clue_set():
     INFEASIBLE for the wrong reason, which prints a false UNIQUE.
     """
     grid, is_choc, circles = rv.load(CAND)
-    sizes = {p: len(g) for c in (True, False) for g in rv.components(is_choc, c) for p in g}
+    sizes = {
+        p: len(g) for c in (True, False) for g in rv.components(is_choc, c) for p in g
+    }
     unsatisfied = next(
         p for p in pcp.CELLS if p not in set(circles) and grid[p] != sizes[p]
     )
-    assert pcp.clue_complaints(
-        (grid, is_choc), [*circles, unsatisfied], (), (), ()
-    ), "a circle the grid does not satisfy must be reported"
+    assert pcp.clue_complaints((grid, is_choc), [*circles, unsatisfied], (), (), ()), (
+        "a circle the grid does not satisfy must be reported"
+    )
     assert pcp.clue_complaints((grid, is_choc), circles, (), (), []) == []
 
 
@@ -134,7 +141,9 @@ def test_a_supplied_solution_is_checked_against_givens_and_shading():
     chocolate = next(p for p in pcp.CELLS if is_choc[p])
     assert pcp.clue_complaints((grid, is_choc), circles, (banana,), (), [])
     assert pcp.clue_complaints((grid, is_choc), circles, (), (chocolate,), [])
-    assert pcp.clue_complaints((grid, is_choc), circles, (chocolate,), (banana,), []) == []
+    assert (
+        pcp.clue_complaints((grid, is_choc), circles, (chocolate,), (banana,), []) == []
+    )
     p0 = pcp.CELLS[0]
     bad_given = (p0, 1 + grid[p0] % 9)
     assert pcp.clue_complaints((grid, is_choc), circles, (), (), [bad_given])
@@ -168,6 +177,7 @@ def test_known_solution_outside_unique_is_refused():
     assert pcp.flag_complaint(Flags(known_solution="cand_00.json"))
     assert pcp.flag_complaint(Flags(unique=True, known_solution="cand_00.json")) is None
 
+
 def test_an_out_file_named_json_falls_through_to_the_streamed_parser(tmp=None):
     """`--out` files get `.json` names too, so it is the `grid` key that says
     a file is a candidate, not the suffix."""
@@ -179,7 +189,7 @@ def test_an_out_file_named_json_falls_through_to_the_streamed_parser(tmp=None):
 
 
 if __name__ == "__main__":
-    for name, fn in sorted(list(globals().items())):
+    for name, fn in sorted(globals().items()):
         if name.startswith("test_"):
             fn()
     print("OK")

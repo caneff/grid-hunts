@@ -2,7 +2,7 @@
 legal. Its verdicts are proofs — an INFEASIBLE says a solved grid carries no
 Renbanana shading at all — so a bug here would silently discard real grids.
 
-    uv run --with ortools docs/research/renbanana/tools/test_probe_finds_known_grids.py
+    uv run --with ortools finders/renbanana/tools/test_probe_finds_known_grids.py
 
 Run it from the repo root, after touching probe_inverted.py.
 """
@@ -10,8 +10,8 @@ Run it from the repo root, after touching probe_inverted.py.
 import sys
 from pathlib import Path
 
-sys.path.insert(0, "docs/research/renbanana/tools")
-sys.path.insert(0, "docs/research")
+sys.path.insert(0, "finders/renbanana/tools")
+sys.path.insert(0, "finders")
 import renbanana_verify as rv
 from ortools.sat.python import cp_model as cp
 from probe_inverted import Shadings

@@ -10,7 +10,7 @@ shading is at least 12 cells from every grid already held, or its multiset of
 chocolate rectangle shapes differs. Every kept grid is re-checked from the
 rules before it is written; nothing enters a pool unverified.
 
-    uv run docs/research/renbanana/tools/walk_to_candidates.py \
+    uv run finders/renbanana/tools/walk_to_candidates.py \
         --walk docs/research/renbanana/walk \
         --out docs/research/renbanana/candidates-walk
 """

@@ -18,6 +18,7 @@ Everything here is exact -- no lazy cuts -- so an INFEASIBLE is a proof.
 """
 
 import argparse
+import contextlib
 import json
 import sys
 from pathlib import Path
@@ -25,7 +26,7 @@ from pathlib import Path
 from ortools.sat.python import cp_model as cp
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-import renbanana_verify as rv  # noqa: E402
+import renbanana_verify as rv
 
 N = 9
 CELLS = [(r, c) for r in range(N) for c in range(N)]
@@ -321,12 +322,16 @@ def clue_complaints(known, circled, choc_cells, ban_cells, givens):
     """
     grid, is_choc = known
     bad = list(rv.check(grid, is_choc, list(circled)))
-    for p in choc_cells:
-        if not is_choc[p]:
-            bad.append(f"--choc r{p[0] + 1}c{p[1] + 1} is banana in the solution")
-    for p in ban_cells:
-        if is_choc[p]:
-            bad.append(f"--ban r{p[0] + 1}c{p[1] + 1} is chocolate in the solution")
+    bad.extend(
+        f"--choc r{p[0] + 1}c{p[1] + 1} is banana in the solution"
+        for p in choc_cells
+        if not is_choc[p]
+    )
+    bad.extend(
+        f"--ban r{p[0] + 1}c{p[1] + 1} is chocolate in the solution"
+        for p in ban_cells
+        if is_choc[p]
+    )
     for p, v in givens:
         if grid[p] != v:
             bad.append(
@@ -396,8 +401,7 @@ def prove_unique(m, choc, d, circled, a, known=None):
         print("\n".join(render(g2, c2)))
         return "NOT UNIQUE"
     print(
-        "verdict: NOT PROVED -- second-solution search returned "
-        f"{s.status_name(st2)}"
+        f"verdict: NOT PROVED -- second-solution search returned {s.status_name(st2)}"
     )
     return "NOT PROVED"
 
@@ -412,51 +416,59 @@ def enumerate_all(m, choc, d, circled, a):
     sols, spent = [], 0.0
     # Stream, never buffer: a long enumeration must leave its results on disk
     # as it goes, so a kill or a timeout still hands back everything found.
-    sink = open(a.out, "w", buffering=1) if a.out else None
-    while len(sols) < a.enumerate and spent < a.seconds:
-        s.parameters.max_time_in_seconds = a.seconds - spent
-        st = s.solve(m)
-        spent += s.wall_time
-        if st not in (cp.OPTIMAL, cp.FEASIBLE):
-            break
-        grid = {p: s.value(d[p]) for p in CELLS}
-        is_choc = {p: bool(s.value(choc[p])) for p in CELLS}
-        bad = rv.check(grid, is_choc, circled)
-        assert not bad, bad
-        extra = [
-            p
-            for colour in (True, False)
-            for g in rv.components(is_choc, colour)
-            for p in g
-            if grid[p] == len(g) and p not in set(circled)
-        ]
-        sols.append((grid, is_choc, sorted(extra)))
-        head = f"--- solution {len(sols)}   after {spent:.0f}s" + (
-            "" if not extra else "   extra size-reading cells: "
-            + ",".join(f"r{q[0] + 1}c{q[1] + 1}" for q in sorted(extra))
-        )
-        body = "\n".join([head, *render(grid, is_choc)])
-        if sink:
-            print(body, file=sink, flush=True)
-        print(f"  solution {len(sols)} at {spent:.0f}s", flush=True)
-        block(m, choc, d, grid, is_choc)
-    exhausted = len(sols) < a.enumerate and spent < a.seconds
-    print(
-        f"distinct solutions: {len(sols)}"
-        + ("  (search exhausted -- this is all of them)" if exhausted else
-           "  (cap or time limit hit -- there may be more)")
-    )
-    strict = [x for x in sols if not x[2]]
-    print(f"of those, strict (no uncircled cell reads its group size): {len(strict)}")
-    if sink:
+    with (
+        Path(a.out).open("w", buffering=1) if a.out else contextlib.nullcontext()
+    ) as sink:
+        while len(sols) < a.enumerate and spent < a.seconds:
+            s.parameters.max_time_in_seconds = a.seconds - spent
+            st = s.solve(m)
+            spent += s.wall_time
+            if st not in (cp.OPTIMAL, cp.FEASIBLE):
+                break
+            grid = {p: s.value(d[p]) for p in CELLS}
+            is_choc = {p: bool(s.value(choc[p])) for p in CELLS}
+            bad = rv.check(grid, is_choc, circled)
+            assert not bad, bad
+            extra = [
+                p
+                for colour in (True, False)
+                for g in rv.components(is_choc, colour)
+                for p in g
+                if grid[p] == len(g) and p not in set(circled)
+            ]
+            sols.append((grid, is_choc, sorted(extra)))
+            head = f"--- solution {len(sols)}   after {spent:.0f}s" + (
+                ""
+                if not extra
+                else "   extra size-reading cells: "
+                + ",".join(f"r{q[0] + 1}c{q[1] + 1}" for q in sorted(extra))
+            )
+            body = "\n".join([head, *render(grid, is_choc)])
+            if sink:
+                print(body, file=sink, flush=True)
+            print(f"  solution {len(sols)} at {spent:.0f}s", flush=True)
+            block(m, choc, d, grid, is_choc)
+        exhausted = len(sols) < a.enumerate and spent < a.seconds
         print(
-            f"# {len(sols)} distinct solutions"
-            + (" -- exhaustive" if exhausted else " -- cap or time limit hit"),
-            file=sink,
-            flush=True,
+            f"distinct solutions: {len(sols)}"
+            + (
+                "  (search exhausted -- this is all of them)"
+                if exhausted
+                else "  (cap or time limit hit -- there may be more)"
+            )
         )
-        sink.close()
-        print(f"written: {a.out}")
+        strict = [x for x in sols if not x[2]]
+        print(
+            f"of those, strict (no uncircled cell reads its group size): {len(strict)}"
+        )
+        if sink:
+            print(
+                f"# {len(sols)} distinct solutions"
+                + (" -- exhaustive" if exhausted else " -- cap or time limit hit"),
+                file=sink,
+                flush=True,
+            )
+            print(f"written: {a.out}")
     print(f"wall {spent:.1f}s")
 
 
@@ -541,12 +553,13 @@ def main():
         ok = rv.check(grid, is_choc, circled)
         print("verify:", ok)
         for X in circled:
-            comp = [g for g in rv.components(is_choc, is_choc[X]) if X in g][0]
+            comp = next(g for g in rv.components(is_choc, is_choc[X]) if X in g)
             print(
-                f"  r{X[0]+1}c{X[1]+1} digit={grid[X]} size={len(comp)} "
+                f"  r{X[0] + 1}c{X[1] + 1} digit={grid[X]} size={len(comp)} "
                 f"{'choc' if is_choc[X] else 'ban'}"
             )
     print(f"wall {s.wall_time:.1f}s")
+    return None
 
 
 if __name__ == "__main__":

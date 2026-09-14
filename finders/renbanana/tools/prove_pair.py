@@ -32,7 +32,7 @@ What is exact here and what is lazy:
 
 An INFEASIBLE is therefore a proof for that geometry.
 
-    uv run --with ortools docs/research/renbanana/tools/prove_pair.py \
+    uv run --with ortools finders/renbanana/tools/prove_pair.py \
         --procs 20 --seconds 120 --limit 50 --out docs/research/renbanana/pair-proof
 """
 

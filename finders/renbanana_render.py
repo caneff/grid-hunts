@@ -1,7 +1,7 @@
 """Pictures for Renbanana candidates (#380): chocolate/banana fill, digits, circles.
 
-    uv run --with pillow docs/research/renbanana_render.py cand_00.json out.png
-    uv run --with pillow docs/research/renbanana_render.py --html DIR page.html
+    uv run --with pillow finders/renbanana_render.py cand_00.json out.png
+    uv run --with pillow finders/renbanana_render.py --html DIR page.html
 
 A circle marks a cell whose digit equals the size of its own chocolate group —
 a clue the puzzle could offer, not one that has been chosen. The HTML mode

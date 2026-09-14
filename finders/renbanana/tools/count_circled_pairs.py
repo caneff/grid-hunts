@@ -21,7 +21,7 @@ pair inside a chocolate rectangle differs by at least 5) and both circles land.
 An INFEASIBLE here is a proof about the pair, and it is a proof no amount of
 walking would have found.
 
-    uv run --with ortools docs/research/renbanana/tools/count_circled_pairs.py \
+    uv run --with ortools finders/renbanana/tools/count_circled_pairs.py \
         --procs 8 --out docs/research/renbanana/circled-pairs
 """
 

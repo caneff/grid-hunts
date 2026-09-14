@@ -18,7 +18,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import max_house_circles as mhc
 import renbanana_verify as rv
 
-POOL = sorted(Path(__file__).resolve().parents[1].glob("candidates*/cand_*.json"))
+DATA_ROOT = Path(__file__).resolve().parents[3] / "docs" / "research" / "renbanana"
+POOL = sorted(DATA_ROOT.glob("candidates*/cand_*.json"))
 HOUSES = ("row5", "col3", "box9")
 
 
@@ -38,7 +39,10 @@ def pin_shading(house_name, is_choc):
     for p in mhc.CELLS:
         m.add(choc[p] == (1 if is_choc[p] else 0))
     sol = cp.CpSolver()
-    sol.parameters.num_search_workers = 4
+    # 1 worker: this test now runs on every `just check`/`check-full`/CI pass
+    # (#469), and this box is shared with other agents -- AGENTS.md's
+    # "--workers 1 unless told otherwise" applies here same as a hunt.
+    sol.parameters.num_search_workers = 1
     sol.parameters.max_time_in_seconds = 120
     if sol.solve(m) not in (cp.OPTIMAL, cp.FEASIBLE):
         return None

@@ -11,7 +11,7 @@ All eleven live on one interactive page, `lineup.html` — filter by run or
 shape, sort by any column below (or by `circles in one house`), toggle
 digits, circles, group outlines and the `fullest house` wash, and hover a cell
 to light up its whole group. Rebuild it after a hunt with
-`uv run python docs/research/renbanana/tools/build_lineup.py`; a new pool
+`uv run python finders/renbanana/tools/build_lineup.py`; a new pool
 needs one line in that script's `POOLS`.
 
 ## Leaderboard

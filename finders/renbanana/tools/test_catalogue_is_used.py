@@ -1,7 +1,7 @@
 """The #377 catalogue is not optional: every chocolate question the generator
 asks must be answered from it rather than re-searched.
 
-    uv run --with ortools python docs/research/renbanana/tools/test_catalogue_is_used.py
+    uv run --with ortools python finders/renbanana/tools/test_catalogue_is_used.py
 
 Five call sites, one check each, plus the soundness check that licenses them:
 the catalogue is layer B (the rectangle and the boxes, nothing outside), so a
@@ -12,8 +12,9 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT.parent))
+CODE_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(CODE_ROOT))
+DATA_ROOT = CODE_ROOT.parent / "docs" / "research" / "renbanana"
 
 import renbanana_cpsat as R
 import renbanana_verify as rv
@@ -28,7 +29,7 @@ def check(name, ok, detail=""):
 
 
 def main():
-    src = (ROOT.parent / "renbanana_cpsat.py").read_text()
+    src = (CODE_ROOT / "renbanana_cpsat.py").read_text()
 
     check(
         "SHAPES drops shapes no grid can hold",
@@ -59,7 +60,7 @@ def main():
 
     # Soundness: nothing the catalogue rules out appears in a grid we accepted.
     cells = dead = circles = unpredicted = 0
-    for f in sorted(ROOT.glob("candidates*/cand_*.json")):
+    for f in sorted(DATA_ROOT.glob("candidates*/cand_*.json")):
         d = json.loads(f.read_text())
         is_choc = {
             (r, c): ch == "C"
@@ -91,6 +92,11 @@ def main():
                         circles += 1
                         if p not in allowed:
                             unpredicted += 1
+    check(
+        "the candidate pool is not empty -- an empty glob would pass every check below vacuously",
+        cells > 0,
+        f"DATA_ROOT={DATA_ROOT}",
+    )
     check(
         "no accepted grid holds a placement the catalogue calls dead",
         dead == 0,

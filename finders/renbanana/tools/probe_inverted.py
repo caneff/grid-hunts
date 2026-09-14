@@ -7,7 +7,7 @@ digit-valid by construction, but only if the other direction is not just as
 thin. This measures that: of K random solved sudoku grids, how many admit a
 legal Renbanana shading at all?
 
-    uv run --with ortools docs/research/renbanana/tools/probe_inverted.py \
+    uv run --with ortools finders/renbanana/tools/probe_inverted.py \
         --grids 100 --seconds 20 --workers 1 --out docs/research/renbanana/probe-inverted
 
 One worker by default and one process, ever: this box is shared (AGENTS.md).

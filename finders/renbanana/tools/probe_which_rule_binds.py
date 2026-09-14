@@ -5,7 +5,7 @@ steering the grid toward more whisper-legal adjacencies did not change that.
 So the whisper is probably not what binds. This drops one rule at a time and
 re-asks: the relaxation that flips infeasible to feasible is the real gate.
 
-    uv run --with ortools docs/research/renbanana/tools/probe_which_rule_binds.py --grids 20
+    uv run --with ortools finders/renbanana/tools/probe_which_rule_binds.py --grids 20
 
 One worker, one process (AGENTS.md).
 """

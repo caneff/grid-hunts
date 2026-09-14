@@ -23,7 +23,7 @@ Then it asks the full inverted model for a legal shading with two circled
 rectangles in it. A hit is a grid no hunt has ever produced. A miss is not a
 proof -- that is stage 2, the joint model -- so the run reports the two apart.
 
-    uv run --with ortools docs/research/renbanana/tools/hunt_circled_pair.py \
+    uv run --with ortools finders/renbanana/tools/hunt_circled_pair.py \
         --procs 20 --seeds 3 --steer 46 --out docs/research/renbanana/pair-hunt
 """
 

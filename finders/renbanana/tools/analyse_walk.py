@@ -6,7 +6,7 @@ into a pool: a grid is new if its shading is at least 12 cells different from
 every grid already held, OR its multiset of chocolate rectangle shapes differs.
 Either-or, because requiring both over-filters and starves the pool.
 
-    uv run docs/research/renbanana/tools/analyse_walk.py docs/research/renbanana/walk
+    uv run finders/renbanana/tools/analyse_walk.py docs/research/renbanana/walk
 
 No solver, no cores.
 """

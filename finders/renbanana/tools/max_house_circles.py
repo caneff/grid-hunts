@@ -30,7 +30,7 @@ group, catalogue domains per rectangle, and `digit == group size` on the cells
 stage A picked. A shading that survives it is a witness, re-checked by
 `renbanana_verify`.
 
-    uv run --with ortools docs/research/renbanana/tools/max_house_circles.py \
+    uv run --with ortools finders/renbanana/tools/max_house_circles.py \
         --house row5 --seconds 900 --workers 6
 """
 

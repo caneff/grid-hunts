@@ -1,6 +1,6 @@
 """Rebuild lineup.html from the candidate pools: DATA spliced into lineup_template.html.
 
-    uv run python docs/research/renbanana/tools/build_lineup.py
+    uv run python finders/renbanana/tools/build_lineup.py
 
 Every `cand_*.json` under a pool directory becomes one card. A pool's name is
 the run label on the card, so a new hunt only needs a line in POOLS.
@@ -41,7 +41,9 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-ROOT = HERE.parent
+CODE_ROOT = HERE.parents[1]
+ROOT = CODE_ROOT.parents[0] / "docs" / "research" / "renbanana"
+TEMPLATE_DIR = ROOT / "tools"
 POOLS = {
     "candidates": "free",
     "candidates-2x4": "forced 2x4",
@@ -61,7 +63,7 @@ POOLS = {
 }
 
 sys.path.insert(0, str(HERE))
-sys.path.insert(0, str(ROOT.parent))
+sys.path.insert(0, str(CODE_ROOT))
 import canon
 import renbanana_verify as rv
 
@@ -211,7 +213,7 @@ def rows():
 
 def main():
     data = rows()
-    tpl = (HERE / "lineup_template.html").read_text()
+    tpl = (TEMPLATE_DIR / "lineup_template.html").read_text()
     marker = "const DATA=[];\n"
     assert tpl.count(marker) == 1, "template must hold exactly one DATA line"
     blob = json.dumps(data, separators=(",", ":"), ensure_ascii=False)

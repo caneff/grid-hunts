@@ -1,6 +1,7 @@
 """Rebuild lineup.html from the repo's found grids: DATA line spliced into lineup_template.html."""
 import json, glob, os
 Z = os.path.dirname(os.path.abspath(__file__))
+TPL_DIR = os.path.normpath(os.path.join(Z, "..", "..", "..", "docs", "research", "zombo-brainanas", "tools"))
 F = "/home/caneff/orca/workspaces/sudokumaker-custom-constraints/tang/docs/research/zombo-brainanas/found"
 ARM = {"bal36": "balance ≥36", "box9": "box 9", "box9_cross": "box 9 + reach", "box9_spread": "box 9 + spread",
        "dist25": "distance 25", "probe": "probe", "spread": "spread", "want2a": "two pockets", "want2b": "two pockets", "want3": "three pockets", "tpl720": "template: 720 opener"}
@@ -75,6 +76,6 @@ for f in sorted(glob.glob(F + "/*.json")):
     rows.append(dict(id=name, arm=ARM.get(arm, arm), seed=seed, grid=grid, inf=d["infected"], circles=[list(p) for p in circles],
                      pockets=sorted(pockets), circ=len(circles), infected=sum(map(sum, inf)), dots=len(dots), dotEdges=dots, white=len(white), whiteEdges=white, cross=cross,
                      box9=sum(1 for p in circles if box(*p) == 9), opener=opener, groups=groups))
-t = open(Z + "/lineup_template.html").read()
+t = open(TPL_DIR + "/lineup_template.html").read()
 out = t.replace("const DATA=[];\n", "const DATA=" + json.dumps(rows, separators=(",", ":"), ensure_ascii=False) + ";\n", 1)
-open(Z + "/lineup.html", "w").write(out); print(len(rows), "grids")
+open(TPL_DIR + "/lineup.html", "w").write(out); print(len(rows), "grids")

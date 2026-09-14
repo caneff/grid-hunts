@@ -14,7 +14,7 @@ shading that survives every rule.
 This hammers the exact case that failed: neighbours of that seed, full model,
 every returned shading checked from the rules.
 
-    uv run --with ortools docs/research/renbanana/tools/repro_renban_bug.py
+    uv run --with ortools finders/renbanana/tools/repro_renban_bug.py
 
 One worker.
 """

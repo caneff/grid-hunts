@@ -1,11 +1,11 @@
 """Renbanana (Choco Banana sudoku + German Chocolate + renban bananas) — CP-SAT
 candidate generator (#380).
 
-    uv run --with ortools docs/research/renbanana_cpsat.py hunt \
+    uv run --with ortools finders/renbanana_cpsat.py hunt \
         --objective chocolate --seeds 0-19 --target 4 --limit 120 --out DIR
-    uv run --with ortools docs/research/renbanana_cpsat.py bound \
+    uv run --with ortools finders/renbanana_cpsat.py bound \
         --objective chocolate --limit 300
-    uv run --with ortools docs/research/renbanana_cpsat.py verify DIR/cand_00.json
+    uv run --with ortools finders/renbanana_cpsat.py verify DIR/cand_00.json
 
 Rules (`renbanana/FEASIBILITY.md`): normal 9x9 sudoku; a free chocolate/banana
 shading that is *not* part of the solution check; every maximal chocolate group
@@ -90,7 +90,13 @@ def neighbours(r, c):
 ADJACENT = [(p, q) for p in CELLS for q in neighbours(*p) if IDX[q] > IDX[p]]
 
 CATALOGUE = json.loads(
-    (Path(__file__).parent / "renbanana" / "rectangle-catalogue.json").read_text()
+    (
+        Path(__file__).resolve().parent.parent
+        / "docs"
+        / "research"
+        / "renbanana"
+        / "rectangle-catalogue.json"
+    ).read_text()
 )
 
 

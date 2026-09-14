@@ -27,18 +27,18 @@ while [ "$(date +%s)" -lt "$END" ]; do
   ROUND=$((ROUND + 1))
   echo "=== round $ROUND at $(date '+%H:%M:%S')" >> "$PROGRESS"
 
-  uv run python docs/research/renbanana/tools/pick_seeds.py \
+  uv run python finders/renbanana/tools/pick_seeds.py \
       --want "$WANT" --top "$PROCS" --out "$SEEDS" >> "$PROGRESS" 2>&1
 
   PROCS="$PROCS" BUDGET="$BUDGET" OUT="$WALK" WANT="$WANT" FLOOR=1 \
     SEEDFILE="$SEEDS" sh docs/research/renbanana/tools/run_walk.sh \
     >> "$WALK/PROGRESS_circled.log" 2>&1 || true
 
-  uv run --with ortools python docs/research/renbanana/tools/walk_to_candidates.py \
+  uv run --with ortools python finders/renbanana/tools/walk_to_candidates.py \
       --walk "$WALK" --out "$POOL" >> "$PROGRESS" 2>&1 || true
 
   # Shout about the thing we are actually hunting.
-  uv run python docs/research/renbanana/tools/pick_seeds.py \
+  uv run python finders/renbanana/tools/pick_seeds.py \
       --want "$WANT" --top 1 --min-score 2 \
       --out /dev/null >> "$PROGRESS" 2>&1 \
       && echo "  *** A GRID WITH TWO CIRCLED SHAPES EXISTS ***" >> "$PROGRESS"

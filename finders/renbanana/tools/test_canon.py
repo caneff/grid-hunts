@@ -9,7 +9,7 @@ Duplicates across pools are reported, not failed. A pool records what one hunt
 found, and two hunts finding the same puzzle is a fact worth keeping -- it is
 the lineup, not the pools, that must show each puzzle once.
 
-    uv run docs/research/renbanana/tools/test_canon.py
+    uv run finders/renbanana/tools/test_canon.py
 """
 
 import json

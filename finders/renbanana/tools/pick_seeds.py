@@ -7,7 +7,7 @@ ranked by that count first, and among equals the freshest grids win, since a
 seed that has already been walked out mostly returns keys the skip-set throws
 straight back.
 
-    uv run docs/research/renbanana/tools/pick_seeds.py --want 2x2,2x3 --top 24
+    uv run finders/renbanana/tools/pick_seeds.py --want 2x2,2x3 --top 24
 """
 
 import argparse

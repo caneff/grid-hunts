@@ -4,7 +4,7 @@ Written from the six rules in `renbanana/FEASIBILITY.md`, not from the CP-SAT
 encoding that produces candidates, so a bug in the encoding cannot hide behind
 a checker that shares it. Nothing enters the candidate pool unchecked.
 
-    uv run docs/research/renbanana_verify.py candidate.json
+    uv run finders/renbanana_verify.py candidate.json
 
 The rules:
 

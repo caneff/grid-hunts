@@ -11,7 +11,7 @@ relabelling two digits. (Transposing and the 10-v relabel are excluded: both
 preserve every |difference|, so they map a legal grid to a legal one for free
 and would only flatter the result.)
 
-    uv run --with ortools docs/research/renbanana/tools/probe_neighbourhood.py --moves 1
+    uv run --with ortools finders/renbanana/tools/probe_neighbourhood.py --moves 1
 
 One worker, one process (AGENTS.md).
 """

@@ -80,9 +80,8 @@ def save(results, pool):
     """Write the legal ones into the pool, skipping any already there."""
     pool.mkdir(parents=True, exist_ok=True)
     keys = set()
-    for path in sorted(
-        Path(__file__).resolve().parents[1].glob("candidates*/cand_*.json")
-    ):
+    data_root = Path(__file__).resolve().parents[3] / "docs" / "research" / "renbanana"
+    for path in sorted(data_root.glob("candidates*/cand_*.json")):
         grid, is_choc, _ = rv.load(path)
         keys.add(canon.key(grid, is_choc))
     n = 1 + max(

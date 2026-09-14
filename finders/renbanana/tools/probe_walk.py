@@ -12,7 +12,7 @@ step onto any neighbour that is still shadeable. Every accepted step is written
 out as a candidate, verified from the rules by `renbanana_verify`, with the
 distance back to the grid it started from recorded on it.
 
-    uv run --with ortools docs/research/renbanana/tools/probe_walk.py \
+    uv run --with ortools finders/renbanana/tools/probe_walk.py \
         --source docs/research/renbanana/candidates/cand_00.json \
         --budget 900 --out docs/research/renbanana/walk
 

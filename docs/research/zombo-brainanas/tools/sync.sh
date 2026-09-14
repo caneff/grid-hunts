@@ -13,7 +13,7 @@ new=0
 for f in sorted(glob.glob(Z+"/hunt/*/full_*.json")):
     if sig(f) in have: continue
     arm=f.split("/")[-2]; seed=f.split("full_")[1][:-5]; dst=f"{F}/{arm}_{seed}.json"
-    os.system(f"cp {f} {dst}"); subprocess.run(["uv","run","--with","pillow","python",R+"/docs/research/zombo_brainanas_render.py",dst,dst[:-5]+".png"],check=False)
+    os.system(f"cp {f} {dst}"); subprocess.run(["uv","run","--with","pillow","python",R+"/finders/zombo_brainanas_render.py",dst,dst[:-5]+".png"],check=False)
     have.add(sig(f)); new+=1
 for p in glob.glob(Z+"/hunt/*/PROGRESS.md"):
     os.system(f"cp {p} {F}/PROGRESS_{p.split('/')[-2]}.md")

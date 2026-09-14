@@ -17,7 +17,7 @@ Levels are built in order and pruned: a set containing an infeasible subset is
 infeasible, because it carries all of that subset's constraints and more. So
 only feasible sets are ever extended, and most of the 422,438 are never solved.
 
-    uv run --with ortools docs/research/renbanana/tools/count_circled_sets.py \
+    uv run --with ortools finders/renbanana/tools/count_circled_sets.py \
         --procs 16 --out docs/research/renbanana/circled-sets
 """
 

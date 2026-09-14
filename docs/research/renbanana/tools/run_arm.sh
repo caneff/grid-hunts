@@ -37,7 +37,7 @@ while [ "$(date +%s)" -lt "$END" ]; do
   ROUND=$((ROUND + 1))
   echo "=== round $ROUND at $(date '+%H:%M:%S')" >> "$PROGRESS"
 
-  uv run python docs/research/renbanana/tools/pick_seeds.py \
+  uv run python finders/renbanana/tools/pick_seeds.py \
       --rank "$RANK" --want "$WANT" --small-max "$SMALLMAX" \
       --min-score "$MINSCORE" --top "$PROCS" --out "$SEEDS" >> "$PROGRESS" 2>&1
 
@@ -46,7 +46,7 @@ while [ "$(date +%s)" -lt "$END" ]; do
     sh docs/research/renbanana/tools/run_walk.sh \
     >> "$WALK/PROGRESS_arm.log" 2>&1 || true
 
-  uv run --with ortools python docs/research/renbanana/tools/walk_to_candidates.py \
+  uv run --with ortools python finders/renbanana/tools/walk_to_candidates.py \
       --walk "$WALK" --out "$POOL" >> "$PROGRESS" 2>&1 || true
 
   git add -A docs/research/renbanana >> /dev/null 2>&1 || true

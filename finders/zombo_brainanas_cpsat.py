@@ -1,9 +1,9 @@
 """Zombo Brainanas (Infections + Choco Banana) — CP-SAT generator prototype.
 
-    uv run --with ortools docs/research/zombo_brainanas_cpsat.py sample 3 [limit] [rect]
-    uv run --with ortools docs/research/zombo_brainanas_cpsat.py hunt 0 100 600 outdir [rect] [want] [min_distance]
-    uv run --with ortools docs/research/zombo_brainanas_cpsat.py verify out.json
-    uv run --with ortools docs/research/zombo_brainanas_cpsat.py strip full.json out.json [seed]
+    uv run --with ortools finders/zombo_brainanas_cpsat.py sample 3 [limit] [rect]
+    uv run --with ortools finders/zombo_brainanas_cpsat.py hunt 0 100 600 outdir [rect] [want] [min_distance]
+    uv run --with ortools finders/zombo_brainanas_cpsat.py verify out.json
+    uv run --with ortools finders/zombo_brainanas_cpsat.py strip full.json out.json [seed]
 
 Rules (map #342): normal 9x9 sudoku. Patient zero = digit equal to its box
 number, exactly one per row and column, infected. Infected cells infect every
