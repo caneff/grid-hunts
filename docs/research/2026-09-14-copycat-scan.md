@@ -13,6 +13,9 @@ Date: 2026-09-14. Companion to `2026-09-14-puzzle-genre-survey.md` and
   (3) the series list Scojo keeps on every Copycat puzzle page.
 - One request per 10 s, no retries. Pages live in `.scratch/copycat/pages/`
   (gitignored). `parse_copycat.py` classifies each page.
+- Result of source (1): all 196 pages read (one 503 on 000GR2 "Target
+  Acquired", refetched once by hand, no copycat rule). No Scojo puzzle uses
+  the modifier under a title without "Copycat" other than Déjà Vu.
 - "Pencil hybrid" below means the rules require the solver to shade cells,
   draw a loop or path, or divide the grid into regions. Line, dot and cage
   variants are not pencil hybrids.
