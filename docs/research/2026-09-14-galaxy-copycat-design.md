@@ -608,3 +608,9 @@ and L2 = r4c7-r9c7, both (3,3) with a segment in box 6. Never pairable:
 the two box-6 segments are six distinct values, so L1's box-3 segment
 r1-3c7 must repeat L2's box-6 values r4-6c7, three doubled values in
 column 7, three copycats in one column. Checker: INFEASIBLE.
+
+**Board 3** (`boards/board3-columns78.json`): L1 = r1-3c7 + r4-6c8, L2 =
+r4-6c7 + r7-9c8. INFEASIBLE, same fault as board 2 in both columns.
+General rule for two (3,3) lines sharing a box: the shared-box segments
+are disjoint, so each line's other segment repeats the other line's
+shared-box values and must avoid its rows, columns and box.
