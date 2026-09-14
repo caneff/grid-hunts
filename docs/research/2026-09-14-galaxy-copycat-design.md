@@ -614,3 +614,8 @@ r4-6c7 + r7-9c8. INFEASIBLE, same fault as board 2 in both columns.
 General rule for two (3,3) lines sharing a box: the shared-box segments
 are disjoint, so each line's other segment repeats the other line's
 shared-box values and must avoid its rows, columns and box.
+
+**Board 4** (`boards/board4-box6-share.json`): L1 = r1-3c7 + r4-6c8, L2 =
+r4-6c7 + r1-3c6. INFEASIBLE through column 7 only (L1's box-3 segment
+repeats L2's r4-6c7). Repairs tested: L1's top segment at r1-3c8 (a
+straight column-8 line) or r1-3c9 both feasible, 3000+ solutions.
