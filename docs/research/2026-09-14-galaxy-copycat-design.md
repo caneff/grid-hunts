@@ -491,3 +491,11 @@ line over one border, segments (3,3).
 **Opener 4, sums with no copycat.** (1,1,3,3) vs (2,2,4) pins 9 / 12 and
 needs no copycat, so it is a clean second pair when Opener 3 has already
 spent two copycats.
+
+**Filter: at most one single per line, no single beside a 4-cell segment.**
+Only (1,3,3) vs (2,5) survives without a 6-cell one-box segment: sums 8 /
+12, single = 8, B's pair {4,8}, B's 5-cell segment holds a copycat and is
+{1,1,2,3,5} (then A = 8 | {1,2,5} | {1,3,4}, no second copycat) or
+{1,2,2,3,4} (then A's triples are {1,3,4} and {2,2,4}, a second copycat).
+The others, (2,2,4)/(2,3,3) vs (2,6) at 12/18 and (2,6) vs (3,5)/(4,4) at
+16-18, all need a 6-cell segment in one box.
