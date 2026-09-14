@@ -570,3 +570,12 @@ straight lines infeasible. Four U-shapes feasible, each 3000+ solutions:
 - r8c7-r8c6-r8c5-r7c5-r7c6-r7c7 (block in box 8, singles in box 9; 8 / 11)
 - r9c4-r9c3-r9c2-r8c2-r8c3-r8c4 (block in box 7, singles in box 8; 8 / 11)
 Other 6-cell shapes (hooks, (2,4) bends) not searched.
+
+**Board 1, all fourth lines (2026-09-14).** `find_l4_all.py` enumerated
+every orthogonal 6-cell path avoiding the three lines (1729), kept the 798
+whose structure the segment model allows against (1,4,1), i.e. (2,4),
+(3,3) and the (1,1,4) family, and solved each with L2-L3 and L1-L4 paired.
+332 feasible, none undecided: 114 of shape (4,2), 105 (2,4), 91 (3,3),
+20 (1,4,1), 2 (4,1,1). Straight (3,3) lines all fail; the feasible (3,3)
+ones bend. Full list in `boards/board1-l4-feasible.txt`, log in
+`boards/board1-l4-search.log`.
