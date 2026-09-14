@@ -439,3 +439,50 @@ one border, e.g. r5c2-r8c2: segments (2, 2).
 value S. B: 2 cells inside one box, one segment summing 2S, values {S, S}
 in one box: one is a copycat whose mirror cell's digit equals the other
 cell's digit. Use as the second pair.
+
+### Segment-structure survey (2026-09-14)
+
+`2026-09-14-galaxy-copycat/segment_openers.py` enumerates every pair of
+segment structures up to length 8 (parts of any size, singles included) and
+lists which (S_A, S_B) can be realised and how many in-segment duplicates
+(copycats) that needs. Geometry-free relaxation: rows and columns are
+ignored, so anything it marks forced is truly forced. Full output in
+`segment_openers.out` (432 lines: 311 impossible, 13 pinned, 55 copycat
+forced, 55 open).
+
+Both openers above check out: (1,1,2) vs (2,2) allows only S_A in {4,6,8}
+with a copycat forced; (1,1) vs (2) is the trivial case.
+
+Pairings that pin both sums with no clue at all:
+
+| A | B | S_A / S_B | copycats forced |
+|---|---|---|---|
+| (1,1,4) | (3,3) or (2,4) | 8 / 12 | 2 |
+| (1,2,4) | (3,4) | 8 / 12 | 1 |
+| (1,3,3) | (2,5) | 8 / 12 | 1 |
+| (1,1,1,4) | (2,2,3) | 9 / 12 | 1 |
+| (1,1,2,4) | (2,2,4) or (2,3,3) | 9 / 12 | 1 |
+| (1,1,3,3) | (2,2,4) | 9 / 12 | 0 |
+| (1,3,4) | (3,5) or (4,4) | 8 / 12 | 2 |
+| (2,2,4), (2,3,3) | (2,6) | 12 / 18 | 2 |
+
+Without any single-cell segment nothing short forces a copycat: (2,2) vs
+(4) and (2,2,2) vs (3,3) are open. The first no-single forcing is at
+length 8 with a 6-cell segment, which is not a line shape worth drawing.
+
+**Opener 3, fully determined values.** A: (1,1,4), e.g. a single in box 1,
+a single in box 2, then four cells bent inside box 5. B: a straight 6-cell
+line over one border, segments (3,3).
+1. Sums pinned: S_A = 8, S_B = 12. Both singles are value 8.
+2. Four distinct digits cannot sum to 8, so the box-5 segment holds a
+   copycat and is {1,2,2,3} or {1,1,2,4}.
+3. B must split the six values into two triples of 12, each holding one 8:
+   the other two cells sum to 4, so {1,3} and {2,2}. Only {8,8,1,2,2,3}
+   works: A's quad is {1,2,2,3}, B is {8,1,3} + {8,2,2}.
+4. Two copycats located before any digit: one in A's quad (value 2), one
+   in B's {8,2,2} triple (value 2). Every value on both lines is known;
+   only the order within segments remains.
+
+**Opener 4, sums with no copycat.** (1,1,3,3) vs (2,2,4) pins 9 / 12 and
+needs no copycat, so it is a clean second pair when Opener 3 has already
+spent two copycats.
