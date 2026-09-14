@@ -63,7 +63,7 @@ def dfs(used, acc):
     low = ((~used) & (used + 1)).bit_length() - 1
     for m in placements.get(low, ()):
         if m & used == 0:
-            dfs(used | m, acc + [m])
+            dfs(used | m, [*acc, m])
 
 
 try:
@@ -79,17 +79,17 @@ def cells_of(m):
 
 def canon(sol):
     best = None
+
+    def tr(r, c, f):
+        for _ in range(f % 4):
+            r, c = c, n - 1 - r
+        if f >= 4:
+            c = n - 1 - c
+        return r, c
+
     for f in range(8):
-
-        def tr(r, c):
-            for _ in range(f % 4):
-                r, c = c, n - 1 - r
-            if f >= 4:
-                c = n - 1 - c
-            return r, c
-
         key = tuple(
-            sorted(tuple(sorted(tr(r, c) for r, c in cells_of(m))) for m in sol)
+            sorted(tuple(sorted(tr(r, c, f) for r, c in cells_of(m))) for m in sol)
         )
         if best is None or key < best:
             best = key
