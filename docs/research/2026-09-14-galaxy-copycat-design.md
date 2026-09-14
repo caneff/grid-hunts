@@ -318,3 +318,34 @@ Costs and cautions: setting a symmetric nonomino partition is real work;
 straight 1x9 galaxies are legal but duplicate the row or column rule and
 must be avoided; "centre digit = galaxy size" from the pairings list is
 dead (every size is nine). Everything else in the pairings list applies.
+
+## Result: equal-size symmetric regions cannot tile the grid irregularly
+
+Checked 2026-09-14 by exhaustive search
+(`2026-09-14-galaxy-copycat/symmetric_region_tilings.py`; shape counts
+cross-checked against the known 9,910 fixed nonominoes).
+
+| Grid | Point-symmetric n-ominoes (fixed) | Tilings by n of them | Distinct up to symmetry | Without any 1xn bar |
+|------|----------------------------------:|---------------------:|------------------------:|--------------------:|
+| 6x6 | 24 | 54 | 15 | 1 (the 2x3 boxes) |
+| 8x8 | 85 | 250 | 58 | 9, all made of 2x4 and 4x2 rectangles |
+| 9x9 | 86 | 37 | 12 | 1 (the 3x3 boxes) |
+
+Every tiling found is made of rectangles: full-length bars or the standard
+boxes (and for 8x8, mixed rectangle layouts). No irregular point-symmetric
+region ever fits. So "nine galaxies of nine cells as the sudoku regions"
+collapses to ordinary sudoku boxes, and the latin-square revision above is
+dead in that form.
+
+What survives:
+
+- **Galaxies of unequal size** with "digits do not repeat inside a galaxy"
+  (every galaxy at most nine cells, so at least ten galaxies on a 9x9; the
+  region rule is weaker than boxes but real). Copycats one per row and
+  column, at most one per galaxy, never on a circle. Each copycat is live
+  only if its partner's digit differs from its own, which the galaxy
+  no-repeat rule guarantees exactly as before.
+- **The sudoku-box version** from the recommended ruleset, unchanged.
+- Any grid where regions and galaxies are allowed to differ, i.e. Galactic
+  Union's arrangement: galaxies are cages or extra constraints laid across
+  the regions, not the regions themselves.
