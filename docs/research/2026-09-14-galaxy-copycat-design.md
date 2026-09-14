@@ -1,0 +1,149 @@
+# Copycat Galaxies — design note
+
+Date: 2026-09-14. Follows `2026-09-14-copycat-scan.md` (no Copycat puzzle
+has used a region-division genre) and survey §3.7 (Spiral Galaxies).
+
+## The idea in one line
+
+Copycat cells copy the digit in the cell rotationally opposite them **about
+their own galaxy's centre**, not the grid centre. The solver has to build the
+galaxy to know where a copycat is looking.
+
+## Why galaxies and copycats fit
+
+- Scojo's modifier is a 180° reflection through one fixed point. Spiral
+  Galaxies is the genre whose entire content is 180° reflection through many
+  points. The copycat's partner becomes an unknown that the region-building
+  half of the puzzle resolves; in every published Copycat puzzle the partner
+  is fixed from the start.
+- The partner is always inside the same galaxy, so a copycat says something
+  about the galaxy's *extent*: a copycat far from its centre forces a big
+  galaxy, because the mirror image must be inside it.
+- Galaxies already behave as regions (killer-galaxy and parity-galaxy hybrids
+  exist, survey §3.7), so value-reading clues have a natural home.
+
+## Design space
+
+Three dials.
+
+**1. Which cells copy?**
+
+| Option | Rule | Coupling to galaxies | Cluing load |
+|--------|------|----------------------|-------------|
+| Latin placement (Scojo) | 9 copycats, one per row, column, box; different digits | only at the 9 cells | low — the latin structure carries most of the placement |
+| Latin + galaxy exclusion | as above, **and no galaxy holds two copycats**; a copycat is never its galaxy's centre cell | the galaxies act as a Star Battle region set on top of the latin structure | low |
+| One per galaxy | exactly one copycat in every galaxy | tightest | high — without the latin structure every galaxy needs a clue that singles out its copycat |
+| Marked cells | given squares are copycats | at the marks only | lowest, but the placement puzzle is gone |
+| Everyone copies | every cell copies its galaxy partner | total | see "Mirror Galaxies" below |
+
+**2. Reflection point.** Own galaxy's centre (the new idea) or the grid
+centre (Scojo's rule with galaxies used only for placement). The grid-centre
+form is a safe fallback but throws away the reason to pair the two.
+
+**3. What reads the values.** Anything that has worked with Copycat: killer
+cages (Yin Yang, Cipher, juggler), arrows (Choco Banana), sight-line circles
+(Yin Yang), Kropki and XV, X-sums. Galaxy-native options: each galaxy's
+values sum to a given total; tail sums equal (LMD 000897); digits do not
+repeat inside a galaxy (a galaxy of at most nine cells is then a hidden
+region, and the copycat pair is the one repeated *value* in it).
+
+## Recommended ruleset
+
+> Normal sudoku rules apply.
+>
+> **Galaxies:** Divide the grid into galaxies. Each galaxy is orthogonally
+> connected, contains exactly one circle, and is symmetric under 180°
+> rotation about that circle. Every cell belongs to one galaxy.
+>
+> **Copycat cells:** Place nine copycat cells so that every row, column and
+> 3x3 box contains exactly one. No galaxy contains more than one copycat, and
+> a copycat is never the cell a circle sits on. The nine copycats contain
+> nine different digits.
+>
+> **Values:** The value of a copycat is the digit in the cell rotationally
+> opposite it about its galaxy's circle. The value of every other cell is
+> its digit. All other clues refer to values.
+>
+> Plus one value-reading clue family (killer cages first choice).
+
+Why this shape:
+
+- The latin placement keeps Scojo's feel and keeps the cluing load sane.
+- "No galaxy holds two" is the Star Battle essence; it makes a big galaxy
+  expensive (it eats a copycat slot for several boxes) and a small galaxy
+  useless as a hiding place.
+- "Never the circle cell" removes the self-copy (value = digit, which would
+  be a copycat that does nothing). With at most one copycat per galaxy, a
+  copycat can never be opposite another copycat, so the value definition
+  never recurses; Scojo's grid version has to allow the swap case.
+- Values may repeat in a unit (a copycat and its partner in one box both
+  show the partner's digit). Cages read values, so "digits do not repeat in
+  a cage, values may" carries over verbatim.
+
+## The deductions the ruleset creates
+
+1. **Reach.** A copycat at distance (dr, dc) from its circle needs the cell
+   at (−dr, −dc) inside the grid and inside its galaxy. Corner and edge
+   copycats are only possible for galaxies whose circle is near them. Conversely,
+   a small galaxy near a wall cannot host a copycat that has nowhere to look.
+2. **Cage arithmetic locates the copycat.** A two-cell cage totalling 2 must
+   be values 1 and 1: one cell is a digit 1, the other a copycat whose partner
+   is a 1, in the same galaxy, and sudoku puts the two 1s in different units.
+   The classic Copycat opening, now with a positional payload: the partner
+   must lie at the mirror position, so the galaxy must reach it.
+3. **Galaxy exclusion on the latin grid.** A galaxy spanning two boxes takes
+   at most one copycat, so the other box's copycat sits outside that galaxy.
+   Standard Star Battle counting across boxes and galaxies.
+4. **Symmetry transfers constraints.** If a copycat and its partner both sit
+   inside a cage or on a line, the partner's digit is counted twice in that
+   clue's values. A cage placed symmetrically inside a galaxy is a strong
+   tell.
+5. **Copycat digits are a full set.** Nine different digits across nine
+   copycats: once eight are known, the ninth is forced, exactly as in Scojo's
+   puzzles.
+
+## Degenerate cases and their fixes
+
+| Case | Effect | Fix in the recommended rules |
+|------|--------|------------------------------|
+| Copycat on a circle cell | copies itself, value = digit | forbidden |
+| Copycat opposite a copycat | values swap, definition recurses | impossible: at most one per galaxy |
+| Partner has the same digit as the copycat | value = digit, copycat invisible | allowed (Scojo allows it); the setter avoids it or uses it as a trap |
+| Galaxy of size 1 or 2 | can hold a copycat only in the size-2 edge-centred case | allowed; small galaxies simply spend no copycat |
+| Exactly nine galaxies wanted | a random spread of nine centres almost never partitions the grid symmetrically (1 of 100 random sets in a quick check) | do not require it; "at most one per galaxy" works for any galaxy count |
+
+## Variants worth a puzzle each
+
+- **Mirror Galaxies.** Every cell copies its galaxy partner. Then every
+  clue applies to the *mirror image* of its cells through their galaxies:
+  a Kropki dot between two cells of one galaxy is really a dot between the
+  two partner cells, a cage inside one galaxy is really the mirrored cage, and
+  a clue that straddles two galaxies is split across two mirrors. Nothing
+  reads the digits directly except sudoku and givens. Striking, very
+  disorienting; a 6x6 first.
+- **Galaxy-placed, grid-copied.** Scojo's exact value rule (grid centre) with
+  the copycat placement bound to galaxies (at most one per galaxy). Lower
+  novelty, lowest risk; a good warm-up puzzle in a set.
+- **Galaxy regions.** Add "digits do not repeat within a galaxy", with every
+  galaxy of size at most nine. The copycat pair becomes the only repeated
+  value in a galaxy, which makes sight-line and "count equal values" clues
+  possible.
+- **Copycat tails.** Adopt the tail-sum rule from LMD 000897 on values: the
+  copycat shifts one tail's sum by (partner − own digit), so equal tails pin
+  the copycat's digit against its partner's.
+
+## What to test by hand first
+
+1. A 6x6 with three or four galaxies, three copycats (one per row/col/box in
+   2x3 boxes), three cages. Checks whether "reach" and "cage arithmetic" carry
+   a solve without the galaxies being fully forced by their circles alone.
+2. The same grid with the grid-centre value rule, to feel the difference the
+   local mirror makes.
+3. A 9x9 where one galaxy deliberately spans three boxes, to see how strongly
+   the exclusion rule bites.
+
+## Not done
+
+No CP-SAT model, no generated puzzle, no uniqueness check; the prototype
+started in `2026-09-14-galaxy-copycat/` is untracked and abandoned at the
+user's request.
