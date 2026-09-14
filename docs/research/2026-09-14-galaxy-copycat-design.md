@@ -602,3 +602,9 @@ at S = 16 with {1,4,5,6,7,9}: all nine digits across the four lines, the
 only multiset at any sum that does. Feasible on the grid, no copycat
 forced. S = 12, 13, 14, 15, 17, 18 reach eight digits; the pair alone
 reaches six distinct values only for S = 11 to 17.
+
+**Board 2** (`boards/board2-column7.json`): L1 = r6c8-r5c8-r4c8-r3c7-r2c7-r1c7
+and L2 = r4c7-r9c7, both (3,3) with a segment in box 6. Never pairable:
+the two box-6 segments are six distinct values, so L1's box-3 segment
+r1-3c7 must repeat L2's box-6 values r4-6c7, three doubled values in
+column 7, three copycats in one column. Checker: INFEASIBLE.
