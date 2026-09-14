@@ -499,3 +499,28 @@ Only (1,3,3) vs (2,5) survives without a 6-cell one-box segment: sums 8 /
 {1,2,2,3,4} (then A's triples are {1,3,4} and {2,2,4}, a second copycat).
 The others, (2,2,4)/(2,3,3) vs (2,6) at 12/18 and (2,6) vs (3,5)/(4,4) at
 16-18, all need a 6-cell segment in one box.
+
+**Opener 5 laid out, (1,3,3) vs (2,5).** A: r1c3 | r1c4 r2c4 r3c4 | r4c4
+r4c5 r5c5. B: r8c5 r8c6 | r8c7 r8c8 r8c9 r9c9 r9c8. A bends so its two 1s
+can avoid sharing a row or column; B's 5-cell segment snakes in box 9.
+
+```
+     c1 c2 c3 | c4 c5 c6 | c7 c8 c9
+r1    .  .  A |  A  .  . |  .  .  .
+r2    .  .  . |  A  .  . |  .  .  .
+r3    .  .  . |  A  .  . |  .  .  .
+     ---------+----------+---------
+r4    .  .  . |  A  A  . |  .  .  .
+r5    .  .  . |  .  A  . |  .  .  .
+r6    .  .  . |  .  .  . |  .  .  .
+     ---------+----------+---------
+r7    .  .  . |  .  .  . |  .  .  .
+r8    .  .  . |  .  B  B |  B  B  B
+r9    .  .  . |  .  .  . |  .  B  B
+```
+
+Forced before any digit: S_A = 8, S_B = 12; r1c3 = 8 in value; r8c5 r8c6 =
+{4,8}; box 9 holds a copycat on B whose value repeats another B value there.
+Branch 1: B's quint {1,1,2,3,5}, A's triples {1,2,5} and {1,3,4}, no other
+copycat on the lines. Branch 2: quint {1,2,2,3,4}, A's triples {1,3,4} and
+{2,2,4}, a second copycat in box 2 or box 5.
