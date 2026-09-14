@@ -353,11 +353,12 @@ What survives:
   Union's arrangement: galaxies are cages or extra constraints laid across
   the regions, not the regions themselves.
 
-## Chosen for setting: Copycat cells + mirrored Copycat Region Sum Lines
+## Chosen for setting: Copycat cells + Copycat Region Sum Lines
 
 Chosen 2026-09-14 as the puzzle to set within a few days. Renban rejected
 (no-repeat clause too strong); whispers and entropic considered; Region Sum
-Lines chosen.
+Lines chosen. The line pairs are **not** mirror images; the mirror lives
+only in the copycat rule.
 
 > Normal sudoku rules apply.
 >
@@ -370,47 +371,44 @@ Lines chosen.
 > **Region Sum Lines:** Box borders divide each blue line into segments.
 > The values on every segment of a line sum to the same total.
 >
-> **Copycat lines:** Blue lines come in pairs. The two lines of a pair are
-> 180° rotations of each other about the grid centre, and they contain the
-> same multiset of values, in any order.
+> **Copycat lines:** Blue lines come in pairs. The two lines of a pair
+> contain the same multiset of values, in any order.
 
 What the combination gives:
 
-- **Shared segment total.** The box grid is 180° symmetric, so line B's
-  segments are line A's segments in reverse order with the same lengths.
-  Equal value multisets give equal line totals, hence the same number of
-  segments, hence one segment sum S for the whole pair. Solving S on one
-  line solves it on both.
+- **Total arithmetic across the pair.** Equal value multisets mean equal
+  line totals, so (segments of A) x S_A = (segments of B) x S_B. Lines with
+  different segment counts share a total: two segments of 12 against three
+  of 8, three of 10 against two of 15. The pair fixes both sums from one.
 - **Repeats are the tell.** A segment lies inside one box, so its digits
-  are distinct. Two equal values inside a segment prove one of them is a
-  copycat. Repeats are allowed on RSLs, so this is a clue, not a
-  contradiction.
-- **One-swap counting.** With one copycat on A at cell c borrowing digit d
-  from its mirror cell p on B: values(A) = values(B), so digits(A) and
-  digits(B) differ by exactly one swap (A's own digit x out, d in). The
-  unmatched digit on A names c; the mirror cell on B holds d.
-- **Mirror single cells.** A one-cell segment shows value S, and its mirror
-  on the other line is also a one-cell segment showing S. If either is a
-  copycat, the other's digit is S exactly. Strongest opening pattern.
-- **Sudoku pushes back.** d must be legal as a digit in p's units, x in c's
-  units, while the segment sums use d at c. The copycat lets a segment
-  "contain" a digit its box forbids.
-- **Double swap.** Copycats at mirror positions on both lines are allowed
-  (Scojo 2024 wording); the pair's digit multisets then differ by a double
-  swap. A third countable pattern, keep for the hardest pair.
+  are distinct. Two equal values inside a segment prove one is a copycat.
+  Repeats are legal on RSLs, so this is a clue, not a contradiction.
+- **One-swap counting.** A copycat on A borrows the digit of its grid-mirror
+  cell, which can be anywhere. digits(A) and values(B) then differ by one
+  swap: A's own digit x out, borrowed d in. The unmatched digit on A names
+  the copycat; the borrowed digit says what sits in the mirror cell, which
+  the solver locates by the 180° rule. Without mirroring the source is
+  found through the grid, not through the pair, which is the point.
+- **A line can carry a forbidden digit.** The borrowed d must be legal at
+  the mirror cell, not at the copycat's cell, so a segment can "contain" a
+  digit its box already holds as a digit. Repeats inside a segment (above)
+  are the visible form of this.
+- **Copycats on both lines.** Each line then has one foreign digit;
+  digits(A) and digits(B) differ by two swaps against a common value set.
+  Keep for the hardest pair.
 
 Setting recipe:
 
-1. Three pairs, one in each of the box pairings (1,9), (2,8), (3,7) or
-   (4,6); avoid lines through box 5 across the centre, which would be their
-   own mirror and make the pair rule vacuous.
-2. Each line crosses two or three boxes; include one pair with a one-cell
-   segment (the opening) and one pair with none (the closer).
+1. Three pairs; vary segment counts within a pair (a 2-segment line paired
+   with a 3-segment line) so the total arithmetic has work to do.
+2. Include one pair with a one-cell segment: that cell's value is S
+   outright, and if it is a copycat its mirror cell's digit is S.
 3. Fill the solution first, then choose the nine copycats last so that:
-   pair 1 has no copycat (pure RSL start, gives S), pair 2 has one copycat
-   on one line, pair 3 has copycats on both lines at non-mirror cells or at
-   mirror cells for the double-swap finish.
-4. Glue: a few Kropki dots on values. No cages with "different digits"
+   pair 1 has no copycat (pure RSL start, gives the totals), pair 2 has one
+   copycat on one line, pair 3 has one on each.
+4. Place at least one copycat whose mirror cell is on a line of a different
+   pair, so the pairs feed each other.
+5. Glue: a few Kropki dots on values. No cages with "different digits"
    clauses.
-5. Uniqueness: CP-SAT model is 81 copycat bools, one value channel per
+6. Uniqueness: CP-SAT model is 81 copycat bools, one value channel per
    cell, one sum per segment, nine count-equalities per pair. Small.
