@@ -279,3 +279,42 @@ accept.
 
 First puzzle: three mirrored pairs, no other constraints, copycat rule as
 above; see whether counting alone reaches the nine copycats.
+
+## Revision: latin square with galaxies as the regions (preferred)
+
+Recorded 2026-09-14. Precedent check: *Galactic Union* (Tacosian, LMD
+000GAA, Dec 2023) is a chaos construction where galaxies are killer cages
+straddling the regions; *Colorguru Chaos Deconstruction: Spiral Galaxies*
+(crispy16, LMD 000BYE, Nov 2022) has no digits. Galaxies *as* the sudoku
+regions is unclaimed in the Galaxies tag listings we hold.
+
+> Divide the grid into nine galaxies of nine cells. Each galaxy is
+> orthogonally connected and symmetric under 180° rotation about its circle.
+> Every row, column and galaxy contains the digits 1 to 9 once each.
+>
+> Place nine copycat cells, one in every row, column and galaxy, never on a
+> circle. The value of a copycat is the digit in the cell rotationally
+> opposite it about its galaxy's circle. Every other cell's value is its
+> digit. All clues read values.
+
+Why this beats the sudoku-box version:
+
+- Nine regions of nine cells force exactly nine galaxies, so "exactly one
+  copycat per galaxy" returns without any feasibility worry; the earlier
+  1-in-100 figure was for random centres, which a setter never uses.
+- Every copycat is live by construction: the partner is in the same galaxy,
+  which holds 1 to 9 once, so the copied digit always differs from the
+  copycat's own digit. The "invisible copycat" case disappears.
+- The galaxies carry the region rule, so the solver must build them to place
+  digits at all: a chaos construction whose regions have a symmetry to
+  exploit, which is far more tractable than connectivity guessing.
+- A nine-cell symmetric region has odd size, so every circle is a cell. The
+  nine circles are nine known, honest (never copycat) cells, one per galaxy.
+- A galaxy's values are 1 to 9 with one repeated digit (the copied one) and
+  one missing (the copycat's own). Any sum over a galaxy or over a symmetric
+  cage inside it reads exactly that difference.
+
+Costs and cautions: setting a symmetric nonomino partition is real work;
+straight 1x9 galaxies are legal but duplicate the row or column rule and
+must be avoided; "centre digit = galaxy size" from the pairings list is
+dead (every size is nine). Everything else in the pairings list applies.
