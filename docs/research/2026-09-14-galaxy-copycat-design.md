@@ -524,3 +524,14 @@ Forced before any digit: S_A = 8, S_B = 12; r1c3 = 8 in value; r8c5 r8c6 =
 Branch 1: B's quint {1,1,2,3,5}, A's triples {1,2,5} and {1,3,4}, no other
 copycat on the lines. Branch 2: quint {1,2,2,3,4}, A's triples {1,3,4} and
 {2,2,4}, a second copycat in box 2 or box 5.
+
+**Length 6 under the same filter.** Nothing forces a copycat outright. The
+pick is (1,2,3) vs (2,4): sums 8/12 or 6/9 only. At S = 8 the sole
+copycat-free fill is A = 8 | {2,6} | {1,3,4}, B = {4,8} | {1,2,3,6}; the
+other ten branches each need a copycat on a line. At S = 6 all four
+branches put a copycat in B's 4-cell segment, and A's triple is {1,2,3} in
+three of them. (1,2,3) vs (3,3) is the same sums with fewer branches and
+two copycat-free at S = 6. (2,2,2) vs (2,4), the no-single look, allows
+8/12 or 10/15 without a copycat and 6/9 or 12/18 with one. (2,4) vs (3,3)
+only says the sums are equal, 11 to 17. Branch lists come from
+`line_multisets` in `segment_openers.py`.
