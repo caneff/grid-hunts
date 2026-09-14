@@ -114,13 +114,6 @@ Why this shape:
 
 ## Variants worth a puzzle each
 
-- **Mirror Galaxies.** Every cell copies its galaxy partner. Then every
-  clue applies to the *mirror image* of its cells through their galaxies:
-  a Kropki dot between two cells of one galaxy is really a dot between the
-  two partner cells, a cage inside one galaxy is really the mirrored cage, and
-  a clue that straddles two galaxies is split across two mirrors. Nothing
-  reads the digits directly except sudoku and givens. Striking, very
-  disorienting; a 6x6 first.
 - **Galaxy-placed, grid-copied.** Scojo's exact value rule (grid centre) with
   the copycat placement bound to galaxies (at most one per galaxy). Lower
   novelty, lowest risk; a good warm-up puzzle in a set.
@@ -131,6 +124,22 @@ Why this shape:
 - **Copycat tails.** Adopt the tail-sum rule from LMD 000897 on values: the
   copycat shifts one tail's sum by (partner − own digit), so equal tails pin
   the copycat's digit against its partner's.
+
+## Dead end: everyone copies ("Mirror Galaxies")
+
+Rejected 2026-09-14. If every cell copies its galaxy partner, the copy is an
+involution inside each galaxy, so the value grid is the digit grid with each
+galaxy rotated 180° in place. Once the galaxies are drawn, every clue is the
+same clue relocated to its mirror cells, and what remains is a plain variant
+sudoku with moved clues. Consequences: there is no hidden placement to find;
+digits feed back into the partition only as "this shape gives a
+contradictory sudoku" (bifurcation, not deduction); a clue that is itself
+mirror-symmetric inside its galaxy reads identically on values and digits,
+so the copy is invisible exactly where the galaxy is prettiest; and every
+cell-centred galaxy has a dead centre cell copying itself. A single
+"copycat galaxy" (one galaxy whose cells all copy, the rest normal) is a
+k-way choice, too thin to carry a puzzle. The sparse nine-copycat rule is
+the version worth setting.
 
 ## What to test by hand first
 
