@@ -435,10 +435,11 @@ one border, e.g. r5c2-r8c2: segments (2, 2).
    pinned to a 2-way choice before any digit; one dot fixing S makes it
    rigid.
 
-**Opener 2, minimal.** A: 2 cells across a border, segments (1, 1), both
-value S. B: 2 cells inside one box, one segment summing 2S, values {S, S}
-in one box: one is a copycat whose mirror cell's digit equals the other
-cell's digit. Use as the second pair.
+**Opener 2, minimal (withdrawn).** (1, 1) vs (2) needed a line inside one
+box; ruled out below.
+
+**Ruling (2026-09-14): every line has at least two segments.** No line lies
+inside one box. Single-cell segments are fine.
 
 ### Segment-structure survey (2026-09-14)
 
@@ -465,6 +466,10 @@ Pairings that pin both sums with no clue at all:
 | (1,1,3,3) | (2,2,4) | 9 / 12 | 0 |
 | (1,3,4) | (3,5) or (4,4) | 8 / 12 | 2 |
 | (2,2,4), (2,3,3) | (2,6) | 12 / 18 | 2 |
+
+All of these have two or more segments on both lines, so the ruling above
+removes nothing from the table; it removes every "(n,)" pairing, including
+Opener 2.
 
 Without any single-cell segment nothing short forces a copycat: (2,2) vs
 (4) and (2,2,2) vs (3,3) are open. The first no-single forcing is at
