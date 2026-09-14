@@ -535,3 +535,28 @@ two copycat-free at S = 6. (2,2,2) vs (2,4), the no-single look, allows
 8/12 or 10/15 without a copycat and 6/9 or 12/18 with one. (2,4) vs (3,3)
 only says the sums are equal, 11 to 17. Branch lists come from
 `line_multisets` in `segment_openers.py`.
+
+### Checker (2026-09-14)
+
+`2026-09-14-galaxy-copycat/copycat_rsl_solver.py` is the CP-SAT model of the
+chosen ruleset: sudoku, nine copycats (one per row, column, box, nine
+different digits, value = digit of the 180-degree opposite cell), region
+sum lines on values, and copycat pairs as equal value multisets. It takes a
+JSON setup or a SudokuMaker link (decoded through gridfind); pairs are
+given with `--pair L1,L2`, sums with `--sum L1=8`. It prints the solution
+count up to a limit, the first solution with copycats starred, and, when
+the count is complete, every forced digit, copycat and sum.
+
+**Board 1** (`boards/board1-three-lines.json`, three 6-cell lines, no
+givens): L1 = r3c3-r3c4-r3c5-r2c5-r2c4-r2c3 is (1,4,1); L2 =
+r6c4-r6c7-r4c7 is (3,3); L3 = r8c9-r8c8-r9c8-r9c7-r9c6-r9c5 is (4,2).
+- L2 with L3 paired, L1 alone: feasible, 300+ solutions, so far open.
+- L1 paired with L2 or L3, and all three sharing: infeasible. The segment
+  model allows 8/12 with {8,8,1,2,2,3}, but the grid does not: L1's two
+  singles r2c3, r3c3 both show 8, so one is digit 8 in column 3 and the
+  other a copycat whose opposite, r7c7 or r8c7, is digit 8 in column 7.
+  L2's column-7 segment then needs its 8 as a copycat copying r4-6c3,
+  but column 3 already holds the 8. And L2's row-6 segment cannot carry
+  {8,2,2}: a copycat in r6c4-6 copies r4c4-6, the same box, so the copied
+  2 and the digit 2 would share box 5. L3 fails the same way through its
+  box-9 quad, whose opposites lie in box 1 with L1's singles.
