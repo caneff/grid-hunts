@@ -412,3 +412,30 @@ Setting recipe:
    clauses.
 6. Uniqueness: CP-SAT model is 81 copycat bools, one value channel per
    cell, one sum per segment, nine count-equalities per pair. Small.
+
+### Openers (2026-09-14)
+
+**Lemma.** Both lines of a pair have equal length, so segs(A) x S_A =
+segs(B) x S_B. A one-cell segment on A puts value S_A on B, where it sits in
+a segment summing to at least S_A + 1 unless that is also a one-cell segment.
+Hence a line with singles, paired with a line without, has more segments and
+the smaller sum. Segment counting alone orders the sums.
+
+**Opener 1, the U-line.** A: r3c3, r3c4, r2c4, r2c3 (box 1, two cells in
+box 2, back to box 1): segments (1, 2, 1). B: any straight 4-cell line over
+one border, e.g. r5c2-r8c2: segments (2, 2).
+1. 3 S_A = 2 S_B; A's values are {S, S, a, b}, a + b = S.
+2. B's segments each sum to 1.5 S from those values; {S, S} would give 2S,
+   so the segments are {S, a} and {S, b}, forcing a = b = S/2 and S even.
+3. Equal values a = b in one segment (box 2): one of r3c4, r2c4 is a
+   copycat, mirror digit S/2, the other has digit S/2.
+4. The singles r3c3, r2c3 both show S inside box 1: one is a copycat,
+   mirror digit S.
+5. One copycat per row: (r3c3, r2c4) or (r2c3, r3c4). Two copycats
+   pinned to a 2-way choice before any digit; one dot fixing S makes it
+   rigid.
+
+**Opener 2, minimal.** A: 2 cells across a border, segments (1, 1), both
+value S. B: 2 cells inside one box, one segment summing 2S, values {S, S}
+in one box: one is a copycat whose mirror cell's digit equals the other
+cell's digit. Use as the second pair.
