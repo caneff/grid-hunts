@@ -142,6 +142,83 @@ Why this shape:
 3. A 9x9 where one galaxy deliberately spans three boxes, to see how strongly
    the exclusion rule bites.
 
+## What else pairs with it
+
+The test for a pairing: does the constraint talk to at least two of the
+three layers (galaxy shape, copycat placement, value vs digit)? Ordered by
+how many it touches.
+
+### Tier 1 — touches all three
+
+- **Centre digit = galaxy size.** The value of a circled cell is the number of
+  cells in its galaxy. Fillomino's clue in Galaxies clothing. Galaxy sizes
+  cap at 9; a cell-centred galaxy is odd-sized, an edge- or vertex-centred one
+  is even-sized (its cells come in pairs), so the centre type alone fixes the
+  parity of the centre digit. The copycat cannot sit on the circle, so this
+  digit is always honest; but a copycat elsewhere in the galaxy is a cell
+  that "counts" while its value belongs to its partner.
+- **Symmetric-pair relations** (a family, one rule per puzzle): every pair of
+  cells opposite each other in a galaxy satisfies R. Published: different
+  parity (LMD 00045K, Space Oddity). Others: differ by at least 5 (galaxy
+  whispers), sum to 10, consecutive, one double the other. Under the copycat
+  rule R(digit(c), digit(partner)) becomes R(digit(c), value(c)): a copycat
+  is a cell whose value differs from its digit in a known way, so any clue
+  that reads values leaks the copycat. Parity is the cleanest: odd/even
+  circles on values then detect copycats directly.
+- **Galaxy sum lines.** Region sum lines with galaxy borders in place of box
+  borders: a line is cut into segments by galaxy boundaries and every segment
+  has the same value sum. The solver must draw the galaxies to know the
+  segments, and a copycat on the line shifts one segment by (partner − own
+  digit). This is the Chaos Construction move applied to Galaxies.
+
+### Tier 2 — touches two
+
+- **Killer galaxies.** Each galaxy's values sum to a given or common total.
+  Reads the copycat (value sum = digit sum − own + partner) and the shape.
+  Already the standard galaxy-sudoku pairing (00045K), so solvers know it.
+- **Zipper through the circle.** A zipper line whose midpoint is a galaxy
+  circle and whose cells are mirror pairs: values equidistant from the
+  centre sum to the centre value, so the line makes partner pairs sum to a
+  fixed number. Mirror pairs are exactly what the galaxy already pairs.
+- **Sight-line circles** (Copycat Yin Yang used them): a circled cell's value
+  counts the cells of its own galaxy visible in the four directions. Reads
+  shape and value. Alternative: counts cells of *other* galaxies seen.
+- **Quadruples on vertex circles.** A galaxy centre on a vertex already is a
+  circle; giving it digits makes it a quadruple clue for the four cells that
+  must all be in the galaxy. Two clues in one glyph.
+- **X-sums and skyscrapers on values.** An outside clue indexed by a copycat's
+  value reads the partner digit, so the row's first cell can be a copycat
+  looking deep into its galaxy.
+- **Tail sums** (LMD 000897): the sum of values along each arm of a galaxy is
+  equal. Only arms exist when the galaxy is drawn.
+
+### Tier 3 — touches one, still useful as glue
+
+- Kropki, XV, thermo, whispers on values: standard Copycat glue, no galaxy
+  awareness.
+- Givens on circle cells (the "digit acts as the centre" convention from
+  000897): a free, honest digit in every cell-centred galaxy.
+- Fog: clear the fog of a cell *and its galaxy partner* when a digit is
+  placed. Presentation only, but it makes the mirror visible in SudokuPad.
+
+### Pencil-genre stacking (use sparingly)
+
+- **Star Battle**: the copycats are the stars of a one-star battle on the
+  galaxies as regions — that is already the recommended placement rule.
+- **Pentominoes** (WPC 2018 "Galaxies and Pentominoes"): a pentomino set
+  placed first, galaxies fill the rest; copycats forbidden on pentominoes.
+  Heavy; only for a championship-style set.
+- Shading or loop genres on top add a fourth layer and are not recommended.
+
+### First three puzzles to set
+
+1. Centre digit = galaxy size, plus killer cages. Classic feel, every layer
+   live.
+2. Parity pairs with odd/even circles. Copycats become detectable through a
+   single glyph type.
+3. Galaxy sum lines only. The cleanest test of whether drawing the galaxies
+   is fun when the lines are the only clue.
+
 ## Not done
 
 No CP-SAT model, no generated puzzle, no uniqueness check; the prototype
