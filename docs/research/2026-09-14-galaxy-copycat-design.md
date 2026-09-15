@@ -684,3 +684,7 @@ forced copycat groups as board 7 with r5c8 in place of r4c8: one of
 r5c8, r7c8, r8c8, r9c8, and one of r4c9, r4c4, r4c5, r4c6. r5c8 and r4c9
 both plain is fine.
 Distinct values on boards 7 and 8: min 5, max 6, both optimal on each.
+r4c9 as a copycat carrying r4c8's digit d: INFEASIBLE. With L1's other
+box-6 values x, y and L2's p, q, equal multisets make the row-4 segment
+{p,q,w} and the column-8 segment {x,y,w}; the two sum equations add to
+d = w, but w is a plain digit in row 4 beside d at r4c8.
