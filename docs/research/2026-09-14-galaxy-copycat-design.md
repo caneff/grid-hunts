@@ -730,3 +730,12 @@ feasible, baseline with L3 unpaired is 8-22):
 - r4c1-r5c1-r6c1-r7c1-r7c2-r7c3 (3,3, no shared box): 8-19.
 So a partner whose 8 / 1,2,4 / 1,2,2,3 values land in box 5 or 6 is
 what ties the two pairs together; box 9 partners do not.
+
+**Board 10b, L3 moved up to r1c3** (`boards/board10b-r1c3.json`, U =
+r1c3-r1c4-r1c5-r2c5-r2c4-r2c3): same search, 312 feasible
+(`boards/board10b-l4-feasible.txt`). 273 partners are common to both
+placements, including the three box-5/6 picks above. The r2c3 placement
+keeps 60 partners the r1c3 one loses (all in boxes 5+8, 7+8, 8+9, i.e.
+where L3's mirror cells sit) and the r1c3 one gains 39 (rows 7-9,
+boxes 7-9). Moving up does not help: the partners that tie the two
+pairs together are the same either way.
