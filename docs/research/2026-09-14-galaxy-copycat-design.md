@@ -626,3 +626,7 @@ makes L2's row-4 segment r4c4-6 repeat L1's r4-6c8 values, and r4c8 is
 in row 4, so a copycat is forced among r4c8, r4c4, r4c5, r4c6 (checker:
 all four as non-copycats is infeasible; r4c8 alone as non-copycat is
 fine). Likewise L1's box-9 segment r7-9c9 repeats r4-6c7, no shared line.
+If r4c8 is not a copycat: in all 39 line copycat patterns exactly one of
+r4c4-6 is, with value = r4c8's digit, copied from r6c6/r6c5/r6c4. Then
+r4c7 is never a copycat (row 4 spent), nor any other box-5 cell; r6c8
+never is in either case.
