@@ -17,3 +17,9 @@ drivers that launch a hunt overnight stay under `docs/research/` (#469).
   only narrows its answers. That is what makes reading it sound.
 - `finders/renbanana/tools/test_catalogue_is_used.py` fails if a call site
   drops it. Run it after touching `renbanana_cpsat.py`.
+
+## Pointers
+
+- Before writing a new finder — what to search, when cuts beat a counter,
+  profiling the loop, the `ctypes` C port, counting what you found:
+  `docs/agents/grid-finder-lessons.md`.
