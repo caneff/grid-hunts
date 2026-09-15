@@ -1,0 +1,4 @@
+r3c7-r3c8-r4c8-r5c8-r6c8-r6c9 {'max': (9, 'optimal'), 'digits': [1, 2, 3, 4, 5, 6, 7, 8, 9], 'L1': [6, 9, 3, 7, 5, 6], 'min': (9, 'optimal')}
+r9c5-r8c5-r8c6-r8c7-r9c7-r9c8 {'max': (8, 'optimal'), 'digits': [1, 2, 3, 4, 5, 7, 8, 9], 'L1': [8, 5, 4, 9, 7, 1], 'min': (8, 'optimal')}
+r4c1-r4c2-r4c3-r5c3-r5c4-r5c5 {'max': (9, 'optimal'), 'digits': [1, 2, 3, 4, 5, 6, 7, 8, 9], 'L1': [6, 9, 3, 5, 7, 6], 'min': (8, 'optimal')}
+r7c8-r8c8-r8c7-r8c6-r8c5-r9c5 {'max': (8, 'optimal'), 'digits': [1, 2, 3, 4, 5, 7, 8, 9], 'L1': [8, 4, 5, 1, 9, 7], 'min': (8, 'optimal')}

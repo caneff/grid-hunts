@@ -757,3 +757,26 @@ box 8 then along box 5). VALID, 3+ solutions at limit, pair sums 8 to
 disjoint values unless one carries a copycat, so with none each line's
 box-5 triple would have to equal the other line's off-box triple, which
 makes r4c4-6 and r6c4-6 the same three values inside one box.
+
+**Board 12** (`boards/board12-three-lines.json`, 2026-09-15): board 11's
+pair plus the U at r2c3. VALID with L1-L2 paired and the U unpaired
+(sample sum 15); the U pairs with neither. Partner search for the U:
+1525 paths, 727 allowed, **249 feasible**, none undecided (106 (2,4),
+78 (3,3), 55 (4,2), 10 (1,4,1)). By boxes: 4+7 82, 8+9 67, 3+6 62,
+6+9 24, 6+8+9 7, 4+5 4, 2+3+6 3. Box 5 is closed (rows 4 and 6 taken).
+Files: `boards/board12-l4-feasible.txt`, `-search.log`,
+`board12-l1sums.jsonl` (`other_pair_sums.py`: L1-L2 sums left per
+partner, baseline 10-22), `board12-coverage.txt`.
+
+Most forcing partners (L1-L2 sums left):
+- **r3c7-r3c8-r4c8-r5c8-r6c8-r6c9** (2,4 via boxes 3, 6): L1 sum
+  pinned at 18, and all nine digits appear across the four lines in
+  every solution. 500+ solutions. Sample: L1 6,9,3 | 5,7,6; L2 9,6,3 |
+  7,5,6; L3 8 | 4,1,2,1 | 8; L4 4,8 | 1,1,2,8.
+- r9c5-r8c5-r8c6-r8c7-r9c7-r9c8 (boxes 8, 9): 17 or 19; exactly 8
+  digits (6 missing).
+- r7c8-r8c8-r8c7-r8c6-r8c5-r9c5 and three siblings (boxes 8, 9): 17-19;
+  exactly 8 digits.
+- r4c1-r4c2-r4c3-r5c3-r5c4-r5c5 and three siblings (boxes 4, 5, the
+  r5c3-r5c5 tail): 14, 15, 17, 18; 8 or 9 digits.
+- Everything else leaves 5 or more sums.
