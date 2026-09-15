@@ -40,3 +40,12 @@ Run: `uv run docs/research/ghosts/shapes.py --seconds 240 --climb-seconds 40 --m
   removals that keep 1 solution.
 - Rate-of-hits over more seeds, then decide whether the finder moves to
   `finders/` through the code lane.
+
+## Dense shapes from CP-SAT (`dense.py`, 2026-09-15)
+
+Maximise the ghost count in the grid+ghost model (10 s per solve, one worker,
+random digit hints), check with the counter, cut the second solution, re-solve
+up to 5 rounds per model. 300 s, seed 1: **30 solves, 0 unique.** Ghost counts
+reached 27-33 (never proven optimal), second solutions differed in 4-30 cells.
+The solver does not reach the 36+ ghosts the idea needs within 10 s; whether
+such shapes exist at all is untested. Box load average was 5-6 during the run.
