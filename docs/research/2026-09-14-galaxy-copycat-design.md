@@ -882,3 +882,9 @@ shuffles are not counted) and tests every single given.
 
 Pair 1 is the cleanest: exactly two solutions, and any one of the 18 open
 cells as a given finishes it.
+
+Re-run with the copycat placement counted as part of the solution
+(`distinct_grids.py` now adds a nogood over digits and flags together):
+the counts are unchanged on all five boards. Every digit grid has exactly
+one copycat placement, so the single-given lists above hold for full
+uniqueness, placement included.
