@@ -665,3 +665,11 @@ Board 6b fourth-line search for the U-line: 2777 paths, 1122 allowed
 structures, 419 feasible, none undecided: 129 (4,2), 124 (3,3), 121
 (2,4), 24 (1,4,1), 13 (1,1,4), 8 (4,1,1). List in
 `boards/board6b-l4-feasible.txt`.
+
+**Board 7** (`boards/board7-pair.json`): L1 = r5c7-r4c8-r4c7 + r4c4-6
+(diagonal step r5c7 to r4c8), L2 = r7-9c8 + r4-6c9. VALID, 2000+
+solutions, sample sum 13. Two forced copycat groups: r4c8's value repeats
+in L2's column-8 segment, so one of r4c8, r7c8, r8c8, r9c8 is a copycat;
+r4c9's value repeats in L1's row-4 segment, so one of r4c9, r4c4, r4c5,
+r4c6 is. Both groups non-copycat is infeasible each; r4c8 and r4c9 both
+non-copycat is fine (the copycats then sit on the other segments).
