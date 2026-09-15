@@ -938,3 +938,17 @@ as a pair, sum 12 on every option, so the line reads as two matched
 pairs rather than a sum. Sample rank put these at 26 and 20 new cells,
 mid-table, so they are a nudge rather than a collapse. Candidate grids in
 `boards/board20-repeat-{A,B}-candidates.txt`.
+
+**Shortest pair whose segments can shuffle (2026-09-15).** Brute force
+over segment shapes and distinct-value multisets from 1-9. Two lines of
+the same shape always match segment to segment (with distinct values):
+any alternative split forces two values equal. Shuffling needs different
+shapes on the two lines.
+
+- Length 4: never (only with repeated values, as board 20 A).
+- Length 5: (1,2,2) against (2,3). Example values {1,2,4,5,6}:
+  6 | 1,5 | 2,4 against 4,5 | 1,2,6 (segment sums 6 and 9).
+- Length 6, two segments each: (2,4) against (3,3), same segment sum on
+  both lines. Example {1,2,3,4,5,7}: 4,7 | 1,2,3,5 against 1,3,7 | 2,4,5
+  (sum 11). Also (1,2,3) against (2,4) or (3,3), and (2,2,2) against
+  (2,4) or (3,3).
