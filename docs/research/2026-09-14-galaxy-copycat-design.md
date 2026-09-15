@@ -867,3 +867,18 @@ copycats, 58 non-copycats); `find_pair4.py --shape 2,2 --seed` and
 12 on the top 30) use them. Seeding cut a pair sample from about 2.5 s to
 0.2 s on a 5-pair bench with identical scores, so a full (2,2) ranking is
 minutes rather than the 112 minutes the unseeded 12-sample pass took.
+
+**Top five, one given to uniqueness? (2026-09-15)** `distinct_grids.py`
+enumerates the distinct digit grids (a nogood per found grid, so copycat
+shuffles are not counted) and tests every single given.
+
+| # | distinct grids | one given suffices? |
+|---|---|---|
+| 1 | 2 | yes, any of the 18 open cells (one 18-cell 5/7 swap) |
+| 2 | 6 | only r1c2 or r6c3 (3 or 9); a 6-cell 3/9 loop, an 18-cell 3/9 loop and a 4/9 triangle overlap |
+| 3 | 4 | r1c2, r1c9, r2c2, r2c6, r3c6 or r3c9 (5 or 7); two independent loops, 6-cell 3/7 and 18-cell 5/7 |
+| 4 | 6 | r1c1, r1c3, r1c7, r2c1 or r6c1 as 3 or 9; a 1/3 4-cell loop, a 1/3/4 loop and an 18-cell 3/9 loop |
+| 5 | 8 | no: three independent swaps (14-cell 5/7, 4-cell 5/7 in r4-5 c3/c7, 4-cell 3/9 in r1/r4 c5-6) need three givens |
+
+Pair 1 is the cleanest: exactly two solutions, and any one of the 18 open
+cells as a given finishes it.
