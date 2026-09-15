@@ -817,3 +817,21 @@ On the board L5 can only sum 6, 9, 10 or 13 and L6 only 8, 9, 10, 11 or
 16; the only sum both take at once is 10, and there L5 is always
 8,2 | 1,9 and L6 always 7,3 | 7,3 (5000 sampled solutions), so the
 multisets never match.
+
+**Board 14, third pair of 4-cell lines (2026-09-15).** `find_pair4.py` on
+`boards/board14-four-lines.json`: 324 orthogonal 4-cell paths off the
+lines, 154 with 2+ segments, 117 feasible alone; 1516 disjoint pairs
+sharing a value multiset, **448 feasible** as a pair
+(`boards/board14-pair4.lines.jsonl`, `board14-pair4.pairs.jsonl`).
+Ranking by forced cells: `rank_pair4.py` -> `board14-pair4.rank.jsonl`
+(random-objective samples; plain enumeration only reshuffles copycat
+placements and reports every cell constant).
+
+First verified leader, **board 18** (`boards/board18-pair-r1c1.json`):
+L5 = r1c1-r1c2-r1c3 | r1c4 (3,1) and L6 = r3c2 | r4c2-r5c2-r6c2 (1,3),
+paired. Sum pinned at 7: singles r1c4 = r3c2 = 7, triples {1,2,4}.
+Exact candidates (`boards/board18-candidates.txt`): about 50 cells
+forced, the copycat digits pinned (r2c5 = 5, r3c3 = 6, r4c2 = 8,
+r8c4 = 2, r6c6 = 1, r5c8 in {3,9}), r6c4 = 5, r6c5 = 7, r4c5/r4c6 = {3,9}.
+Still 5000+ solutions at the cap: the remaining freedom is 3/9 pairs
+across the grid and the empty box 7 / column 9 region.
