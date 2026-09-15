@@ -673,6 +673,10 @@ in L2's column-8 segment, so one of r4c8, r7c8, r8c8, r9c8 is a copycat;
 r4c9's value repeats in L1's row-4 segment, so one of r4c9, r4c4, r4c5,
 r4c6 is. Both groups non-copycat is infeasible each; r4c8 and r4c9 both
 non-copycat is fine (the copycats then sit on the other segments).
+Sharper: r4c8 must be plain. A copycat at r4c8 spends row 4's copycat,
+leaving r4c9 and r4c4-6 all plain, which the second group forbids.
+Checker: r4c8 as copycat is INFEASIBLE. So the column-8 copycat is one
+of r7c8, r8c8, r9c8, and it carries r4c8's digit.
 
 **Board 8** (`boards/board8-pair.json`): L1 = r5c8-r5c7-r4c7 + r4c4-6,
 L2 = r7-9c8 + r4-6c9. VALID, 2000+ solutions, sample sum 16. Same two
