@@ -1,173 +1,102 @@
 """Ghosts, all visible: harvest as many unique shapes (with an 8) as possible.
 
-    uv run docs/research/ghosts/harvest.py --seconds 1800 --seed 1 --out DIR
+    uv run docs/research/ghosts/harvest.py --seconds 1800 --seed 1 --out DIR \
+        [--roots docs/research/ghosts/allvisible-hits.jsonl]
 
-Loop: a shapes.py climb until a hit (or its time runs out); then a BFS over
-the hit's plateau. Each plateau move toggles one cell or a cell plus a
-neighbour; a result that is admissible, keeps an 8, and has exactly one
-solution (counter capped at 2) is another example. The BFS stops after
-`--plateau` new shapes so the next climb starts fresh elsewhere.
+Roots: shapes from --roots first, then shapes.climb runs (the settings that
+produced the first hit). Each root's plateau is walked breadth-first: a move
+toggles one cell or a cell plus a neighbour, and a result that is admissible,
+keeps an 8, and has exactly one solution (counter capped at 2) is another
+example. The walk stops after `--plateau` new shapes so the next root starts
+elsewhere.
 
 Shapes are deduplicated up to the 8 square symmetries (they preserve houses
-and king adjacency). Every example goes to DIR/examples.jsonl with the climb
-that found it; DIR/summary.json is rewritten after each climb.
+and king adjacency). DIR/examples.jsonl gets one line per example with its
+root id and its toggle distance from the root; DIR/summary.json is rewritten
+after each root. Earlier experiments (aimed climb, windowed CP-SAT repair)
+are in commit 6157c6e; see 2026-09-15-ghosts-all-visible.md.
 """
 
 import argparse
 import json
-import math
 import random
 import time
 from collections import deque
 from pathlib import Path
 
-from shapes import BOX, NEIGH, count_solutions, givens, has_eight, seed_shape
+from shapes import NEIGH, climb, count_solutions, givens, has_eight, seed_shape
 
 SYMS = [
     lambda r, c: (r, c), lambda r, c: (c, 8 - r), lambda r, c: (8 - r, 8 - c), lambda r, c: (8 - c, r),
     lambda r, c: (r, 8 - c), lambda r, c: (8 - r, c), lambda r, c: (c, r), lambda r, c: (8 - c, 8 - r),
 ]
+MOVES = [(i,) for i in range(81)] + [(i, j) for i in range(81) for j in NEIGH[i] if j > i]
 
 
 def canonical(shape):
-    return min(tuple(sorted(f(*divmod(i, 9))[0] * 9 + f(*divmod(i, 9))[1] for i in shape)) for f in SYMS)
+    out = []
+    for f in SYMS:
+        out.append(tuple(sorted(f(i // 9, i % 9)[0] * 9 + f(i // 9, i % 9)[1] for i in shape)))
+    return min(out)
 
 
 def unique_example(shape):
     g = givens(shape)
-    return g if has_eight(g) and count_solutions(g, 2) == 1 else None
+    return has_eight(g) and count_solutions(g, 2) == 1
 
 
-def moves():
-    for i in range(81):
-        yield (i,)
-        for j in NEIGH[i]:
-            if j > i:
-                yield (i, j)
-
-
-MOVES = list(moves())
-
-
-def aimed_climb(rng, deadline, cap, min_ghosts, aim):
-    """shapes.climb with moves aimed at cells that differ between solutions."""
-    shape = seed_shape(rng, min_ghosts)
-    g = givens(shape)
+def score_of(g, cap):
+    """(solutions capped, cells that vary among them); (0, 0) = unsolvable."""
     vary = set()
-    score = count_solutions(g, cap, vary)
-    best = (score, shape, g)
-    steps = 0
-    temp = 0.1
-    while time.monotonic() < deadline and score != 1:
-        if vary and rng.random() < aim:
-            i = rng.choice(tuple(vary))
-            if rng.random() < 0.5:
-                i = rng.choice(NEIGH[i])
-        else:
-            i = rng.randrange(81)
+    n = count_solutions(g, cap, vary)
+    return (n, len(vary))
+
+
+NEAR2 = [[j for j in range(81) if j != i and max(abs(i // 9 - j // 9), abs(i % 9 - j % 9)) <= 2]
+         for i in range(81)]
+
+
+def finish(shape, deadline):
+    """Near miss: toggle a varying non-ghost cell on, plus 0-2 toggles within
+    distance 2 of it. Yields every unique shape found."""
+    vary = set()
+    count_solutions(givens(shape), 64, vary)
+    for v in sorted(vary):
+        if v in shape:
+            continue
+        near = NEAR2[v]
+        base = shape | {v}
+        combos = [()] + [(a,) for a in near] + [(a, b) for k, a in enumerate(near) for b in near[k + 1:]]
+        for extra in combos:
+            if time.monotonic() > deadline:
+                return
+            trial = base.symmetric_difference(extra)
+            if v in trial and unique_example(trial):
+                yield trial
+
+
+def fast_climb(rng, start, deadline, cap):
+    """Greedy climb on (solutions, varying cells) from `start`; returns (best shape, best score)."""
+    shape = start
+    score = score_of(givens(shape), cap)
+    best = (score, shape)
+    while time.monotonic() < deadline and score[0] != 1:
+        i = rng.randrange(81)
         move = {i}
         if rng.random() < 0.5:
             move.add(rng.choice(NEIGH[i]))
         trial = shape ^ move
         tg = givens(trial)
-        steps += 1
         if not has_eight(tg):
             continue
-        tv = set()
-        ts = count_solutions(tg, cap, tv)
-        if ts == 0:
+        ts = score_of(tg, cap)
+        if ts[0] == 0:
             continue
-        worse = math.log(ts) - math.log(score)
-        if worse <= 0 or rng.random() < math.exp(-worse / temp):
-            shape, g, score, vary = trial, tg, ts, tv
+        if ts <= score or rng.random() < 0.02:
+            shape, score = trial, ts
             if score < best[0]:
-                best = (score, shape, g)
-        temp = max(0.01, temp * 0.9999)
-    score, shape, g = best
-    return shape, g, score, steps
-
-
-class Lns:
-    """Grid+ghost CP-SAT model reused across rounds. Ghosts outside the window
-    are pinned by assumptions; every alternative solution seen is a cut."""
-
-    def __init__(self, min_ghosts):
-        from ortools.sat.python import cp_model
-        self.cp = cp_model
-        self.m = m = cp_model.CpModel()
-        self.g = g = [m.new_bool_var(f"g{i}") for i in range(81)]
-        self.x = x = [[m.new_bool_var(f"x{i}{d}") for d in range(9)] for i in range(81)]
-        for i in range(81):
-            m.add_exactly_one(x[i])
-        for d in range(9):
-            for k in range(9):
-                m.add_exactly_one(x[k * 9 + c][d] for c in range(9))
-                m.add_exactly_one(x[r * 9 + k][d] for r in range(9))
-                m.add_exactly_one(x[i][d] for i in range(81) if BOX[i] == k)
-        self.on = []
-        eight = []
-        for i in range(81):
-            digit = sum((d + 1) * x[i][d] for d in range(9))
-            m.add(sum(g[j] for j in NEIGH[i]) == digit).only_enforce_if(g[i])
-            row = []
-            for d in range(9):
-                v = m.new_bool_var(f"on{i}{d}")
-                m.add_implication(v, g[i])
-                m.add_implication(v, x[i][d])
-                m.add_bool_or([v, g[i].Not(), x[i][d].Not()])
-                row.append(v)
-            self.on.append(row)
-            eight.append(row[7])
-        m.add_bool_or(eight)
-        m.add(sum(g) >= min_ghosts)
-        self.cuts = set()
-
-    def cut(self, Y):
-        key = tuple(Y)
-        if key in self.cuts:
-            return
-        self.cuts.add(key)
-        self.m.add_bool_or([self.on[i][d] for i in range(81) for d in range(9) if d != Y[i] - 1])
-
-    def step(self, rng, shape, S, window, limit):
-        m = self.m
-        m.clear_assumptions()
-        m.add_assumptions([self.g[i] if i in shape else self.g[i].Not() for i in range(81) if i not in window])
-        m.clear_hints()
-        for i in range(81):
-            m.add_hint(self.g[i], i in shape)
-            m.add_hint(self.x[i][S[i] - 1], True)
-        s = self.cp.CpSolver()
-        s.parameters.num_workers = 1
-        s.parameters.random_seed = rng.randrange(1 << 30)
-        s.parameters.max_time_in_seconds = limit
-        if s.solve(m) not in (self.cp.OPTIMAL, self.cp.FEASIBLE):
-            return None
-        return {i for i in range(81) if s.value(self.g[i])}
-
-
-def lns_root(rng, deadline, min_ghosts, radius, log):
-    """Seed a shape, then repair it with windowed CP-SAT rounds until unique."""
-    shape = seed_shape(rng, min_ghosts)
-    lns = Lns(min_ghosts)
-    rounds = 0
-    while time.monotonic() < deadline:
-        sols = []
-        n = count_solutions(givens(shape), 30, None, sols)
-        if n == 1:
-            return shape, rounds
-        for Y in sols:
-            lns.cut(Y)
-        S = sols[0]
-        diff = [i for i in range(81) if any(Y[i] != S[i] for Y in sols[1:])]
-        centre = divmod(rng.choice(diff), 9)
-        window = {r * 9 + c for r in range(9) for c in range(9)
-                  if abs(r - centre[0]) <= radius and abs(c - centre[1]) <= radius}
-        new = lns.step(rng, shape, S, window, min(5.0, max(0.5, deadline - time.monotonic())))
-        rounds += 1
-        if new is not None:
-            shape = new
-    return None, rounds
+                best = (score, shape)
+    return best[1], best[0]
 
 
 def main():
@@ -175,42 +104,83 @@ def main():
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--seconds", type=float, default=1800)
     ap.add_argument("--climb-seconds", type=float, default=40)
-    ap.add_argument("--plateau", type=int, default=300)
+    ap.add_argument("--plateau", type=int, default=2000)
     ap.add_argument("--min-ghosts", type=int, default=26)
-    ap.add_argument("--aim", type=float, default=0.7)
+    ap.add_argument("--roots", type=Path)
+    ap.add_argument("--mode", choices=["fast", "classic"], default="fast")
+    ap.add_argument("--cap", type=int, default=64)
+    ap.add_argument("--finish-below", type=int, default=16)
+    ap.add_argument("--finish-seconds", type=float, default=30)
     ap.add_argument("--out", type=Path, required=True)
     a = ap.parse_args()
     a.out.mkdir(parents=True, exist_ok=True)
     rng = random.Random(a.seed)
-    seen = set()
     t0 = time.monotonic()
-    climbs = hit_climbs = 0
-    min_ghosts = None
+    seen = set()
+    stats = {"seed": a.seed, "climbs": 0, "roots": 0, "examples": 0, "min_ghosts": None, "max_ghosts": None,
+             "max_distance": 0}
     ex_file = open(a.out / "examples.jsonl", "a")
+    pool = []
+    given_roots = [set(json.loads(line)["shape"]) for line in open(a.roots)] if a.roots else []
 
-    def record(shape, g, climb_id, root):
-        nonlocal min_ghosts
+    def elapsed():
+        return time.monotonic() - t0
+
+    def record(shape, root_id, dist):
         key = canonical(shape)
         if key in seen:
-            return False
+            return 0
         seen.add(key)
-        min_ghosts = len(shape) if min_ghosts is None else min(min_ghosts, len(shape))
-        ex_file.write(json.dumps({"seed": a.seed, "climb": climb_id, "root": root, "ghosts": len(shape),
-                                  "shape": list(key)}) + "\n")
-        return True
+        n = len(shape)
+        stats["examples"] += 1
+        stats["min_ghosts"] = n if stats["min_ghosts"] is None else min(stats["min_ghosts"], n)
+        stats["max_ghosts"] = n if stats["max_ghosts"] is None else max(stats["max_ghosts"], n)
+        stats["max_distance"] = max(stats["max_distance"], dist)
+        ex_file.write(json.dumps({"root": root_id, "distance": dist, "ghosts": n, "shape": list(key)}) + "\n")
+        return 1
 
-    while time.monotonic() - t0 < a.seconds:
-        climbs += 1
-        shape, g, score, _ = aimed_climb(rng, min(time.monotonic() + a.climb_seconds, t0 + a.seconds), 2000,
-                                         a.min_ghosts, a.aim)
-        if score != 1:
-            print(f"climb {climbs}: miss (best {score}) t={time.monotonic() - t0:.0f}s", flush=True)
+    while elapsed() < a.seconds:
+        if given_roots:
+            root = given_roots.pop(0)
+        else:
+            stats["climbs"] += 1
+            end = t0 + min(elapsed() + a.climb_seconds, a.seconds)
+            if a.mode == "fast":
+                if pool and rng.random() < 0.5:
+                    start = rng.choice(pool)[1]
+                else:
+                    start = seed_shape(rng, a.min_ghosts)
+                root, score = fast_climb(rng, start, end, a.cap)
+                if 1 < score[0] <= a.finish_below:
+                    t = elapsed()
+                    found = list(finish(root, t0 + min(elapsed() + a.finish_seconds, a.seconds)))
+                    stats["finishes"] = stats.get("finishes", 0) + 1
+                    stats["finish_hits"] = stats.get("finish_hits", 0) + bool(found)
+                    print(f"climb {stats['climbs']}: finish from {score}: {len(found)} unique "
+                          f"in {elapsed() - t:.1f}s", flush=True)
+                    if found:
+                        root, score = found[0], (1, 0)
+                        given_roots.extend(found[1:])
+                if score[0] != 1:
+                    if score[0] <= 10:
+                        pool.append((score, root))
+                        pool.sort(key=lambda p: p[0])
+                        del pool[20:]
+                    print(f"climb {stats['climbs']}: miss (best {score}) t={elapsed():.0f}s", flush=True)
+                    continue
+            else:
+                root, _, score, _ = climb(rng, end, 2000, a.min_ghosts)
+                if score != 1:
+                    print(f"climb {stats['climbs']}: miss (best {score}) t={elapsed():.0f}s", flush=True)
+                    continue
+        if not unique_example(root) or canonical(root) in seen:
             continue
-        hit_climbs += 1
-        new = int(record(shape, g, climbs, True))
-        queue = deque([shape])
-        visited = {canonical(shape)}
-        while queue and new < a.plateau and time.monotonic() - t0 < a.seconds:
+        stats["roots"] += 1
+        root_id = stats["roots"]
+        new = record(root, root_id, 0)
+        queue = deque([root])
+        visited = {canonical(root)}
+        while queue and new < a.plateau and elapsed() < a.seconds:
             cur = queue.popleft()
             order = MOVES[:]
             rng.shuffle(order)
@@ -220,21 +190,17 @@ def main():
                 if key in visited:
                     continue
                 visited.add(key)
-                tg = unique_example(trial)
-                if tg is None:
+                if not unique_example(trial):
                     continue
                 queue.append(trial)
-                new += record(trial, tg, climbs, False)
+                new += record(trial, root_id, len(trial ^ root))
                 if new >= a.plateau:
                     break
         ex_file.flush()
-        summary = {"seed": a.seed, "elapsed_s": round(time.monotonic() - t0), "climbs": climbs,
-                   "hit_climbs": hit_climbs, "examples": len(seen), "min_ghosts": min_ghosts}
-        (a.out / "summary.json").write_text(json.dumps(summary))
-        print(f"climb {climbs}: HIT +{new} examples, total {len(seen)} from {hit_climbs} hit climbs, "
-              f"min ghosts {min_ghosts}, t={time.monotonic() - t0:.0f}s", flush=True)
-    print("done", json.dumps({"climbs": climbs, "hit_climbs": hit_climbs, "examples": len(seen),
-                              "min_ghosts": min_ghosts}), flush=True)
+        stats["elapsed_s"] = round(elapsed())
+        (a.out / "summary.json").write_text(json.dumps(stats))
+        print(f"root {root_id}: +{new} examples; {json.dumps(stats)}", flush=True)
+    print("done", json.dumps(stats), flush=True)
 
 
 if __name__ == "__main__":
