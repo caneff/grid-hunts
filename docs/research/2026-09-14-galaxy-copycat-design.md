@@ -901,13 +901,17 @@ r2c1 = 1, r3c1 = 9, r4c1 = 8, r8c6 = 9, r8c7 = 2, copycat r4c2, plain r7c7
    1, and r4c1/r4c2 cannot show 1 (box 4's 1 is r5c2; as copycats they
    show r6c9 = 8 or r6c8 = 2). So r2c1 = 1.
 2. Box 1's copycat is r3c3, so r2c1, r3c1 are plain: segment 1 + r3c1,
-   r3c1 in {3,5,7,9}.
+   r3c1 in {3,5,6,7,9}.
 3. r4c3 cannot be a copycat (it would show r6c7 = 6, and row 4 has 6), so
    box 4's copycat is r4c1 (shows 8) or r4c2 (shows 2). The box-4 segment
    is 8 + d or 2 + d with d in {2,3,5,7,8,9}. Equal sums: 10 (r3c1 = 9,
-   {8,2}) or 4 (r3c1 = 3, {2,2}). Sum 4 needs L6 = {1,3,2,2}: r8c6 = 3
-   and r7c7 worth 2, impossible (digit 8; as copycat it shows r3c3 in
-   {3,5,6,7,9}). So both lines are {1,9 | 8,2}, sum 10.
+   {8,2}), 7 (r3c1 = 6, {2,5}) or 4 (r3c1 = 3, {2,2}). Sum 4 needs
+   L6 = {1,3,2,2}: r8c6 = 3 and r7c7 worth 2, impossible (digit 8; as
+   copycat it shows r3c3 in {3,5,6,7,9}). Sum 7 needs r8c6 = 6, which
+   board 14 already forbids: L2's C segment (r7-9c4) carries a value 6
+   (the v of the sum-18 proof), column 4 already has its 6 at r4c4, so
+   that 6 is box 8's copycat copying r1c6/r2c6/r3c6, which puts column
+   6's 6 in box 2. So both lines are {1,9 | 8,2}, sum 10.
 4. L6: r8c6 = 9; r7c7 worth 8 means plain (not 2 either way), r8c7 = 2 plain.
 5. r4c1 as the copycat is infeasible on the pair (feasible if either the
    distinct-copycat-digits rule or one-per-row/col is dropped, so the
