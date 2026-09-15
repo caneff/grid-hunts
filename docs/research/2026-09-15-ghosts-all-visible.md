@@ -49,3 +49,26 @@ up to 5 rounds per model. 300 s, seed 1: **30 solves, 0 unique.** Ghost counts
 reached 27-33 (never proven optimal), second solutions differed in 4-30 cells.
 The solver does not reach the 36+ ghosts the idea needs within 10 s; whether
 such shapes exist at all is untested. Box load average was 5-6 during the run.
+
+## C climb harvest: 234 verified examples (2026-09-15)
+
+- **Max density** (8-worker CP-SAT, 300 s): best 35 ghosts, bound 39; the
+  35-ghost shape had 8 solutions. Density alone does not give uniqueness.
+- **C climb** (`ghosts_fast.c` via `fastclimb.py`, parity-tested against
+  `shapes.py` on 20 000 shapes): ~500k moves/s, ~90x the Python climb. With
+  the Python cooling it froze in <1 s; cooling over the run (T 2 -> 0.05) with
+  king-walk moves of up to 6 toggles gave 2 hits in 6 x 10 s climbs.
+- **Harvest** (`charvest.py`): 8 processes x 1200 s, one worker each.
+  Seeds 201-204 fresh CP-SAT seed every loop, 205-208 30 % fresh + pool
+  restarts. Distinct after cross-process dedupe: fresh 128, pool 102.
+  Fresh seeds win; pool restarts mostly re-find their own shapes.
+- **Verified**: `verify_all.py` merged these with the earlier Python hits:
+  **234 examples, 48 duplicates, 0 failures**, in
+  `ghosts/examples-verified.jsonl` (shape, givens, solution).
+- Ghost counts: 25 (1), 26 (8), 27 (17), 28 (41), 29 (51), 30 (60), 31 (40),
+  32 (15), 33 (1).
+- Spread: nearest-neighbour toggle distance (under symmetry) median 8;
+  25 examples are within 1-2 toggles of another.
+
+Fewest ghosts, 25: ![puzzle](ghosts/allvisible-25-puzzle.png)
+![solution](ghosts/allvisible-25-solution.png)
