@@ -789,3 +789,17 @@ r6c4-6, whose copycat copies box 5 itself, so it is r7-9c4: a plain 2
 in column 4 and a copycat 2 copied from r1-3c6. The U's quad {1,2,2,3}
 also needs a copycat carrying 2, copied from r7c5, r7c6, r8c5 or r8c6,
 which is a second digit 2 in box 8.
+
+**Board 13** (`boards/board13-five-lines.json`, 2026-09-15): board 12
+plus L4 = r3c7-r3c8-r4c8-r5c8-r6c8-r6c9 (the pick above), a fifth line
+L5 = r2c1-r3c1-r4c1-r5c1 (2,2, unpaired), and a given 2 at r5c3.
+INFEASIBLE, and the given is the reason: without it the board is valid
+(L5 sample 7,6 | 8,5, sum 13). Candidates without the given
+(`boards/board13-candidates.txt`): r5c3 is 3,5,6,7 or 9, because r5c2
+is forced to 1 and the 2 of row 5 is forced into r5c4-6 (box 5 needs
+its 2 there once L4's quad and L3's quad both carry 1,1,2). Forced
+cells on that board: r2c3 = r3c8 = r6c9 = 8, r2c4 = 4, r3c4 = 1,
+r3c5 = 2, r5c2 = 1, r4c4 = 6, r6c7 = 6, r4c8 = 1, r4c9 = 4, r6c8 = 2,
+r6c6 = 1 (copycat), r8c5 = 1, r7c7 = 8, r3c7 = 4, r3c3 and r2c5 are
+copycats, one of r5c8 (copycat) and r4c1/r4c2. The link's pencilled
+2 at r8c5 is wrong: r8c5 is 1.
