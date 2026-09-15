@@ -5,11 +5,14 @@ segments carry different values), i.e. the pairing does not match segment to
 segment.
 
 Usage: uv run find_pair7.py board.json out_prefix [--length 7] [--shape 3,4]
-         [--seed forced.json] [--samples 40]
+         [--seed forced.json] [--cap 150] [--shard i/n]
 Stage 1: every orthogonal path of `length` cells off the existing lines whose
-segment sizes are `shape` (either way round); per line, `samples` solves
-maximising a random weighting of the line's values, recording each
-(multiset, 3-seg multiset) seen.  -> out_prefix.lines.jsonl
+segment sizes are `shape` (either way round); per line, enumerate its
+distinct value vectors exactly (a nogood per vector found, up to `cap`),
+recording each (multiset, small-segment multiset).  -> out_prefix.lines.jsonl
+With --shard i/n only every n-th line (offset i) is done and the output goes
+to out_prefix.lines.i.jsonl; run without --shard afterwards to merge the
+shard files and do stage 2.
 Stage 2: every disjoint pair sharing a multiset for which the two lines were
 seen with different small-segment values; exact check with the pair
 constraint plus "small segments differ".  -> out_prefix.pairs.jsonl (FEASIBLE
@@ -19,7 +22,6 @@ Rank the survivors with rank_pair4.py (it is length-agnostic).
 
 import argparse
 import json
-import random
 import sys
 import time
 from collections import defaultdict
@@ -36,13 +38,16 @@ ap.add_argument("out")
 ap.add_argument("--length", type=int, default=7)
 ap.add_argument("--shape", default="3,4")
 ap.add_argument("--seed")
-ap.add_argument("--samples", type=int, default=40)
+ap.add_argument("--cap", type=int, default=150, help="max value vectors per line")
+ap.add_argument("--shard", help="i/n: do lines i, i+n, ... and write .lines.i.jsonl")
 args = ap.parse_args()
+SHARD = tuple(int(x) for x in args.shard.split("/")) if args.shard else None
 base = json.loads(Path(args.board).read_text())
 SEED = json.loads(Path(args.seed).read_text()) if args.seed else {}
 SHAPE = sorted(int(x) for x in args.shape.split(","))
 used = {parse_cell(c) for cells in base["lines"].values() for c in cells}
-LINES_OUT, PAIRS_OUT = Path(args.out + ".lines.jsonl"), Path(args.out + ".pairs.jsonl")
+LINES_OUT = Path(args.out + (f".lines.{SHARD[0]}.jsonl" if SHARD else ".lines.jsonl"))
+PAIRS_OUT = Path(args.out + ".pairs.jsonl")
 
 
 def name(rc):
@@ -92,8 +97,8 @@ def solver(t):
 
 
 def line_info(cells):
-    """multiset -> set of small-segment multisets seen, from random-objective samples."""
-    rng = random.Random(hash(cells) & 0xFFFF)
+    """multiset -> set of small-segment multisets, from an exact enumeration of
+    the line's value vectors (nogood per vector, capped)."""
     setup = {
         **SEED,
         "lines": dict(base["lines"], X=[name(c) for c in cells]),
@@ -101,31 +106,49 @@ def line_info(cells):
     }
     seen = defaultdict(set)
     small = small_seg(cells)
-    for _ in range(args.samples):
-        m, digit, cc, _ = build(setup)
-        val = add_values(m, digit, cc)
-        m.Maximize(sum(rng.randint(-9, 9) * val[r][c] for r, c in cells))
+    m, digit, cc, _ = build(setup)
+    val = add_values(m, digit, cc)
+    for _ in range(args.cap):
         sv = solver(20)
         if sv.Solve(m) not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-            continue
-        d = [[sv.Value(digit[r][c]) for c in range(9)] for r in range(9)]
-        k = [[bool(sv.Value(cc[r][c])) for c in range(9)] for r in range(9)]
-        ms = tuple(sorted(value_of(d, k, r, c) for r, c in cells))
-        sm = tuple(sorted(value_of(d, k, r, c) for r, c in small))
-        seen[ms].add(sm)
+            break
+        vec = [sv.Value(val[r][c]) for r, c in cells]
+        seen[tuple(sorted(vec))].add(
+            tuple(sorted(sv.Value(val[r][c]) for r, c in small))
+        )
+        bs = []
+        for (r, c), v in zip(cells, vec, strict=True):
+            b = m.NewBoolVar("")
+            m.Add(val[r][c] != v).OnlyEnforceIf(b)
+            bs.append(b)
+        m.AddBoolOr(bs)
     return seen
 
 
 infos = {}
-if LINES_OUT.exists():
-    for row in map(json.loads, LINES_OUT.read_text().splitlines()):
+
+
+def load_lines(path):
+    for row in map(json.loads, path.read_text().splitlines()):
         infos[tuple(parse_cell(c) for c in row["cells"].split("-"))] = {
             tuple(json.loads(k)): {tuple(s) for s in v} for k, v in row["seen"].items()
         }
+
+
+for path in [
+    LINES_OUT,
+    *Path(args.out).parent.glob(Path(args.out).name + ".lines.*.jsonl"),
+]:
+    if path.exists():
+        load_lines(path)
+if infos:
     print(f"resumed {len(infos)} lines", flush=True)
-for i, p in enumerate(cands):
-    if p in infos:
-        continue
+todo = [
+    p
+    for i, p in enumerate(cands)
+    if p not in infos and (not SHARD or i % SHARD[1] == SHARD[0])
+]
+for i, p in enumerate(todo):
     t = time.time()
     seen = line_info(p)
     infos[p] = seen
@@ -138,6 +161,7 @@ for i, p in enumerate(cands):
                         json.dumps(list(ms)): [list(s) for s in v]
                         for ms, v in seen.items()
                     },
+                    "n": sum(len(v) for v in seen.values()),
                     "t": round(time.time() - t, 1),
                 }
             ),
@@ -145,9 +169,15 @@ for i, p in enumerate(cands):
             flush=True,
         )
     print(
-        f"line {i + 1}/{len(cands)} {len(seen)} multisets {time.time() - t:.1f}s",
+        f"line {i + 1}/{len(todo)} {len(seen)} multisets {time.time() - t:.1f}s",
         flush=True,
     )
+if SHARD:
+    print("shard done", flush=True)
+    sys.exit(0)
+missing = [p for p in cands if p not in infos]
+if missing:
+    raise SystemExit(f"{len(missing)} lines not yet enumerated; run the shards first")
 
 pairs = []
 for a, b in combinations(cands, 2):
