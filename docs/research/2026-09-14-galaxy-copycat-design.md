@@ -803,3 +803,8 @@ r3c5 = 2, r5c2 = 1, r4c4 = 6, r6c7 = 6, r4c8 = 1, r4c9 = 4, r6c8 = 2,
 r6c6 = 1 (copycat), r8c5 = 1, r7c7 = 8, r3c7 = 4, r3c3 and r2c5 are
 copycats, one of r5c8 (copycat) and r4c1/r4c2. The link's pencilled
 2 at r8c5 is wrong: r8c5 is 1.
+
+**Board 14** (2026-09-15): board 13 without the given and without L5,
+pencilled r2c3 = 8, r3c8 = 8, r7c7 = 8, r8c5 = 1. VALID and all four
+entries are forced (`boards/board14-candidates.txt`; same forced set as
+board 13's grid, L5 changed nothing there).
