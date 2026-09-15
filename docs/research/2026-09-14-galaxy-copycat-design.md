@@ -649,3 +649,15 @@ distinct values: every even-total 6-subset of 1-9 except 123789 and
 134679, sums 11 to 19. 266 with five distinct: one digit doubled, sums 8
 to 22, the doubled digit anything from 1 to 9 (1 and 9 least often, 26
 sets each; 3 to 7 most often, 32 each).
+
+**Board 6** (`boards/board6-three-lines.json`): L1 = r5c8-r4c8-r4c7 +
+r4c4-6 (3,3); L2 = the U-line r2c3-r2c4-r2c5-r3c5-r3c4-r3c3 (1,4,1); L3 =
+r7-9c8 + r4-6c9 (3,3).
+- L1-L3 pair: INFEASIBLE. L3's box-9 segment r7-9c8 must repeat L1's
+  box-6 values, and two of those, r5c8 and r4c8, are in column 8: two
+  doubled values in one column, two copycats in column 8.
+- L2 with L1: feasible (the U-line does pair with a (3,3) line here). L2
+  with L3: infeasible.
+- Repair tested (`boards/board6b-col9.json`): L3 as the straight column
+  9 line r4-9c9. L1-L3 feasible, sample sums 17/17. Fourth-line search
+  for L2 on that board: `boards/board6b-l4-search.log`.

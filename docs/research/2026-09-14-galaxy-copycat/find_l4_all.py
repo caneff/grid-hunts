@@ -1,3 +1,9 @@
+"""Exhaustive 6-cell fourth-line search.
+
+Usage: uv run find_l4_all.py board.json FIXED_A,FIXED_B TARGET log.txt [--count]
+Pairs FIXED_A with FIXED_B, TARGET with each candidate L4, logs one line per candidate.
+"""
+
 import json
 import sys
 import time
@@ -8,15 +14,24 @@ sys.path.insert(0, "docs/research/2026-09-14-galaxy-copycat")
 from copycat_rsl_solver import Collector, build, segments
 from ortools.sat.python import cp_model
 
-base = json.loads(
-    Path(
-        "docs/research/2026-09-14-galaxy-copycat/boards/board1-three-lines.json"
-    ).read_text()
+BASE, FIXED, TARGET, LOGPATH = (
+    sys.argv[1],
+    sys.argv[2].split(","),
+    sys.argv[3],
+    sys.argv[4],
 )
+base = json.loads(Path(BASE).read_text())
 used = {
     (int(c[1]) - 1, int(c[3]) - 1) for cells in base["lines"].values() for c in cells
 }
-OK = {(2, 4), (4, 2), (3, 3), (1, 1, 4), (1, 4, 1), (4, 1, 1)}
+OK = {
+    (2, 4),
+    (4, 2),
+    (3, 3),
+    (1, 1, 4),
+    (1, 4, 1),
+    (4, 1, 1),
+}  # partners of (1,4,1) in the segment model
 
 paths = set()
 
@@ -47,12 +62,12 @@ print(
 if "--count" in sys.argv:
     sys.exit()
 LIMIT = 2
-LOG = Path("docs/research/2026-09-14-galaxy-copycat/boards/board1-l4-search.log")
+LOG = Path(LOGPATH)
 for i, (p, st) in enumerate(sorted(cands.items())):
     cells = [f"r{r + 1}c{c + 1}" for r, c in p]
     setup = {
         "lines": dict(base["lines"], L4=cells),
-        "pairs": [["L2", "L3"], ["L1", "L4"]],
+        "pairs": [FIXED, [TARGET, "L4"]],
     }
     m, digit, cc, lines = build(setup)
     solver = cp_model.CpSolver()
