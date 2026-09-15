@@ -749,3 +749,11 @@ distinct values on L1-L4 together, min and max over solutions):
 - r7c4-r7c5-r7c6-r7c7-r8c7-r9c7 (3,3, box 9): 6 to 9.
 - r6c4-r7c4-r7c5-r7c6-r8c6-r8c7 (1,4,1): 5 to 9.
 - r4c1-r5c1-r6c1-r7c1-r7c2-r7c3 (3,3, no shared box): 6 to 9.
+
+**Board 11** (`boards/board11-pair.json`, 2026-09-15): L1 = r4c4-r4c6 +
+r4c7-r5c7-r6c7 (box 5 then down box 6), L2 = r9c4-r7c4 + r6c4-r6c6 (up
+box 8 then along box 5). VALID, 3+ solutions at limit, pair sums 8 to
+22. A copycat on the lines is forced: the two box-5 segments hold
+disjoint values unless one carries a copycat, so with none each line's
+box-5 triple would have to equal the other line's off-box triple, which
+makes r4c4-6 and r6c4-6 the same three values inside one box.
