@@ -739,3 +739,13 @@ keeps 60 partners the r1c3 one loses (all in boxes 5+8, 7+8, 8+9, i.e.
 where L3's mirror cells sit) and the r1c3 one gains 39 (rows 7-9,
 boxes 7-9). Moving up does not help: the partners that tie the two
 pairs together are the same either way.
+
+**Board 10, digit coverage across all four lines** (`boards/board10-coverage.txt`,
+distinct values on L1-L4 together, min and max over solutions):
+- r5c8-r6c8-r6c7-r6c6-r6c5-r6c4 (3,3): exactly 8, always. Sample L1
+  3,5,6 | 1,4,9 with L3/L4 on {8,1,2,2,3}: 7 is the digit left out.
+- r5c2-r6c2-r6c3-r6c4-r6c5-r6c6 (3,3): exactly 8, always.
+- r5c4-r5c5-r5c6-r6c6-r6c7-r6c8 (4,2): 8 or 9.
+- r7c4-r7c5-r7c6-r7c7-r8c7-r9c7 (3,3, box 9): 6 to 9.
+- r6c4-r7c4-r7c5-r7c6-r8c6-r8c7 (1,4,1): 5 to 9.
+- r4c1-r5c1-r6c1-r7c1-r7c2-r7c3 (3,3, no shared box): 6 to 9.
