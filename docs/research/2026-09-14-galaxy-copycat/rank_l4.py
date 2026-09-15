@@ -57,10 +57,11 @@ for raw in Path(LOGPATH).read_text().splitlines():
     solver.Solve(m, col)
     sums, cc_on, distinct = Counter(), [], Counter()
     l4 = [rc(c) for c in cells]
-    seg0 = segments(l4)[0]
+    target = [rc(c) for c in base["lines"][TARGET]]
+    seg0 = segments(target)[0]  # pair sums are reported as TARGET's segment sum
     for d, k in col.solutions:
         vals = {(r, c): value_of(d, k, r, c) for r, c in l4}
-        sums[sum(vals[x] for x in seg0)] += 1
+        sums[sum(value_of(d, k, r, c) for r, c in seg0)] += 1
         cc_on.append(sum(k[r][c] for r, c in l4))
         distinct[len(set(vals.values()))] += 1
     n = len(col.solutions)
