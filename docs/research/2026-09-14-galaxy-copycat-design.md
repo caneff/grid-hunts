@@ -940,10 +940,11 @@ mid-table, so they are a nudge rather than a collapse. Candidate grids in
 `boards/board20-repeat-{A,B}-candidates.txt`.
 
 **Shortest pair whose segments can shuffle (2026-09-15).** Brute force
-over segment shapes and distinct-value multisets from 1-9. Two lines of
-the same shape always match segment to segment (with distinct values):
-any alternative split forces two values equal. Shuffling needs different
-shapes on the two lines.
+over segment shapes and distinct-value multisets from 1-9. Up to length
+6, two lines of the same shape always match segment to segment (with
+distinct values): any alternative split forces two values equal, so
+shuffling needs different shapes. From length 7 the same shape can
+shuffle too (see below).
 
 - Length 4: never (only with repeated values, as board 20 A).
 - Length 5: (1,2,2) against (2,3). Example values {1,2,4,5,6}:
@@ -952,3 +953,13 @@ shapes on the two lines.
   both lines. Example {1,2,3,4,5,7}: 4,7 | 1,2,3,5 against 1,3,7 | 2,4,5
   (sum 11). Also (1,2,3) against (2,4) or (3,3), and (2,2,2) against
   (2,4) or (3,3).
+
+- Length 7 (board 14 already uses a shuffled length 6, L3 (1,4,1) against
+  L4 (2,4)): **(3,4) against (3,4)** shuffles, 20 of the 36 seven-value
+  multisets have two to four different splits. {1,2,3,4,5,6,7} at sum
+  14 has four: 3,5,6 | 1,2,4,7; 3,4,7 | 1,2,5,6; 2,5,7 | 1,3,4,6;
+  1,6,7 | 2,3,4,5. Every multiset of seven distinct digits with an even
+  total has at least two splits except sixteen with one or none. Also
+  (2,5) against (3,4) (5 multisets), (2,2,3) against (2,5) or (3,4), and
+  (1,2,2,2) against (3,4) or (2,2,3). The full split table is in
+  `boards/length7-splits.txt`.
