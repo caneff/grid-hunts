@@ -241,15 +241,16 @@ def load_setup(arg: str) -> dict:
     return json.loads(text)
 
 
-def candidates(m, digit, cc, lines, workers: int) -> None:
-    """Feasibility-test each cell digit and copycat flag; print pencilmarks."""
+def candidates(m, digit, cc, lines, workers: int):
+    """Feasibility-test each cell digit and copycat flag; print pencilmarks.
+    Returns (cands, ccs): per-cell digit sets and copycat-flag sets, or None."""
     solver = cp_model.CpSolver()
     solver.parameters.num_search_workers = workers
     solver.parameters.max_time_in_seconds = 60
     base = solver.Solve(m)
     if base not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
         print("INFEASIBLE: nothing to test")
-        return
+        return None
     seed_d = [[solver.Value(digit[r][c]) for c in range(9)] for r in range(9)]
     seed_k = [[solver.Value(cc[r][c]) for c in range(9)] for r in range(9)]
     cands = [[{seed_d[r][c]} for c in range(9)] for r in range(9)]
@@ -299,6 +300,22 @@ def candidates(m, digit, cc, lines, workers: int) -> None:
             print("-" * 120)
     never = sum(1 for r in range(9) for c in range(9) if ccs[r][c] == {0})
     print(f"cells that can never be a copycat: {never} of 81")
+    return cands, ccs
+
+
+def forced_setup(cands, ccs) -> dict:
+    """The exact forced facts as setup keys, to seed later searches."""
+    out: dict = {"givens": {}, "copycats": [], "not_copycats": []}
+    for r in range(9):
+        for c in range(9):
+            cell = f"r{r + 1}c{c + 1}"
+            if len(cands[r][c]) == 1:
+                out["givens"][cell] = next(iter(cands[r][c]))
+            if ccs[r][c] == {1}:
+                out["copycats"].append(cell)
+            elif ccs[r][c] == {0}:
+                out["not_copycats"].append(cell)
+    return out
 
 
 def show_grid(d, k) -> str:
@@ -334,6 +351,10 @@ def main() -> None:
         action="store_true",
         help="test every cell digit and copycat flag; print the pencilmark grid",
     )
+    ap.add_argument(
+        "--forced-out",
+        help="with --candidates: write the forced digits/flags as setup keys (JSON)",
+    )
     args = ap.parse_args()
     setup = load_setup(args.setup)
     setup.setdefault("pairs", [])
@@ -355,7 +376,14 @@ def main() -> None:
     m, digit, cc, lines = build(setup, set(args.relax))
 
     if args.candidates:
-        candidates(m, digit, cc, lines, args.workers)
+        res = candidates(m, digit, cc, lines, args.workers)
+        if res and args.forced_out:
+            forced = forced_setup(*res)
+            Path(args.forced_out).write_text(json.dumps(forced, indent=1) + "\n")
+            print(
+                f"forced: {len(forced['givens'])} digits, {len(forced['copycats'])} copycats, "
+                f"{len(forced['not_copycats'])} non-copycats -> {args.forced_out}"
+            )
         return
 
     solver = cp_model.CpSolver()

@@ -1,8 +1,12 @@
 """Find pairs of 4-cell lines (each with 2+ segments) that can be added, paired
 with each other, to a board whose existing pairs are given.
 
-Usage: uv run find_pair4.py board.json out_prefix
+Usage: uv run find_pair4.py board.json out_prefix [--shape 2,2] [--seed forced.json]
   board.json: {"lines": {...}, "pairs": [[..],[..]]}
+  --shape a,b: keep only lines whose segment lengths are (a,b) either way round
+  --seed: forced facts from `copycat_rsl_solver.py --candidates --forced-out`,
+          merged into every model as givens/copycats/not_copycats (exact, so
+          sound; saves the solver rediscovering them on every solve)
 Stage 1: every orthogonal 4-cell path off the existing lines; per line, the
 exact feasible sums (unpaired) and, per sum, the value multisets it can carry
 (a 300-solution sample, then an exact probe of every multiset the segment
@@ -12,6 +16,7 @@ exactly with the pair constraint; feasible pairs get a capped solution count.
   -> out_prefix.pairs.jsonl (FEASIBLE rows only) ; DONE at the end.
 """
 
+import argparse
 import json
 import sys
 import time
@@ -24,8 +29,16 @@ from copycat_rsl_solver import Collector, build, parse_cell, segments, value_of
 from ortools.sat.python import cp_model
 from segment_openers import line_multisets
 
-BASE, OUT = sys.argv[1], sys.argv[2]
+ap = argparse.ArgumentParser()
+ap.add_argument("board")
+ap.add_argument("out")
+ap.add_argument("--shape", help="a,b segment lengths to keep, e.g. 2,2")
+ap.add_argument("--seed", help="forced.json from copycat_rsl_solver --forced-out")
+args = ap.parse_args()
+BASE, OUT = args.board, args.out
 base = json.loads(Path(BASE).read_text())
+SEED = json.loads(Path(args.seed).read_text()) if args.seed else {}
+SHAPE = tuple(int(x) for x in args.shape.split(",")) if args.shape else None
 used = {parse_cell(c) for cells in base["lines"].values() for c in cells}
 LINES_OUT, PAIRS_OUT = Path(OUT + ".lines.jsonl"), Path(OUT + ".pairs.jsonl")
 
@@ -53,7 +66,16 @@ for r in range(9):
         if (r, c) not in used:
             grow([(r, c)])
 cands = sorted(p for p in paths if len(segments(list(p))) >= 2)
-print(f"{len(paths)} paths, {len(cands)} with 2+ segments", flush=True)
+if SHAPE:
+    cands = [
+        p
+        for p in cands
+        if tuple(len(s) for s in segments(list(p))) in (SHAPE, SHAPE[::-1])
+    ]
+print(
+    f"{len(paths)} paths, {len(cands)} kept (shape {SHAPE or '2+ segments'})",
+    flush=True,
+)
 
 
 def add_values(m, digit, cc):
@@ -75,6 +97,7 @@ def solver(t):
 def line_info(cells):
     """feasible sums -> set of multisets, for one line added unpaired."""
     setup = {
+        **SEED,
         "lines": dict(base["lines"], X=[name(c) for c in cells]),
         "pairs": base["pairs"],
     }
@@ -148,6 +171,7 @@ for a, b in combinations(live, 2):
 print(f"{len(live)} live lines, {len(pairs)} candidate pairs", flush=True)
 for i, (a, b) in enumerate(pairs):
     setup = {
+        **SEED,
         "lines": dict(base["lines"], X=[name(c) for c in a], Y=[name(c) for c in b]),
         "pairs": [*base["pairs"], ["X", "Y"]],
     }
