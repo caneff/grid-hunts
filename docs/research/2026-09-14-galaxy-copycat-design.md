@@ -639,3 +639,6 @@ for feasibility) on both branches of board 5, no givens:
   (rest of row 4, column 8 and box 6).
 With no digits placed the branch moves copycats, not digits. Digit
 consequences only appear once a given or a sum clue enters.
+Distinct values across board 5's lines (`distinct_values.py`): min 5,
+max 6, both optimal. Six cells of box 6 lie on the lines, so at most one
+value repeats and the other segments copy them.
