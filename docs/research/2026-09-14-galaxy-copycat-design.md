@@ -683,3 +683,4 @@ L2 = r7-9c8 + r4-6c9. VALID, 2000+ solutions, sample sum 16. Same two
 forced copycat groups as board 7 with r5c8 in place of r4c8: one of
 r5c8, r7c8, r8c8, r9c8, and one of r4c9, r4c4, r4c5, r4c6. r5c8 and r4c9
 both plain is fine.
+Distinct values on boards 7 and 8: min 5, max 6, both optimal on each.
