@@ -780,3 +780,12 @@ Most forcing partners (L1-L2 sums left):
 - r4c1-r4c2-r4c3-r5c3-r5c4-r5c5 and three siblings (boxes 4, 5, the
   r5c3-r5c5 tail): 14, 15, 17, 18; 8 or 9 digits.
 - Everything else leaves 5 or more sums.
+
+**Board 12, U vs the column-4 line (L2-L3), asked 2026-09-15.** INFEASIBLE
+even with L1 removed and even without row/column uniqueness. Segment
+model: (1,4,1) vs (3,3) needs S = 8 / 12 and only {8,8,1,2,2,3} splits
+into 12-triples, {8,1,3} and {8,2,2}. The {8,2,2} triple cannot be
+r6c4-6, whose copycat copies box 5 itself, so it is r7-9c4: a plain 2
+in column 4 and a copycat 2 copied from r1-3c6. The U's quad {1,2,2,3}
+also needs a copycat carrying 2, copied from r7c5, r7c6, r8c5 or r8c6,
+which is a second digit 2 in box 8.
