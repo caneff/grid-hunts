@@ -41,8 +41,12 @@ def givens(shape):
     return out
 
 
-def count_solutions(given, cap):
-    """Solutions of the sudoku with these givens, stopping at cap."""
+def count_solutions(given, cap, varying=None, store=None):
+    """Solutions of the sudoku with these givens, stopping at cap.
+
+    If `varying` is a set, it receives the cells whose digit differs between
+    the first solution found and any later one. If `store` is a list, it
+    receives every solution found (81 digits)."""
     rows, cols, boxes = [0] * 9, [0] * 9, [0] * 9
     grid = [0] * 81
     for i, d in given.items():
@@ -57,9 +61,10 @@ def count_solutions(given, cap):
     empty = [i for i in range(81) if not grid[i]]
     full = 0b1111111110
     found = 0
+    first = None
 
     def search():
-        nonlocal found
+        nonlocal found, first
         best, best_opts, best_n = -1, 0, 10
         for i in empty:
             if grid[i]:
@@ -73,6 +78,13 @@ def count_solutions(given, cap):
                     break
         if best < 0:
             found += 1
+            if store is not None:
+                store.append(grid[:])
+            if varying is not None:
+                if first is None:
+                    first = grid[:]
+                else:
+                    varying.update(i for i in empty if grid[i] != first[i])
             return found >= cap
         if best_n == 0:
             return False
