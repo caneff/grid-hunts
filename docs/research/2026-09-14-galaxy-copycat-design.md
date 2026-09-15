@@ -643,3 +643,9 @@ consequences only appear once a given or a sum clue enters.
 Distinct values across board 5's lines (`distinct_values.py`): min 5,
 max 6, both optimal. Six cells of box 6 lie on the lines, so at most one
 value repeats and the other segments copy them.
+Value multisets board 5's lines can carry (`line_multisets_on_grid.py`,
+full list in `boards/board5-multisets.txt`): 304 in all. 38 with six
+distinct values: every even-total 6-subset of 1-9 except 123789 and
+134679, sums 11 to 19. 266 with five distinct: one digit doubled, sums 8
+to 22, the doubled digit anything from 1 to 9 (1 and 9 least often, 26
+sets each; 3 to 7 most often, 32 each).
