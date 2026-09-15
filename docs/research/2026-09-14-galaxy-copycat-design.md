@@ -888,3 +888,32 @@ Re-run with the copycat placement counted as part of the solution
 the counts are unchanged on all five boards. Every digit grid has exactly
 one copycat placement, so the single-given lists above hold for full
 uniqueness, placement included.
+
+**Why pair 1 forces so much (2026-09-15).** Each line alone does almost
+nothing (`boards/board19-pair22-1-L6only-candidates.txt`: r8c6 loses
+2, 3, 6; `-L5only-`: r2c1 loses 2). The pairing pins five digits and two
+copycat facts, and board 14 does everything else: board 14 plus givens
+r2c1 = 1, r3c1 = 9, r4c1 = 8, r8c6 = 9, r8c7 = 2, copycat r4c2, plain r7c7
+(`boards/board19-pair22-1-step5.json`, no L5/L6) gives the identical
+63-cell candidate grid. The chain to those seven facts:
+
+1. r8c5 = 1 is plain, so L6 carries value 1 and L5 must too. r3c1 has no
+   1, and r4c1/r4c2 cannot show 1 (box 4's 1 is r5c2; as copycats they
+   show r6c9 = 8 or r6c8 = 2). So r2c1 = 1.
+2. Box 1's copycat is r3c3, so r2c1, r3c1 are plain: segment 1 + r3c1,
+   r3c1 in {3,5,7,9}.
+3. r4c3 cannot be a copycat (it would show r6c7 = 6, and row 4 has 6), so
+   box 4's copycat is r4c1 (shows 8) or r4c2 (shows 2). The box-4 segment
+   is 8 + d or 2 + d with d in {2,3,5,7,8,9}. Equal sums: 10 (r3c1 = 9,
+   {8,2}) or 4 (r3c1 = 3, {2,2}). Sum 4 needs L6 = {1,3,2,2}: r8c6 = 3
+   and r7c7 worth 2, impossible (digit 8; as copycat it shows r3c3 in
+   {3,5,6,7,9}). So both lines are {1,9 | 8,2}, sum 10.
+4. L6: r8c6 = 9; r7c7 worth 8 means plain (not 2 either way), r8c7 = 2 plain.
+5. r4c1 as the copycat is infeasible on the pair (feasible if either the
+   distinct-copycat-digits rule or one-per-row/col is dropped, so the
+   contradiction is a copycat-digit clash). Hence r4c2 is the copycat
+   showing 2 and r4c1 = 8 plain.
+
+Board 14 was already one push from collapse: its 16 forced digits plus
+sum 18 plus four pinned copycats leave the rest hanging on column 1 and
+box 4, which is exactly where these five digits land.
