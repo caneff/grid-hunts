@@ -241,6 +241,66 @@ def load_setup(arg: str) -> dict:
     return json.loads(text)
 
 
+def candidates(m, digit, cc, lines, workers: int) -> None:
+    """Feasibility-test each cell digit and copycat flag; print pencilmarks."""
+    solver = cp_model.CpSolver()
+    solver.parameters.num_search_workers = workers
+    solver.parameters.max_time_in_seconds = 60
+    base = solver.Solve(m)
+    if base not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        print("INFEASIBLE: nothing to test")
+        return
+    seed_d = [[solver.Value(digit[r][c]) for c in range(9)] for r in range(9)]
+    seed_k = [[solver.Value(cc[r][c]) for c in range(9)] for r in range(9)]
+    cands = [[{seed_d[r][c]} for c in range(9)] for r in range(9)]
+    ccs = [[{seed_k[r][c]} for c in range(9)] for r in range(9)]
+    on_line = {cell for cells in lines.values() for cell in cells}
+    for r in range(9):
+        for c in range(9):
+            for v in range(1, 10):
+                if v in cands[r][c]:
+                    continue
+                lit = m.NewBoolVar("")
+                m.Add(digit[r][c] == v).OnlyEnforceIf(lit)
+                m.AddAssumption(lit)
+                st = solver.Solve(m)
+                m.ClearAssumptions()
+                if st in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+                    for rr in range(9):
+                        for cc_ in range(9):
+                            cands[rr][cc_].add(solver.Value(digit[rr][cc_]))
+                            ccs[rr][cc_].add(solver.Value(cc[rr][cc_]))
+            for flag in (0, 1):
+                if flag in ccs[r][c]:
+                    continue
+                m.AddAssumption(cc[r][c] if flag else cc[r][c].Not())
+                st = solver.Solve(m)
+                m.ClearAssumptions()
+                if st in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+                    for rr in range(9):
+                        for cc_ in range(9):
+                            cands[rr][cc_].add(solver.Value(digit[rr][cc_]))
+                            ccs[rr][cc_].add(solver.Value(cc[rr][cc_]))
+    print(
+        "candidates (digits; * = may be copycat, ! = must be copycat, line cells in [ ]):"
+    )
+    for r in range(9):
+        row = []
+        for c in range(9):
+            s = "".join(str(v) for v in sorted(cands[r][c]))
+            mark = "!" if ccs[r][c] == {1} else ("*" if 1 in ccs[r][c] else "")
+            cell = f"{s}{mark}"
+            cell = f"[{cell}]" if (r, c) in on_line else cell
+            row.append(f"{cell:>12}")
+        print(
+            " ".join(row[0:3]) + " |" + " ".join(row[3:6]) + " |" + " ".join(row[6:9])
+        )
+        if r in (2, 5):
+            print("-" * 120)
+    never = sum(1 for r in range(9) for c in range(9) if ccs[r][c] == {0})
+    print(f"cells that can never be a copycat: {never} of 81")
+
+
 def show_grid(d, k) -> str:
     rows = []
     for r in range(9):
@@ -269,6 +329,11 @@ def main() -> None:
     ap.add_argument(
         "--relax", action="append", default=[], help="distinct|rowcol (debug)"
     )
+    ap.add_argument(
+        "--candidates",
+        action="store_true",
+        help="test every cell digit and copycat flag; print the pencilmark grid",
+    )
     args = ap.parse_args()
     setup = load_setup(args.setup)
     setup.setdefault("pairs", [])
@@ -288,6 +353,10 @@ def main() -> None:
         f"pairs: {setup['pairs'] or 'none'}  sums: {setup['sums'] or 'none'}  givens: {len(setup.get('givens', {}))}"
     )
     m, digit, cc, lines = build(setup, set(args.relax))
+
+    if args.candidates:
+        candidates(m, digit, cc, lines, args.workers)
+        return
 
     solver = cp_model.CpSolver()
     solver.parameters.num_search_workers = args.workers

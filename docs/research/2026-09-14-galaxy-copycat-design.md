@@ -630,3 +630,12 @@ If r4c8 is not a copycat: in all 39 line copycat patterns exactly one of
 r4c4-6 is, with value = r4c8's digit, copied from r6c6/r6c5/r6c4. Then
 r4c7 is never a copycat (row 4 spent), nor any other box-5 cell; r6c8
 never is in either case.
+Candidates mode (`--candidates`, every cell digit and copycat flag tested
+for feasibility) on both branches of board 5, no givens:
+- r4c8 not a copycat: no digit restricted anywhere; the row-4 copycat is
+  one of r4c4-6, so 13 cells can never be a copycat (rest of row 4, rest
+  of box 5, r6c8).
+- r4c8 a copycat: no digit restricted; 20 cells can never be a copycat
+  (rest of row 4, column 8 and box 6).
+With no digits placed the branch moves copycats, not digits. Digit
+consequences only appear once a given or a sum clue enters.
