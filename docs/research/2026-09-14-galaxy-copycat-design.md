@@ -357,8 +357,9 @@ What survives:
 
 Chosen 2026-09-14 as the puzzle to set within a few days. Renban rejected
 (no-repeat clause too strong); whispers and entropic considered; Region Sum
-Lines chosen. The line pairs are **not** mirror images; the mirror lives
-only in the copycat rule.
+Lines chosen. Whether a pair's two lines are drawn as 180° images of each
+other is a layout choice, not a rule: the rules never mention symmetry
+between lines, and the boards so far are simply not drawn symmetric.
 
 > Normal sudoku rules apply.
 >
