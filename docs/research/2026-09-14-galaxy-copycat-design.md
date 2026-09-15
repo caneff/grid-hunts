@@ -688,3 +688,45 @@ r4c9 as a copycat carrying r4c8's digit d: INFEASIBLE. With L1's other
 box-6 values x, y and L2's p, q, equal multisets make the row-4 segment
 {p,q,w} and the column-8 segment {x,y,w}; the two sum equations add to
 d = w, but w is a plain digit in row 4 beside d at r4c8.
+
+**Board 9** (`boards/board9-three-lines.json`): the user's slip, L3 drawn
+as the 4-cell square r2c3-r2c4-r3c4-r3c3 (1,2,1). Partner search kept for
+the record: 536 4-cell paths, 166 allowed, 28 feasible
+(`boards/board9-l4-search.log`). Withdrawn ("oops").
+
+**Board 10** (`boards/board10-three-lines.json`, 2026-09-14): L1 =
+r4c4-r4c8 + r5c7, L2 = r9-7c8 + r6-4c9 (the board 7 pair), L3 = the U
+r2c3-r2c4-r2c5-r3c5-r3c4-r3c3 (1,4,1). Fourth-line search for L3's
+partner with L1-L2 paired: 2414 6-cell paths, 975 allowed, **333
+feasible**, none undecided: 115 (4,2), 94 (2,4), 91 (3,3), 18 (1,4,1),
+8 (1,1,4), 7 (4,1,1). List `boards/board10-l4-feasible.txt`, log
+`boards/board10-l4-search.log`, per-partner scores
+`boards/board10-l4-rank.jsonl` (`rank_l4.py`), multiset test
+`boards/board10-l4-msets.jsonl`.
+
+What every two-segment partner (300 of the 333) forces:
+- **Pair sum pinned at 8.** L3's singles r2c3 and r3c3 both equal S, so
+  S ≤ 9 and one of them is box 1's copycat; the box-2 quad needs S ≥ 7
+  (1+1+2+3, with box 2's copycat). A two-segment partner needs 3S = 2S',
+  so S is even: S = 8, S' = 12. L3 is 8 | {1,1,2,4} or {1,2,2,3} | 8 and
+  always spends two copycats (box 1 and box 2). Four distinct values on
+  the pair, every time.
+- **(4,2) and (2,4) partners carry {8,8,1,1,2,4}**: quad {8,1,1,2} with
+  a copycat, pair {8,4}. (3,3) partners carry {8,8,1,2,2,3}: triples
+  {8,1,3} and {8,2,2} with a copycat. The partner's shape decides which
+  of L3's two quads is drawn. 120 of the 300 also force a second copycat
+  on the partner (`min_cc` 2 in the rank file).
+- The 33 three-segment partners ((1,4,1) family) leave S in {7,8,9}.
+
+Interaction with the L1-L2 pair (`boards/board10-l1sums.txt`, L1 sums
+feasible, baseline with L3 unpaired is 8-22):
+- r5c8-r6c8-r6c7-r6c6-r6c5-r6c4 (3,3 through boxes 6 and 5): L1 sum
+  13 or 14.
+- r5c2-r6c2-r6c3-r6c4-r6c5-r6c6 (3,3 through box 5): L1 sum 17 or 18.
+- r5c4-r5c5-r5c6-r6c6-r6c7-r6c8 (4,2 through boxes 5 and 6): 14-18.
+- r7c4-r7c5-r7c6-r7c7-r8c7-r9c7 (3,3 through box 9): 9-22, barely any.
+- r6c4-r7c4-r7c5-r7c6-r8c6-r8c7 (1,4,1 through boxes 5, 8, 9): 8-22,
+  none.
+- r4c1-r5c1-r6c1-r7c1-r7c2-r7c3 (3,3, no shared box): 8-19.
+So a partner whose 8 / 1,2,4 / 1,2,2,3 values land in box 5 or 6 is
+what ties the two pairs together; box 9 partners do not.
