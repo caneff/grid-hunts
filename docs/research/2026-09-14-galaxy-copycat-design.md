@@ -921,3 +921,20 @@ r2c1 = 1, r3c1 = 9, r4c1 = 8, r8c6 = 9, r8c7 = 2, copycat r4c2, plain r7c7
 Board 14 was already one push from collapse: its 16 forced digits plus
 sum 18 plus four pinned copycats leave the rest hanging on column 1 and
 box 4, which is exactly where these five digits land.
+
+**(2,2) pairs that can carry a repeated value (2026-09-15).**
+`find_repeats.py`: of the 243 (2,2)+(2,2) pairs, 7 share a multiset with
+a repeat at the line stage and 3 survive an exact check, all with
+L5 = r1c5-r1c6 | r1c7-r2c7 (boxes 2, 3) and L6 a loop around r6c1/r7c2.
+Two are the same cells in a different order, so two distinct boards:
+
+| board | L6 | multisets | solutions | forced |
+|---|---|---|---|---|
+| `board20-repeat-A` | r6c1-r6c2 \| r7c2-r7c1 | {3,3,9,9} or {5,5,7,7} only | 48 | 41: every 1, 2, 4, 6, 8 placed; all 40 open cells are 3/5/7/9 |
+| `board20-repeat-B` | r6c2-r6c1 \| r7c1-r8c1 | {3,3,9,9}, {5,5,7,7} or {3,5,7,9} | 64 | ~39, a few 2s still open |
+
+Pair A is forced to repeat: both segments carry the same two odd digits
+as a pair, sum 12 on every option, so the line reads as two matched
+pairs rather than a sum. Sample rank put these at 26 and 20 new cells,
+mid-table, so they are a nudge rather than a collapse. Candidate grids in
+`boards/board20-repeat-{A,B}-candidates.txt`.
