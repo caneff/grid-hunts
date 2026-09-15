@@ -2,12 +2,13 @@
 
 import json
 import sys
+from pathlib import Path
 
 sys.path.insert(0, "docs/research/2026-09-14-galaxy-copycat")
 from copycat_rsl_solver import build
 from ortools.sat.python import cp_model
 
-setup = json.load(open(sys.argv[1]))
+setup = json.loads(Path(sys.argv[1]).read_text())
 for sense in ("min", "max"):
     m, digit, cc, lines = build(setup)
     cells = [c for n in lines for c in lines[n]]
