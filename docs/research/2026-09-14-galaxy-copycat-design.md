@@ -835,3 +835,35 @@ forced, the copycat digits pinned (r2c5 = 5, r3c3 = 6, r4c2 = 8,
 r8c4 = 2, r6c6 = 1, r5c8 in {3,9}), r6c4 = 5, r6c5 = 7, r4c5/r4c6 = {3,9}.
 Still 5000+ solutions at the cap: the remaining freedom is 3/9 pairs
 across the grid and the empty box 7 / column 9 region.
+
+**Board 14, (2,2)+(2,2) pairs, exact (2026-09-15).** Of the 448 feasible
+pairs, 243 have both lines shaped (2,2). Ranking finished
+(`boards/board14-pair4.rank.jsonl`, 12 random-objective samples a pair,
+sample score = new constant cells over board 14's 16). The top five by
+sample, each verified with `--candidates`
+(`boards/board19-pair22-{1..5}.json`, `-candidates.txt`), all leave the
+grid nearly solved: every one pins about 60 of 81 digits, and what is
+left is one bivalue swap running through the whole grid.
+
+| # | L5 | L6 | forced digits | left open |
+|---|----|----|---------------|-----------|
+| 1 | r2c1-r3c1-r4c1-r4c2 | r7c7-r8c7-r8c6-r8c5 | 63 | 18 cells, all 5/7 |
+| 2 | r2c1-r3c1-r4c1-r5c1 | r7c5-r7c6-r7c7-r7c8 | 61 | 20 cells, 3/9 (three are 3/4/9) |
+| 3 | r5c2-r6c2-r7c2-r8c2 | r8c6-r9c6-r9c7-r9c8 | 60 | 21 cells, 5/7 (three are 3/5/7) |
+| 4 | r2c2-r3c2-r4c2-r5c2 | r8c5-r8c6-r8c7-r8c8 | 59 | 22 cells, 3/9 (some 1/3/9, 3/4/9) |
+| 5 | r5c2-r6c2-r7c2-r7c3 | r7c7-r8c7-r8c6-r8c5 | 58 | 23 cells, 5/7 and 3/9 |
+
+The sample score matched the exact count for the leader (47 new cells
+both ways). The full (2,2) top 25 is in the rank file; the leaders are all
+a column-1/2 vertical in boxes 1/4 or 4/7 paired with a row-7/8/9
+horizontal in boxes 8/9. Cost: a third pair this shape is not a nudge,
+it is the whole puzzle minus one deadly-pattern-sized swap, so it would
+need one given (or a shorter/weaker third pair) to finish.
+
+Speed for later passes: `copycat_rsl_solver.py --candidates --forced-out
+boards/board14-forced.json` writes the exact forced facts (16 digits, 4
+copycats, 58 non-copycats); `find_pair4.py --shape 2,2 --seed` and
+`rank_pair4.py --shape 2,2 --seed` (two-stage: 4 samples on every pair,
+12 on the top 30) use them. Seeding cut a pair sample from about 2.5 s to
+0.2 s on a 5-pair bench with identical scores, so a full (2,2) ranking is
+minutes rather than the 112 minutes the unseeded 12-sample pass took.
