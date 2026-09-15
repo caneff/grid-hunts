@@ -808,3 +808,12 @@ copycats, one of r5c8 (copycat) and r4c1/r4c2. The link's pencilled
 pencilled r2c3 = 8, r3c8 = 8, r7c7 = 8, r8c5 = 1. VALID and all four
 entries are forced (`boards/board14-candidates.txt`; same forced set as
 board 13's grid, L5 changed nothing there).
+
+**Board 17** (`boards/board17-six-lines.json`, 2026-09-15): board 14 plus
+a third pair of 4-cell (2,2) lines, L5 = r8c6-r9c6-r9c7-r8c7 (boxes 8, 9)
+and L6 = r2c6-r1c6-r1c7-r2c7 (boxes 2, 3). INFEASIBLE as a pair; each
+line alone, both unpaired, and the pair on an empty grid are all fine.
+On the board L5 can only sum 6, 9, 10 or 13 and L6 only 8, 9, 10, 11 or
+16; the only sum both take at once is 10, and there L5 is always
+8,2 | 1,9 and L6 always 7,3 | 7,3 (5000 sampled solutions), so the
+multisets never match.
