@@ -1,43 +1,52 @@
 """Score feasible 4-cell line pairs (from find_pair4) by how much they pin down.
 
 Usage: uv run rank_pair4.py board.json pairs.jsonl out.jsonl [limit]
-For each pair: enumerate up to `limit` solutions and record, for every cell,
+For each pair: `limit` solves with random digit objectives; record, per cell,
 the digits seen and whether the copycat flag varied.  Score = number of cells
 whose digit is constant across the sample (an upper bound on forced cells;
 verify the leaders with copycat_rsl_solver --candidates).
 """
 
 import json
+import random
 import sys
 import time
 from pathlib import Path
 
 sys.path.insert(0, "docs/research/2026-09-14-galaxy-copycat")
-from copycat_rsl_solver import Collector, build, parse_cell
+from copycat_rsl_solver import build, parse_cell
 from ortools.sat.python import cp_model
 
 BASE, PAIRS, OUT = sys.argv[1], sys.argv[2], sys.argv[3]
-LIMIT = int(sys.argv[4]) if len(sys.argv) > 4 else 400
+LIMIT = int(sys.argv[4]) if len(sys.argv) > 4 else 12
 base = json.loads(Path(BASE).read_text())
 
 
 # baseline: which cells are already constant on the board alone
 def sample(setup):
-    m, digit, cc, _ = build(setup)
-    sv = cp_model.CpSolver()
-    sv.parameters.num_search_workers = 1
-    sv.parameters.enumerate_all_solutions = True
-    sv.parameters.max_time_in_seconds = 120
-    col = Collector(digit, cc, LIMIT)
-    sv.Solve(m, col)
+    """K solves, each maximising a random weighting of the digits, so the grids
+    differ in digits (plain enumeration only shuffles copycat placements)."""
+    rng = random.Random(1)
     digits = [[set() for _ in range(9)] for _ in range(9)]
     flags = [[set() for _ in range(9)] for _ in range(9)]
-    for d, k in col.solutions:
+    n = 0
+    for _ in range(LIMIT):
+        m, digit, cc, _ = build(setup)
+        m.Maximize(
+            sum(rng.randint(-9, 9) * digit[r][c] for r in range(9) for c in range(9))
+        )
+        sv = cp_model.CpSolver()
+        sv.parameters.num_search_workers = 1
+        sv.parameters.max_time_in_seconds = 20
+        st = sv.Solve(m)
+        if st not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+            continue
+        n += 1
         for r in range(9):
             for c in range(9):
-                digits[r][c].add(d[r][c])
-                flags[r][c].add(k[r][c])
-    return len(col.solutions), digits, flags
+                digits[r][c].add(sv.Value(digit[r][c]))
+                flags[r][c].add(bool(sv.Value(cc[r][c])))
+    return n, digits, flags
 
 
 n0, base_digits, base_flags = sample(base)
