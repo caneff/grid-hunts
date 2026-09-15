@@ -661,3 +661,7 @@ r7-9c8 + r4-6c9 (3,3).
 - Repair tested (`boards/board6b-col9.json`): L3 as the straight column
   9 line r4-9c9. L1-L3 feasible, sample sums 17/17. Fourth-line search
   for L2 on that board: `boards/board6b-l4-search.log`.
+Board 6b fourth-line search for the U-line: 2777 paths, 1122 allowed
+structures, 419 feasible, none undecided: 129 (4,2), 124 (3,3), 121
+(2,4), 24 (1,4,1), 13 (1,1,4), 8 (4,1,1). List in
+`boards/board6b-l4-feasible.txt`.

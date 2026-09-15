@@ -1,0 +1,1123 @@
+1/1122 infeasible 0.2s (3, 3) r1c1-r1c2-r1c3-r1c4-r1c5-r1c6
+2/1122 infeasible 0.2s (4, 2) r1c1-r1c2-r2c2-r3c2-r4c2-r4c1
+3/1122 infeasible 0.2s (4, 2) r1c1-r1c2-r2c2-r3c2-r4c2-r4c3
+4/1122 infeasible 0.2s (4, 2) r1c1-r1c2-r2c2-r3c2-r4c2-r5c2
+5/1122 infeasible 0.2s (4, 2) r1c1-r2c1-r2c2-r3c2-r4c2-r4c1
+6/1122 infeasible 0.2s (4, 2) r1c1-r2c1-r2c2-r3c2-r4c2-r4c3
+7/1122 infeasible 0.2s (4, 2) r1c1-r2c1-r2c2-r3c2-r4c2-r5c2
+8/1122 infeasible 0.2s (4, 2) r1c1-r2c1-r3c1-r3c2-r4c2-r4c1
+9/1122 infeasible 0.2s (4, 2) r1c1-r2c1-r3c1-r3c2-r4c2-r4c3
+10/1122 infeasible 0.2s (4, 2) r1c1-r2c1-r3c1-r3c2-r4c2-r5c2
+11/1122 infeasible 0.2s (3, 3) r1c1-r2c1-r3c1-r4c1-r4c2-r4c3
+12/1122 infeasible 0.2s (3, 3) r1c1-r2c1-r3c1-r4c1-r4c2-r5c2
+13/1122 infeasible 0.2s (3, 3) r1c1-r2c1-r3c1-r4c1-r5c1-r5c2
+14/1122 infeasible 0.2s (3, 3) r1c1-r2c1-r3c1-r4c1-r5c1-r6c1
+15/1122 infeasible 0.2s (4, 2) r1c2-r1c1-r2c1-r3c1-r4c1-r4c2
+16/1122 infeasible 0.2s (4, 2) r1c2-r1c1-r2c1-r3c1-r4c1-r5c1
+17/1122 infeasible 0.2s (2, 4) r1c2-r1c3-r1c4-r1c5-r1c6-r2c6
+18/1122 infeasible 0.2s (4, 2) r1c2-r2c2-r2c1-r3c1-r4c1-r4c2
+19/1122 infeasible 0.2s (4, 2) r1c2-r2c2-r2c1-r3c1-r4c1-r5c1
+20/1122 infeasible 0.2s (4, 2) r1c2-r2c2-r3c2-r3c1-r4c1-r4c2
+21/1122 infeasible 0.2s (4, 2) r1c2-r2c2-r3c2-r3c1-r4c1-r5c1
+22/1122 infeasible 0.2s (3, 3) r1c2-r2c2-r3c2-r4c2-r4c1-r5c1
+23/1122 infeasible 0.2s (3, 3) r1c2-r2c2-r3c2-r4c2-r4c3-r5c3
+24/1122 infeasible 0.2s (3, 3) r1c2-r2c2-r3c2-r4c2-r5c2-r5c1
+25/1122 infeasible 0.2s (3, 3) r1c2-r2c2-r3c2-r4c2-r5c2-r5c3
+26/1122 infeasible 0.2s (3, 3) r1c2-r2c2-r3c2-r4c2-r5c2-r6c2
+27/1122 infeasible 0.2s (4, 2) r1c3-r1c2-r2c2-r3c2-r4c2-r4c1
+28/1122 infeasible 0.2s (4, 2) r1c3-r1c2-r2c2-r3c2-r4c2-r4c3
+29/1122 infeasible 0.2s (4, 2) r1c3-r1c2-r2c2-r3c2-r4c2-r5c2
+30/1122 infeasible 0.0s (1, 4, 1) r1c3-r1c4-r1c5-r1c6-r2c6-r2c7
+31/1122 infeasible 0.2s (1, 4, 1) r1c4-r1c3-r1c2-r2c2-r3c2-r4c2
+32/1122 infeasible 0.3s (3, 3) r1c4-r1c5-r1c6-r1c7-r1c8-r1c9
+33/1122 infeasible 0.2s (3, 3) r1c4-r1c5-r1c6-r1c7-r1c8-r2c8
+34/1122 infeasible 0.2s (3, 3) r1c4-r1c5-r1c6-r1c7-r2c7-r2c8
+35/1122 infeasible 0.2s (3, 3) r1c4-r1c5-r1c6-r1c7-r2c7-r3c7
+36/1122 infeasible 0.2s (4, 2) r1c4-r1c5-r1c6-r2c6-r2c7-r1c7
+37/1122 infeasible 0.2s (4, 2) r1c4-r1c5-r1c6-r2c6-r2c7-r2c8
+38/1122 infeasible 0.2s (4, 2) r1c4-r1c5-r1c6-r2c6-r2c7-r3c7
+39/1122 infeasible 0.2s (2, 4) r1c5-r1c4-r1c3-r1c2-r1c1-r2c1
+40/1122 infeasible 0.2s (2, 4) r1c5-r1c4-r1c3-r1c2-r2c2-r2c1
+41/1122 infeasible 0.2s (2, 4) r1c5-r1c4-r1c3-r1c2-r2c2-r3c2
+42/1122 infeasible 0.2s (2, 4) r1c5-r1c6-r1c7-r1c8-r1c9-r2c9
+43/1122 infeasible 0.2s (2, 4) r1c5-r1c6-r1c7-r1c8-r2c8-r2c7
+44/1122 infeasible 0.3s (2, 4) r1c5-r1c6-r1c7-r1c8-r2c8-r2c9
+45/1122 infeasible 0.3s (2, 4) r1c5-r1c6-r1c7-r1c8-r2c8-r3c8
+46/1122 infeasible 0.2s (2, 4) r1c5-r1c6-r1c7-r2c7-r2c8-r1c8
+47/1122 infeasible 0.3s (2, 4) r1c5-r1c6-r1c7-r2c7-r2c8-r2c9
+48/1122 infeasible 0.3s (2, 4) r1c5-r1c6-r1c7-r2c7-r2c8-r3c8
+49/1122 infeasible 0.3s (2, 4) r1c5-r1c6-r1c7-r2c7-r3c7-r3c8
+50/1122 infeasible 0.2s (3, 3) r1c5-r1c6-r2c6-r2c7-r1c7-r1c8
+51/1122 infeasible 0.4s (3, 3) r1c5-r1c6-r2c6-r2c7-r2c8-r1c8
+52/1122 infeasible 0.3s (3, 3) r1c5-r1c6-r2c6-r2c7-r2c8-r2c9
+53/1122 infeasible 0.3s (3, 3) r1c5-r1c6-r2c6-r2c7-r2c8-r3c8
+54/1122 infeasible 0.3s (3, 3) r1c5-r1c6-r2c6-r2c7-r3c7-r3c8
+55/1122 infeasible 0.2s (4, 2) r1c5-r1c6-r2c6-r3c6-r3c7-r2c7
+56/1122 infeasible 0.2s (4, 2) r1c5-r1c6-r2c6-r3c6-r3c7-r3c8
+57/1122 infeasible 0.2s (3, 3) r1c6-r1c5-r1c4-r1c3-r1c2-r2c2
+58/1122 infeasible 0.2s (1, 4, 1) r1c6-r1c7-r1c8-r2c8-r2c7-r2c6
+59/1122 infeasible 0.3s (2, 4) r1c6-r2c6-r2c7-r1c7-r1c8-r1c9
+60/1122 infeasible 0.3s (2, 4) r1c6-r2c6-r2c7-r1c7-r1c8-r2c8
+61/1122 infeasible 0.3s (2, 4) r1c6-r2c6-r2c7-r2c8-r1c8-r1c7
+62/1122 infeasible 0.3s (2, 4) r1c6-r2c6-r2c7-r2c8-r1c8-r1c9
+63/1122 infeasible 0.3s (2, 4) r1c6-r2c6-r2c7-r2c8-r2c9-r1c9
+64/1122 infeasible 0.2s (2, 4) r1c6-r2c6-r2c7-r2c8-r2c9-r3c9
+65/1122 infeasible 0.3s (2, 4) r1c6-r2c6-r2c7-r2c8-r3c8-r3c7
+66/1122 infeasible 0.2s (2, 4) r1c6-r2c6-r2c7-r2c8-r3c8-r3c9
+67/1122 infeasible 0.2s (2, 4) r1c6-r2c6-r2c7-r3c7-r3c8-r2c8
+68/1122 infeasible 0.2s (2, 4) r1c6-r2c6-r2c7-r3c7-r3c8-r3c9
+69/1122 infeasible 0.2s (3, 3) r1c6-r2c6-r3c6-r3c7-r2c7-r1c7
+70/1122 infeasible 0.4s (3, 3) r1c6-r2c6-r3c6-r3c7-r2c7-r2c8
+71/1122 infeasible 0.3s (3, 3) r1c6-r2c6-r3c6-r3c7-r3c8-r2c8
+72/1122 infeasible 0.2s (3, 3) r1c6-r2c6-r3c6-r3c7-r3c8-r3c9
+73/1122 infeasible 0.3s (4, 2) r1c7-r1c8-r2c8-r2c7-r2c6-r3c6
+74/1122 infeasible 0.3s (4, 2) r1c8-r1c7-r2c7-r3c7-r3c6-r2c6
+75/1122 infeasible 0.3s (4, 2) r1c8-r2c8-r2c7-r1c7-r1c6-r2c6
+76/1122 infeasible 0.2s (4, 2) r1c8-r2c8-r2c7-r3c7-r3c6-r2c6
+77/1122 infeasible 0.3s (4, 2) r1c8-r2c8-r3c8-r3c7-r3c6-r2c6
+78/1122 infeasible 0.3s (3, 3) r1c9-r1c8-r1c7-r1c6-r2c6-r3c6
+79/1122 infeasible 0.3s (4, 2) r1c9-r1c8-r1c7-r2c7-r2c6-r3c6
+80/1122 infeasible 0.3s (4, 2) r1c9-r1c8-r2c8-r2c7-r2c6-r3c6
+81/1122 infeasible 0.3s (4, 2) r1c9-r2c9-r2c8-r2c7-r2c6-r3c6
+82/1122 infeasible 0.2s (4, 2) r2c1-r2c2-r3c2-r3c1-r4c1-r4c2
+83/1122 infeasible 0.2s (4, 2) r2c1-r2c2-r3c2-r3c1-r4c1-r5c1
+84/1122 infeasible 0.2s (3, 3) r2c1-r2c2-r3c2-r4c2-r4c1-r5c1
+85/1122 infeasible 0.2s (3, 3) r2c1-r2c2-r3c2-r4c2-r4c3-r5c3
+86/1122 infeasible 0.2s (3, 3) r2c1-r2c2-r3c2-r4c2-r5c2-r5c1
+87/1122 infeasible 0.2s (3, 3) r2c1-r2c2-r3c2-r4c2-r5c2-r5c3
+88/1122 infeasible 0.2s (3, 3) r2c1-r2c2-r3c2-r4c2-r5c2-r6c2
+89/1122 infeasible 0.2s (3, 3) r2c1-r3c1-r3c2-r4c2-r4c1-r5c1
+90/1122 infeasible 0.2s (3, 3) r2c1-r3c1-r3c2-r4c2-r4c3-r5c3
+91/1122 infeasible 0.2s (3, 3) r2c1-r3c1-r3c2-r4c2-r5c2-r5c1
+92/1122 infeasible 0.2s (3, 3) r2c1-r3c1-r3c2-r4c2-r5c2-r5c3
+93/1122 infeasible 0.2s (3, 3) r2c1-r3c1-r3c2-r4c2-r5c2-r6c2
+94/1122 infeasible 0.2s (2, 4) r2c1-r3c1-r4c1-r4c2-r4c3-r5c3
+95/1122 infeasible 0.2s (2, 4) r2c1-r3c1-r4c1-r4c2-r5c2-r5c1
+96/1122 infeasible 0.2s (2, 4) r2c1-r3c1-r4c1-r4c2-r5c2-r5c3
+97/1122 infeasible 0.2s (2, 4) r2c1-r3c1-r4c1-r4c2-r5c2-r6c2
+98/1122 infeasible 0.2s (2, 4) r2c1-r3c1-r4c1-r5c1-r5c2-r4c2
+99/1122 infeasible 0.2s (2, 4) r2c1-r3c1-r4c1-r5c1-r5c2-r5c3
+100/1122 infeasible 0.2s (2, 4) r2c1-r3c1-r4c1-r5c1-r5c2-r6c2
+101/1122 infeasible 0.2s (2, 4) r2c1-r3c1-r4c1-r5c1-r6c1-r6c2
+102/1122 infeasible 0.2s (4, 2) r2c2-r2c1-r3c1-r3c2-r4c2-r4c1
+103/1122 infeasible 0.2s (4, 2) r2c2-r2c1-r3c1-r3c2-r4c2-r4c3
+104/1122 infeasible 0.2s (4, 2) r2c2-r2c1-r3c1-r3c2-r4c2-r5c2
+105/1122 infeasible 0.2s (3, 3) r2c2-r2c1-r3c1-r4c1-r4c2-r4c3
+106/1122 infeasible 0.2s (3, 3) r2c2-r2c1-r3c1-r4c1-r4c2-r5c2
+107/1122 infeasible 0.2s (3, 3) r2c2-r2c1-r3c1-r4c1-r5c1-r5c2
+108/1122 infeasible 0.2s (3, 3) r2c2-r2c1-r3c1-r4c1-r5c1-r6c1
+109/1122 infeasible 0.2s (3, 3) r2c2-r3c2-r3c1-r4c1-r4c2-r4c3
+110/1122 infeasible 0.2s (3, 3) r2c2-r3c2-r3c1-r4c1-r4c2-r5c2
+111/1122 infeasible 0.2s (3, 3) r2c2-r3c2-r3c1-r4c1-r5c1-r5c2
+112/1122 infeasible 0.2s (3, 3) r2c2-r3c2-r3c1-r4c1-r5c1-r6c1
+113/1122 infeasible 0.2s (2, 4) r2c2-r3c2-r4c2-r4c1-r5c1-r5c2
+114/1122 infeasible 0.2s (2, 4) r2c2-r3c2-r4c2-r4c1-r5c1-r6c1
+115/1122 infeasible 0.2s (2, 4) r2c2-r3c2-r4c2-r4c3-r5c3-r5c2
+116/1122 infeasible 0.2s (2, 4) r2c2-r3c2-r4c2-r4c3-r5c3-r6c3
+117/1122 infeasible 0.2s (2, 4) r2c2-r3c2-r4c2-r5c2-r5c1-r4c1
+118/1122 infeasible 0.2s (2, 4) r2c2-r3c2-r4c2-r5c2-r5c1-r6c1
+119/1122 infeasible 0.2s (2, 4) r2c2-r3c2-r4c2-r5c2-r5c3-r4c3
+120/1122 infeasible 0.2s (2, 4) r2c2-r3c2-r4c2-r5c2-r5c3-r6c3
+121/1122 infeasible 0.2s (2, 4) r2c2-r3c2-r4c2-r5c2-r6c2-r6c1
+122/1122 infeasible 0.2s (2, 4) r2c2-r3c2-r4c2-r5c2-r6c2-r6c3
+123/1122 infeasible 0.3s (2, 4) r2c6-r1c6-r1c7-r1c8-r1c9-r2c9
+124/1122 infeasible 0.3s (2, 4) r2c6-r1c6-r1c7-r1c8-r2c8-r2c7
+125/1122 infeasible 0.3s (2, 4) r2c6-r1c6-r1c7-r1c8-r2c8-r2c9
+126/1122 infeasible 0.2s (2, 4) r2c6-r1c6-r1c7-r1c8-r2c8-r3c8
+127/1122 infeasible 0.3s (2, 4) r2c6-r1c6-r1c7-r2c7-r2c8-r2c9
+128/1122 infeasible 0.2s (2, 4) r2c6-r1c6-r1c7-r2c7-r2c8-r3c8
+129/1122 infeasible 0.2s (2, 4) r2c6-r1c6-r1c7-r2c7-r3c7-r3c8
+130/1122 infeasible 0.3s (1, 4, 1) r2c6-r2c7-r2c8-r3c8-r3c7-r3c6
+131/1122 infeasible 0.2s (2, 4) r2c6-r3c6-r3c7-r2c7-r2c8-r2c9
+132/1122 infeasible 0.3s (2, 4) r2c6-r3c6-r3c7-r2c7-r2c8-r3c8
+133/1122 infeasible 0.2s (2, 4) r2c6-r3c6-r3c7-r3c8-r2c8-r2c7
+134/1122 infeasible 0.3s (2, 4) r2c6-r3c6-r3c7-r3c8-r2c8-r2c9
+135/1122 infeasible 0.3s (2, 4) r2c6-r3c6-r3c7-r3c8-r3c9-r2c9
+136/1122 infeasible 0.3s (3, 3) r2c8-r1c8-r1c7-r1c6-r2c6-r3c6
+137/1122 infeasible 0.3s (4, 2) r2c8-r1c8-r1c7-r2c7-r2c6-r3c6
+138/1122 infeasible 0.3s (3, 3) r2c8-r2c7-r1c7-r1c6-r2c6-r3c6
+139/1122 infeasible 0.2s (4, 2) r2c8-r3c8-r3c7-r2c7-r2c6-r3c6
+140/1122 infeasible 0.2s (4, 2) r3c1-r2c1-r2c2-r3c2-r4c2-r4c1
+141/1122 infeasible 0.2s (4, 2) r3c1-r2c1-r2c2-r3c2-r4c2-r4c3
+142/1122 infeasible 0.2s (4, 2) r3c1-r2c1-r2c2-r3c2-r4c2-r5c2
+143/1122 infeasible 0.2s (2, 4) r3c1-r3c2-r4c2-r4c1-r5c1-r5c2
+144/1122 infeasible 0.2s (2, 4) r3c1-r3c2-r4c2-r4c1-r5c1-r6c1
+145/1122 infeasible 0.2s (2, 4) r3c1-r3c2-r4c2-r4c3-r5c3-r5c2
+146/1122 infeasible 0.2s (2, 4) r3c1-r3c2-r4c2-r4c3-r5c3-r6c3
+147/1122 infeasible 0.2s (2, 4) r3c1-r3c2-r4c2-r5c2-r5c1-r4c1
+148/1122 infeasible 0.2s (2, 4) r3c1-r3c2-r4c2-r5c2-r5c1-r6c1
+149/1122 infeasible 0.2s (2, 4) r3c1-r3c2-r4c2-r5c2-r5c3-r4c3
+150/1122 infeasible 0.2s (2, 4) r3c1-r3c2-r4c2-r5c2-r5c3-r6c3
+151/1122 infeasible 0.2s (2, 4) r3c1-r3c2-r4c2-r5c2-r6c2-r6c1
+152/1122 infeasible 0.2s (2, 4) r3c1-r3c2-r4c2-r5c2-r6c2-r6c3
+153/1122 infeasible 0.2s (1, 4, 1) r3c1-r4c1-r4c2-r4c3-r5c3-r5c4
+154/1122 infeasible 0.2s (1, 4, 1) r3c1-r4c1-r4c2-r5c2-r5c3-r5c4
+155/1122 infeasible 0.2s (1, 4, 1) r3c1-r4c1-r4c2-r5c2-r6c2-r7c2
+156/1122 infeasible 0.2s (1, 4, 1) r3c1-r4c1-r5c1-r5c2-r4c2-r3c2
+157/1122 infeasible 0.2s (1, 4, 1) r3c1-r4c1-r5c1-r5c2-r5c3-r5c4
+158/1122 infeasible 0.2s (1, 4, 1) r3c1-r4c1-r5c1-r5c2-r6c2-r7c2
+159/1122 infeasible 0.2s (1, 4, 1) r3c1-r4c1-r5c1-r6c1-r6c2-r7c2
+160/1122 infeasible 0.2s (4, 2) r3c2-r2c2-r2c1-r3c1-r4c1-r4c2
+161/1122 infeasible 0.2s (4, 2) r3c2-r2c2-r2c1-r3c1-r4c1-r5c1
+162/1122 infeasible 0.2s (2, 4) r3c2-r3c1-r4c1-r4c2-r4c3-r5c3
+163/1122 infeasible 0.2s (2, 4) r3c2-r3c1-r4c1-r4c2-r5c2-r5c1
+164/1122 infeasible 0.2s (2, 4) r3c2-r3c1-r4c1-r4c2-r5c2-r5c3
+165/1122 infeasible 0.2s (2, 4) r3c2-r3c1-r4c1-r4c2-r5c2-r6c2
+166/1122 infeasible 0.2s (2, 4) r3c2-r3c1-r4c1-r5c1-r5c2-r4c2
+167/1122 infeasible 0.2s (2, 4) r3c2-r3c1-r4c1-r5c1-r5c2-r5c3
+168/1122 infeasible 0.2s (2, 4) r3c2-r3c1-r4c1-r5c1-r5c2-r6c2
+169/1122 infeasible 0.2s (2, 4) r3c2-r3c1-r4c1-r5c1-r6c1-r6c2
+170/1122 infeasible 0.2s (1, 4, 1) r3c2-r4c2-r4c1-r5c1-r6c1-r7c1
+171/1122 infeasible 0.2s (1, 4, 1) r3c2-r4c2-r4c3-r5c3-r6c3-r6c4
+172/1122 infeasible 0.2s (1, 4, 1) r3c2-r4c2-r4c3-r5c3-r6c3-r7c3
+173/1122 infeasible 0.2s (1, 4, 1) r3c2-r4c2-r5c2-r5c1-r6c1-r7c1
+174/1122 infeasible 0.2s (1, 4, 1) r3c2-r4c2-r5c2-r5c3-r6c3-r6c4
+175/1122 infeasible 0.2s (1, 4, 1) r3c2-r4c2-r5c2-r5c3-r6c3-r7c3
+176/1122 infeasible 0.2s (1, 4, 1) r3c2-r4c2-r5c2-r6c2-r6c1-r7c1
+177/1122 infeasible 0.2s (1, 4, 1) r3c2-r4c2-r5c2-r6c2-r6c3-r6c4
+178/1122 infeasible 0.2s (1, 4, 1) r3c2-r4c2-r5c2-r6c2-r6c3-r7c3
+179/1122 infeasible 0.2s (3, 3) r3c6-r2c6-r1c6-r1c7-r2c7-r3c7
+180/1122 infeasible 0.3s (2, 4) r3c6-r2c6-r2c7-r2c8-r2c9-r3c9
+181/1122 infeasible 0.3s (2, 4) r3c6-r2c6-r2c7-r2c8-r3c8-r3c7
+182/1122 infeasible 0.4s (2, 4) r3c6-r2c6-r2c7-r2c8-r3c8-r3c9
+183/1122 infeasible 0.3s (2, 4) r3c6-r2c6-r2c7-r3c7-r3c8-r3c9
+184/1122 infeasible 0.2s (1, 4, 1) r4c1-r3c1-r2c1-r2c2-r3c2-r4c2
+185/1122 infeasible 0.4s (4, 2) r4c1-r4c2-r4c3-r5c3-r5c4-r5c5
+186/1122 infeasible 0.6s (4, 2) r4c1-r4c2-r4c3-r5c3-r5c4-r6c4
+187/1122 FEASIBLE 0.3s (4, 2) r4c1-r4c2-r5c2-r5c3-r5c4-r5c5
+188/1122 FEASIBLE 0.3s (4, 2) r4c1-r4c2-r5c2-r5c3-r5c4-r6c4
+189/1122 FEASIBLE 0.3s (4, 2) r4c1-r4c2-r5c2-r6c2-r7c2-r7c1
+190/1122 FEASIBLE 0.3s (4, 2) r4c1-r4c2-r5c2-r6c2-r7c2-r7c3
+191/1122 FEASIBLE 0.3s (4, 2) r4c1-r4c2-r5c2-r6c2-r7c2-r8c2
+192/1122 infeasible 0.2s (4, 2) r4c1-r5c1-r5c2-r5c3-r5c4-r5c5
+193/1122 FEASIBLE 0.4s (4, 2) r4c1-r5c1-r5c2-r5c3-r5c4-r6c4
+194/1122 FEASIBLE 0.3s (4, 2) r4c1-r5c1-r5c2-r6c2-r7c2-r7c1
+195/1122 FEASIBLE 0.3s (4, 2) r4c1-r5c1-r5c2-r6c2-r7c2-r7c3
+196/1122 FEASIBLE 0.5s (4, 2) r4c1-r5c1-r5c2-r6c2-r7c2-r8c2
+197/1122 FEASIBLE 0.3s (4, 2) r4c1-r5c1-r6c1-r6c2-r7c2-r7c1
+198/1122 FEASIBLE 0.3s (4, 2) r4c1-r5c1-r6c1-r6c2-r7c2-r7c3
+199/1122 FEASIBLE 0.4s (4, 2) r4c1-r5c1-r6c1-r6c2-r7c2-r8c2
+200/1122 FEASIBLE 0.4s (3, 3) r4c1-r5c1-r6c1-r7c1-r7c2-r7c3
+201/1122 FEASIBLE 0.6s (3, 3) r4c1-r5c1-r6c1-r7c1-r7c2-r8c2
+202/1122 FEASIBLE 0.4s (3, 3) r4c1-r5c1-r6c1-r7c1-r8c1-r8c2
+203/1122 infeasible 0.4s (3, 3) r4c1-r5c1-r6c1-r7c1-r8c1-r9c1
+204/1122 FEASIBLE 0.3s (4, 2) r4c2-r4c1-r5c1-r6c1-r7c1-r7c2
+205/1122 FEASIBLE 0.5s (4, 2) r4c2-r4c1-r5c1-r6c1-r7c1-r8c1
+206/1122 FEASIBLE 0.3s (3, 3) r4c2-r4c3-r5c3-r5c4-r5c5-r5c6
+207/1122 infeasible 0.3s (3, 3) r4c2-r4c3-r5c3-r5c4-r5c5-r6c5
+208/1122 infeasible 0.4s (3, 3) r4c2-r4c3-r5c3-r5c4-r6c4-r6c5
+209/1122 infeasible 0.3s (4, 2) r4c2-r4c3-r5c3-r6c3-r6c4-r5c4
+210/1122 infeasible 0.2s (4, 2) r4c2-r4c3-r5c3-r6c3-r6c4-r6c5
+211/1122 infeasible 2.8s (4, 1, 1) r4c2-r4c3-r5c3-r6c3-r6c4-r7c4
+212/1122 infeasible 0.2s (4, 2) r4c2-r4c3-r5c3-r6c3-r7c3-r7c2
+213/1122 infeasible 0.2s (4, 1, 1) r4c2-r4c3-r5c3-r6c3-r7c3-r7c4
+214/1122 infeasible 0.2s (4, 2) r4c2-r4c3-r5c3-r6c3-r7c3-r8c3
+215/1122 FEASIBLE 0.3s (4, 2) r4c2-r5c2-r5c1-r6c1-r7c1-r7c2
+216/1122 FEASIBLE 0.4s (4, 2) r4c2-r5c2-r5c1-r6c1-r7c1-r8c1
+217/1122 FEASIBLE 0.5s (3, 3) r4c2-r5c2-r5c3-r5c4-r5c5-r5c6
+218/1122 infeasible 0.4s (3, 3) r4c2-r5c2-r5c3-r5c4-r5c5-r6c5
+219/1122 infeasible 0.5s (3, 3) r4c2-r5c2-r5c3-r5c4-r6c4-r6c5
+220/1122 FEASIBLE 0.4s (4, 2) r4c2-r5c2-r5c3-r6c3-r6c4-r5c4
+221/1122 infeasible 0.4s (4, 2) r4c2-r5c2-r5c3-r6c3-r6c4-r6c5
+222/1122 FEASIBLE 0.3s (4, 1, 1) r4c2-r5c2-r5c3-r6c3-r6c4-r7c4
+223/1122 infeasible 0.2s (4, 2) r4c2-r5c2-r5c3-r6c3-r7c3-r7c2
+224/1122 infeasible 0.2s (4, 1, 1) r4c2-r5c2-r5c3-r6c3-r7c3-r7c4
+225/1122 infeasible 0.2s (4, 2) r4c2-r5c2-r5c3-r6c3-r7c3-r8c3
+226/1122 FEASIBLE 0.3s (4, 2) r4c2-r5c2-r6c2-r6c1-r7c1-r7c2
+227/1122 FEASIBLE 0.3s (4, 2) r4c2-r5c2-r6c2-r6c1-r7c1-r8c1
+228/1122 FEASIBLE 0.3s (4, 2) r4c2-r5c2-r6c2-r6c3-r6c4-r5c4
+229/1122 FEASIBLE 0.4s (4, 2) r4c2-r5c2-r6c2-r6c3-r6c4-r6c5
+230/1122 FEASIBLE 0.3s (4, 1, 1) r4c2-r5c2-r6c2-r6c3-r6c4-r7c4
+231/1122 infeasible 0.2s (4, 2) r4c2-r5c2-r6c2-r6c3-r7c3-r7c2
+232/1122 infeasible 0.2s (4, 1, 1) r4c2-r5c2-r6c2-r6c3-r7c3-r7c4
+233/1122 infeasible 0.2s (4, 2) r4c2-r5c2-r6c2-r6c3-r7c3-r8c3
+234/1122 FEASIBLE 0.4s (3, 3) r4c2-r5c2-r6c2-r7c2-r7c1-r8c1
+235/1122 infeasible 0.3s (3, 3) r4c2-r5c2-r6c2-r7c2-r7c3-r8c3
+236/1122 FEASIBLE 0.5s (3, 3) r4c2-r5c2-r6c2-r7c2-r8c2-r8c1
+237/1122 infeasible 0.4s (3, 3) r4c2-r5c2-r6c2-r7c2-r8c2-r8c3
+238/1122 infeasible 0.3s (3, 3) r4c2-r5c2-r6c2-r7c2-r8c2-r9c2
+239/1122 FEASIBLE 0.3s (4, 2) r4c3-r4c2-r5c2-r5c3-r5c4-r5c5
+240/1122 FEASIBLE 0.5s (4, 2) r4c3-r4c2-r5c2-r5c3-r5c4-r6c4
+241/1122 FEASIBLE 0.3s (4, 2) r4c3-r4c2-r5c2-r6c2-r7c2-r7c1
+242/1122 infeasible 0.2s (4, 2) r4c3-r4c2-r5c2-r6c2-r7c2-r7c3
+243/1122 infeasible 0.3s (4, 2) r4c3-r4c2-r5c2-r6c2-r7c2-r8c2
+244/1122 FEASIBLE 0.3s (4, 2) r4c3-r5c3-r5c2-r6c2-r7c2-r7c1
+245/1122 infeasible 0.2s (4, 2) r4c3-r5c3-r5c2-r6c2-r7c2-r7c3
+246/1122 infeasible 0.3s (4, 2) r4c3-r5c3-r5c2-r6c2-r7c2-r8c2
+247/1122 infeasible 0.2s (2, 4) r4c3-r5c3-r5c4-r5c5-r5c6-r6c6
+248/1122 infeasible 0.2s (2, 4) r4c3-r5c3-r5c4-r5c5-r6c5-r6c4
+249/1122 infeasible 0.2s (2, 4) r4c3-r5c3-r5c4-r5c5-r6c5-r6c6
+250/1122 infeasible 0.2s (2, 4) r4c3-r5c3-r5c4-r6c4-r6c5-r5c5
+251/1122 infeasible 0.2s (2, 4) r4c3-r5c3-r5c4-r6c4-r6c5-r6c6
+252/1122 infeasible 0.3s (4, 2) r4c3-r5c3-r6c3-r6c2-r7c2-r7c1
+253/1122 infeasible 0.2s (4, 2) r4c3-r5c3-r6c3-r6c2-r7c2-r7c3
+254/1122 infeasible 0.2s (4, 2) r4c3-r5c3-r6c3-r6c2-r7c2-r8c2
+255/1122 infeasible 0.2s (3, 3) r4c3-r5c3-r6c3-r6c4-r5c4-r5c5
+256/1122 infeasible 0.2s (3, 3) r4c3-r5c3-r6c3-r6c4-r6c5-r5c5
+257/1122 infeasible 0.2s (3, 3) r4c3-r5c3-r6c3-r6c4-r6c5-r6c6
+258/1122 infeasible 0.2s (3, 3) r4c3-r5c3-r6c3-r7c3-r7c2-r7c1
+259/1122 infeasible 0.2s (3, 3) r4c3-r5c3-r6c3-r7c3-r7c2-r8c2
+260/1122 infeasible 0.2s (3, 3) r4c3-r5c3-r6c3-r7c3-r8c3-r8c2
+261/1122 infeasible 0.2s (3, 3) r4c3-r5c3-r6c3-r7c3-r8c3-r9c3
+262/1122 infeasible 0.2s (3, 3) r5c1-r5c2-r5c3-r5c4-r5c5-r5c6
+263/1122 infeasible 0.3s (3, 3) r5c1-r5c2-r5c3-r5c4-r5c5-r6c5
+264/1122 infeasible 0.4s (3, 3) r5c1-r5c2-r5c3-r5c4-r6c4-r6c5
+265/1122 FEASIBLE 0.3s (4, 2) r5c1-r5c2-r5c3-r6c3-r6c4-r5c4
+266/1122 FEASIBLE 0.3s (4, 2) r5c1-r5c2-r5c3-r6c3-r6c4-r6c5
+267/1122 FEASIBLE 0.3s (4, 1, 1) r5c1-r5c2-r5c3-r6c3-r6c4-r7c4
+268/1122 FEASIBLE 0.3s (4, 2) r5c1-r5c2-r5c3-r6c3-r7c3-r7c2
+269/1122 infeasible 0.2s (4, 1, 1) r5c1-r5c2-r5c3-r6c3-r7c3-r7c4
+270/1122 infeasible 0.2s (4, 2) r5c1-r5c2-r5c3-r6c3-r7c3-r8c3
+271/1122 FEASIBLE 0.4s (4, 2) r5c1-r5c2-r6c2-r6c1-r7c1-r7c2
+272/1122 FEASIBLE 0.4s (4, 2) r5c1-r5c2-r6c2-r6c1-r7c1-r8c1
+273/1122 FEASIBLE 0.3s (4, 2) r5c1-r5c2-r6c2-r6c3-r6c4-r5c4
+274/1122 FEASIBLE 0.3s (4, 2) r5c1-r5c2-r6c2-r6c3-r6c4-r6c5
+275/1122 FEASIBLE 0.3s (4, 1, 1) r5c1-r5c2-r6c2-r6c3-r6c4-r7c4
+276/1122 FEASIBLE 0.5s (4, 2) r5c1-r5c2-r6c2-r6c3-r7c3-r7c2
+277/1122 infeasible 0.2s (4, 1, 1) r5c1-r5c2-r6c2-r6c3-r7c3-r7c4
+278/1122 infeasible 0.3s (4, 2) r5c1-r5c2-r6c2-r6c3-r7c3-r8c3
+279/1122 FEASIBLE 0.4s (3, 3) r5c1-r5c2-r6c2-r7c2-r7c1-r8c1
+280/1122 FEASIBLE 0.7s (3, 3) r5c1-r5c2-r6c2-r7c2-r7c3-r8c3
+281/1122 FEASIBLE 0.7s (3, 3) r5c1-r5c2-r6c2-r7c2-r8c2-r8c1
+282/1122 FEASIBLE 0.5s (3, 3) r5c1-r5c2-r6c2-r7c2-r8c2-r8c3
+283/1122 FEASIBLE 1.0s (3, 3) r5c1-r5c2-r6c2-r7c2-r8c2-r9c2
+284/1122 FEASIBLE 0.3s (4, 2) r5c1-r6c1-r6c2-r6c3-r6c4-r5c4
+285/1122 FEASIBLE 0.4s (4, 2) r5c1-r6c1-r6c2-r6c3-r6c4-r6c5
+286/1122 FEASIBLE 0.2s (4, 1, 1) r5c1-r6c1-r6c2-r6c3-r6c4-r7c4
+287/1122 FEASIBLE 0.4s (4, 2) r5c1-r6c1-r6c2-r6c3-r7c3-r7c2
+288/1122 infeasible 0.2s (4, 1, 1) r5c1-r6c1-r6c2-r6c3-r7c3-r7c4
+289/1122 infeasible 0.2s (4, 2) r5c1-r6c1-r6c2-r6c3-r7c3-r8c3
+290/1122 FEASIBLE 0.5s (3, 3) r5c1-r6c1-r6c2-r7c2-r7c1-r8c1
+291/1122 FEASIBLE 0.6s (3, 3) r5c1-r6c1-r6c2-r7c2-r7c3-r8c3
+292/1122 FEASIBLE 0.8s (3, 3) r5c1-r6c1-r6c2-r7c2-r8c2-r8c1
+293/1122 FEASIBLE 0.4s (3, 3) r5c1-r6c1-r6c2-r7c2-r8c2-r8c3
+294/1122 FEASIBLE 0.6s (3, 3) r5c1-r6c1-r6c2-r7c2-r8c2-r9c2
+295/1122 FEASIBLE 0.6s (2, 4) r5c1-r6c1-r7c1-r7c2-r7c3-r8c3
+296/1122 FEASIBLE 0.3s (2, 4) r5c1-r6c1-r7c1-r7c2-r8c2-r8c1
+297/1122 FEASIBLE 0.3s (2, 4) r5c1-r6c1-r7c1-r7c2-r8c2-r8c3
+298/1122 FEASIBLE 0.7s (2, 4) r5c1-r6c1-r7c1-r7c2-r8c2-r9c2
+299/1122 FEASIBLE 0.3s (2, 4) r5c1-r6c1-r7c1-r8c1-r8c2-r7c2
+300/1122 FEASIBLE 0.6s (2, 4) r5c1-r6c1-r7c1-r8c1-r8c2-r8c3
+301/1122 FEASIBLE 0.4s (2, 4) r5c1-r6c1-r7c1-r8c1-r8c2-r9c2
+302/1122 FEASIBLE 0.4s (2, 4) r5c1-r6c1-r7c1-r8c1-r9c1-r9c2
+303/1122 FEASIBLE 0.2s (4, 2) r5c2-r4c2-r4c3-r5c3-r5c4-r5c5
+304/1122 FEASIBLE 0.5s (4, 2) r5c2-r4c2-r4c3-r5c3-r5c4-r6c4
+305/1122 FEASIBLE 0.4s (4, 2) r5c2-r5c1-r6c1-r6c2-r7c2-r7c1
+306/1122 FEASIBLE 0.3s (4, 2) r5c2-r5c1-r6c1-r6c2-r7c2-r7c3
+307/1122 FEASIBLE 0.4s (4, 2) r5c2-r5c1-r6c1-r6c2-r7c2-r8c2
+308/1122 FEASIBLE 0.3s (3, 3) r5c2-r5c1-r6c1-r7c1-r7c2-r7c3
+309/1122 FEASIBLE 0.5s (3, 3) r5c2-r5c1-r6c1-r7c1-r7c2-r8c2
+310/1122 FEASIBLE 0.4s (3, 3) r5c2-r5c1-r6c1-r7c1-r8c1-r8c2
+311/1122 FEASIBLE 0.3s (3, 3) r5c2-r5c1-r6c1-r7c1-r8c1-r9c1
+312/1122 FEASIBLE 0.2s (2, 4) r5c2-r5c3-r5c4-r5c5-r5c6-r6c6
+313/1122 infeasible 0.2s (2, 4) r5c2-r5c3-r5c4-r5c5-r6c5-r6c4
+314/1122 infeasible 0.2s (2, 4) r5c2-r5c3-r5c4-r5c5-r6c5-r6c6
+315/1122 infeasible 0.2s (2, 4) r5c2-r5c3-r5c4-r6c4-r6c5-r5c5
+316/1122 infeasible 0.2s (2, 4) r5c2-r5c3-r5c4-r6c4-r6c5-r6c6
+317/1122 FEASIBLE 0.4s (4, 2) r5c2-r5c3-r6c3-r6c2-r7c2-r7c1
+318/1122 infeasible 0.2s (4, 2) r5c2-r5c3-r6c3-r6c2-r7c2-r7c3
+319/1122 infeasible 0.2s (4, 2) r5c2-r5c3-r6c3-r6c2-r7c2-r8c2
+320/1122 infeasible 0.3s (3, 3) r5c2-r5c3-r6c3-r6c4-r5c4-r5c5
+321/1122 infeasible 0.3s (3, 3) r5c2-r5c3-r6c3-r6c4-r6c5-r5c5
+322/1122 infeasible 0.4s (3, 3) r5c2-r5c3-r6c3-r6c4-r6c5-r6c6
+323/1122 infeasible 0.3s (3, 3) r5c2-r5c3-r6c3-r7c3-r7c2-r7c1
+324/1122 infeasible 0.3s (3, 3) r5c2-r5c3-r6c3-r7c3-r7c2-r8c2
+325/1122 infeasible 0.2s (3, 3) r5c2-r5c3-r6c3-r7c3-r8c3-r8c2
+326/1122 infeasible 0.2s (3, 3) r5c2-r5c3-r6c3-r7c3-r8c3-r9c3
+327/1122 FEASIBLE 0.6s (3, 3) r5c2-r6c2-r6c1-r7c1-r7c2-r7c3
+328/1122 FEASIBLE 0.6s (3, 3) r5c2-r6c2-r6c1-r7c1-r7c2-r8c2
+329/1122 FEASIBLE 0.3s (3, 3) r5c2-r6c2-r6c1-r7c1-r8c1-r8c2
+330/1122 FEASIBLE 0.4s (3, 3) r5c2-r6c2-r6c1-r7c1-r8c1-r9c1
+331/1122 infeasible 0.3s (4, 2) r5c2-r6c2-r6c3-r5c3-r5c4-r5c5
+332/1122 FEASIBLE 0.3s (4, 2) r5c2-r6c2-r6c3-r5c3-r5c4-r6c4
+333/1122 FEASIBLE 0.3s (3, 3) r5c2-r6c2-r6c3-r6c4-r5c4-r5c5
+334/1122 FEASIBLE 0.2s (3, 3) r5c2-r6c2-r6c3-r6c4-r6c5-r5c5
+335/1122 FEASIBLE 0.4s (3, 3) r5c2-r6c2-r6c3-r6c4-r6c5-r6c6
+336/1122 FEASIBLE 0.5s (3, 3) r5c2-r6c2-r6c3-r7c3-r7c2-r7c1
+337/1122 infeasible 0.4s (3, 3) r5c2-r6c2-r6c3-r7c3-r7c2-r8c2
+338/1122 infeasible 0.3s (3, 3) r5c2-r6c2-r6c3-r7c3-r8c3-r8c2
+339/1122 infeasible 0.2s (3, 3) r5c2-r6c2-r6c3-r7c3-r8c3-r9c3
+340/1122 FEASIBLE 0.3s (2, 4) r5c2-r6c2-r7c2-r7c1-r8c1-r8c2
+341/1122 FEASIBLE 0.3s (2, 4) r5c2-r6c2-r7c2-r7c1-r8c1-r9c1
+342/1122 infeasible 0.2s (2, 4) r5c2-r6c2-r7c2-r7c3-r8c3-r8c2
+343/1122 infeasible 0.2s (2, 4) r5c2-r6c2-r7c2-r7c3-r8c3-r9c3
+344/1122 FEASIBLE 0.3s (2, 4) r5c2-r6c2-r7c2-r8c2-r8c1-r7c1
+345/1122 FEASIBLE 0.3s (2, 4) r5c2-r6c2-r7c2-r8c2-r8c1-r9c1
+346/1122 infeasible 0.2s (2, 4) r5c2-r6c2-r7c2-r8c2-r8c3-r7c3
+347/1122 infeasible 0.3s (2, 4) r5c2-r6c2-r7c2-r8c2-r8c3-r9c3
+348/1122 FEASIBLE 0.3s (2, 4) r5c2-r6c2-r7c2-r8c2-r9c2-r9c1
+349/1122 infeasible 0.3s (2, 4) r5c2-r6c2-r7c2-r8c2-r9c2-r9c3
+350/1122 FEASIBLE 0.3s (4, 2) r5c3-r5c2-r5c1-r6c1-r7c1-r7c2
+351/1122 FEASIBLE 0.3s (4, 2) r5c3-r5c2-r5c1-r6c1-r7c1-r8c1
+352/1122 FEASIBLE 0.4s (4, 2) r5c3-r5c2-r6c2-r6c1-r7c1-r7c2
+353/1122 FEASIBLE 0.3s (4, 2) r5c3-r5c2-r6c2-r6c1-r7c1-r8c1
+354/1122 FEASIBLE 0.3s (4, 2) r5c3-r5c2-r6c2-r6c3-r6c4-r5c4
+355/1122 FEASIBLE 0.3s (4, 2) r5c3-r5c2-r6c2-r6c3-r6c4-r6c5
+356/1122 FEASIBLE 0.3s (4, 1, 1) r5c3-r5c2-r6c2-r6c3-r6c4-r7c4
+357/1122 infeasible 0.2s (4, 2) r5c3-r5c2-r6c2-r6c3-r7c3-r7c2
+358/1122 infeasible 0.2s (4, 1, 1) r5c3-r5c2-r6c2-r6c3-r7c3-r7c4
+359/1122 infeasible 0.2s (4, 2) r5c3-r5c2-r6c2-r6c3-r7c3-r8c3
+360/1122 FEASIBLE 0.3s (3, 3) r5c3-r5c2-r6c2-r7c2-r7c1-r8c1
+361/1122 infeasible 0.3s (3, 3) r5c3-r5c2-r6c2-r7c2-r7c3-r8c3
+362/1122 FEASIBLE 0.7s (3, 3) r5c3-r5c2-r6c2-r7c2-r8c2-r8c1
+363/1122 infeasible 0.5s (3, 3) r5c3-r5c2-r6c2-r7c2-r8c2-r8c3
+364/1122 infeasible 0.3s (3, 3) r5c3-r5c2-r6c2-r7c2-r8c2-r9c2
+365/1122 infeasible 0.2s (1, 4, 1) r5c3-r5c4-r5c5-r5c6-r6c6-r6c7
+366/1122 infeasible 0.1s (1, 4, 1) r5c3-r5c4-r5c5-r5c6-r6c6-r7c6
+367/1122 infeasible 0.2s (1, 4, 1) r5c3-r5c4-r5c5-r6c5-r6c4-r6c3
+368/1122 infeasible 0.2s (1, 4, 1) r5c3-r5c4-r5c5-r6c5-r6c4-r7c4
+369/1122 infeasible 0.2s (1, 4, 1) r5c3-r5c4-r5c5-r6c5-r6c6-r6c7
+370/1122 infeasible 0.0s (1, 4, 1) r5c3-r5c4-r5c5-r6c5-r6c6-r7c6
+371/1122 infeasible 0.2s (1, 4, 1) r5c3-r5c4-r6c4-r6c5-r6c6-r6c7
+372/1122 infeasible 0.0s (1, 4, 1) r5c3-r5c4-r6c4-r6c5-r6c6-r7c6
+373/1122 FEASIBLE 0.4s (4, 2) r5c3-r6c3-r6c2-r6c1-r7c1-r7c2
+374/1122 FEASIBLE 0.3s (4, 2) r5c3-r6c3-r6c2-r6c1-r7c1-r8c1
+375/1122 FEASIBLE 0.5s (3, 3) r5c3-r6c3-r6c2-r7c2-r7c1-r8c1
+376/1122 infeasible 0.2s (3, 3) r5c3-r6c3-r6c2-r7c2-r7c3-r8c3
+377/1122 FEASIBLE 0.4s (3, 3) r5c3-r6c3-r6c2-r7c2-r8c2-r8c1
+378/1122 infeasible 0.3s (3, 3) r5c3-r6c3-r6c2-r7c2-r8c2-r8c3
+379/1122 infeasible 0.4s (3, 3) r5c3-r6c3-r6c2-r7c2-r8c2-r9c2
+380/1122 infeasible 0.2s (2, 4) r5c3-r6c3-r6c4-r5c4-r5c5-r5c6
+381/1122 infeasible 0.2s (2, 4) r5c3-r6c3-r6c4-r5c4-r5c5-r6c5
+382/1122 infeasible 0.2s (2, 4) r5c3-r6c3-r6c4-r6c5-r5c5-r5c4
+383/1122 infeasible 0.2s (2, 4) r5c3-r6c3-r6c4-r6c5-r5c5-r5c6
+384/1122 infeasible 0.2s (2, 4) r5c3-r6c3-r6c4-r6c5-r6c6-r5c6
+385/1122 infeasible 0.2s (2, 4) r5c3-r6c3-r7c3-r7c2-r7c1-r8c1
+386/1122 infeasible 0.2s (2, 4) r5c3-r6c3-r7c3-r7c2-r8c2-r8c1
+387/1122 infeasible 0.2s (2, 4) r5c3-r6c3-r7c3-r7c2-r8c2-r8c3
+388/1122 infeasible 0.2s (2, 4) r5c3-r6c3-r7c3-r7c2-r8c2-r9c2
+389/1122 infeasible 0.2s (2, 4) r5c3-r6c3-r7c3-r8c3-r8c2-r7c2
+390/1122 infeasible 0.2s (2, 4) r5c3-r6c3-r7c3-r8c3-r8c2-r8c1
+391/1122 infeasible 0.2s (2, 4) r5c3-r6c3-r7c3-r8c3-r8c2-r9c2
+392/1122 infeasible 0.2s (2, 4) r5c3-r6c3-r7c3-r8c3-r9c3-r9c2
+393/1122 FEASIBLE 0.3s (1, 4, 1) r5c4-r5c3-r5c2-r5c1-r6c1-r7c1
+394/1122 FEASIBLE 0.3s (1, 4, 1) r5c4-r5c3-r5c2-r6c2-r6c1-r7c1
+395/1122 infeasible 0.2s (1, 4, 1) r5c4-r5c3-r5c2-r6c2-r6c3-r6c4
+396/1122 infeasible 0.2s (1, 4, 1) r5c4-r5c3-r5c2-r6c2-r6c3-r7c3
+397/1122 FEASIBLE 0.3s (1, 4, 1) r5c4-r5c3-r6c3-r6c2-r6c1-r7c1
+398/1122 FEASIBLE 0.4s (3, 3) r5c4-r5c5-r5c6-r5c7-r6c7-r6c8
+399/1122 infeasible 0.2s (4, 2) r5c4-r5c5-r5c6-r6c6-r6c7-r5c7
+400/1122 FEASIBLE 0.4s (4, 2) r5c4-r5c5-r5c6-r6c6-r6c7-r6c8
+401/1122 infeasible 0.2s (4, 1, 1) r5c4-r5c5-r5c6-r6c6-r6c7-r7c7
+402/1122 infeasible 0.3s (4, 2) r5c4-r5c5-r5c6-r6c6-r7c6-r7c5
+403/1122 FEASIBLE 0.2s (4, 1, 1) r5c4-r5c5-r5c6-r6c6-r7c6-r7c7
+404/1122 FEASIBLE 0.4s (4, 2) r5c4-r5c5-r5c6-r6c6-r7c6-r8c6
+405/1122 infeasible 0.2s (4, 2) r5c4-r5c5-r6c5-r6c4-r6c3-r6c2
+406/1122 infeasible 0.2s (4, 1, 1) r5c4-r5c5-r6c5-r6c4-r6c3-r7c3
+407/1122 infeasible 0.2s (4, 1, 1) r5c4-r5c5-r6c5-r6c4-r7c4-r7c3
+408/1122 infeasible 0.2s (4, 2) r5c4-r5c5-r6c5-r6c4-r7c4-r7c5
+409/1122 infeasible 0.3s (4, 2) r5c4-r5c5-r6c5-r6c4-r7c4-r8c4
+410/1122 infeasible 0.2s (4, 2) r5c4-r5c5-r6c5-r6c6-r6c7-r5c7
+411/1122 infeasible 0.2s (4, 2) r5c4-r5c5-r6c5-r6c6-r6c7-r6c8
+412/1122 infeasible 0.2s (4, 1, 1) r5c4-r5c5-r6c5-r6c6-r6c7-r7c7
+413/1122 infeasible 0.2s (4, 2) r5c4-r5c5-r6c5-r6c6-r7c6-r7c5
+414/1122 infeasible 0.2s (4, 1, 1) r5c4-r5c5-r6c5-r6c6-r7c6-r7c7
+415/1122 infeasible 0.3s (4, 2) r5c4-r5c5-r6c5-r6c6-r7c6-r8c6
+416/1122 infeasible 0.3s (3, 3) r5c4-r5c5-r6c5-r7c5-r7c4-r8c4
+417/1122 FEASIBLE 0.6s (3, 3) r5c4-r5c5-r6c5-r7c5-r7c6-r8c6
+418/1122 infeasible 0.4s (3, 3) r5c4-r5c5-r6c5-r7c5-r8c5-r8c4
+419/1122 infeasible 0.4s (3, 3) r5c4-r5c5-r6c5-r7c5-r8c5-r8c6
+420/1122 infeasible 0.3s (3, 3) r5c4-r5c5-r6c5-r7c5-r8c5-r9c5
+421/1122 FEASIBLE 0.3s (2, 4) r5c4-r6c4-r6c3-r5c3-r5c2-r6c2
+422/1122 infeasible 0.2s (4, 2) r5c4-r6c4-r6c5-r6c6-r6c7-r5c7
+423/1122 infeasible 0.2s (4, 2) r5c4-r6c4-r6c5-r6c6-r6c7-r6c8
+424/1122 infeasible 0.2s (4, 1, 1) r5c4-r6c4-r6c5-r6c6-r6c7-r7c7
+425/1122 infeasible 0.3s (4, 2) r5c4-r6c4-r6c5-r6c6-r7c6-r7c5
+426/1122 infeasible 0.2s (4, 1, 1) r5c4-r6c4-r6c5-r6c6-r7c6-r7c7
+427/1122 infeasible 0.2s (4, 2) r5c4-r6c4-r6c5-r6c6-r7c6-r8c6
+428/1122 infeasible 0.4s (3, 3) r5c4-r6c4-r6c5-r7c5-r7c4-r8c4
+429/1122 FEASIBLE 0.5s (3, 3) r5c4-r6c4-r6c5-r7c5-r7c6-r8c6
+430/1122 infeasible 0.3s (3, 3) r5c4-r6c4-r6c5-r7c5-r8c5-r8c4
+431/1122 FEASIBLE 0.4s (3, 3) r5c4-r6c4-r6c5-r7c5-r8c5-r8c6
+432/1122 infeasible 0.3s (3, 3) r5c4-r6c4-r6c5-r7c5-r8c5-r9c5
+433/1122 FEASIBLE 0.2s (2, 4) r5c4-r6c4-r7c4-r7c5-r7c6-r8c6
+434/1122 infeasible 0.3s (2, 4) r5c4-r6c4-r7c4-r7c5-r8c5-r8c4
+435/1122 FEASIBLE 0.4s (2, 4) r5c4-r6c4-r7c4-r7c5-r8c5-r8c6
+436/1122 infeasible 0.3s (2, 4) r5c4-r6c4-r7c4-r7c5-r8c5-r9c5
+437/1122 infeasible 0.2s (2, 4) r5c4-r6c4-r7c4-r8c4-r8c5-r7c5
+438/1122 infeasible 0.3s (2, 4) r5c4-r6c4-r7c4-r8c4-r8c5-r8c6
+439/1122 infeasible 0.2s (2, 4) r5c4-r6c4-r7c4-r8c4-r8c5-r9c5
+440/1122 infeasible 0.3s (2, 4) r5c4-r6c4-r7c4-r8c4-r9c4-r9c5
+441/1122 infeasible 0.2s (2, 4) r5c5-r5c4-r5c3-r5c2-r5c1-r6c1
+442/1122 FEASIBLE 0.3s (2, 4) r5c5-r5c4-r5c3-r5c2-r6c2-r6c1
+443/1122 infeasible 0.3s (2, 4) r5c5-r5c4-r5c3-r5c2-r6c2-r6c3
+444/1122 infeasible 0.3s (2, 4) r5c5-r5c4-r5c3-r6c3-r6c2-r6c1
+445/1122 infeasible 0.5s (3, 3) r5c5-r5c4-r6c4-r6c3-r6c2-r6c1
+446/1122 infeasible 0.2s (4, 2) r5c5-r5c4-r6c4-r6c5-r7c5-r7c4
+447/1122 infeasible 0.2s (4, 2) r5c5-r5c4-r6c4-r6c5-r7c5-r7c6
+448/1122 infeasible 0.2s (4, 2) r5c5-r5c4-r6c4-r6c5-r7c5-r8c5
+449/1122 FEASIBLE 0.5s (3, 3) r5c5-r5c4-r6c4-r7c4-r7c5-r7c6
+450/1122 infeasible 0.4s (3, 3) r5c5-r5c4-r6c4-r7c4-r7c5-r8c5
+451/1122 infeasible 0.3s (3, 3) r5c5-r5c4-r6c4-r7c4-r8c4-r8c5
+452/1122 infeasible 0.3s (3, 3) r5c5-r5c4-r6c4-r7c4-r8c4-r9c4
+453/1122 infeasible 0.3s (4, 2) r5c5-r5c6-r6c6-r6c5-r7c5-r7c4
+454/1122 infeasible 0.3s (4, 2) r5c5-r5c6-r6c6-r6c5-r7c5-r7c6
+455/1122 infeasible 0.2s (4, 2) r5c5-r5c6-r6c6-r6c5-r7c5-r8c5
+456/1122 FEASIBLE 0.4s (3, 3) r5c5-r5c6-r6c6-r7c6-r7c5-r7c4
+457/1122 FEASIBLE 0.3s (3, 3) r5c5-r5c6-r6c6-r7c6-r7c5-r8c5
+458/1122 FEASIBLE 0.5s (3, 3) r5c5-r5c6-r6c6-r7c6-r8c6-r8c5
+459/1122 FEASIBLE 0.3s (3, 3) r5c5-r5c6-r6c6-r7c6-r8c6-r9c6
+460/1122 infeasible 0.2s (4, 2) r5c5-r6c5-r6c4-r5c4-r5c3-r6c3
+461/1122 infeasible 0.5s (3, 3) r5c5-r6c5-r6c4-r6c3-r6c2-r6c1
+462/1122 FEASIBLE 0.3s (3, 3) r5c5-r6c5-r6c4-r7c4-r7c5-r7c6
+463/1122 infeasible 0.4s (3, 3) r5c5-r6c5-r6c4-r7c4-r7c5-r8c5
+464/1122 infeasible 0.3s (3, 3) r5c5-r6c5-r6c4-r7c4-r8c4-r8c5
+465/1122 infeasible 0.3s (3, 3) r5c5-r6c5-r6c4-r7c4-r8c4-r9c4
+466/1122 infeasible 0.2s (4, 2) r5c5-r6c5-r6c6-r5c6-r5c7-r6c7
+467/1122 FEASIBLE 0.4s (3, 3) r5c5-r6c5-r6c6-r7c6-r7c5-r7c4
+468/1122 infeasible 0.3s (3, 3) r5c5-r6c5-r6c6-r7c6-r7c5-r8c5
+469/1122 FEASIBLE 0.4s (3, 3) r5c5-r6c5-r6c6-r7c6-r8c6-r8c5
+470/1122 infeasible 0.4s (3, 3) r5c5-r6c5-r6c6-r7c6-r8c6-r9c6
+471/1122 infeasible 0.2s (2, 4) r5c5-r6c5-r7c5-r7c4-r8c4-r8c5
+472/1122 infeasible 0.2s (2, 4) r5c5-r6c5-r7c5-r7c4-r8c4-r9c4
+473/1122 infeasible 0.3s (2, 4) r5c5-r6c5-r7c5-r7c6-r8c6-r8c5
+474/1122 FEASIBLE 0.3s (2, 4) r5c5-r6c5-r7c5-r7c6-r8c6-r9c6
+475/1122 infeasible 0.2s (2, 4) r5c5-r6c5-r7c5-r8c5-r8c4-r7c4
+476/1122 infeasible 0.3s (2, 4) r5c5-r6c5-r7c5-r8c5-r8c4-r9c4
+477/1122 infeasible 0.3s (2, 4) r5c5-r6c5-r7c5-r8c5-r8c6-r7c6
+478/1122 infeasible 0.3s (2, 4) r5c5-r6c5-r7c5-r8c5-r8c6-r9c6
+479/1122 infeasible 0.2s (2, 4) r5c5-r6c5-r7c5-r8c5-r9c5-r9c4
+480/1122 infeasible 0.2s (2, 4) r5c5-r6c5-r7c5-r8c5-r9c5-r9c6
+481/1122 FEASIBLE 0.3s (3, 3) r5c6-r5c5-r5c4-r5c3-r5c2-r6c2
+482/1122 FEASIBLE 0.6s (3, 3) r5c6-r5c5-r5c4-r5c3-r6c3-r6c2
+483/1122 FEASIBLE 0.5s (4, 2) r5c6-r5c5-r5c4-r6c4-r6c3-r6c2
+484/1122 infeasible 0.2s (4, 1, 1) r5c6-r5c5-r5c4-r6c4-r6c3-r7c3
+485/1122 infeasible 0.2s (4, 1, 1) r5c6-r5c5-r5c4-r6c4-r7c4-r7c3
+486/1122 FEASIBLE 0.3s (4, 2) r5c6-r5c5-r5c4-r6c4-r7c4-r7c5
+487/1122 infeasible 0.3s (4, 2) r5c6-r5c5-r5c4-r6c4-r7c4-r8c4
+488/1122 infeasible 0.2s (4, 2) r5c6-r5c5-r6c5-r6c4-r6c3-r6c2
+489/1122 infeasible 0.2s (4, 1, 1) r5c6-r5c5-r6c5-r6c4-r6c3-r7c3
+490/1122 infeasible 0.2s (4, 1, 1) r5c6-r5c5-r6c5-r6c4-r7c4-r7c3
+491/1122 infeasible 0.3s (4, 2) r5c6-r5c5-r6c5-r6c4-r7c4-r7c5
+492/1122 infeasible 0.3s (4, 2) r5c6-r5c5-r6c5-r6c4-r7c4-r8c4
+493/1122 infeasible 0.2s (4, 2) r5c6-r5c5-r6c5-r6c6-r6c7-r5c7
+494/1122 infeasible 0.2s (4, 2) r5c6-r5c5-r6c5-r6c6-r6c7-r6c8
+495/1122 infeasible 0.2s (4, 1, 1) r5c6-r5c5-r6c5-r6c6-r6c7-r7c7
+496/1122 infeasible 0.3s (4, 2) r5c6-r5c5-r6c5-r6c6-r7c6-r7c5
+497/1122 infeasible 0.2s (4, 1, 1) r5c6-r5c5-r6c5-r6c6-r7c6-r7c7
+498/1122 infeasible 0.3s (4, 2) r5c6-r5c5-r6c5-r6c6-r7c6-r8c6
+499/1122 infeasible 0.3s (3, 3) r5c6-r5c5-r6c5-r7c5-r7c4-r8c4
+500/1122 FEASIBLE 0.4s (3, 3) r5c6-r5c5-r6c5-r7c5-r7c6-r8c6
+501/1122 infeasible 0.4s (3, 3) r5c6-r5c5-r6c5-r7c5-r8c5-r8c4
+502/1122 infeasible 0.4s (3, 3) r5c6-r5c5-r6c5-r7c5-r8c5-r8c6
+503/1122 infeasible 0.3s (3, 3) r5c6-r5c5-r6c5-r7c5-r8c5-r9c5
+504/1122 infeasible 0.2s (4, 2) r5c6-r6c6-r6c5-r6c4-r6c3-r6c2
+505/1122 infeasible 0.2s (4, 1, 1) r5c6-r6c6-r6c5-r6c4-r6c3-r7c3
+506/1122 infeasible 0.2s (4, 1, 1) r5c6-r6c6-r6c5-r6c4-r7c4-r7c3
+507/1122 infeasible 0.2s (4, 2) r5c6-r6c6-r6c5-r6c4-r7c4-r7c5
+508/1122 infeasible 0.3s (4, 2) r5c6-r6c6-r6c5-r6c4-r7c4-r8c4
+509/1122 infeasible 0.4s (3, 3) r5c6-r6c6-r6c5-r7c5-r7c4-r8c4
+510/1122 FEASIBLE 0.4s (3, 3) r5c6-r6c6-r6c5-r7c5-r7c6-r8c6
+511/1122 infeasible 0.4s (3, 3) r5c6-r6c6-r6c5-r7c5-r8c5-r8c4
+512/1122 FEASIBLE 0.3s (3, 3) r5c6-r6c6-r6c5-r7c5-r8c5-r8c6
+513/1122 infeasible 0.4s (3, 3) r5c6-r6c6-r6c5-r7c5-r8c5-r9c5
+514/1122 FEASIBLE 0.3s (2, 4) r5c6-r6c6-r7c6-r7c5-r7c4-r8c4
+515/1122 FEASIBLE 0.4s (2, 4) r5c6-r6c6-r7c6-r7c5-r8c5-r8c4
+516/1122 FEASIBLE 0.3s (2, 4) r5c6-r6c6-r7c6-r7c5-r8c5-r8c6
+517/1122 FEASIBLE 0.3s (2, 4) r5c6-r6c6-r7c6-r7c5-r8c5-r9c5
+518/1122 FEASIBLE 0.3s (2, 4) r5c6-r6c6-r7c6-r8c6-r8c5-r7c5
+519/1122 FEASIBLE 0.3s (2, 4) r5c6-r6c6-r7c6-r8c6-r8c5-r8c4
+520/1122 FEASIBLE 0.4s (2, 4) r5c6-r6c6-r7c6-r8c6-r8c5-r9c5
+521/1122 FEASIBLE 0.4s (2, 4) r5c6-r6c6-r7c6-r8c6-r9c6-r9c5
+522/1122 infeasible 0.2s (1, 4, 1) r5c7-r5c6-r5c5-r5c4-r6c4-r6c3
+523/1122 infeasible 0.2s (1, 4, 1) r5c7-r5c6-r5c5-r5c4-r6c4-r7c4
+524/1122 infeasible 0.2s (1, 4, 1) r5c7-r5c6-r5c5-r6c5-r6c4-r6c3
+525/1122 infeasible 0.2s (1, 4, 1) r5c7-r5c6-r5c5-r6c5-r6c4-r7c4
+526/1122 infeasible 0.2s (1, 4, 1) r5c7-r5c6-r5c5-r6c5-r6c6-r6c7
+527/1122 infeasible 0.0s (1, 4, 1) r5c7-r5c6-r5c5-r6c5-r6c6-r7c6
+528/1122 infeasible 0.2s (1, 4, 1) r5c7-r5c6-r6c6-r6c5-r6c4-r6c3
+529/1122 infeasible 0.2s (1, 4, 1) r5c7-r5c6-r6c6-r6c5-r6c4-r7c4
+530/1122 infeasible 0.2s (2, 4) r5c7-r6c7-r6c6-r5c6-r5c5-r6c5
+531/1122 FEASIBLE 0.3s (3, 3) r5c7-r6c7-r6c8-r7c8-r7c7-r8c7
+532/1122 FEASIBLE 0.3s (3, 3) r5c7-r6c7-r6c8-r7c8-r8c8-r8c7
+533/1122 infeasible 0.2s (3, 3) r5c7-r6c7-r6c8-r7c8-r8c8-r9c8
+534/1122 infeasible 0.2s (2, 4) r5c7-r6c7-r7c7-r7c8-r8c8-r8c7
+535/1122 infeasible 0.2s (2, 4) r5c7-r6c7-r7c7-r7c8-r8c8-r9c8
+536/1122 infeasible 0.2s (2, 4) r5c7-r6c7-r7c7-r8c7-r8c8-r7c8
+537/1122 infeasible 0.2s (2, 4) r5c7-r6c7-r7c7-r8c7-r8c8-r9c8
+538/1122 infeasible 0.2s (2, 4) r5c7-r6c7-r7c7-r8c7-r9c7-r9c8
+539/1122 FEASIBLE 0.4s (4, 2) r6c1-r5c1-r5c2-r5c3-r5c4-r6c4
+540/1122 FEASIBLE 0.4s (4, 2) r6c1-r5c1-r5c2-r6c2-r7c2-r7c1
+541/1122 FEASIBLE 0.3s (4, 2) r6c1-r5c1-r5c2-r6c2-r7c2-r7c3
+542/1122 FEASIBLE 0.4s (4, 2) r6c1-r5c1-r5c2-r6c2-r7c2-r8c2
+543/1122 FEASIBLE 0.3s (4, 2) r6c1-r6c2-r5c2-r5c3-r5c4-r6c4
+544/1122 infeasible 0.3s (4, 2) r6c1-r6c2-r6c3-r5c3-r5c4-r6c4
+545/1122 infeasible 0.4s (3, 3) r6c1-r6c2-r6c3-r6c4-r6c5-r6c6
+546/1122 FEASIBLE 0.8s (3, 3) r6c1-r6c2-r6c3-r7c3-r7c2-r7c1
+547/1122 FEASIBLE 0.4s (3, 3) r6c1-r6c2-r6c3-r7c3-r7c2-r8c2
+548/1122 FEASIBLE 0.4s (3, 3) r6c1-r6c2-r6c3-r7c3-r8c3-r8c2
+549/1122 infeasible 0.2s (3, 3) r6c1-r6c2-r6c3-r7c3-r8c3-r9c3
+550/1122 FEASIBLE 0.4s (2, 4) r6c1-r6c2-r7c2-r7c1-r8c1-r8c2
+551/1122 FEASIBLE 0.6s (2, 4) r6c1-r6c2-r7c2-r7c1-r8c1-r9c1
+552/1122 FEASIBLE 1.1s (2, 4) r6c1-r6c2-r7c2-r7c3-r8c3-r8c2
+553/1122 infeasible 0.2s (2, 4) r6c1-r6c2-r7c2-r7c3-r8c3-r9c3
+554/1122 FEASIBLE 0.4s (2, 4) r6c1-r6c2-r7c2-r8c2-r8c1-r7c1
+555/1122 FEASIBLE 1.1s (2, 4) r6c1-r6c2-r7c2-r8c2-r8c1-r9c1
+556/1122 FEASIBLE 1.1s (2, 4) r6c1-r6c2-r7c2-r8c2-r8c3-r7c3
+557/1122 FEASIBLE 0.6s (2, 4) r6c1-r6c2-r7c2-r8c2-r8c3-r9c3
+558/1122 FEASIBLE 0.4s (2, 4) r6c1-r6c2-r7c2-r8c2-r9c2-r9c1
+559/1122 FEASIBLE 0.5s (2, 4) r6c1-r6c2-r7c2-r8c2-r9c2-r9c3
+560/1122 FEASIBLE 0.4s (1, 4, 1) r6c1-r7c1-r7c2-r7c3-r8c3-r8c4
+561/1122 FEASIBLE 0.3s (1, 4, 1) r6c1-r7c1-r7c2-r8c2-r8c3-r8c4
+562/1122 FEASIBLE 0.3s (1, 4, 1) r6c1-r7c1-r8c1-r8c2-r7c2-r6c2
+563/1122 FEASIBLE 0.3s (1, 4, 1) r6c1-r7c1-r8c1-r8c2-r8c3-r8c4
+564/1122 FEASIBLE 0.4s (4, 2) r6c2-r5c2-r5c1-r6c1-r7c1-r7c2
+565/1122 FEASIBLE 0.4s (4, 2) r6c2-r5c2-r5c1-r6c1-r7c1-r8c1
+566/1122 FEASIBLE 0.3s (3, 3) r6c2-r5c2-r5c3-r5c4-r5c5-r6c5
+567/1122 FEASIBLE 0.4s (3, 3) r6c2-r5c2-r5c3-r5c4-r6c4-r6c5
+568/1122 FEASIBLE 0.3s (4, 2) r6c2-r5c2-r5c3-r6c3-r6c4-r6c5
+569/1122 FEASIBLE 0.3s (4, 1, 1) r6c2-r5c2-r5c3-r6c3-r6c4-r7c4
+570/1122 infeasible 0.2s (4, 2) r6c2-r5c2-r5c3-r6c3-r7c3-r7c2
+571/1122 infeasible 0.2s (4, 1, 1) r6c2-r5c2-r5c3-r6c3-r7c3-r7c4
+572/1122 infeasible 0.2s (4, 2) r6c2-r5c2-r5c3-r6c3-r7c3-r8c3
+573/1122 FEASIBLE 0.5s (2, 4) r6c2-r6c1-r7c1-r7c2-r7c3-r8c3
+574/1122 FEASIBLE 0.4s (2, 4) r6c2-r6c1-r7c1-r7c2-r8c2-r8c1
+575/1122 FEASIBLE 0.3s (2, 4) r6c2-r6c1-r7c1-r7c2-r8c2-r8c3
+576/1122 FEASIBLE 0.4s (2, 4) r6c2-r6c1-r7c1-r7c2-r8c2-r9c2
+577/1122 FEASIBLE 0.4s (2, 4) r6c2-r6c1-r7c1-r8c1-r8c2-r7c2
+578/1122 FEASIBLE 0.5s (2, 4) r6c2-r6c1-r7c1-r8c1-r8c2-r8c3
+579/1122 FEASIBLE 0.4s (2, 4) r6c2-r6c1-r7c1-r8c1-r8c2-r9c2
+580/1122 FEASIBLE 0.5s (2, 4) r6c2-r6c1-r7c1-r8c1-r9c1-r9c2
+581/1122 infeasible 0.3s (3, 3) r6c2-r6c3-r5c3-r5c4-r5c5-r6c5
+582/1122 infeasible 0.3s (3, 3) r6c2-r6c3-r5c3-r5c4-r6c4-r6c5
+583/1122 infeasible 0.2s (2, 4) r6c2-r6c3-r6c4-r5c4-r5c5-r6c5
+584/1122 FEASIBLE 0.5s (2, 4) r6c2-r6c3-r7c3-r7c2-r7c1-r8c1
+585/1122 FEASIBLE 0.5s (2, 4) r6c2-r6c3-r7c3-r7c2-r8c2-r8c1
+586/1122 infeasible 0.2s (2, 4) r6c2-r6c3-r7c3-r7c2-r8c2-r8c3
+587/1122 infeasible 0.2s (2, 4) r6c2-r6c3-r7c3-r7c2-r8c2-r9c2
+588/1122 infeasible 0.2s (2, 4) r6c2-r6c3-r7c3-r8c3-r8c2-r7c2
+589/1122 FEASIBLE 0.6s (2, 4) r6c2-r6c3-r7c3-r8c3-r8c2-r8c1
+590/1122 infeasible 0.2s (2, 4) r6c2-r6c3-r7c3-r8c3-r8c2-r9c2
+591/1122 infeasible 0.2s (2, 4) r6c2-r6c3-r7c3-r8c3-r9c3-r9c2
+592/1122 FEASIBLE 0.5s (1, 4, 1) r6c2-r7c2-r7c3-r8c3-r9c3-r9c4
+593/1122 infeasible 0.2s (1, 4, 1) r6c2-r7c2-r8c2-r8c3-r7c3-r6c3
+594/1122 FEASIBLE 0.3s (1, 4, 1) r6c2-r7c2-r8c2-r8c3-r7c3-r7c4
+595/1122 FEASIBLE 0.2s (1, 4, 1) r6c2-r7c2-r8c2-r8c3-r9c3-r9c4
+596/1122 FEASIBLE 0.5s (1, 4, 1) r6c2-r7c2-r8c2-r9c2-r9c3-r9c4
+597/1122 FEASIBLE 0.4s (4, 2) r6c3-r5c3-r5c2-r6c2-r7c2-r7c1
+598/1122 infeasible 0.2s (4, 2) r6c3-r5c3-r5c2-r6c2-r7c2-r7c3
+599/1122 infeasible 0.2s (4, 2) r6c3-r5c3-r5c2-r6c2-r7c2-r8c2
+600/1122 infeasible 0.2s (2, 4) r6c3-r5c3-r5c4-r5c5-r5c6-r6c6
+601/1122 infeasible 0.2s (2, 4) r6c3-r5c3-r5c4-r5c5-r6c5-r6c4
+602/1122 infeasible 0.2s (2, 4) r6c3-r5c3-r5c4-r5c5-r6c5-r6c6
+603/1122 infeasible 0.2s (2, 4) r6c3-r5c3-r5c4-r6c4-r6c5-r6c6
+604/1122 FEASIBLE 0.2s (4, 2) r6c3-r6c2-r5c2-r5c3-r5c4-r6c4
+605/1122 FEASIBLE 0.8s (3, 3) r6c3-r6c2-r6c1-r7c1-r7c2-r7c3
+606/1122 FEASIBLE 0.4s (3, 3) r6c3-r6c2-r6c1-r7c1-r7c2-r8c2
+607/1122 FEASIBLE 0.4s (3, 3) r6c3-r6c2-r6c1-r7c1-r8c1-r8c2
+608/1122 FEASIBLE 0.6s (3, 3) r6c3-r6c2-r6c1-r7c1-r8c1-r9c1
+609/1122 FEASIBLE 0.3s (2, 4) r6c3-r6c2-r7c2-r7c1-r8c1-r8c2
+610/1122 FEASIBLE 0.3s (2, 4) r6c3-r6c2-r7c2-r7c1-r8c1-r9c1
+611/1122 infeasible 0.2s (2, 4) r6c3-r6c2-r7c2-r7c3-r8c3-r8c2
+612/1122 infeasible 0.2s (2, 4) r6c3-r6c2-r7c2-r7c3-r8c3-r9c3
+613/1122 FEASIBLE 0.3s (2, 4) r6c3-r6c2-r7c2-r8c2-r8c1-r7c1
+614/1122 FEASIBLE 0.3s (2, 4) r6c3-r6c2-r7c2-r8c2-r8c1-r9c1
+615/1122 infeasible 0.2s (2, 4) r6c3-r6c2-r7c2-r8c2-r8c3-r7c3
+616/1122 infeasible 0.2s (2, 4) r6c3-r6c2-r7c2-r8c2-r8c3-r9c3
+617/1122 FEASIBLE 0.5s (2, 4) r6c3-r6c2-r7c2-r8c2-r9c2-r9c1
+618/1122 infeasible 0.2s (2, 4) r6c3-r6c2-r7c2-r8c2-r9c2-r9c3
+619/1122 infeasible 0.0s (1, 4, 1) r6c3-r6c4-r5c4-r5c5-r6c5-r7c5
+620/1122 infeasible 0.2s (1, 1, 4) r6c3-r6c4-r7c4-r7c5-r7c6-r8c6
+621/1122 infeasible 0.2s (1, 1, 4) r6c3-r6c4-r7c4-r7c5-r8c5-r8c4
+622/1122 infeasible 0.2s (1, 1, 4) r6c3-r6c4-r7c4-r7c5-r8c5-r8c6
+623/1122 infeasible 0.2s (1, 1, 4) r6c3-r6c4-r7c4-r7c5-r8c5-r9c5
+624/1122 infeasible 0.2s (1, 1, 4) r6c3-r6c4-r7c4-r8c4-r8c5-r7c5
+625/1122 infeasible 0.2s (1, 1, 4) r6c3-r6c4-r7c4-r8c4-r8c5-r8c6
+626/1122 infeasible 0.2s (1, 1, 4) r6c3-r6c4-r7c4-r8c4-r8c5-r9c5
+627/1122 infeasible 0.2s (1, 1, 4) r6c3-r6c4-r7c4-r8c4-r9c4-r9c5
+628/1122 infeasible 0.2s (1, 4, 1) r6c3-r7c3-r7c2-r8c2-r8c3-r8c4
+629/1122 infeasible 0.2s (1, 1, 4) r6c3-r7c3-r7c4-r7c5-r7c6-r8c6
+630/1122 infeasible 0.2s (1, 1, 4) r6c3-r7c3-r7c4-r7c5-r8c5-r8c4
+631/1122 infeasible 0.2s (1, 1, 4) r6c3-r7c3-r7c4-r7c5-r8c5-r8c6
+632/1122 infeasible 0.2s (1, 1, 4) r6c3-r7c3-r7c4-r7c5-r8c5-r9c5
+633/1122 infeasible 0.2s (1, 1, 4) r6c3-r7c3-r7c4-r8c4-r8c5-r7c5
+634/1122 infeasible 0.2s (1, 1, 4) r6c3-r7c3-r7c4-r8c4-r8c5-r8c6
+635/1122 infeasible 0.2s (1, 1, 4) r6c3-r7c3-r7c4-r8c4-r8c5-r9c5
+636/1122 infeasible 0.2s (1, 1, 4) r6c3-r7c3-r7c4-r8c4-r9c4-r9c5
+637/1122 infeasible 0.2s (4, 2) r6c4-r5c4-r5c5-r5c6-r5c7-r6c7
+638/1122 infeasible 0.2s (4, 2) r6c4-r5c4-r5c5-r6c5-r7c5-r7c4
+639/1122 infeasible 0.2s (4, 2) r6c4-r5c4-r5c5-r6c5-r7c5-r7c6
+640/1122 infeasible 0.3s (4, 2) r6c4-r5c4-r5c5-r6c5-r7c5-r8c5
+641/1122 FEASIBLE 0.3s (1, 4, 1) r6c4-r6c3-r5c3-r5c2-r6c2-r7c2
+642/1122 infeasible 0.2s (1, 1, 4) r6c4-r6c3-r7c3-r7c2-r7c1-r8c1
+643/1122 infeasible 0.2s (1, 1, 4) r6c4-r6c3-r7c3-r7c2-r8c2-r8c1
+644/1122 infeasible 0.2s (1, 1, 4) r6c4-r6c3-r7c3-r7c2-r8c2-r8c3
+645/1122 infeasible 0.2s (1, 1, 4) r6c4-r6c3-r7c3-r7c2-r8c2-r9c2
+646/1122 infeasible 0.2s (1, 1, 4) r6c4-r6c3-r7c3-r8c3-r8c2-r7c2
+647/1122 infeasible 0.2s (1, 1, 4) r6c4-r6c3-r7c3-r8c3-r8c2-r8c1
+648/1122 infeasible 0.2s (1, 1, 4) r6c4-r6c3-r7c3-r8c3-r8c2-r9c2
+649/1122 infeasible 0.2s (1, 1, 4) r6c4-r6c3-r7c3-r8c3-r9c3-r9c2
+650/1122 infeasible 0.2s (4, 2) r6c4-r6c5-r5c5-r5c6-r5c7-r6c7
+651/1122 infeasible 0.2s (4, 2) r6c4-r6c5-r6c6-r5c6-r5c7-r6c7
+652/1122 FEASIBLE 0.3s (3, 3) r6c4-r6c5-r6c6-r7c6-r7c5-r7c4
+653/1122 FEASIBLE 0.5s (3, 3) r6c4-r6c5-r6c6-r7c6-r7c5-r8c5
+654/1122 FEASIBLE 0.3s (3, 3) r6c4-r6c5-r6c6-r7c6-r8c6-r8c5
+655/1122 FEASIBLE 0.5s (3, 3) r6c4-r6c5-r6c6-r7c6-r8c6-r9c6
+656/1122 infeasible 0.3s (2, 4) r6c4-r6c5-r7c5-r7c4-r8c4-r8c5
+657/1122 infeasible 0.3s (2, 4) r6c4-r6c5-r7c5-r7c4-r8c4-r9c4
+658/1122 FEASIBLE 0.4s (2, 4) r6c4-r6c5-r7c5-r7c6-r8c6-r8c5
+659/1122 FEASIBLE 0.3s (2, 4) r6c4-r6c5-r7c5-r7c6-r8c6-r9c6
+660/1122 infeasible 0.3s (2, 4) r6c4-r6c5-r7c5-r8c5-r8c4-r7c4
+661/1122 infeasible 0.3s (2, 4) r6c4-r6c5-r7c5-r8c5-r8c4-r9c4
+662/1122 FEASIBLE 0.4s (2, 4) r6c4-r6c5-r7c5-r8c5-r8c6-r7c6
+663/1122 FEASIBLE 0.3s (2, 4) r6c4-r6c5-r7c5-r8c5-r8c6-r9c6
+664/1122 infeasible 0.3s (2, 4) r6c4-r6c5-r7c5-r8c5-r9c5-r9c4
+665/1122 infeasible 0.2s (2, 4) r6c4-r6c5-r7c5-r8c5-r9c5-r9c6
+666/1122 FEASIBLE 0.4s (1, 1, 4) r6c4-r7c4-r7c3-r7c2-r7c1-r8c1
+667/1122 FEASIBLE 0.3s (1, 1, 4) r6c4-r7c4-r7c3-r7c2-r8c2-r8c1
+668/1122 FEASIBLE 0.3s (1, 1, 4) r6c4-r7c4-r7c3-r7c2-r8c2-r8c3
+669/1122 FEASIBLE 0.3s (1, 1, 4) r6c4-r7c4-r7c3-r7c2-r8c2-r9c2
+670/1122 FEASIBLE 0.3s (1, 1, 4) r6c4-r7c4-r7c3-r8c3-r8c2-r7c2
+671/1122 FEASIBLE 0.3s (1, 1, 4) r6c4-r7c4-r7c3-r8c3-r8c2-r8c1
+672/1122 FEASIBLE 0.3s (1, 1, 4) r6c4-r7c4-r7c3-r8c3-r8c2-r9c2
+673/1122 FEASIBLE 0.9s (1, 1, 4) r6c4-r7c4-r7c3-r8c3-r9c3-r9c2
+674/1122 FEASIBLE 0.2s (1, 4, 1) r6c4-r7c4-r7c5-r7c6-r8c6-r8c7
+675/1122 infeasible 0.2s (1, 4, 1) r6c4-r7c4-r7c5-r8c5-r8c4-r8c3
+676/1122 FEASIBLE 0.2s (1, 4, 1) r6c4-r7c4-r7c5-r8c5-r8c6-r8c7
+677/1122 infeasible 0.2s (1, 4, 1) r6c4-r7c4-r8c4-r8c5-r7c5-r6c5
+678/1122 infeasible 0.2s (1, 4, 1) r6c4-r7c4-r8c4-r8c5-r8c6-r8c7
+679/1122 infeasible 0.2s (4, 1, 1) r6c5-r5c5-r5c4-r6c4-r6c3-r7c3
+680/1122 infeasible 0.2s (4, 1, 1) r6c5-r5c5-r5c4-r6c4-r7c4-r7c3
+681/1122 infeasible 0.2s (4, 2) r6c5-r5c5-r5c4-r6c4-r7c4-r7c5
+682/1122 infeasible 0.3s (4, 2) r6c5-r5c5-r5c4-r6c4-r7c4-r8c4
+683/1122 FEASIBLE 0.3s (3, 3) r6c5-r5c5-r5c6-r5c7-r6c7-r6c8
+684/1122 infeasible 0.2s (4, 2) r6c5-r5c5-r5c6-r6c6-r6c7-r6c8
+685/1122 infeasible 0.2s (4, 1, 1) r6c5-r5c5-r5c6-r6c6-r6c7-r7c7
+686/1122 infeasible 0.3s (4, 2) r6c5-r5c5-r5c6-r6c6-r7c6-r7c5
+687/1122 infeasible 0.2s (4, 1, 1) r6c5-r5c5-r5c6-r6c6-r7c6-r7c7
+688/1122 infeasible 0.3s (4, 2) r6c5-r5c5-r5c6-r6c6-r7c6-r8c6
+689/1122 FEASIBLE 0.4s (2, 4) r6c5-r6c4-r7c4-r7c5-r7c6-r8c6
+690/1122 infeasible 0.3s (2, 4) r6c5-r6c4-r7c4-r7c5-r8c5-r8c4
+691/1122 FEASIBLE 0.3s (2, 4) r6c5-r6c4-r7c4-r7c5-r8c5-r8c6
+692/1122 infeasible 0.3s (2, 4) r6c5-r6c4-r7c4-r7c5-r8c5-r9c5
+693/1122 infeasible 0.3s (2, 4) r6c5-r6c4-r7c4-r8c4-r8c5-r7c5
+694/1122 FEASIBLE 0.4s (2, 4) r6c5-r6c4-r7c4-r8c4-r8c5-r8c6
+695/1122 infeasible 0.3s (2, 4) r6c5-r6c4-r7c4-r8c4-r8c5-r9c5
+696/1122 infeasible 0.2s (2, 4) r6c5-r6c4-r7c4-r8c4-r9c4-r9c5
+697/1122 FEASIBLE 0.3s (3, 3) r6c5-r6c6-r5c6-r5c7-r6c7-r6c8
+698/1122 FEASIBLE 0.3s (2, 4) r6c5-r6c6-r7c6-r7c5-r7c4-r8c4
+699/1122 FEASIBLE 0.4s (2, 4) r6c5-r6c6-r7c6-r7c5-r8c5-r8c4
+700/1122 FEASIBLE 0.3s (2, 4) r6c5-r6c6-r7c6-r7c5-r8c5-r8c6
+701/1122 infeasible 0.3s (2, 4) r6c5-r6c6-r7c6-r7c5-r8c5-r9c5
+702/1122 FEASIBLE 0.3s (2, 4) r6c5-r6c6-r7c6-r8c6-r8c5-r7c5
+703/1122 FEASIBLE 0.3s (2, 4) r6c5-r6c6-r7c6-r8c6-r8c5-r8c4
+704/1122 FEASIBLE 0.4s (2, 4) r6c5-r6c6-r7c6-r8c6-r8c5-r9c5
+705/1122 infeasible 0.4s (2, 4) r6c5-r6c6-r7c6-r8c6-r9c6-r9c5
+706/1122 infeasible 0.2s (1, 4, 1) r6c5-r7c5-r7c4-r8c4-r9c4-r9c3
+707/1122 infeasible 0.2s (1, 4, 1) r6c5-r7c5-r7c6-r8c6-r9c6-r9c7
+708/1122 infeasible 0.2s (1, 4, 1) r6c5-r7c5-r8c5-r8c4-r7c4-r7c3
+709/1122 infeasible 0.2s (1, 4, 1) r6c5-r7c5-r8c5-r8c4-r9c4-r9c3
+710/1122 infeasible 0.2s (1, 4, 1) r6c5-r7c5-r8c5-r8c6-r7c6-r6c6
+711/1122 FEASIBLE 0.2s (1, 4, 1) r6c5-r7c5-r8c5-r8c6-r7c6-r7c7
+712/1122 infeasible 0.2s (1, 4, 1) r6c5-r7c5-r8c5-r8c6-r9c6-r9c7
+713/1122 infeasible 0.2s (1, 4, 1) r6c5-r7c5-r8c5-r9c5-r9c4-r9c3
+714/1122 infeasible 0.2s (1, 4, 1) r6c5-r7c5-r8c5-r9c5-r9c6-r9c7
+715/1122 infeasible 0.3s (4, 2) r6c6-r5c6-r5c5-r6c5-r7c5-r7c4
+716/1122 infeasible 0.3s (4, 2) r6c6-r5c6-r5c5-r6c5-r7c5-r7c6
+717/1122 infeasible 0.2s (4, 2) r6c6-r5c6-r5c5-r6c5-r7c5-r8c5
+718/1122 infeasible 0.2s (4, 2) r6c6-r6c5-r5c5-r5c6-r5c7-r6c7
+719/1122 FEASIBLE 0.3s (3, 3) r6c6-r6c5-r6c4-r7c4-r7c5-r7c6
+720/1122 infeasible 0.4s (3, 3) r6c6-r6c5-r6c4-r7c4-r7c5-r8c5
+721/1122 infeasible 0.4s (3, 3) r6c6-r6c5-r6c4-r7c4-r8c4-r8c5
+722/1122 infeasible 0.3s (3, 3) r6c6-r6c5-r6c4-r7c4-r8c4-r9c4
+723/1122 infeasible 0.3s (2, 4) r6c6-r6c5-r7c5-r7c4-r8c4-r8c5
+724/1122 infeasible 0.3s (2, 4) r6c6-r6c5-r7c5-r7c4-r8c4-r9c4
+725/1122 FEASIBLE 0.3s (2, 4) r6c6-r6c5-r7c5-r7c6-r8c6-r8c5
+726/1122 FEASIBLE 0.3s (2, 4) r6c6-r6c5-r7c5-r7c6-r8c6-r9c6
+727/1122 infeasible 0.3s (2, 4) r6c6-r6c5-r7c5-r8c5-r8c4-r7c4
+728/1122 infeasible 0.3s (2, 4) r6c6-r6c5-r7c5-r8c5-r8c4-r9c4
+729/1122 FEASIBLE 0.3s (2, 4) r6c6-r6c5-r7c5-r8c5-r8c6-r7c6
+730/1122 FEASIBLE 0.4s (2, 4) r6c6-r6c5-r7c5-r8c5-r8c6-r9c6
+731/1122 infeasible 0.3s (2, 4) r6c6-r6c5-r7c5-r8c5-r9c5-r9c4
+732/1122 infeasible 0.3s (2, 4) r6c6-r6c5-r7c5-r8c5-r9c5-r9c6
+733/1122 infeasible 0.0s (1, 1, 4) r6c6-r6c7-r7c7-r7c8-r8c8-r8c7
+734/1122 infeasible 0.0s (1, 1, 4) r6c6-r6c7-r7c7-r7c8-r8c8-r9c8
+735/1122 infeasible 0.0s (1, 1, 4) r6c6-r6c7-r7c7-r8c7-r8c8-r7c8
+736/1122 infeasible 0.0s (1, 1, 4) r6c6-r6c7-r7c7-r8c7-r8c8-r9c8
+737/1122 infeasible 0.0s (1, 1, 4) r6c6-r6c7-r7c7-r8c7-r9c7-r9c8
+738/1122 infeasible 0.2s (1, 4, 1) r6c6-r7c6-r7c5-r7c4-r8c4-r8c3
+739/1122 infeasible 0.2s (1, 4, 1) r6c6-r7c6-r7c5-r8c5-r8c4-r8c3
+740/1122 FEASIBLE 0.2s (1, 4, 1) r6c6-r7c6-r7c5-r8c5-r8c6-r8c7
+741/1122 FEASIBLE 0.2s (1, 1, 4) r6c6-r7c6-r7c7-r7c8-r8c8-r8c7
+742/1122 FEASIBLE 0.2s (1, 1, 4) r6c6-r7c6-r7c7-r7c8-r8c8-r9c8
+743/1122 FEASIBLE 0.2s (1, 1, 4) r6c6-r7c6-r7c7-r8c7-r8c8-r7c8
+744/1122 FEASIBLE 0.2s (1, 1, 4) r6c6-r7c6-r7c7-r8c7-r8c8-r9c8
+745/1122 FEASIBLE 0.2s (1, 1, 4) r6c6-r7c6-r7c7-r8c7-r9c7-r9c8
+746/1122 infeasible 0.2s (1, 4, 1) r6c6-r7c6-r8c6-r8c5-r8c4-r8c3
+747/1122 infeasible 0.0s (1, 4, 1) r6c7-r6c6-r5c6-r5c5-r6c5-r7c5
+748/1122 infeasible 0.2s (1, 1, 4) r6c7-r6c6-r7c6-r7c5-r7c4-r8c4
+749/1122 infeasible 0.2s (1, 1, 4) r6c7-r6c6-r7c6-r7c5-r8c5-r8c4
+750/1122 infeasible 0.2s (1, 1, 4) r6c7-r6c6-r7c6-r7c5-r8c5-r8c6
+751/1122 infeasible 0.2s (1, 1, 4) r6c7-r6c6-r7c6-r7c5-r8c5-r9c5
+752/1122 infeasible 0.2s (1, 1, 4) r6c7-r6c6-r7c6-r8c6-r8c5-r7c5
+753/1122 infeasible 0.2s (1, 1, 4) r6c7-r6c6-r7c6-r8c6-r8c5-r8c4
+754/1122 infeasible 0.2s (1, 1, 4) r6c7-r6c6-r7c6-r8c6-r8c5-r9c5
+755/1122 infeasible 0.2s (1, 1, 4) r6c7-r6c6-r7c6-r8c6-r9c6-r9c5
+756/1122 FEASIBLE 0.3s (2, 4) r6c7-r6c8-r7c8-r7c7-r8c7-r8c8
+757/1122 FEASIBLE 0.3s (2, 4) r6c7-r6c8-r7c8-r7c7-r8c7-r9c7
+758/1122 FEASIBLE 0.3s (2, 4) r6c7-r6c8-r7c8-r8c8-r8c7-r7c7
+759/1122 FEASIBLE 0.3s (2, 4) r6c7-r6c8-r7c8-r8c8-r8c7-r9c7
+760/1122 infeasible 0.2s (2, 4) r6c7-r6c8-r7c8-r8c8-r9c8-r9c7
+761/1122 infeasible 0.2s (1, 1, 4) r6c7-r7c7-r7c6-r7c5-r7c4-r8c4
+762/1122 infeasible 0.2s (1, 1, 4) r6c7-r7c7-r7c6-r7c5-r8c5-r8c4
+763/1122 infeasible 0.2s (1, 1, 4) r6c7-r7c7-r7c6-r7c5-r8c5-r8c6
+764/1122 infeasible 0.2s (1, 1, 4) r6c7-r7c7-r7c6-r7c5-r8c5-r9c5
+765/1122 infeasible 0.2s (1, 1, 4) r6c7-r7c7-r7c6-r8c6-r8c5-r7c5
+766/1122 infeasible 0.2s (1, 1, 4) r6c7-r7c7-r7c6-r8c6-r8c5-r8c4
+767/1122 infeasible 0.2s (1, 1, 4) r6c7-r7c7-r7c6-r8c6-r8c5-r9c5
+768/1122 infeasible 0.2s (1, 1, 4) r6c7-r7c7-r7c6-r8c6-r9c6-r9c5
+769/1122 infeasible 0.0s (1, 4, 1) r6c7-r7c7-r7c8-r8c8-r8c7-r8c6
+770/1122 infeasible 0.0s (1, 4, 1) r6c7-r7c7-r8c7-r8c8-r7c8-r6c8
+771/1122 FEASIBLE 0.3s (2, 4) r6c8-r6c7-r7c7-r7c8-r8c8-r8c7
+772/1122 FEASIBLE 0.3s (2, 4) r6c8-r6c7-r7c7-r7c8-r8c8-r9c8
+773/1122 FEASIBLE 0.3s (2, 4) r6c8-r6c7-r7c7-r8c7-r8c8-r7c8
+774/1122 FEASIBLE 0.2s (2, 4) r6c8-r6c7-r7c7-r8c7-r8c8-r9c8
+775/1122 FEASIBLE 0.3s (2, 4) r6c8-r6c7-r7c7-r8c7-r9c7-r9c8
+776/1122 FEASIBLE 0.3s (1, 4, 1) r6c8-r7c8-r7c7-r8c7-r9c7-r9c6
+777/1122 FEASIBLE 0.2s (1, 4, 1) r6c8-r7c8-r8c8-r8c7-r7c7-r7c6
+778/1122 FEASIBLE 0.3s (1, 4, 1) r6c8-r7c8-r8c8-r8c7-r9c7-r9c6
+779/1122 FEASIBLE 0.2s (1, 4, 1) r6c8-r7c8-r8c8-r9c8-r9c7-r9c6
+780/1122 infeasible 0.2s (1, 4, 1) r7c1-r6c1-r5c1-r5c2-r6c2-r7c2
+781/1122 infeasible 0.2s (3, 3) r7c1-r7c2-r7c3-r7c4-r7c5-r7c6
+782/1122 infeasible 0.3s (3, 3) r7c1-r7c2-r7c3-r7c4-r7c5-r8c5
+783/1122 infeasible 0.3s (3, 3) r7c1-r7c2-r7c3-r7c4-r8c4-r8c5
+784/1122 infeasible 0.3s (3, 3) r7c1-r7c2-r7c3-r7c4-r8c4-r9c4
+785/1122 FEASIBLE 0.6s (4, 2) r7c1-r7c2-r7c3-r8c3-r8c4-r7c4
+786/1122 FEASIBLE 0.3s (4, 2) r7c1-r7c2-r7c3-r8c3-r8c4-r8c5
+787/1122 FEASIBLE 0.3s (4, 2) r7c1-r7c2-r7c3-r8c3-r8c4-r9c4
+788/1122 FEASIBLE 0.4s (4, 2) r7c1-r7c2-r8c2-r8c3-r8c4-r7c4
+789/1122 FEASIBLE 0.3s (4, 2) r7c1-r7c2-r8c2-r8c3-r8c4-r8c5
+790/1122 FEASIBLE 0.4s (4, 2) r7c1-r7c2-r8c2-r8c3-r8c4-r9c4
+791/1122 FEASIBLE 0.3s (4, 2) r7c1-r8c1-r8c2-r8c3-r8c4-r7c4
+792/1122 infeasible 0.3s (4, 2) r7c1-r8c1-r8c2-r8c3-r8c4-r8c5
+793/1122 FEASIBLE 0.5s (4, 2) r7c1-r8c1-r8c2-r8c3-r8c4-r9c4
+794/1122 infeasible 0.2s (1, 4, 1) r7c2-r6c2-r5c2-r5c3-r6c3-r7c3
+795/1122 infeasible 0.2s (2, 4) r7c2-r7c3-r7c4-r7c5-r7c6-r8c6
+796/1122 infeasible 0.2s (2, 4) r7c2-r7c3-r7c4-r7c5-r8c5-r8c4
+797/1122 infeasible 0.2s (2, 4) r7c2-r7c3-r7c4-r7c5-r8c5-r8c6
+798/1122 infeasible 0.2s (2, 4) r7c2-r7c3-r7c4-r7c5-r8c5-r9c5
+799/1122 infeasible 0.3s (2, 4) r7c2-r7c3-r7c4-r8c4-r8c5-r7c5
+800/1122 FEASIBLE 0.4s (2, 4) r7c2-r7c3-r7c4-r8c4-r8c5-r8c6
+801/1122 infeasible 0.2s (2, 4) r7c2-r7c3-r7c4-r8c4-r8c5-r9c5
+802/1122 infeasible 0.3s (2, 4) r7c2-r7c3-r7c4-r8c4-r9c4-r9c5
+803/1122 infeasible 0.3s (3, 3) r7c2-r7c3-r8c3-r8c4-r7c4-r7c5
+804/1122 infeasible 0.3s (3, 3) r7c2-r7c3-r8c3-r8c4-r8c5-r7c5
+805/1122 FEASIBLE 0.5s (3, 3) r7c2-r7c3-r8c3-r8c4-r8c5-r8c6
+806/1122 infeasible 0.3s (3, 3) r7c2-r7c3-r8c3-r8c4-r8c5-r9c5
+807/1122 infeasible 0.4s (3, 3) r7c2-r7c3-r8c3-r8c4-r9c4-r9c5
+808/1122 infeasible 0.3s (4, 2) r7c2-r7c3-r8c3-r9c3-r9c4-r8c4
+809/1122 infeasible 0.2s (4, 2) r7c2-r7c3-r8c3-r9c3-r9c4-r9c5
+810/1122 infeasible 0.3s (4, 2) r7c2-r8c2-r8c3-r7c3-r7c4-r7c5
+811/1122 infeasible 0.3s (4, 2) r7c2-r8c2-r8c3-r7c3-r7c4-r8c4
+812/1122 infeasible 0.4s (3, 3) r7c2-r8c2-r8c3-r8c4-r7c4-r7c5
+813/1122 infeasible 0.4s (3, 3) r7c2-r8c2-r8c3-r8c4-r8c5-r7c5
+814/1122 FEASIBLE 0.6s (3, 3) r7c2-r8c2-r8c3-r8c4-r8c5-r8c6
+815/1122 FEASIBLE 1.2s (3, 3) r7c2-r8c2-r8c3-r8c4-r8c5-r9c5
+816/1122 FEASIBLE 0.3s (3, 3) r7c2-r8c2-r8c3-r8c4-r9c4-r9c5
+817/1122 FEASIBLE 0.4s (4, 2) r7c2-r8c2-r8c3-r9c3-r9c4-r8c4
+818/1122 FEASIBLE 0.3s (4, 2) r7c2-r8c2-r8c3-r9c3-r9c4-r9c5
+819/1122 FEASIBLE 0.4s (4, 2) r7c2-r8c2-r9c2-r9c3-r9c4-r8c4
+820/1122 FEASIBLE 0.4s (4, 2) r7c2-r8c2-r9c2-r9c3-r9c4-r9c5
+821/1122 infeasible 0.3s (4, 2) r7c3-r7c2-r8c2-r8c3-r8c4-r7c4
+822/1122 infeasible 0.2s (4, 2) r7c3-r7c2-r8c2-r8c3-r8c4-r8c5
+823/1122 FEASIBLE 0.4s (4, 2) r7c3-r7c2-r8c2-r8c3-r8c4-r9c4
+824/1122 infeasible 0.2s (1, 4, 1) r7c3-r7c4-r7c5-r7c6-r8c6-r8c7
+825/1122 infeasible 0.2s (1, 4, 1) r7c3-r7c4-r7c5-r8c5-r8c4-r8c3
+826/1122 infeasible 0.2s (1, 4, 1) r7c3-r7c4-r7c5-r8c5-r8c6-r8c7
+827/1122 infeasible 0.2s (1, 4, 1) r7c3-r7c4-r8c4-r8c5-r8c6-r8c7
+828/1122 infeasible 0.2s (2, 4) r7c3-r8c3-r8c4-r7c4-r7c5-r7c6
+829/1122 infeasible 0.2s (2, 4) r7c3-r8c3-r8c4-r7c4-r7c5-r8c5
+830/1122 infeasible 0.2s (2, 4) r7c3-r8c3-r8c4-r8c5-r7c5-r7c4
+831/1122 infeasible 0.2s (2, 4) r7c3-r8c3-r8c4-r8c5-r7c5-r7c6
+832/1122 infeasible 0.2s (2, 4) r7c3-r8c3-r8c4-r8c5-r8c6-r7c6
+833/1122 infeasible 0.2s (2, 4) r7c3-r8c3-r8c4-r8c5-r8c6-r9c6
+834/1122 infeasible 0.2s (2, 4) r7c3-r8c3-r8c4-r8c5-r9c5-r9c4
+835/1122 infeasible 0.2s (2, 4) r7c3-r8c3-r8c4-r8c5-r9c5-r9c6
+836/1122 infeasible 0.2s (2, 4) r7c3-r8c3-r8c4-r9c4-r9c5-r8c5
+837/1122 infeasible 0.2s (2, 4) r7c3-r8c3-r8c4-r9c4-r9c5-r9c6
+838/1122 infeasible 0.2s (3, 3) r7c3-r8c3-r9c3-r9c4-r8c4-r7c4
+839/1122 infeasible 0.2s (3, 3) r7c3-r8c3-r9c3-r9c4-r8c4-r8c5
+840/1122 infeasible 0.2s (3, 3) r7c3-r8c3-r9c3-r9c4-r9c5-r8c5
+841/1122 infeasible 0.2s (3, 3) r7c3-r8c3-r9c3-r9c4-r9c5-r9c6
+842/1122 infeasible 0.0s (1, 4, 1) r7c4-r6c4-r5c4-r5c5-r6c5-r7c5
+843/1122 FEASIBLE 0.3s (1, 4, 1) r7c4-r7c3-r7c2-r8c2-r8c3-r8c4
+844/1122 FEASIBLE 0.4s (3, 3) r7c4-r7c5-r7c6-r7c7-r7c8-r8c8
+845/1122 FEASIBLE 0.4s (3, 3) r7c4-r7c5-r7c6-r7c7-r8c7-r8c8
+846/1122 FEASIBLE 0.4s (3, 3) r7c4-r7c5-r7c6-r7c7-r8c7-r9c7
+847/1122 FEASIBLE 0.3s (4, 2) r7c4-r7c5-r7c6-r8c6-r8c7-r7c7
+848/1122 FEASIBLE 0.4s (4, 2) r7c4-r7c5-r7c6-r8c6-r8c7-r8c8
+849/1122 FEASIBLE 0.3s (4, 2) r7c4-r7c5-r7c6-r8c6-r8c7-r9c7
+850/1122 infeasible 0.2s (4, 2) r7c4-r7c5-r8c5-r8c4-r8c3-r8c2
+851/1122 infeasible 0.2s (4, 2) r7c4-r7c5-r8c5-r8c4-r8c3-r9c3
+852/1122 FEASIBLE 0.3s (4, 2) r7c4-r7c5-r8c5-r8c6-r8c7-r7c7
+853/1122 FEASIBLE 0.3s (4, 2) r7c4-r7c5-r8c5-r8c6-r8c7-r8c8
+854/1122 FEASIBLE 0.4s (4, 2) r7c4-r7c5-r8c5-r8c6-r8c7-r9c7
+855/1122 infeasible 0.3s (2, 4) r7c4-r8c4-r8c3-r7c3-r7c2-r8c2
+856/1122 FEASIBLE 0.4s (2, 4) r7c4-r8c4-r8c3-r8c2-r8c1-r9c1
+857/1122 FEASIBLE 0.6s (2, 4) r7c4-r8c4-r8c3-r8c2-r9c2-r9c1
+858/1122 FEASIBLE 0.4s (2, 4) r7c4-r8c4-r8c3-r8c2-r9c2-r9c3
+859/1122 FEASIBLE 0.4s (2, 4) r7c4-r8c4-r8c3-r9c3-r9c2-r8c2
+860/1122 FEASIBLE 0.3s (2, 4) r7c4-r8c4-r8c3-r9c3-r9c2-r9c1
+861/1122 FEASIBLE 0.3s (4, 2) r7c4-r8c4-r8c5-r8c6-r8c7-r7c7
+862/1122 infeasible 0.2s (4, 2) r7c4-r8c4-r8c5-r8c6-r8c7-r8c8
+863/1122 infeasible 0.2s (4, 2) r7c4-r8c4-r8c5-r8c6-r8c7-r9c7
+864/1122 infeasible 0.3s (3, 3) r7c4-r8c4-r9c4-r9c3-r8c3-r8c2
+865/1122 FEASIBLE 0.6s (3, 3) r7c4-r8c4-r9c4-r9c3-r9c2-r8c2
+866/1122 FEASIBLE 0.7s (3, 3) r7c4-r8c4-r9c4-r9c3-r9c2-r9c1
+867/1122 infeasible 0.0s (1, 4, 1) r7c5-r6c5-r5c5-r5c6-r6c6-r7c6
+868/1122 infeasible 0.2s (2, 4) r7c5-r7c4-r7c3-r7c2-r7c1-r8c1
+869/1122 FEASIBLE 0.4s (2, 4) r7c5-r7c4-r7c3-r7c2-r8c2-r8c1
+870/1122 infeasible 0.2s (2, 4) r7c5-r7c4-r7c3-r7c2-r8c2-r8c3
+871/1122 FEASIBLE 0.3s (2, 4) r7c5-r7c4-r7c3-r7c2-r8c2-r9c2
+872/1122 FEASIBLE 0.6s (2, 4) r7c5-r7c4-r7c3-r8c3-r8c2-r8c1
+873/1122 FEASIBLE 0.4s (2, 4) r7c5-r7c4-r7c3-r8c3-r8c2-r9c2
+874/1122 infeasible 0.2s (2, 4) r7c5-r7c4-r7c3-r8c3-r9c3-r9c2
+875/1122 infeasible 0.4s (3, 3) r7c5-r7c4-r8c4-r8c3-r8c2-r8c1
+876/1122 FEASIBLE 0.4s (3, 3) r7c5-r7c4-r8c4-r8c3-r8c2-r9c2
+877/1122 infeasible 0.4s (3, 3) r7c5-r7c4-r8c4-r8c3-r9c3-r9c2
+878/1122 infeasible 0.2s (4, 2) r7c5-r7c4-r8c4-r9c4-r9c3-r8c3
+879/1122 infeasible 0.2s (4, 2) r7c5-r7c4-r8c4-r9c4-r9c3-r9c2
+880/1122 infeasible 0.2s (2, 4) r7c5-r7c6-r7c7-r7c8-r8c8-r8c7
+881/1122 infeasible 0.2s (2, 4) r7c5-r7c6-r7c7-r7c8-r8c8-r9c8
+882/1122 infeasible 0.2s (2, 4) r7c5-r7c6-r7c7-r8c7-r8c8-r7c8
+883/1122 infeasible 0.3s (2, 4) r7c5-r7c6-r7c7-r8c7-r8c8-r9c8
+884/1122 infeasible 0.2s (2, 4) r7c5-r7c6-r7c7-r8c7-r9c7-r9c8
+885/1122 FEASIBLE 0.4s (3, 3) r7c5-r7c6-r8c6-r8c7-r7c7-r7c8
+886/1122 FEASIBLE 0.5s (3, 3) r7c5-r7c6-r8c6-r8c7-r8c8-r7c8
+887/1122 FEASIBLE 0.8s (3, 3) r7c5-r7c6-r8c6-r8c7-r8c8-r9c8
+888/1122 FEASIBLE 0.6s (3, 3) r7c5-r7c6-r8c6-r8c7-r9c7-r9c8
+889/1122 FEASIBLE 0.4s (4, 2) r7c5-r7c6-r8c6-r9c6-r9c7-r8c7
+890/1122 infeasible 0.2s (4, 2) r7c5-r7c6-r8c6-r9c6-r9c7-r9c8
+891/1122 infeasible 0.2s (4, 2) r7c5-r8c5-r8c4-r7c4-r7c3-r8c3
+892/1122 infeasible 0.3s (3, 3) r7c5-r8c5-r8c4-r8c3-r8c2-r8c1
+893/1122 FEASIBLE 0.9s (3, 3) r7c5-r8c5-r8c4-r8c3-r8c2-r9c2
+894/1122 infeasible 0.4s (3, 3) r7c5-r8c5-r8c4-r8c3-r9c3-r9c2
+895/1122 infeasible 0.2s (4, 2) r7c5-r8c5-r8c4-r9c4-r9c3-r8c3
+896/1122 infeasible 0.3s (4, 2) r7c5-r8c5-r8c4-r9c4-r9c3-r9c2
+897/1122 FEASIBLE 0.3s (4, 2) r7c5-r8c5-r8c6-r7c6-r7c7-r7c8
+898/1122 FEASIBLE 0.3s (4, 2) r7c5-r8c5-r8c6-r7c6-r7c7-r8c7
+899/1122 FEASIBLE 0.5s (3, 3) r7c5-r8c5-r8c6-r8c7-r7c7-r7c8
+900/1122 FEASIBLE 0.4s (3, 3) r7c5-r8c5-r8c6-r8c7-r8c8-r7c8
+901/1122 FEASIBLE 0.3s (3, 3) r7c5-r8c5-r8c6-r8c7-r8c8-r9c8
+902/1122 FEASIBLE 0.6s (3, 3) r7c5-r8c5-r8c6-r8c7-r9c7-r9c8
+903/1122 FEASIBLE 0.4s (4, 2) r7c5-r8c5-r8c6-r9c6-r9c7-r8c7
+904/1122 infeasible 0.2s (4, 2) r7c5-r8c5-r8c6-r9c6-r9c7-r9c8
+905/1122 infeasible 0.2s (4, 2) r7c5-r8c5-r9c5-r9c4-r9c3-r8c3
+906/1122 infeasible 0.3s (4, 2) r7c5-r8c5-r9c5-r9c4-r9c3-r9c2
+907/1122 infeasible 0.2s (4, 2) r7c5-r8c5-r9c5-r9c6-r9c7-r8c7
+908/1122 infeasible 0.2s (4, 2) r7c5-r8c5-r9c5-r9c6-r9c7-r9c8
+909/1122 FEASIBLE 0.5s (3, 3) r7c6-r7c5-r7c4-r7c3-r7c2-r8c2
+910/1122 FEASIBLE 0.5s (3, 3) r7c6-r7c5-r7c4-r7c3-r8c3-r8c2
+911/1122 infeasible 0.3s (3, 3) r7c6-r7c5-r7c4-r7c3-r8c3-r9c3
+912/1122 FEASIBLE 0.3s (4, 2) r7c6-r7c5-r7c4-r8c4-r8c3-r8c2
+913/1122 infeasible 0.2s (4, 2) r7c6-r7c5-r7c4-r8c4-r8c3-r9c3
+914/1122 infeasible 0.2s (4, 2) r7c6-r7c5-r8c5-r8c4-r8c3-r8c2
+915/1122 infeasible 0.2s (4, 2) r7c6-r7c5-r8c5-r8c4-r8c3-r9c3
+916/1122 FEASIBLE 0.3s (4, 2) r7c6-r7c5-r8c5-r8c6-r8c7-r7c7
+917/1122 FEASIBLE 0.3s (4, 2) r7c6-r7c5-r8c5-r8c6-r8c7-r8c8
+918/1122 FEASIBLE 0.3s (4, 2) r7c6-r7c5-r8c5-r8c6-r8c7-r9c7
+919/1122 infeasible 0.0s (1, 4, 1) r7c6-r7c7-r7c8-r8c8-r8c7-r8c6
+920/1122 infeasible 0.2s (4, 2) r7c6-r8c6-r8c5-r8c4-r8c3-r8c2
+921/1122 infeasible 0.2s (4, 2) r7c6-r8c6-r8c5-r8c4-r8c3-r9c3
+922/1122 FEASIBLE 0.3s (2, 4) r7c6-r8c6-r8c7-r7c7-r7c8-r8c8
+923/1122 FEASIBLE 0.3s (2, 4) r7c6-r8c6-r8c7-r8c8-r7c8-r7c7
+924/1122 FEASIBLE 0.3s (2, 4) r7c6-r8c6-r8c7-r8c8-r9c8-r9c7
+925/1122 FEASIBLE 0.3s (2, 4) r7c6-r8c6-r8c7-r9c7-r9c8-r8c8
+926/1122 FEASIBLE 0.3s (3, 3) r7c6-r8c6-r9c6-r9c7-r8c7-r7c7
+927/1122 FEASIBLE 0.3s (3, 3) r7c6-r8c6-r9c6-r9c7-r8c7-r8c8
+928/1122 infeasible 0.2s (3, 3) r7c6-r8c6-r9c6-r9c7-r9c8-r8c8
+929/1122 infeasible 0.3s (1, 4, 1) r7c7-r7c6-r7c5-r7c4-r8c4-r8c3
+930/1122 infeasible 0.2s (1, 4, 1) r7c7-r7c6-r7c5-r8c5-r8c4-r8c3
+931/1122 FEASIBLE 0.4s (1, 4, 1) r7c7-r7c6-r7c5-r8c5-r8c6-r8c7
+932/1122 infeasible 0.4s (1, 4, 1) r7c7-r7c6-r8c6-r8c5-r8c4-r8c3
+933/1122 infeasible 0.3s (4, 2) r7c7-r7c8-r8c8-r8c7-r8c6-r8c5
+934/1122 FEASIBLE 0.5s (4, 2) r7c7-r7c8-r8c8-r8c7-r8c6-r9c6
+935/1122 FEASIBLE 0.3s (2, 4) r7c7-r8c7-r8c6-r7c6-r7c5-r8c5
+936/1122 FEASIBLE 0.3s (2, 4) r7c7-r8c7-r8c6-r8c5-r8c4-r9c4
+937/1122 FEASIBLE 0.3s (2, 4) r7c7-r8c7-r8c6-r8c5-r9c5-r9c4
+938/1122 FEASIBLE 0.3s (2, 4) r7c7-r8c7-r8c6-r8c5-r9c5-r9c6
+939/1122 FEASIBLE 0.3s (2, 4) r7c7-r8c7-r8c6-r9c6-r9c5-r8c5
+940/1122 infeasible 0.3s (2, 4) r7c7-r8c7-r8c6-r9c6-r9c5-r9c4
+941/1122 FEASIBLE 0.8s (3, 3) r7c7-r8c7-r9c7-r9c6-r8c6-r8c5
+942/1122 infeasible 0.4s (3, 3) r7c7-r8c7-r9c7-r9c6-r9c5-r8c5
+943/1122 infeasible 0.7s (3, 3) r7c7-r8c7-r9c7-r9c6-r9c5-r9c4
+944/1122 infeasible 0.3s (2, 4) r7c8-r7c7-r7c6-r7c5-r7c4-r8c4
+945/1122 FEASIBLE 0.3s (2, 4) r7c8-r7c7-r7c6-r7c5-r8c5-r8c4
+946/1122 FEASIBLE 0.3s (2, 4) r7c8-r7c7-r7c6-r7c5-r8c5-r8c6
+947/1122 FEASIBLE 0.3s (2, 4) r7c8-r7c7-r7c6-r7c5-r8c5-r9c5
+948/1122 FEASIBLE 0.3s (2, 4) r7c8-r7c7-r7c6-r8c6-r8c5-r8c4
+949/1122 FEASIBLE 0.3s (2, 4) r7c8-r7c7-r7c6-r8c6-r8c5-r9c5
+950/1122 FEASIBLE 0.3s (2, 4) r7c8-r7c7-r7c6-r8c6-r9c6-r9c5
+951/1122 FEASIBLE 0.3s (3, 3) r7c8-r7c7-r8c7-r8c6-r8c5-r8c4
+952/1122 FEASIBLE 0.7s (3, 3) r7c8-r7c7-r8c7-r8c6-r8c5-r9c5
+953/1122 infeasible 0.4s (3, 3) r7c8-r7c7-r8c7-r8c6-r9c6-r9c5
+954/1122 FEASIBLE 0.3s (4, 2) r7c8-r7c7-r8c7-r9c7-r9c6-r8c6
+955/1122 FEASIBLE 0.3s (4, 2) r7c8-r7c7-r8c7-r9c7-r9c6-r9c5
+956/1122 FEASIBLE 0.3s (4, 2) r7c8-r8c8-r8c7-r7c7-r7c6-r8c6
+957/1122 FEASIBLE 0.4s (3, 3) r7c8-r8c8-r8c7-r8c6-r8c5-r8c4
+958/1122 FEASIBLE 0.5s (3, 3) r7c8-r8c8-r8c7-r8c6-r8c5-r9c5
+959/1122 FEASIBLE 0.4s (3, 3) r7c8-r8c8-r8c7-r8c6-r9c6-r9c5
+960/1122 FEASIBLE 0.4s (4, 2) r7c8-r8c8-r8c7-r9c7-r9c6-r8c6
+961/1122 FEASIBLE 0.5s (4, 2) r7c8-r8c8-r8c7-r9c7-r9c6-r9c5
+962/1122 infeasible 0.2s (4, 2) r7c8-r8c8-r9c8-r9c7-r9c6-r8c6
+963/1122 infeasible 0.2s (4, 2) r7c8-r8c8-r9c8-r9c7-r9c6-r9c5
+964/1122 FEASIBLE 0.4s (4, 2) r8c1-r7c1-r7c2-r7c3-r7c4-r8c4
+965/1122 FEASIBLE 0.4s (4, 2) r8c1-r8c2-r7c2-r7c3-r7c4-r8c4
+966/1122 FEASIBLE 0.4s (4, 2) r8c1-r8c2-r8c3-r7c3-r7c4-r8c4
+967/1122 infeasible 0.2s (3, 3) r8c1-r8c2-r8c3-r8c4-r8c5-r8c6
+968/1122 infeasible 0.5s (3, 3) r8c1-r8c2-r8c3-r8c4-r8c5-r9c5
+969/1122 infeasible 0.4s (3, 3) r8c1-r8c2-r8c3-r8c4-r9c4-r9c5
+970/1122 FEASIBLE 0.3s (4, 2) r8c1-r8c2-r8c3-r9c3-r9c4-r8c4
+971/1122 FEASIBLE 0.6s (4, 2) r8c1-r8c2-r8c3-r9c3-r9c4-r9c5
+972/1122 FEASIBLE 0.4s (4, 2) r8c1-r8c2-r9c2-r9c3-r9c4-r8c4
+973/1122 FEASIBLE 0.3s (4, 2) r8c1-r8c2-r9c2-r9c3-r9c4-r9c5
+974/1122 FEASIBLE 0.7s (4, 2) r8c1-r9c1-r9c2-r9c3-r9c4-r8c4
+975/1122 FEASIBLE 0.3s (4, 2) r8c1-r9c1-r9c2-r9c3-r9c4-r9c5
+976/1122 infeasible 0.4s (3, 3) r8c2-r7c2-r7c3-r7c4-r7c5-r8c5
+977/1122 infeasible 0.3s (3, 3) r8c2-r7c2-r7c3-r7c4-r8c4-r8c5
+978/1122 infeasible 0.3s (3, 3) r8c2-r7c2-r7c3-r7c4-r8c4-r9c4
+979/1122 infeasible 0.2s (4, 2) r8c2-r7c2-r7c3-r8c3-r8c4-r8c5
+980/1122 FEASIBLE 0.4s (4, 2) r8c2-r7c2-r7c3-r8c3-r8c4-r9c4
+981/1122 infeasible 0.3s (3, 3) r8c2-r8c3-r7c3-r7c4-r7c5-r8c5
+982/1122 infeasible 0.3s (3, 3) r8c2-r8c3-r7c3-r7c4-r8c4-r8c5
+983/1122 infeasible 0.3s (3, 3) r8c2-r8c3-r7c3-r7c4-r8c4-r9c4
+984/1122 infeasible 0.2s (2, 4) r8c2-r8c3-r8c4-r7c4-r7c5-r8c5
+985/1122 FEASIBLE 0.3s (2, 4) r8c2-r8c3-r8c4-r8c5-r8c6-r9c6
+986/1122 infeasible 0.2s (2, 4) r8c2-r8c3-r8c4-r8c5-r9c5-r9c4
+987/1122 infeasible 0.2s (2, 4) r8c2-r8c3-r8c4-r8c5-r9c5-r9c6
+988/1122 infeasible 0.2s (2, 4) r8c2-r8c3-r8c4-r9c4-r9c5-r8c5
+989/1122 infeasible 0.2s (2, 4) r8c2-r8c3-r8c4-r9c4-r9c5-r9c6
+990/1122 infeasible 0.3s (3, 3) r8c2-r8c3-r9c3-r9c4-r8c4-r8c5
+991/1122 infeasible 0.3s (3, 3) r8c2-r8c3-r9c3-r9c4-r9c5-r8c5
+992/1122 infeasible 0.3s (3, 3) r8c2-r8c3-r9c3-r9c4-r9c5-r9c6
+993/1122 FEASIBLE 0.3s (4, 2) r8c2-r9c2-r9c3-r8c3-r8c4-r8c5
+994/1122 FEASIBLE 0.3s (4, 2) r8c2-r9c2-r9c3-r8c3-r8c4-r9c4
+995/1122 FEASIBLE 0.7s (3, 3) r8c2-r9c2-r9c3-r9c4-r8c4-r8c5
+996/1122 FEASIBLE 0.6s (3, 3) r8c2-r9c2-r9c3-r9c4-r9c5-r8c5
+997/1122 FEASIBLE 0.6s (3, 3) r8c2-r9c2-r9c3-r9c4-r9c5-r9c6
+998/1122 infeasible 0.2s (2, 4) r8c3-r7c3-r7c4-r7c5-r7c6-r8c6
+999/1122 infeasible 0.2s (2, 4) r8c3-r7c3-r7c4-r7c5-r8c5-r8c4
+1000/1122 infeasible 0.2s (2, 4) r8c3-r7c3-r7c4-r7c5-r8c5-r8c6
+1001/1122 infeasible 0.2s (2, 4) r8c3-r7c3-r7c4-r7c5-r8c5-r9c5
+1002/1122 infeasible 0.2s (2, 4) r8c3-r7c3-r7c4-r8c4-r8c5-r8c6
+1003/1122 infeasible 0.2s (2, 4) r8c3-r7c3-r7c4-r8c4-r8c5-r9c5
+1004/1122 infeasible 0.2s (2, 4) r8c3-r7c3-r7c4-r8c4-r9c4-r9c5
+1005/1122 infeasible 0.2s (4, 2) r8c3-r8c2-r7c2-r7c3-r7c4-r8c4
+1006/1122 FEASIBLE 0.3s (4, 2) r8c3-r8c2-r9c2-r9c3-r9c4-r8c4
+1007/1122 FEASIBLE 0.3s (4, 2) r8c3-r8c2-r9c2-r9c3-r9c4-r9c5
+1008/1122 infeasible 0.2s (1, 4, 1) r8c3-r8c4-r8c5-r8c6-r9c6-r9c7
+1009/1122 infeasible 0.2s (1, 4, 1) r8c3-r8c4-r8c5-r9c5-r9c4-r9c3
+1010/1122 infeasible 0.2s (1, 4, 1) r8c3-r8c4-r8c5-r9c5-r9c6-r9c7
+1011/1122 infeasible 0.2s (1, 4, 1) r8c3-r8c4-r9c4-r9c5-r9c6-r9c7
+1012/1122 infeasible 0.2s (2, 4) r8c3-r9c3-r9c4-r8c4-r8c5-r8c6
+1013/1122 infeasible 0.2s (2, 4) r8c3-r9c3-r9c4-r8c4-r8c5-r9c5
+1014/1122 infeasible 0.2s (2, 4) r8c3-r9c3-r9c4-r9c5-r8c5-r8c4
+1015/1122 infeasible 0.2s (2, 4) r8c3-r9c3-r9c4-r9c5-r8c5-r8c6
+1016/1122 infeasible 0.2s (2, 4) r8c3-r9c3-r9c4-r9c5-r9c6-r8c6
+1017/1122 FEASIBLE 0.5s (2, 4) r8c4-r7c4-r7c3-r7c2-r8c2-r9c2
+1018/1122 FEASIBLE 0.4s (2, 4) r8c4-r7c4-r7c3-r8c3-r8c2-r9c2
+1019/1122 infeasible 0.3s (2, 4) r8c4-r7c4-r7c3-r8c3-r9c3-r9c2
+1020/1122 FEASIBLE 0.4s (4, 2) r8c4-r7c4-r7c5-r7c6-r7c7-r8c7
+1021/1122 FEASIBLE 0.3s (1, 4, 1) r8c4-r8c3-r8c2-r9c2-r9c3-r9c4
+1022/1122 FEASIBLE 0.4s (4, 2) r8c4-r8c5-r7c5-r7c6-r7c7-r8c7
+1023/1122 FEASIBLE 0.5s (4, 2) r8c4-r8c5-r8c6-r7c6-r7c7-r8c7
+1024/1122 FEASIBLE 0.6s (3, 3) r8c4-r8c5-r8c6-r8c7-r8c8-r9c8
+1025/1122 FEASIBLE 0.4s (3, 3) r8c4-r8c5-r8c6-r8c7-r9c7-r9c8
+1026/1122 infeasible 0.3s (4, 2) r8c4-r8c5-r8c6-r9c6-r9c7-r8c7
+1027/1122 infeasible 0.2s (4, 2) r8c4-r8c5-r8c6-r9c6-r9c7-r9c8
+1028/1122 infeasible 0.3s (4, 2) r8c4-r8c5-r9c5-r9c4-r9c3-r9c2
+1029/1122 infeasible 0.3s (4, 2) r8c4-r8c5-r9c5-r9c6-r9c7-r8c7
+1030/1122 infeasible 0.2s (4, 2) r8c4-r8c5-r9c5-r9c6-r9c7-r9c8
+1031/1122 FEASIBLE 0.3s (2, 4) r8c4-r9c4-r9c3-r8c3-r8c2-r9c2
+1032/1122 infeasible 0.3s (4, 2) r8c4-r9c4-r9c5-r9c6-r9c7-r8c7
+1033/1122 infeasible 0.2s (4, 2) r8c4-r9c4-r9c5-r9c6-r9c7-r9c8
+1034/1122 infeasible 0.2s (3, 3) r8c5-r7c5-r7c4-r7c3-r8c3-r9c3
+1035/1122 infeasible 0.2s (4, 2) r8c5-r7c5-r7c4-r8c4-r8c3-r9c3
+1036/1122 FEASIBLE 0.5s (3, 3) r8c5-r7c5-r7c6-r7c7-r7c8-r8c8
+1037/1122 FEASIBLE 0.3s (3, 3) r8c5-r7c5-r7c6-r7c7-r8c7-r8c8
+1038/1122 FEASIBLE 0.5s (3, 3) r8c5-r7c5-r7c6-r7c7-r8c7-r9c7
+1039/1122 FEASIBLE 0.3s (4, 2) r8c5-r7c5-r7c6-r8c6-r8c7-r8c8
+1040/1122 FEASIBLE 0.3s (4, 2) r8c5-r7c5-r7c6-r8c6-r8c7-r9c7
+1041/1122 infeasible 0.2s (3, 3) r8c5-r8c4-r7c4-r7c3-r8c3-r9c3
+1042/1122 infeasible 0.2s (2, 4) r8c5-r8c4-r8c3-r8c2-r8c1-r9c1
+1043/1122 FEASIBLE 0.4s (2, 4) r8c5-r8c4-r8c3-r8c2-r9c2-r9c1
+1044/1122 FEASIBLE 0.3s (2, 4) r8c5-r8c4-r8c3-r8c2-r9c2-r9c3
+1045/1122 FEASIBLE 0.3s (2, 4) r8c5-r8c4-r8c3-r9c3-r9c2-r9c1
+1046/1122 FEASIBLE 0.3s (3, 3) r8c5-r8c4-r9c4-r9c3-r9c2-r9c1
+1047/1122 FEASIBLE 0.6s (3, 3) r8c5-r8c6-r7c6-r7c7-r7c8-r8c8
+1048/1122 FEASIBLE 0.4s (3, 3) r8c5-r8c6-r7c6-r7c7-r8c7-r8c8
+1049/1122 FEASIBLE 0.3s (3, 3) r8c5-r8c6-r7c6-r7c7-r8c7-r9c7
+1050/1122 infeasible 0.2s (2, 4) r8c5-r8c6-r8c7-r7c7-r7c8-r8c8
+1051/1122 infeasible 0.2s (2, 4) r8c5-r8c6-r8c7-r8c8-r9c8-r9c7
+1052/1122 infeasible 0.2s (2, 4) r8c5-r8c6-r8c7-r9c7-r9c8-r8c8
+1053/1122 FEASIBLE 0.6s (3, 3) r8c5-r8c6-r9c6-r9c7-r8c7-r8c8
+1054/1122 infeasible 0.2s (3, 3) r8c5-r8c6-r9c6-r9c7-r9c8-r8c8
+1055/1122 infeasible 0.2s (4, 2) r8c5-r9c5-r9c4-r8c4-r8c3-r9c3
+1056/1122 FEASIBLE 0.5s (3, 3) r8c5-r9c5-r9c4-r9c3-r9c2-r9c1
+1057/1122 infeasible 0.2s (4, 2) r8c5-r9c5-r9c6-r8c6-r8c7-r8c8
+1058/1122 infeasible 0.2s (4, 2) r8c5-r9c5-r9c6-r8c6-r8c7-r9c7
+1059/1122 FEASIBLE 0.6s (3, 3) r8c5-r9c5-r9c6-r9c7-r8c7-r8c8
+1060/1122 infeasible 0.2s (3, 3) r8c5-r9c5-r9c6-r9c7-r9c8-r8c8
+1061/1122 FEASIBLE 0.3s (2, 4) r8c6-r7c6-r7c7-r7c8-r8c8-r8c7
+1062/1122 FEASIBLE 0.4s (2, 4) r8c6-r7c6-r7c7-r7c8-r8c8-r9c8
+1063/1122 FEASIBLE 0.3s (2, 4) r8c6-r7c6-r7c7-r8c7-r8c8-r9c8
+1064/1122 FEASIBLE 0.5s (2, 4) r8c6-r7c6-r7c7-r8c7-r9c7-r9c8
+1065/1122 FEASIBLE 0.3s (4, 2) r8c6-r8c5-r7c5-r7c6-r7c7-r8c7
+1066/1122 FEASIBLE 0.5s (3, 3) r8c6-r8c5-r8c4-r8c3-r8c2-r9c2
+1067/1122 FEASIBLE 0.9s (3, 3) r8c6-r8c5-r8c4-r8c3-r9c3-r9c2
+1068/1122 FEASIBLE 0.3s (4, 2) r8c6-r8c5-r8c4-r9c4-r9c3-r9c2
+1069/1122 FEASIBLE 0.4s (4, 2) r8c6-r8c5-r9c5-r9c4-r9c3-r9c2
+1070/1122 infeasible 0.3s (4, 2) r8c6-r8c5-r9c5-r9c6-r9c7-r8c7
+1071/1122 infeasible 0.2s (4, 2) r8c6-r8c5-r9c5-r9c6-r9c7-r9c8
+1072/1122 FEASIBLE 0.7s (1, 4, 1) r8c6-r8c7-r8c8-r9c8-r9c7-r9c6
+1073/1122 infeasible 0.2s (4, 2) r8c6-r9c6-r9c5-r9c4-r9c3-r9c2
+1074/1122 FEASIBLE 0.3s (2, 4) r8c6-r9c6-r9c7-r8c7-r8c8-r9c8
+1075/1122 FEASIBLE 0.3s (2, 4) r8c6-r9c6-r9c7-r9c8-r8c8-r8c7
+1076/1122 FEASIBLE 0.3s (2, 4) r8c7-r7c7-r7c6-r7c5-r8c5-r9c5
+1077/1122 FEASIBLE 0.3s (2, 4) r8c7-r7c7-r7c6-r8c6-r8c5-r9c5
+1078/1122 FEASIBLE 0.5s (2, 4) r8c7-r7c7-r7c6-r8c6-r9c6-r9c5
+1079/1122 infeasible 0.2s (1, 4, 1) r8c7-r8c6-r8c5-r8c4-r9c4-r9c3
+1080/1122 infeasible 0.2s (1, 4, 1) r8c7-r8c6-r8c5-r9c5-r9c4-r9c3
+1081/1122 infeasible 0.2s (1, 4, 1) r8c7-r8c6-r8c5-r9c5-r9c6-r9c7
+1082/1122 infeasible 0.2s (1, 4, 1) r8c7-r8c6-r9c6-r9c5-r9c4-r9c3
+1083/1122 FEASIBLE 0.3s (4, 2) r8c7-r8c8-r9c8-r9c7-r9c6-r9c5
+1084/1122 infeasible 0.3s (2, 4) r8c7-r9c7-r9c6-r8c6-r8c5-r9c5
+1085/1122 FEASIBLE 0.4s (3, 3) r8c8-r7c8-r7c7-r7c6-r8c6-r9c6
+1086/1122 FEASIBLE 0.5s (4, 2) r8c8-r7c8-r7c7-r8c7-r8c6-r9c6
+1087/1122 FEASIBLE 0.4s (3, 3) r8c8-r8c7-r7c7-r7c6-r8c6-r9c6
+1088/1122 infeasible 0.3s (2, 4) r8c8-r8c7-r8c6-r8c5-r8c4-r9c4
+1089/1122 infeasible 0.3s (2, 4) r8c8-r8c7-r8c6-r8c5-r9c5-r9c4
+1090/1122 infeasible 0.3s (2, 4) r8c8-r8c7-r8c6-r8c5-r9c5-r9c6
+1091/1122 infeasible 0.3s (2, 4) r8c8-r8c7-r8c6-r9c6-r9c5-r9c4
+1092/1122 FEASIBLE 0.5s (3, 3) r8c8-r8c7-r9c7-r9c6-r9c5-r9c4
+1093/1122 FEASIBLE 0.3s (4, 2) r8c8-r9c8-r9c7-r8c7-r8c6-r9c6
+1094/1122 infeasible 0.2s (3, 3) r8c8-r9c8-r9c7-r9c6-r9c5-r9c4
+1095/1122 FEASIBLE 0.6s (4, 2) r9c1-r8c1-r8c2-r8c3-r8c4-r9c4
+1096/1122 FEASIBLE 0.3s (4, 2) r9c1-r9c2-r8c2-r8c3-r8c4-r9c4
+1097/1122 FEASIBLE 0.3s (4, 2) r9c1-r9c2-r9c3-r8c3-r8c4-r9c4
+1098/1122 infeasible 0.4s (3, 3) r9c1-r9c2-r9c3-r9c4-r9c5-r9c6
+1099/1122 FEASIBLE 0.7s (3, 3) r9c2-r8c2-r8c3-r8c4-r8c5-r9c5
+1100/1122 FEASIBLE 2.5s (3, 3) r9c2-r8c2-r8c3-r8c4-r9c4-r9c5
+1101/1122 FEASIBLE 0.3s (4, 2) r9c2-r8c2-r8c3-r9c3-r9c4-r9c5
+1102/1122 infeasible 0.3s (3, 3) r9c2-r9c3-r8c3-r8c4-r8c5-r9c5
+1103/1122 infeasible 0.3s (3, 3) r9c2-r9c3-r8c3-r8c4-r9c4-r9c5
+1104/1122 infeasible 0.3s (2, 4) r9c2-r9c3-r9c4-r8c4-r8c5-r9c5
+1105/1122 infeasible 0.2s (3, 3) r9c3-r8c3-r7c3-r7c4-r8c4-r9c4
+1106/1122 infeasible 0.2s (2, 4) r9c3-r8c3-r8c4-r8c5-r8c6-r9c6
+1107/1122 infeasible 0.2s (2, 4) r9c3-r8c3-r8c4-r8c5-r9c5-r9c4
+1108/1122 infeasible 0.2s (2, 4) r9c3-r8c3-r8c4-r8c5-r9c5-r9c6
+1109/1122 infeasible 0.2s (2, 4) r9c3-r8c3-r8c4-r9c4-r9c5-r9c6
+1110/1122 FEASIBLE 0.3s (4, 2) r9c3-r9c2-r8c2-r8c3-r8c4-r9c4
+1111/1122 infeasible 0.3s (4, 2) r9c4-r8c4-r8c5-r8c6-r8c7-r9c7
+1112/1122 infeasible 0.3s (4, 2) r9c4-r9c5-r8c5-r8c6-r8c7-r9c7
+1113/1122 infeasible 0.2s (4, 2) r9c4-r9c5-r9c6-r8c6-r8c7-r9c7
+1114/1122 FEASIBLE 0.4s (3, 3) r9c5-r8c5-r8c6-r8c7-r8c8-r9c8
+1115/1122 FEASIBLE 0.3s (3, 3) r9c5-r8c5-r8c6-r8c7-r9c7-r9c8
+1116/1122 infeasible 0.2s (4, 2) r9c5-r8c5-r8c6-r9c6-r9c7-r9c8
+1117/1122 FEASIBLE 0.5s (3, 3) r9c5-r9c6-r8c6-r8c7-r8c8-r9c8
+1118/1122 FEASIBLE 0.7s (3, 3) r9c5-r9c6-r8c6-r8c7-r9c7-r9c8
+1119/1122 FEASIBLE 0.2s (2, 4) r9c5-r9c6-r9c7-r8c7-r8c8-r9c8
+1120/1122 FEASIBLE 0.4s (3, 3) r9c6-r8c6-r7c6-r7c7-r8c7-r9c7
+1121/1122 FEASIBLE 0.3s (2, 4) r9c6-r8c6-r8c7-r8c8-r9c8-r9c7
+1122/1122 infeasible 0.3s (4, 2) r9c6-r9c5-r8c5-r8c6-r8c7-r9c7
+DONE
