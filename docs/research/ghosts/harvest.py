@@ -24,7 +24,7 @@ import time
 from collections import deque
 from pathlib import Path
 
-from shapes import NEIGH, climb, count_solutions, givens, has_eight, seed_shape
+from shapes import NEIGH, climb, count_solutions, givens, eight_ok, seed_shape
 
 SYMS = [
     lambda r, c: (r, c), lambda r, c: (c, 8 - r), lambda r, c: (8 - r, 8 - c), lambda r, c: (8 - c, r),
@@ -42,7 +42,7 @@ def canonical(shape):
 
 def unique_example(shape):
     g = givens(shape)
-    return has_eight(g) and count_solutions(g, 2) == 1
+    return eight_ok(g) and count_solutions(g, 2) == 1
 
 
 def score_of(g, cap):
@@ -87,7 +87,7 @@ def fast_climb(rng, start, deadline, cap):
             move.add(rng.choice(NEIGH[i]))
         trial = shape ^ move
         tg = givens(trial)
-        if not has_eight(tg):
+        if not eight_ok(tg):
             continue
         ts = score_of(tg, cap)
         if ts[0] == 0:

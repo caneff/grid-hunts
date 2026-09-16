@@ -4,7 +4,8 @@
 
 A shape fixes its givens: each ghost shows its ghost-neighbour count. So the
 search needs no grid variables. A shape is admissible when its counts are
-1-8, distinct within every row, column and box, and one count is 8. Each
+1-8, distinct within every row, column and box, the ghosts form one
+orthogonally connected region. An 8 is demanded only when REQUIRE_EIGHT. Each
 admissible shape goes to a bitmask sudoku counter that stops at `cap`
 solutions. Hill climbing toggles ghost cells and keeps a move that leaves the
 shape admissible and does not raise the capped solution count; a count of 1 is
@@ -27,8 +28,33 @@ PEERS = [{j for j in range(81) if j != i and (CELLS[i][0] == CELLS[j][0] or CELL
                                               or BOX[i] == BOX[j])} for i in range(81)]
 
 
+ORTH = [[(r + a) * 9 + c + b for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1))
+         if 0 <= r + a < N and 0 <= c + b < N] for r, c in CELLS]
+
+
+def connected(shape):
+    """One orthogonally connected ghost region?"""
+    if not shape:
+        return False
+    start = next(iter(shape))
+    seen, stack = {start}, [start]
+    while stack:
+        for j in ORTH[stack.pop()]:
+            if j in shape and j not in seen:
+                seen.add(j)
+                stack.append(j)
+    return len(seen) == len(shape)
+
+
 def givens(shape):
-    """{cell: digit} for a shape (a set of cell indices), or None if inadmissible."""
+    """{cell: digit} for a shape (a set of cell indices), or None if inadmissible.
+
+    Inadmissible covers: an isolated ghost, a repeated given in a house, and a
+    ghost region that is not orthogonally connected."""
+    if FORCE - shape or BAN & shape:
+        return None
+    if not connected(shape):
+        return None
     out = {}
     for i in shape:
         n = sum(j in shape for j in NEIGH[i])
@@ -110,8 +136,38 @@ def count_solutions(given, cap, varying=None, store=None):
     return found
 
 
-def has_eight(given):
-    return given is not None and 8 in given.values()
+REQUIRE_EIGHT = False  # set True to demand a ghost showing 8
+FORCE = set()  # cell indices that must be ghosts
+BAN = set()  # cell indices that must not be ghosts
+
+
+def pins(force=(), ban=()):
+    """Pin cells on (force) and off (ban), as r1c1-style indices 0-80."""
+    global FORCE, BAN
+    FORCE, BAN = set(force), set(ban)
+
+
+def eight_ok(given):
+    """Admissible, and showing an 8 if REQUIRE_EIGHT."""
+    return given is not None and (not REQUIRE_EIGHT or 8 in given.values())
+
+
+def grow_seed(rng, size, tries=20000):
+    """A random connected admissible solvable shape of `size` ghosts honouring the
+    pins, or None. Grows from the forced cells (or one random cell) by adding a
+    random orthogonal neighbour at a time."""
+    for _ in range(tries):
+        shape = set(FORCE) or {rng.choice([i for i in range(81) if i not in BAN])}
+        while len(shape) < size:
+            frontier = [j for i in shape for j in ORTH[i] if j not in shape and j not in BAN]
+            frontier += [i for i in FORCE if i not in shape]
+            if not frontier:
+                break
+            shape.add(rng.choice(frontier))
+        g = givens(shape)
+        if g is not None and eight_ok(g) and count_solutions(g, 1) == 1:
+            return shape
+    return None
 
 
 def seed_shape(rng, min_ghosts):
@@ -164,7 +220,7 @@ def climb(rng, deadline, cap, min_ghosts):
         trial = shape ^ move
         tg = givens(trial)
         steps += 1
-        if not has_eight(tg):
+        if not eight_ok(tg):
             continue
         ts = count_solutions(tg, cap)
         if ts == 0:

@@ -3,8 +3,9 @@
 //   gcc -O2 -shared -fPIC -o ghosts_fast.so ghosts_fast.c -lm
 //
 // Same rules as shapes.py: a ghost's given is its ghost-neighbour count
-// (1-8), givens are distinct within every row, column and box, and one given
-// is 8. gf_count counts sudoku solutions of a shape's givens up to a cap;
+// (1-8), givens are distinct within every row, column and box, and the ghosts
+// form one orthogonally connected region. gf_require_eight(1) also demands a
+// given of 8; gf_set_pins forces cells on or off. gf_count counts sudoku solutions of a shape's givens up to a cap;
 // gf_climb anneals on log solutions (temperature t_hi -> t_lo over the run; a
 // move toggles a short king-walk of 1..max_toggles cells) and returns the best
 // shape found.
@@ -13,29 +14,73 @@
 #include <string.h>
 #include <time.h>
 
-static int NB[81][8], NBN[81], ROW[81], COL[81], BOX[81];
+static int NB[81][8], NBN[81], ORTH[81][4], ORTHN[81], ROW[81], COL[81], BOX[81];
 static int ready;
+static int need_eight;  // gf_require_eight; off by default
+static uint8_t force_on[81], force_off[81];  // gf_set_pins
+
+// Pin cells on and off: two 81-byte masks, 1 = pinned.
+void gf_set_pins(const uint8_t *on, const uint8_t *off) {
+    for (int i = 0; i < 81; i++) {
+        force_on[i] = on ? on[i] : 0;
+        force_off[i] = off ? off[i] : 0;
+    }
+}
+
+// Require (1) or drop (0) the "some ghost shows 8" condition.
+void gf_require_eight(int on) { need_eight = on; }
 
 static void init(void) {
     if (ready) return;
     for (int i = 0; i < 81; i++) {
         int r = i / 9, c = i % 9;
         ROW[i] = r; COL[i] = c; BOX[i] = (r / 3) * 3 + c / 3;
-        NBN[i] = 0;
+        NBN[i] = ORTHN[i] = 0;
         for (int a = -1; a <= 1; a++)
             for (int b = -1; b <= 1; b++) {
                 if (!a && !b) continue;
                 int rr = r + a, cc = c + b;
-                if (rr >= 0 && rr < 9 && cc >= 0 && cc < 9) NB[i][NBN[i]++] = rr * 9 + cc;
+                if (rr >= 0 && rr < 9 && cc >= 0 && cc < 9) {
+                    NB[i][NBN[i]++] = rr * 9 + cc;
+                    if (!a || !b) ORTH[i][ORTHN[i]++] = rr * 9 + cc;
+                }
             }
     }
     ready = 1;
 }
 
-// Fill giv (0 = no given). Returns 1 if admissible and some given is 8.
+// One orthogonally connected ghost region?
+static int connected(const uint8_t *sh) {
+    int stack[81], top = 0, total = 0, start = -1;
+    uint8_t seen[81] = {0};
+    for (int i = 0; i < 81; i++) {
+        if (!sh[i]) continue;
+        total++;
+        if (start < 0) start = i;
+    }
+    if (start < 0) return 0;
+    stack[top++] = start;
+    seen[start] = 1;
+    int reached = 0;
+    while (top) {
+        int i = stack[--top];
+        reached++;
+        for (int k = 0; k < ORTHN[i]; k++) {
+            int j = ORTH[i][k];
+            if (sh[j] && !seen[j]) { seen[j] = 1; stack[top++] = j; }
+        }
+    }
+    return reached == total;
+}
+
+// Fill giv (0 = no given). Returns 1 if admissible and connected (and, under
+// gf_require_eight(1), showing an 8).
 static int givens(const uint8_t *sh, uint8_t *giv) {
     uint16_t rm[9] = {0}, cm[9] = {0}, bm[9] = {0};
     int eight = 0;
+    for (int i = 0; i < 81; i++)
+        if ((force_on[i] && !sh[i]) || (force_off[i] && sh[i])) return 0;
+    if (!connected(sh)) return 0;
     for (int i = 0; i < 81; i++) {
         giv[i] = 0;
         if (!sh[i]) continue;
@@ -48,7 +93,7 @@ static int givens(const uint8_t *sh, uint8_t *giv) {
         giv[i] = n;
         eight |= n == 8;
     }
-    return eight;
+    return !need_eight || eight;
 }
 
 typedef struct {
@@ -99,7 +144,7 @@ static int count_givens(const uint8_t *giv, int cap) {
     return s.found;
 }
 
-// Solutions of a shape's givens up to cap; -1 if inadmissible or no 8.
+// Solutions of a shape's givens up to cap; -1 if inadmissible.
 int gf_count(const uint8_t *shape, int cap) {
     init();
     uint8_t giv[81];
