@@ -74,6 +74,16 @@ def shape(group):
     return (max(rows) - min(rows) + 1, max(cols) - min(cols) + 1)
 
 
+def group_sizes(is_choc):
+    """Each cell's maximal group size, chocolate or banana: what a circle reads."""
+    return {
+        p: len(g)
+        for colour in (True, False)
+        for g in components(is_choc, colour)
+        for p in g
+    }
+
+
 def check(grid, is_choc, circles=()):
     """Return a list of human-readable violations; empty means the grid is legal.
 
@@ -133,11 +143,7 @@ def check(grid, is_choc, circles=()):
             )
 
     if circles:
-        size_of = {}
-        for colour in (True, False):
-            for group in components(is_choc, colour):
-                for p in group:
-                    size_of[p] = len(group)
+        size_of = group_sizes(is_choc)
         for p in circles:
             p = tuple(p)
             if grid[p] != size_of[p]:

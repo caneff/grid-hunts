@@ -195,6 +195,11 @@ class Shadings:
     banana-non-rectangle rule arrives as cuts, each forbidding one genuinely
     illegal pattern. So an INFEASIBLE from this model is a proof, and its
     optimum is a true upper bound on any shading-layer objective.
+
+    Every constraint added here must keep the model a *relaxation* -- never
+    excluding a shading some legal grid carries. `tools/prove_two_stage.py`
+    reads an INFEASIBLE from it as a uniqueness proof, so one over-tight
+    constraint turns a puzzle with two solutions into a printed UNIQUE.
     """
 
     def __init__(
@@ -381,20 +386,25 @@ class Shadings:
         whatever the rest of the grid does, so sampling one wastes a whole
         digit solve to learn what is already enumerated.
         """
-        spots = []
-        for r in range(N - a + 1):
-            for c in range(N - b + 1):
-                if circleable and not circle_cells_at(a, b, r % 3, c % 3):
-                    continue
-                inside = [(r + i, c + j) for i in range(a) for j in range(b)]
-                border = {q for p in inside for q in neighbours(*p) if q not in inside}
-                spot = self.m.new_bool_var(f"p{a}x{b}@{r},{c}")
-                for p in inside:
-                    self.m.add_implication(spot, self.choc[p])
-                for q in border:
-                    self.m.add_implication(spot, self.choc[q].negated())
-                spots.append(spot)
-        return spots
+        return [
+            self.spot(a, b, r, c)
+            for r in range(N - a + 1)
+            for c in range(N - b + 1)
+            if not circleable or circle_cells_at(a, b, r % 3, c % 3)
+        ]
+
+    def spot(self, a, b, r, c):
+        """One bool for the `a` by `b` maximal chocolate component with its
+        top-left at (r, c): true only if those cells are chocolate and every
+        bordering cell banana. Implication one way only."""
+        inside = [(r + i, c + j) for i in range(a) for j in range(b)]
+        border = {q for p in inside for q in neighbours(*p) if q not in inside}
+        here = self.m.new_bool_var(f"p{a}x{b}@{r},{c}")
+        for p in inside:
+            self.m.add_implication(here, self.choc[p])
+        for q in border:
+            self.m.add_implication(here, self.choc[q].negated())
+        return here
 
     def forbid_component(self, group):
         """Cut exactly one illegal pattern: these cells banana with a fully
