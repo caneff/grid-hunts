@@ -1100,3 +1100,27 @@ r5c4=2); 9s -> 41 (r2c7=1, r5c5=4, r5c6=8, r7c5=6, r9c5=8); 8s -> 2
 (20 digits, copycats r1c9, r4c2, r9c1); 2s -> 1. Runner-up: L5
 r4c1-r5c1-r5c2-r6c2 | r7c2-r7c1-r8c1 with L6 r8c6-r8c5-r9c5-r9c6 |
 r9c7-r8c7-r8c8 (8s, 4s, 2s, 1s, 5s; one copycat on the lines).
+
+**Human rungs must survive a relaxed model (2026-09-16).** Board 24's
+count ladder looked gradual, but every rung after the 1s was closed by
+where L1/L2 pin box 8's 8, which a solver cannot see from the lines. Test:
+enumerate the states of board 14's forced facts + sudoku + copycat rules +
+the region sums of L1-L4 *without* their pairings (606,950 states, CP-SAT
+OPTIMAL in 210 s, placement DFS agrees), and run the count ladder there.
+A rung counts only if it places digits in that set. Board 24 keeps one
+rung (the 1s). Over the 201 unique pairs: 112 keep no rung, 42 one, 14
+two, 10 three, 17 four, 4 five, 2 six (`.scratch/copycat-rsl/p7/enum_relaxed.py`,
+`ladder_relaxed.py`; the no-lines relaxation passed 4.4 M states without
+finishing and was dropped).
+
+**Board 25** (`boards/board25-pair7-relaxed.json`): L5 = r1c1-r2c1-r3c1 |
+r4c1-r5c1-r5c2-r5c3 (boxes 1, 4), L6 = r7c6-r7c5-r8c5-r8c6 | r8c7-r7c7-r7c8
+(boxes 8, 9); values 2,7,9 | 8,6,1,3 and 9,6,1,2 | 7,8,3, sums 18; unique,
+and unique already in the relaxed set, so the L1/L2 pairings are never
+needed. No copycat lands on the lines (r4c1, r7c7, r8c7 are possible
+until excluded). Relaxed ladder from 890 lines-only states: 8s -> 163
+(r1c3=1, r8c7 not a copycat); 7s -> 61 (r6c3=4); 3s -> 20 (r4c1=8,
+r4c3=2); 4s -> 9 (r3c1=9, r4c2=9, r4c7=3, r5c7=9, r7c8=3); 5s -> 3 (nine
+digits); 2s -> 1. Runner-up with six rungs but ending at 3 relaxed states:
+L5 r2c1-r2c2-r3c2 | r4c2-r5c2-r5c1-r6c1 with L6 r9c5-r9c6-r8c6 |
+r8c7-r8c8-r9c8-r9c9.
