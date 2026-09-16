@@ -20,6 +20,11 @@ drivers that launch a hunt overnight stay under `docs/research/` (#469).
 
 ## Pointers
 
+- Before writing a new finder, start from `finders/hunt/`: the shared hunt
+  protocol (a `typing.Protocol` of `propose`/`verify`/`record`/`key`/
+  `symmetry`, and the `hunt` CLI's `run(finder, argv)`) that gives a fresh
+  hunt its output directory and dedupe for free. `finders/hunt/toy_finder.py`
+  is a minimal worked example. Existing finders are not ported onto it.
 - Before writing a new finder — what to search, when cuts beat a counter,
   profiling the loop, the `ctypes` C port, counting what you found:
   `docs/agents/grid-finder-lessons.md`.
