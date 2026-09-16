@@ -54,15 +54,26 @@ def _terminal(status, first):
     return None
 
 
+def _remap(retry_model, v):
+    """The `retry_model` literal for `v` -- a plain variable's proto index
+    is non-negative, but a negated literal (`.Not()`) carries a negative
+    one, so it resolves through the positive base variable and gets
+    negated back rather than being looked up directly."""
+    index = v.Index()
+    if index >= 0:
+        return retry_model.GetIntVarFromProtoIndex(index)
+    return retry_model.GetIntVarFromProtoIndex(-index - 1).Not()
+
+
 def check_uniqueness(model, variables, *, time_limit=10.0, workers=1):
     """True (via `.unique`) iff `model` has exactly one solution over
     `variables`. A timeout or an invalid model is reported as such and
     never as unique -- a stripper that trusted either would keep a clue
     that isn't actually load-bearing: sound, never lean.
 
-    Mutates `model`: adds the exclusion constraint that rules the first
-    solution out, so a caller that needs the model unchanged afterwards
-    should pass a copy (`fresh = cp_model.CpModel(); fresh.CopyFrom(model)`).
+    Never mutates `model`: the exclusion constraint that rules the first
+    solution out is added to an internal copy, so the caller's model is
+    safe to reuse across repeated calls.
     """
     variables = list(variables)
     status, solver = _solve(model, time_limit, workers)
@@ -71,17 +82,20 @@ def check_uniqueness(model, variables, *, time_limit=10.0, workers=1):
         return terminal
     first = tuple(solver.Value(v) for v in variables)
 
-    diffs = []
-    for v, value in zip(variables, first, strict=True):
-        d = model.NewBoolVar("")
-        model.Add(v != value).OnlyEnforceIf(d)
-        model.Add(v == value).OnlyEnforceIf(d.Not())
-        diffs.append(d)
-    model.AddBoolOr(diffs)
+    retry_model = model.clone()
+    retry_variables = [_remap(retry_model, v) for v in variables]
 
-    status, solver = _solve(model, time_limit, workers)
+    diffs = []
+    for v, value in zip(retry_variables, first, strict=True):
+        d = retry_model.NewBoolVar("")
+        retry_model.Add(v != value).OnlyEnforceIf(d)
+        retry_model.Add(v == value).OnlyEnforceIf(d.Not())
+        diffs.append(d)
+    retry_model.AddBoolOr(diffs)
+
+    status, solver = _solve(retry_model, time_limit, workers)
     terminal = _terminal(status, first)
     if terminal is not None:
         return terminal
-    second = tuple(solver.Value(v) for v in variables)
+    second = tuple(solver.Value(v) for v in retry_variables)
     return UniquenessResult("not_unique", first, second)
