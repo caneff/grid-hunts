@@ -475,54 +475,67 @@ def _render_example(finder, out, seed, candidate, event):
         event["render_error"] = f"{type(e).__name__}: {e}"
 
 
+def _propose_and_key(finder, seed, symmetry, no_verify=False):
+    """The propose -> verify -> key -> canonical_key sequence, shared by
+    `_process_seed` (which writes the outcome) and
+    `_check_symmetry_before_mutation` (which only wants the key) so the
+    two can't drift on what counts as a mismatch (#509 review, P1; #525
+    review, S3). Returns `(candidate, verdict, key)`; `verdict` and `key`
+    are `None` when there's nothing further to compute -- no candidate,
+    or a rejected one. `no_verify` (#489) skips the call to
+    `finder.verify` the same way `_process_seed` always has -- a
+    candidate that would be rejected is treated as accepted, so `hunt
+    verify DIR` can check it later.
+    """
+    candidate = finder.propose(random.Random(seed))
+    if candidate is None:
+        return candidate, None, None
+    verdict = Verdict(ok=True) if no_verify else finder.verify(candidate)
+    if not verdict.ok:
+        return candidate, verdict, None
+    cell_values = finder.key(candidate)
+    try:
+        key = canonical_key(cell_values, symmetry)
+    except ValueError as e:
+        # Only a custom group's own shape can raise here -- D4's "needs a
+        # square grid" is a separate, out-of-scope bug (#509 review, C3)
+        # and finder.key() itself is called above, outside this try, so a
+        # finder's own ValueError is never relabelled as a symmetry
+        # failure (#509 review, P1).
+        if symmetry in (D4, IDENTITY):
+            raise
+        raise SymmetryMismatch(str(e)) from e
+    return candidate, verdict, key
+
+
 def _process_seed(
     finder, seed, seen, symmetry, examples_f, progress_f, counts, out, no_verify
 ):
     """Run one seed and append its outcome to examples.jsonl/progress.jsonl,
     updating `seen` and `counts` in place. Shared by the fresh and resumed
-    loops so the two can't drift apart on what a seed's outcome means.
-
-    `no_verify` (#489) skips the call to `finder.verify` -- a candidate
-    that would be rejected is recorded anyway, so `hunt verify DIR` can
-    check it later over everything the search saved."""
-    candidate = finder.propose(random.Random(seed))
+    loops so the two can't drift apart on what a seed's outcome means."""
+    candidate, verdict, key = _propose_and_key(finder, seed, symmetry, no_verify)
     event = {"event": "seed_done", "seed": seed}
     if candidate is None:
         counts["empty"] += 1
         event["outcome"] = "empty"
+    elif not verdict.ok:
+        counts["rejected"] += 1
+        event["outcome"] = "rejected"
+        if verdict.reason:
+            event["rejected_reason"] = verdict.reason
+    elif key in seen:
+        counts["duplicates"] += 1
+        event["outcome"] = "duplicate"
     else:
-        verdict = Verdict(ok=True) if no_verify else finder.verify(candidate)
-        if not verdict.ok:
-            counts["rejected"] += 1
-            event["outcome"] = "rejected"
-            if verdict.reason:
-                event["rejected_reason"] = verdict.reason
-        else:
-            cell_values = finder.key(candidate)
-            try:
-                key = canonical_key(cell_values, symmetry)
-            except ValueError as e:
-                # Only a custom group's own shape can raise here -- D4's
-                # "needs a square grid" is a separate, out-of-scope bug
-                # (#509 review, C3) and finder.key() itself is called
-                # above, outside this try, so a finder's own ValueError
-                # is never relabelled as a symmetry failure (#509 review,
-                # P1).
-                if symmetry in (D4, IDENTITY):
-                    raise
-                raise SymmetryMismatch(str(e)) from e
-            if key in seen:
-                counts["duplicates"] += 1
-                event["outcome"] = "duplicate"
-            else:
-                seen.add(key)
-                record = dict(finder.record(candidate))
-                record[_DEDUPE_KEY_FIELD] = list(key)
-                examples_f.write(json.dumps(record) + "\n")
-                examples_f.flush()
-                counts["examples"] += 1
-                event["outcome"] = "example"
-                _render_example(finder, out, seed, candidate, event)
+        seen.add(key)
+        record = dict(finder.record(candidate))
+        record[_DEDUPE_KEY_FIELD] = list(key)
+        examples_f.write(json.dumps(record) + "\n")
+        examples_f.flush()
+        counts["examples"] += 1
+        event["outcome"] = "example"
+        _render_example(finder, out, seed, candidate, event)
 
     progress_f.write(json.dumps(event) + "\n")
     progress_f.flush()
@@ -581,6 +594,73 @@ def _fresh(finder, argv, args, out):
     return 0
 
 
+def _check_symmetry_before_mutation(
+    finder, symmetry, seed_start, seed_end, done_seeds, examples_records, no_verify
+):
+    """Refuse a resume whose custom symmetry group no longer fits the
+    finder's key shape, before `_resume` writes anything -- two checks,
+    both run ahead of any write (#525; `_repair_renders`, #524, moved
+    ahead of the same check on rebase):
+
+    1. The group against the key length already durable in
+       examples.jsonl, with no finder call at all -- catches a resume
+       whose entire seed range is already done, where check 2 below never
+       has an un-done seed to probe and so would otherwise never notice a
+       stale recorded shape (Codex pass 1 on PR 530, finding 1).
+    2. The first not-yet-done seed's *actual* key -- for a finder whose
+       `key()` shape changed since the run being resumed last succeeded,
+       where the group's own length still happens to match the *old*
+       recorded shape and check 1 can't see the drift without a real
+       candidate (#525 review C2/P1's own regression test depends on
+       this).
+
+    `symmetry in (D4, IDENTITY)` skips both: D4's own "needs a square
+    grid" ValueError is a separate, out-of-scope bug (#509 review C3),
+    never converted to `SymmetryMismatch` either way, so neither check
+    can ever produce a refusal on that path -- running them anyway would
+    only spend an unconditional extra propose/verify per resume for
+    nothing (#525 review C4, #529).
+
+    `done_seeds` must be the reconciled set `_hunt_loop` will actually
+    skip, not a raw read of progress.jsonl (#525 review C2/P1). Calling
+    `finder.propose`/`verify` again for check 2 is only safe for a
+    stateless finder; a stateful one's `save_state`/`load_state`
+    round-trips the in-memory state around the probe so it can't
+    double-count whatever the probed seed did (#525 review C1) --
+    `_resume` must call `_load_state` before this runs, so the snapshot
+    taken here is the resumed state, not the finder's fresh default. That
+    snapshot is a deep copy (`json.loads(json.dumps(...))`), not the live
+    object `save_state()` returned -- a finder that mutates its own saved
+    state in place (rather than returning a fresh one each call) would
+    otherwise see the probe's mutation bleed into the "restored" state
+    too, since restoring a reference restores nothing (Codex pass 1 on
+    PR 530, finding 2).
+    """
+    if symmetry in (D4, IDENTITY):
+        return
+
+    if examples_records:
+        key_len = len(examples_records[0][_DEDUPE_KEY_FIELD])
+        try:
+            canonical_key(tuple(range(key_len)), symmetry)
+        except ValueError as e:
+            raise SymmetryMismatch(str(e)) from e
+
+    save = getattr(finder, "save_state", None)
+    load = getattr(finder, "load_state", None)
+    pristine = json.loads(json.dumps(save())) if save else None
+    try:
+        for seed in range(seed_start, seed_end):
+            if seed in done_seeds:
+                continue
+            _, _, key = _propose_and_key(finder, seed, symmetry, no_verify)
+            if key is not None:
+                return
+    finally:
+        if save and load:
+            load(pristine)
+
+
 def _resume(finder, argv, args, out, prior):
     current_sha = _git_sha()
     if prior.get("git_sha") != current_sha:
@@ -594,9 +674,34 @@ def _resume(finder, argv, args, out, prior):
 
     progress_lines, progress_events = _read_valid_lines(out / "progress.jsonl")
     examples_lines, examples_records = _read_valid_lines(out / "examples.jsonl")
+
+    # Reconciliation itself only edits these in-memory lists -- every write
+    # (`_truncate_to_valid`, `_repair_renders`, summary.json) is held off
+    # until the symmetry check below has passed, so nothing is on disk yet
+    # for it to protect (#525; #525 review C2/P1 -- `_repair_renders` (#524)
+    # writes too, and moved ahead of the same check on rebase).
     progress_lines, progress_events, examples_lines, examples_records = _reconcile(
         finder, out, progress_lines, progress_events, examples_lines, examples_records
     )
+
+    done_seeds = {e["seed"] for e in progress_events if e.get("event") == "seed_done"}
+    seen = {_to_hashable(r[_DEDUPE_KEY_FIELD]) for r in examples_records}
+    symmetry = getattr(finder, "symmetry", D4)
+
+    # Loaded before the probe, not after: the probe's save_state/
+    # load_state round-trip (see `_check_symmetry_before_mutation`) must
+    # snapshot the resumed state, not the finder's fresh default.
+    _load_state(finder, out)
+    _check_symmetry_before_mutation(
+        finder,
+        symmetry,
+        seed_start,
+        seed_end,
+        done_seeds,
+        examples_records,
+        args.no_verify,
+    )
+
     _truncate_to_valid(out / "progress.jsonl", progress_lines)
     _truncate_to_valid(out / "examples.jsonl", examples_lines)
 
@@ -604,9 +709,6 @@ def _resume(finder, argv, args, out, prior):
         finder, out, progress_lines, progress_events
     )
     _truncate_to_valid(out / "progress.jsonl", progress_lines)
-
-    done_seeds = {e["seed"] for e in progress_events if e.get("event") == "seed_done"}
-    seen = {_to_hashable(r[_DEDUPE_KEY_FIELD]) for r in examples_records}
 
     counts = {
         "seeds_done": 0,
@@ -621,7 +723,6 @@ def _resume(finder, argv, args, out, prior):
         if count_key:
             counts[count_key] += 1
     _write_json_atomic(out / "summary.json", dict(counts))
-    _load_state(finder, out)
 
     _hunt_loop(
         finder,
@@ -765,30 +866,10 @@ def run(finder, argv):
         return _refuse(args.out, "an active hunt (locked)")
 
     is_resume = False
-    resume_snapshot = None
     try:
         run_path = out / "run.json"
         if run_path.exists():
             is_resume = True
-            # Taken before `_resume` touches anything: reconciliation
-            # truncates progress.jsonl/examples.jsonl and rewrites
-            # summary.json before `_hunt_loop` ever runs, so a
-            # SymmetryMismatch raised deep inside that loop finds those
-            # files already mutated by reconciliation alone, independent of
-            # whatever the loop itself did (#509 Codex pass 1, finding 1).
-            # Restoring this snapshot on that failure is what makes "left
-            # exactly as found" true byte-for-byte, not just "not deleted".
-            # `renders/` (#490) is skipped: it's a directory, not a byte
-            # string to snapshot/restore, and it's a picture cache rather
-            # than a source of truth (examples.jsonl is) -- a render
-            # written during a resume attempt that then hits
-            # SymmetryMismatch is left as-is rather than rolled back, the
-            # same accepted gap as #522.
-            resume_snapshot = {
-                name: (out / name).read_bytes() if (out / name).exists() else None
-                for name in OUTPUT_FILES
-                if name != "renders"
-            }
             prior = json.loads(run_path.read_text())
             prior_argv = prior.get("argv")
             if prior_argv is None or _resume_key(prior_argv) != _resume_key(argv):
@@ -810,23 +891,16 @@ def run(finder, argv):
     except SymmetryMismatch as e:
         # Same clean refusal `_validate_symmetry`'s pre-flight gives a
         # structurally-broken group -- this one only surfaces once a real
-        # candidate exists, after run.json/summary.json (and possibly more)
-        # are already on disk. On a fresh hunt that output is only this
-        # attempt's own, so it's torn down; on a resume it can hold a prior
-        # attempt's genuine completed results (#509 review, finding V1 --
-        # e.g. the finder's key() shape changed since the run being resumed
-        # last succeeded), so the pre-`_resume` snapshot is restored
-        # verbatim instead, undoing both reconciliation's own rewrite and
-        # anything any seed processed successfully before the crash.
+        # candidate exists. On a fresh hunt that output is only this
+        # attempt's own, so it's torn down. On a resume, `_resume` checks
+        # the symmetry group against the first un-done seed's key before
+        # writing anything (#525), so the case this exists to guard --
+        # the mismatch a resumed hunt would have hit on its very next seed
+        # -- refuses with every hunt file untouched, no restore needed. A
+        # mismatch a later seed raises once `_hunt_loop` is already
+        # running is unguarded the same way any other mid-loop failure is.
         print(f"hunt: refusing to run -- invalid symmetry group: {e}", file=sys.stderr)
-        if is_resume:
-            for name, content in resume_snapshot.items():
-                path = out / name
-                if content is None:
-                    path.unlink(missing_ok=True)
-                else:
-                    path.write_bytes(content)
-        else:
+        if not is_resume:
             _cleanup_partial_output(out)
         return 2
     finally:

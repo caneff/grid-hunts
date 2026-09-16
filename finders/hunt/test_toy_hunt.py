@@ -561,18 +561,20 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # Skipping cleanup on resume isn't enough on its own: `_resume`
-    # reconciles (trims an orphaned example) and rewrites summary.json
-    # *before* `_hunt_loop` ever runs, so those files are already mutated
-    # by the time a SymmetryMismatch fires deep inside the loop -- a
-    # SymmetryMismatch on resume must restore the pre-`_resume` snapshot,
-    # not just leave whatever reconciliation already produced in place
-    # (#509 Codex pass 1, finding 1). Built via a genuine base hunt (not
-    # hand-crafted files) so run.json/summary.json/progress.jsonl/
-    # examples.jsonl are exactly what the driver itself would produce, then
-    # progress.jsonl is truncated to orphan the one example -- forcing
-    # `_resume`'s reconciliation to actually trim examples.jsonl and
-    # rewrite summary.json on the next invocation.
+    # Skipping cleanup on resume isn't enough on its own: `_resume` would
+    # otherwise reconcile (trimming an orphaned example) and rewrite
+    # summary.json *before* the loop ever reaches a seed's key, mutating
+    # those files ahead of a SymmetryMismatch raised deep inside the loop
+    # (#509 Codex pass 1, finding 1). #525 moves the symmetry check ahead
+    # of reconciliation and any write instead, so nothing needs restoring
+    # -- this test proves that by orphaning an example and checking every
+    # hunt file is still exactly what the base hunt produced. Built via a
+    # genuine base hunt (not hand-crafted files) so run.json/summary.json/
+    # progress.jsonl/examples.jsonl are exactly what the driver itself
+    # would produce, then progress.jsonl is truncated to orphan the one
+    # example -- forcing reconciliation to actually want to trim
+    # examples.jsonl and rewrite summary.json on the next invocation, if
+    # the symmetry check didn't refuse first.
     out = Path(tmp) / "hunt-out"
     valid_script = f"""
 import sys
@@ -604,7 +606,7 @@ sys.exit(run(ValidGroupFinder(), sys.argv[1:]))
         env=success_env(),
     )
     check(
-        f"base hunt for the byte-for-byte restore test exits 0 (stderr: "
+        f"base hunt for the byte-for-byte-unchanged test exits 0 (stderr: "
         f"{base.stderr[-300:]})",
         base.returncode == 0,
     )
@@ -637,12 +639,271 @@ sys.exit(run(ValidGroupFinder(), sys.argv[1:]))
         resumed.returncode == 2,
     )
     check(
-        "every hunt file is restored byte-for-byte to its pre-resume "
-        "snapshot, undoing reconciliation's own rewrite",
+        "every hunt file is still byte-for-byte what the base hunt wrote "
+        "-- the symmetry check refused before reconciliation could rewrite "
+        "anything",
         all(
             (out / name).exists() and (out / name).read_bytes() == content
             for name, content in snapshot.items()
         ),
+    )
+
+with tempfile.TemporaryDirectory() as tmp:
+    # #525 review, C2/P1: the symmetry probe must check the seeds
+    # reconciliation will *actually* leave un-done, not a raw read of
+    # progress.jsonl -- reconciliation can un-done a seed progress.jsonl
+    # claims is finished (its example never made it to examples.jsonl), and
+    # a probe using the raw set skips exactly that seed, checks a
+    # well-formed later one instead, and passes -- clearing the way for
+    # reconciliation's truncate/rewrite to run before the loop reprocesses
+    # the un-done seed for real and raises, now with no restore path.
+    # Seed 0 here is hand-marked done-with-an-example but examples.jsonl
+    # has no such example, forcing reconciliation to un-done it; its
+    # candidate is the one that doesn't fit the group, while seed 1 (what a
+    # raw-done-set probe would check instead) fits fine. The two
+    # `randint` draws below are `random.Random(0)`/`random.Random(1)`'s
+    # own first draw -- the only way `propose` can tell seeds apart, since
+    # it only ever sees an already-seeded `rng`, never the seed itself.
+    out = Path(tmp) / "hunt-out"
+    out.mkdir()
+    argv = ["--out", str(out), "--seeds", "0:2"]
+    (out / "run.json").write_text(
+        json.dumps(
+            {
+                "argv": argv,
+                "git_sha": "0" * 40,
+                "start_time": "2026-01-01T00:00:00+00:00",
+            }
+        )
+    )
+    (out / "progress.jsonl").write_text(
+        json.dumps({"event": "seed_done", "seed": 0, "outcome": "example"}) + "\n"
+    )
+    progress_before = (out / "progress.jsonl").read_text()
+    reconciled_probe_script = f"""
+import sys
+sys.path.insert(0, {str(HERE)!r})
+from driver import run
+from protocol import Verdict
+
+class ReconciledFirstSeedFinder:
+    symmetry = [(0, 1, 2, 3), (1, 3, 0, 2), (2, 0, 3, 1), (3, 2, 1, 0)]
+
+    def propose(self, rng):
+        if rng.randint(0, 10 ** 9) == 906691059:  # random.Random(0)'s draw
+            return (0,) * 9
+        return (0, 1, 2, 3)
+
+    def verify(self, candidate):
+        return Verdict(ok=True)
+
+    def record(self, candidate):
+        return {{"grid": list(candidate)}}
+
+    def key(self, candidate):
+        return candidate
+
+sys.exit(run(ReconciledFirstSeedFinder(), sys.argv[1:]))
+"""
+    resumed = subprocess.run(
+        [sys.executable, "-c", reconciled_probe_script, *argv],
+        capture_output=True,
+        text=True,
+    )
+    check(
+        f"resuming a reconcilable-away 'done' seed into a symmetry mismatch "
+        f"still exits 2 (stderr: {resumed.stderr[-300:]})",
+        resumed.returncode == 2,
+    )
+    check(
+        "progress.jsonl is untouched -- the check ran before reconciliation "
+        "could trim the seed it depends on",
+        (out / "progress.jsonl").read_text() == progress_before,
+    )
+    check(
+        "no summary.json was written -- the mismatch surfaced before the "
+        "loop, not mid-loop after a truncate/rewrite",
+        not (out / "summary.json").exists(),
+    )
+    check(
+        "examples.jsonl was never created",
+        not (out / "examples.jsonl").exists(),
+    )
+
+with tempfile.TemporaryDirectory() as tmp:
+    # Codex pass 1 on PR 530, finding 1: a resume whose entire seed range
+    # is already done never gives the live probe an un-done seed to check
+    # -- so a group that no longer fits the shape already durable in
+    # examples.jsonl (here: the group was a length-9 identity while the
+    # recorded key is length 4, as if the declared symmetry changed after
+    # a run that used a different one completed) must be caught by
+    # comparing the group against the recorded key length directly, with
+    # no finder call at all. `propose` raises if called, so a probe that
+    # still tried to call it (instead of catching this from the recorded
+    # length alone) would fail loudly rather than silently passing.
+    out = Path(tmp) / "hunt-out"
+    out.mkdir()
+    argv = ["--out", str(out), "--seeds", "0:1"]
+    (out / "run.json").write_text(
+        json.dumps(
+            {
+                "argv": argv,
+                "git_sha": "0" * 40,
+                "start_time": "2026-01-01T00:00:00+00:00",
+            }
+        )
+    )
+    (out / "progress.jsonl").write_text(
+        json.dumps({"event": "seed_done", "seed": 0, "outcome": "example"}) + "\n"
+    )
+    base_examples = (
+        json.dumps({"grid": [0, 1, 2, 3], "__dedupe_key__": [0, 1, 2, 3]}) + "\n"
+    )
+    (out / "examples.jsonl").write_text(base_examples)
+    progress_before = (out / "progress.jsonl").read_text()
+    all_done_stale_shape_script = f"""
+import sys
+sys.path.insert(0, {str(HERE)!r})
+from driver import run
+from protocol import Verdict
+
+class AllDoneStaleShapeFinder:
+    symmetry = [(0, 1, 2, 3, 4, 5, 6, 7, 8)]
+
+    def propose(self, rng):
+        raise AssertionError("propose() must not be called -- every seed "
+                              "in range is already done")
+
+    def verify(self, candidate):
+        return Verdict(ok=True)
+
+    def record(self, candidate):
+        return {{"grid": list(candidate)}}
+
+    def key(self, candidate):
+        return candidate
+
+sys.exit(run(AllDoneStaleShapeFinder(), sys.argv[1:]))
+"""
+    resumed = subprocess.run(
+        [sys.executable, "-c", all_done_stale_shape_script, *argv],
+        capture_output=True,
+        text=True,
+    )
+    check(
+        f"resuming an already-fully-done hunt into a stale recorded shape "
+        f"still exits 2 (stderr: {resumed.stderr[-500:]})",
+        resumed.returncode == 2,
+    )
+    check(
+        "progress.jsonl is untouched",
+        (out / "progress.jsonl").read_text() == progress_before,
+    )
+    check(
+        "examples.jsonl is untouched",
+        (out / "examples.jsonl").read_text() == base_examples,
+    )
+    check("no summary.json was written", not (out / "summary.json").exists())
+
+with tempfile.TemporaryDirectory() as tmp:
+    # Codex pass 1 on PR 530, finding 2: the probe's save_state()/
+    # load_state() round-trip must snapshot a deep copy, not the live
+    # object save_state() returns -- a finder whose save_state() hands
+    # back the same mutable object it keeps mutating (here, a list
+    # `propose` appends to in place, rather than returning a fresh copy
+    # each time) would otherwise see the probe's own extra propose() call
+    # bleed into the "restored" state, since restoring a reference to an
+    # already-mutated object restores nothing.
+    #
+    # A genuine base hunt (one seed) completes normally, then state.json
+    # is deleted to simulate a kill before its save landed -- the same
+    # technique test_hunt_resume.py's negative-seed-no-state case uses.
+    # Reconciliation then un-dones that one seed (a stateful finder with
+    # no state.json can never prove it "caught up"), so on resume the
+    # probe's first (and only) candidate is that same seed's, starting
+    # from the finder's fresh (empty) log -- a live-reference bug is not
+    # masked by anything already in it.
+    out = Path(tmp) / "hunt-out"
+    live_reference_script = f"""
+import sys
+sys.path.insert(0, {str(HERE)!r})
+from driver import run
+from protocol import Verdict
+
+class LiveReferenceStateFinder:
+    symmetry = [(0, 1, 2, 3), (1, 3, 0, 2), (2, 0, 3, 1), (3, 2, 1, 0)]
+
+    def __init__(self):
+        self.log = []
+
+    def propose(self, rng):
+        self.log.append(1)
+        return (0, 1, 2, 3)
+
+    def verify(self, candidate):
+        return Verdict(ok=True)
+
+    def record(self, candidate):
+        return {{"grid": list(candidate), "log_len_at_find": len(self.log)}}
+
+    def key(self, candidate):
+        return candidate
+
+    def save_state(self):
+        return self.log
+
+    def load_state(self, state):
+        self.log = state
+
+sys.exit(run(LiveReferenceStateFinder(), sys.argv[1:]))
+"""
+    base = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            live_reference_script,
+            "--out",
+            str(out),
+            "--seeds",
+            "0:1",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    check(
+        f"base hunt for the live-reference-state test exits 0 (stderr: "
+        f"{base.stderr[-500:]})",
+        base.returncode == 0,
+    )
+    (out / "state.json").unlink()  # simulate a kill before the save landed
+
+    resumed = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            live_reference_script,
+            "--out",
+            str(out),
+            "--seeds",
+            "0:1",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    check(
+        f"resume with a live-reference save_state and no state.json exits "
+        f"0 (stderr: {resumed.stderr[-500:]})",
+        resumed.returncode == 0,
+    )
+    examples = [
+        json.loads(line)
+        for line in (out / "examples.jsonl").read_text().splitlines()
+        if line
+    ]
+    check(
+        "the probe's own extra propose() call didn't leak into seed 0's "
+        "real log_len_at_find",
+        len(examples) == 1 and examples[0]["log_len_at_find"] == 1,
     )
 
 sys.exit(0 if ok else 1)
