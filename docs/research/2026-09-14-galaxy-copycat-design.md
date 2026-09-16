@@ -1040,3 +1040,22 @@ Answer to the question: yes, two (3,4) lines fit, in hundreds of ways,
 and 341 of them are unique puzzles in which the split genuinely
 shuffles. Next: pick by shape and box coverage, then verify the chosen
 board with `copycat_rsl_solver.py --candidates` and hand-check the break-in.
+
+**Unique (3,4) pairs deduped by cell coverage (2026-09-16).** Direction and
+path order through the same cells are the same region sum line, so pairs
+are keyed by the two cell sets. 2,255 feasible pairs are 1,317 by
+coverage; the 341 unique ones are **201**, 16 of them with a repeated
+value. `boards/board14-pair7.unique-dedup.jsonl` lists the 201 sorted by
+"lines only" (solutions left by the two lines' region sums before the
+pairing rule; higher means the pairing does more). Top of each list:
+
+| lines only | L5 | L6 | values |
+|---|---|---|---|
+| 1,249 | r1c2-r6c2 column, hook r6c1 (boxes 1, 4) | r7c7-r9c7, r9c6-r8c6-r8c5-r9c5 (boxes 9, 8) | 5 9 6 \| 8 1 7 4 vs 8 5 7 \| 9 4 1 6 |
+| 1,140 | r1c2-r5c2, r5c3-r6c3 | r8c5-r9c5-r9c6-r8c6, r8c7-r8c8-r9c8 | 9 2 7 \| 8 1 5 4 vs 1 8 7 2 \| 9 4 5 |
+| 646 (repeat) | r1c2-r1c1-r2c1-r3c1, r4c1-r4c2-r4c3 | r1c5-r1c6-r2c6, r2c7-r2c8-r1c8-r1c9 | 7 1 5 6 \| 8 8 3 vs 5 8 6 \| 1 7 3 8 |
+
+The repeat case is notable: L5's 3-segment is three cells of row 4
+showing 8, 8, 3, so the repeat itself proves a copycat sits on the
+segment. Repeats cost freedom (646 against 1,249) because they pin a
+copycat on the line.
