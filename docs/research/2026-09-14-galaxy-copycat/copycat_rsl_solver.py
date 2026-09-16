@@ -139,6 +139,10 @@ def build(setup: dict, relax: set[str] | None = None):
                 m.Add(value[r][c] != v).OnlyEnforceIf(is_val[r][c][v].Not())
             m.AddExactlyOne(is_dig[r][c][1:])
             m.AddExactlyOne(is_val[r][c][1:])
+            # the digit-0 slots are never referenced; pin them so solution
+            # enumeration does not multiply over 162 free booleans
+            m.Add(is_dig[r][c][0] == 0)
+            m.Add(is_val[r][c][0] == 0)
             m.Add(value[r][c] == digit[8 - r][8 - c]).OnlyEnforceIf(cc[r][c])
             m.Add(value[r][c] == digit[r][c]).OnlyEnforceIf(cc[r][c].Not())
     for v in range(1, 10):

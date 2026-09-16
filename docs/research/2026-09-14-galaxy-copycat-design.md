@@ -963,3 +963,77 @@ shuffle too (see below).
   (2,5) against (3,4) (5 multisets), (2,2,3) against (2,5) or (3,4), and
   (1,2,2,2) against (3,4) or (2,2,3). The full split table is in
   `boards/length7-splits.txt`.
+
+**Board 14's residual set, enumerated once (2026-09-15).** Following
+`docs/agents/grid-finder-lessons.md` ("search the smallest object"):
+board 14 with its forced facts has exactly **120,000 solutions**, one
+copycat placement per digit grid, enumerated to OPTIMAL in 2 minutes.
+Two things made that possible. The checker's model never constrained
+the digit-0 slot of its per-cell booleans (162 free variables), so
+CP-SAT's solution enumeration multiplied every real solution by them:
+1.59 M "solutions" in 15 minutes were 17 real ones. `copycat_rsl_solver.py`
+now pins those slots (no other behaviour changes; the capped `n`
+columns in the older `*.pairs.jsonl` catalogues were inflated by this
+and are not counts). A nogood loop over digit grids alone managed 3,766
+grids in 2.5 hours before it was replaced.
+
+`residual.py build board.json grids.txt out.npz --seed forced.json`
+takes the grid list and re-derives every placement with a DFS (one
+copycat per box, one per row and column, nine different digits, the
+board's lines and pairs); on board 14 the 120,000 placements it finds
+are exactly CP-SAT's 120,000. Every later question is then a numpy
+filter over the set: a line's region sums, a pair's multiset match, an
+exact survivor count, exact forced cells. `rank_residual.py` does that
+for the quad and pair searches below; both agree with the CP-SAT runs on
+every row, which is the independent verification the lessons ask for.
+The `.npz` is 2 minutes to regenerate (`.scratch/copycat-rsl/enum_b14.py`
+then `residual.py build`) and stays out of git.
+
+**Four (2,2) lines with a deducible pairing (2026-09-15).** Asked: drop
+to four 4-cell (2,2) lines whose 2+2 pairing is unique and whose grid is
+unique. `find_quad4.py` takes the 243 feasible (2,2) pairs, forms the
+7,171 cell-disjoint 4-sets, and solves each with a matching variable
+(AB|CD, AC|BD, AD|BC). Results (`boards/board14-quad4.{0,1}.jsonl`,
+exact re-rank in `boards/board14-quad4.rank.jsonl`):
+
+- 66 feasible 4-sets; in every one only a single pairing admits any
+  solution. 21 have a unique solution in digits and placement.
+- The lines do the work, not the pairing: with the four lines' region
+  sums alone and no pairing, the 66 sets leave at most 41 of the 120,000
+  solutions (median 5), and the 21 unique ones at most 26.
+- In 19 of the 21 the wrong pairings are already killed by segment sums.
+  Only two sets keep a sum-compatible wrong pairing: r1c5-r1c8 (row),
+  r3c1-r3c2 | r4c2-r4c1 (or reversed), r5c2-r8c2 (column), r5c5-r5c4 |
+  r5c3-r6c3; lines alone leave 3 solutions, all three pairings
+  sum-compatible in some, AC|BD the only one that holds (values 3719 /
+  3728 / 1937 / 8273).
+
+So the pairing deduction is a small last step, the same "no interesting
+ambiguity" as the single (2,2) pairs: four lines of two sums each pin
+the grid before the pairing matters.
+
+**Two (3,4) 7-cell lines with shuffled splits (2026-09-15).** Asked: if
+the 4-cell lines go, can board 14 take two (3,4) lines whose 3-segments
+carry different multisets? `find_pair7.py` (4 shards, exact value-vector
+enumeration per line, `boards/board14-pair7.lines.{0..3}.jsonl`, 514
+lines) then a pair stage with the "small segments differ" constraint:
+27,976 candidate pairs, **2,255 feasible**, all confirmed by the residual
+filter. Exact rank in `boards/board14-pair7.rank.jsonl`:
+
+- 341 pairs give a **unique** puzzle (one residual solution), all 81
+  digits forced, and the two 3-segments differ in that solution.
+- 2,116 of 2,255 pairs are shuffled in every surviving solution, so the
+  shuffle is a property of the placement, not luck of the sample.
+- Survivor counts: 1 (341 pairs), 2 (472), 3 (182), 4 (288), then a long
+  tail; nothing over a few dozen.
+- The unique ones sit almost entirely in the corners: 187 pair a line
+  through boxes 4-7 with one through 8-9, 117 pair boxes 1-4 with 8-9;
+  the rest spread over 2-3 with 4-7 or 8-9, and 1-2 with 4-7 or 8-9.
+- Example (first in rank order): X = r1c1-r1c2-r2c2 | r3c2-r4c2-r5c2-r6c2
+  with 3-segment {1,8,9}, Y = r7c6-r7c5-r8c5 | r8c6-r8c7-r9c7-r9c8 with
+  3-segment {2,7,9}; same seven values, different split, unique grid.
+
+Answer to the question: yes, two (3,4) lines fit, in hundreds of ways,
+and 341 of them are unique puzzles in which the split genuinely
+shuffles. Next: pick by shape and box coverage, then verify the chosen
+board with `copycat_rsl_solver.py --candidates` and hand-check the break-in.
