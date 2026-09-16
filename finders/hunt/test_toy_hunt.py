@@ -82,15 +82,20 @@ with tempfile.TemporaryDirectory() as tmp:
     keys = [canonical_key(tuple(ex["grid"]), D4) for ex in examples]
     check("no two examples are equal under D4", len(keys) == len(set(keys)))
 
-    # A fresh hunt only: rerunning on the same --out must refuse rather than
-    # silently mix in more output (dedupe isn't reloaded across runs; #487
-    # is where a real resume makes that safe).
+    # A completed hunt is a run.json-bearing --out, so rerunning it goes
+    # through the resume path (#487) -- and a differing --seeds is a
+    # differing argv, which that path refuses rather than silently mixing
+    # in output under a range the recorded run never agreed to. See
+    # test_hunt_resume.py for resuming with the *same* argv.
     rerun = subprocess.run(
         [sys.executable, str(TOY_FINDER), "--out", str(out), "--seeds", "0:5"],
         capture_output=True,
         text=True,
     )
-    check("rerunning on the same --out refuses (nonzero exit)", rerun.returncode != 0)
+    check(
+        "rerunning with a differing --seeds refuses (nonzero exit)",
+        rerun.returncode != 0,
+    )
     check(
         "a refused rerun leaves examples.jsonl untouched",
         len(

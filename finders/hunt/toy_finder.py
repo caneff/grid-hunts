@@ -1,4 +1,4 @@
-"""Toy finder for the hunt protocol's own tests (#484): random 4x4 shadings.
+"""Toy finder for the hunt protocol's own tests (#484/#487): random 4x4 shadings.
 
 Not a real finder rule -- it exists so test_toy_hunt.py can drive the `hunt`
 CLI end to end without a real search. `verify` is trivial: an even number of

@@ -49,3 +49,16 @@ class Finder(Protocol):
         """The flat tuple of cell values dedupe canonicalizes under
         `symmetry`."""
         ...
+
+    # Optional -- a finder with no expensive cuts to remember skips both.
+    # The driver calls `save_state` after every seed and `load_state` once,
+    # before a resumed hunt's first seed, round-tripping through state.json
+    # (#487) so a resumed hunt doesn't relearn what it already knew.
+
+    def save_state(self) -> Any:
+        """JSON-serialisable state to persist to state.json."""
+        ...
+
+    def load_state(self, state: Any) -> None:
+        """Restore state a prior run's `save_state` wrote."""
+        ...
