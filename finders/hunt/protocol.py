@@ -12,6 +12,8 @@ from typing import Any, NamedTuple, Protocol
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dedupe import D4
 
+DEFAULT_WORKERS = 3
+
 
 class Verdict(NamedTuple):
     """The result of `Finder.verify`: ok, plus why not when it isn't."""
@@ -27,9 +29,15 @@ class Finder(Protocol):
     `dedupe.IDENTITY`, or a custom list of cell maps (see dedupe.py). A
     finder that leaves `symmetry` unset gets `dedupe.D4` from the driver --
     the common, square-board case needs no code.
+
+    `workers` is set by the driver from `--workers` (default `DEFAULT_WORKERS`)
+    before the first seed runs (#488) -- a finder that solves with CP-SAT
+    reads `self.workers` for its own solver's worker count, so a hunt
+    started without `--workers` still leaves cores for the rest of the box.
     """
 
     symmetry: Any = D4
+    workers: int = DEFAULT_WORKERS
 
     def propose(self, rng) -> Any | None:
         """One candidate for this seed's rng, or None if this seed found

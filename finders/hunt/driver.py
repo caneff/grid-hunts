@@ -7,9 +7,11 @@ new hunt; an `--out` that already has one resumes it: seeds with a
 `seed_done` event are skipped, the dedupe set is rebuilt from the durable
 log, and a finder's optional `save_state`/`load_state` round-trip through
 state.json. A differing argv versus the recorded run refuses to start; a
-differing git sha only warns. The grid helpers, CP-SAT helpers, the
-`--workers`/load gate, deferred verification and the render hook are the
-other later tickets (#485-#490) under the parent spec (#483).
+differing git sha only warns. The grid helpers, CP-SAT helpers,
+deferred verification and the render hook are the other later tickets
+(#485-#490) under the parent spec (#483). `--workers` (default 3, set on
+the finder before the first seed) and the 1-minute load gate (refuses above
+24 unless `--force-load`) are #488.
 
     uv run finders/hunt/toy_finder.py --out DIR --seeds START:END
 
@@ -33,6 +35,7 @@ import argparse
 import contextlib
 import fcntl
 import json
+import math
 import os
 import random
 import subprocess
@@ -42,6 +45,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dedupe import D4, IDENTITY, canonical_key, validate_group
+from protocol import DEFAULT_WORKERS
 
 OUTPUT_FILES = (
     "examples.jsonl",
@@ -60,6 +64,49 @@ _OUTCOME_COUNT_KEY = {
 }
 
 _DEDUPE_KEY_FIELD = "__dedupe_key__"
+
+LOAD_LIMIT = 24
+
+
+def _load1():
+    """The 1-minute load average, or `HUNT_FAKE_LOAD1` when set.
+
+    The env var is the injection point for tests (#488): a hunt started
+    through the CLI in a subprocess has no way to hand in a fake load
+    function, so the override travels as an env var instead of a
+    production-visible CLI flag.
+    """
+    override = os.environ.get("HUNT_FAKE_LOAD1")
+    if not override:
+        return os.getloadavg()[0]
+    value = float(override)
+    if not math.isfinite(value) or value < 0:
+        raise ValueError(
+            f"HUNT_FAKE_LOAD1={override!r} is not a finite, non-negative load"
+        )
+    return value
+
+
+def _check_load(args):
+    if args.force_load:
+        return None
+    try:
+        load = _load1()
+    except ValueError:
+        print(
+            f"hunt: refusing to run -- HUNT_FAKE_LOAD1={os.environ.get('HUNT_FAKE_LOAD1')!r} "
+            "is not a valid load",
+            file=sys.stderr,
+        )
+        return 2
+    if load > LOAD_LIMIT:
+        print(
+            f"hunt: refusing to run -- 1-minute load {load} is above {LOAD_LIMIT} "
+            "(use --force-load to run anyway)",
+            file=sys.stderr,
+        )
+        return 2
+    return None
 
 
 def _parse_seeds(text):
@@ -98,6 +145,8 @@ def _parse_args(argv):
     parser = argparse.ArgumentParser(prog="hunt")
     parser.add_argument("--out", required=True)
     parser.add_argument("--seeds", required=True, type=_parse_seeds)
+    parser.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
+    parser.add_argument("--force-load", action="store_true")
     return parser.parse_args(_merge_seeds_token(argv))
 
 
@@ -124,6 +173,17 @@ def _write_text_atomic(path, text):
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(text)
     tmp.replace(path)
+
+
+def _resume_key(argv):
+    """The parts of `argv` that define a hunt's search space: `--out` and
+    `--seeds`. Box-safety knobs (`--workers`, `--force-load`) are excluded
+    on purpose (#488 review C1/P2) -- the box's load or a chosen worker
+    count differing between two invocations of the same hunt is not a
+    differing search, and the load gate's own "use --force-load" advice
+    must not be something the resume check then refuses."""
+    args = _parse_args(argv)
+    return (args.out, args.seeds)
 
 
 def _refuse(out_arg, why):
@@ -451,6 +511,16 @@ def run(finder, argv):
     --out's lock).
     """
     args = _parse_args(argv)
+    if args.workers < 1:
+        print(
+            f"hunt: refusing to run -- --workers must be at least 1, got {args.workers}",
+            file=sys.stderr,
+        )
+        return 2
+    refusal = _check_load(args)
+    if refusal is not None:
+        return refusal
+    finder.workers = args.workers
     refusal = _validate_symmetry(finder)
     if refusal is not None:
         return refusal
@@ -495,10 +565,11 @@ def run(finder, argv):
                 for name in OUTPUT_FILES
             }
             prior = json.loads(run_path.read_text())
-            if prior.get("argv") != list(argv):
+            prior_argv = prior.get("argv")
+            if prior_argv is None or _resume_key(prior_argv) != _resume_key(argv):
                 print(
                     "hunt: refusing to resume -- argv differs from the recorded run "
-                    f"({prior.get('argv')!r} vs {list(argv)!r})",
+                    f"({prior_argv!r} vs {list(argv)!r})",
                     file=sys.stderr,
                 )
                 return 2
