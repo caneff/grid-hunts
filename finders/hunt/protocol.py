@@ -80,3 +80,13 @@ class Finder(Protocol):
         """Rebuild the candidate `verify` can check from a line `record()`
         wrote to examples.jsonl."""
         ...
+
+    # Optional -- a finder with no picture to draw skips this. The driver
+    # calls `render` right after an accepted example is written, and saves
+    # the returned image to renders/<seed>.png (#490). Build the image with
+    # `render.GridCanvas`.
+
+    def render(self, candidate: Any):
+        """A picture of this candidate (a `PIL.Image.Image`), or omit this
+        method entirely for a finder with nothing to draw."""
+        ...
