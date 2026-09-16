@@ -1029,9 +1029,12 @@ filter. Exact rank in `boards/board14-pair7.rank.jsonl`:
 - The unique ones sit almost entirely in the corners: 187 pair a line
   through boxes 4-7 with one through 8-9, 117 pair boxes 1-4 with 8-9;
   the rest spread over 2-3 with 4-7 or 8-9, and 1-2 with 4-7 or 8-9.
-- Example (first in rank order): X = r1c1-r1c2-r2c2 | r3c2-r4c2-r5c2-r6c2
-  with 3-segment {1,8,9}, Y = r7c6-r7c5-r8c5 | r8c6-r8c7-r9c7-r9c8 with
-  3-segment {2,7,9}; same seven values, different split, unique grid.
+- Example (first in rank order, `boards/board21-pair7-1.json`):
+  L5 = r1c1-r1c2-r2c2-r3c2 | r4c2-r5c2-r6c2 (boxes 1, 4) with 3-segment
+  {1,8,9}, L6 = r7c6-r7c5-r8c5-r8c6 | r8c7-r9c7-r9c8 (boxes 8, 9) with
+  3-segment {2,7,9}; both sum 18 per segment, values 4,2,7,5 | 8,1,9 and
+  5,4,1,8 | 2,9,7. Alone L5 leaves 2,778 and L6 8,520 of the 120,000
+  solutions, both together 171, the pairing takes it to 1.
 
 Answer to the question: yes, two (3,4) lines fit, in hundreds of ways,
 and 341 of them are unique puzzles in which the split genuinely
