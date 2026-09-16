@@ -23,3 +23,6 @@ drivers that launch a hunt overnight stay under `docs/research/` (#469).
 - Before writing a new finder — what to search, when cuts beat a counter,
   profiling the loop, the `ctypes` C port, counting what you found:
   `docs/agents/grid-finder-lessons.md`.
+- `finders/galaxy-copycat/`'s write-ups live in `docs/research/2026-09-14-copycat-scan.md`
+  and `docs/research/2026-09-14-galaxy-copycat-design.md`; its boards are
+  `docs/research/2026-09-14-galaxy-copycat/boards/`.

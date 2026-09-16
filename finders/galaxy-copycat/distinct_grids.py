@@ -1,3 +1,11 @@
+"""Solution stats for the five p22 copycat-RSL setups in
+.scratch/copycat-rsl/p22/: solution count, distinct digit grids, single-given
+uniqueness, and which grids see more than one copycat placement. The five
+p{i}.json setups are hand-built, not produced by a script in this repo.
+
+Run from the repo root: uv run finders/galaxy-copycat/distinct_grids.py
+"""
+
 import json
 import sys
 from pathlib import Path
@@ -38,13 +46,6 @@ for i in range(1, 6):
         )
     # single given: digit at cell -> number of full solutions
     cnt = Counter((r, c, g[r][c]) for g, _ in sols for r in range(9) for c in range(9))
-    open_cells = {
-        (r, c)
-        for g, _ in sols
-        for r in range(9)
-        for c in range(9)
-        if g[r][c] != sols[0][0][r][c]
-    }
     uniq = [f"r{r + 1}c{c + 1}={d}" for (r, c, d), v in sorted(cnt.items()) if v == 1]
     print(
         f"p{i}: {n} solutions (digits+placement){' CAP' if n >= 200 else ''}, {len(grids)} digit grids; single digit givens giving uniqueness: {len(uniq)}"

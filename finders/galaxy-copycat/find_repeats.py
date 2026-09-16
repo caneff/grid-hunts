@@ -1,3 +1,10 @@
+"""For each pair4 candidate pairing two (2,2) 4-cell lines on board14, check
+whether some shared value's repeat count is CP-SAT-feasible on the paired
+lines; writes survivors to .scratch/copycat-rsl/p22/repeats.json.
+
+Run from the repo root: uv run finders/galaxy-copycat/find_repeats.py
+"""
+
 import json
 import sys
 import time
@@ -81,5 +88,7 @@ for p in pairs:
         )
         print(json.dumps(out[-1]), flush=True)
 print(f"{len(out)} pairs with a feasible repeated value, {time.time() - t0:.0f}s")
-with Path(".scratch/copycat-rsl/p22/repeats.json").open("w") as f:
+OUT = Path(".scratch/copycat-rsl/p22/repeats.json")
+OUT.parent.mkdir(parents=True, exist_ok=True)
+with OUT.open("w") as f:
     json.dump(out, f)
