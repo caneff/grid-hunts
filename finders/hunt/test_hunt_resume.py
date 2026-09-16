@@ -50,8 +50,13 @@ def check(name, cond):
 
 
 def run_cli(finder, out, seeds):
+    # `--seeds`, `seeds` as two argv items reads a negative seeds range
+    # (e.g. "-3:-2") as an unrecognized option on argparse versions that
+    # don't special-case a leading "-" followed by a digit (Python <3.14
+    # here) -- the single `--seeds=<value>` token sidesteps that ambiguity
+    # on every version (#516).
     return subprocess.run(
-        [sys.executable, str(finder), "--out", str(out), "--seeds", seeds],
+        [sys.executable, str(finder), "--out", str(out), f"--seeds={seeds}"],
         capture_output=True,
         text=True,
     )
@@ -69,7 +74,7 @@ def kill_partway(finder, out, seeds, min_seed_done_events=3):
     (see toy_slow_finder.py) so this doesn't race a hunt that finishes
     before the kill lands."""
     proc = subprocess.Popen(
-        [sys.executable, str(finder), "--out", str(out), "--seeds", seeds],
+        [sys.executable, str(finder), "--out", str(out), f"--seeds={seeds}"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
@@ -219,6 +224,76 @@ with tempfile.TemporaryDirectory() as tmp:
         "state.json ends caught up to the last seed again",
         final_state.get("seed") == 9 and final_state["state"].get("seeds_seen") == 10,
     )
+
+with tempfile.TemporaryDirectory() as tmp:
+    # #516: simulates a kill between negative seed -3's progress.jsonl
+    # event and its state.json save by removing state.json after a
+    # completed run, as if that one save never landed. progress.jsonl's
+    # seed_done event for -3 survives either way, so the witness is
+    # whether state.json comes back at all, not whether -3 reappears there.
+    out = Path(tmp) / "negative-seed-no-state"
+    result = run_cli(STATEFUL_FINDER, out, "-3:-2")
+    check(
+        f"base negative-seed stateful hunt exits 0 (stderr: {result.stderr[-300:]})",
+        result.returncode == 0,
+    )
+    state_path = out / "state.json"
+    real_state = json.loads(state_path.read_text())
+    check(
+        "the base hunt's state.json reflects the negative seed",
+        real_state.get("seed") == -3,
+    )
+    # Remove state.json entirely, as if seed -3's save never landed.
+    state_path.unlink()
+
+    rerun = run_cli(STATEFUL_FINDER, out, "-3:-2")
+    check(
+        f"resume after a negative-seed state gap exits 0 (stderr: {rerun.stderr[-300:]})",
+        rerun.returncode == 0,
+    )
+    check(
+        "state.json exists again after resume, proving seed -3 actually reran "
+        "instead of staying done on the absent-state sentinel collision",
+        state_path.exists(),
+    )
+    if state_path.exists():
+        final_state = json.loads(state_path.read_text())
+        check(
+            "state.json reflects the negative seed again",
+            final_state.get("seed") == -3
+            and final_state["state"].get("seeds_seen") == 1,
+        )
+        final_progress = read_jsonl(out / "progress.jsonl")
+        seeds_seen = [
+            e["seed"] for e in final_progress if e.get("event") == "seed_done"
+        ]
+        check(
+            "exactly one seed_done event for the negative seed after resume",
+            seeds_seen == [-3],
+        )
+
+with tempfile.TemporaryDirectory() as tmp:
+    # #516 Codex pass 2: the CLI itself must accept a negative --seeds
+    # range as two separate argv tokens ("--seeds", "-3:-2"), not only the
+    # "--seeds=-3:-2" single-token form the rest of this file uses -- a
+    # real user invoking the CLI by hand types the two-token form, and
+    # argparse's own heuristic for telling a negative-looking value apart
+    # from an unrecognized option only accepts it on Python 3.14+ without
+    # `_merge_seeds_token`'s help.
+    out = Path(tmp) / "two-token-negative-seeds"
+    result = subprocess.run(
+        [sys.executable, str(TOY_FINDER), "--out", str(out), "--seeds", "-3:-1"],
+        capture_output=True,
+        text=True,
+    )
+    check(
+        f"--seeds and a negative range as two argv tokens exits 0 "
+        f"(stderr: {result.stderr[-300:]})",
+        result.returncode == 0,
+    )
+    progress = read_jsonl(out / "progress.jsonl")
+    seeds_seen = [e["seed"] for e in progress if e.get("event") == "seed_done"]
+    check("both negative seeds ran", sorted(seeds_seen) == [-3, -2])
 
 with tempfile.TemporaryDirectory() as tmp:
     # Only two possible keys exist for this finder, so a broken dedupe

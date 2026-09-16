@@ -68,11 +68,36 @@ def _parse_seeds(text):
     return int(start), int(end)
 
 
+def _merge_seeds_token(argv):
+    """Merge a bare `--seeds VALUE` two-token pair into one `--seeds=VALUE`
+    token before argparse ever sees it.
+
+    `--seeds` accepts a negative start (e.g. "-3:-2"), and argparse's own
+    heuristic for telling a negative-looking value apart from an
+    unrecognized option is version-dependent: the two-token form only
+    parses on Python 3.14+ here, and raises "expected one argument" on
+    3.11-3.13 (#516 Codex pass 2) even though `--seeds=-3:-2` parses on
+    every version. Merging ourselves removes that ambiguity everywhere,
+    without touching the caller's own argv (used verbatim for run.json's
+    recorded-run comparison) -- this returns a new list.
+    """
+    merged = []
+    i = 0
+    while i < len(argv):
+        if argv[i] == "--seeds" and i + 1 < len(argv):
+            merged.append(f"--seeds={argv[i + 1]}")
+            i += 2
+            continue
+        merged.append(argv[i])
+        i += 1
+    return merged
+
+
 def _parse_args(argv):
     parser = argparse.ArgumentParser(prog="hunt")
     parser.add_argument("--out", required=True)
     parser.add_argument("--seeds", required=True, type=_parse_seeds)
-    return parser.parse_args(argv)
+    return parser.parse_args(_merge_seeds_token(argv))
 
 
 def _git_sha():
@@ -160,14 +185,16 @@ def _truncate_to_valid(path, valid_lines):
 
 
 def _state_seed(finder, out):
-    """The seed number the finder's last saved state reflects, or -1 if
-    this finder doesn't save state or hasn't saved any yet."""
+    """The seed number the finder's last saved state reflects, or None if
+    this finder doesn't save state or hasn't saved any yet -- None, since
+    `--seeds` accepts negative integers and no numeric sentinel is safe
+    from colliding with a real one (#516)."""
     if not hasattr(finder, "load_state"):
-        return -1
+        return None
     state_path = out / "state.json"
     if not state_path.exists():
-        return -1
-    return json.loads(state_path.read_text()).get("seed", -1)
+        return None
+    return json.loads(state_path.read_text()).get("seed")
 
 
 def _reconcile(
@@ -205,8 +232,16 @@ def _reconcile(
             1 for e in progress_events if e.get("outcome") == "example"
         )
         examples_ok = example_confirmed <= len(examples_records)
-        last_seed = progress_events[-1].get("seed", -1)
-        state_ok = not tracks_state or last_seed <= state_seed
+        # A seed_done event always carries "seed" (_process_seed sets it
+        # unconditionally); this default only guards a line corrupted in a
+        # way _read_valid_lines still parses. It must not default to a
+        # numeric sentinel -- that's the exact collision #516 fixed for
+        # state_seed -- so an event missing "seed" reads as "always ahead
+        # of any real state_seed," never confirmed, always rerun.
+        last_seed = progress_events[-1].get("seed", float("inf"))
+        state_ok = not tracks_state or (
+            state_seed is not None and last_seed <= state_seed
+        )
         if examples_ok and state_ok:
             break
         del progress_events[-1]
