@@ -2,7 +2,7 @@
 
 Resumable: a page already under .scratch/lmdpages/<id>.html is skipped. Appends one
 line per request to the progress file. Run from the repo root:
-    uv run docs/research/2026-09-14-lmd-hybrid-scan/fetch_pages.py
+    uv run finders/lmd-hybrid-scan/fetch_pages.py
 """
 
 import re

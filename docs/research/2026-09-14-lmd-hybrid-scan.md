@@ -3,7 +3,7 @@
 Date: 2026-09-14. Source: every puzzle listed on the newest 3 pages (60 puzzles) of each of
 46 LMD genre tag listings, then each puzzle page opened once (1533 pages, one request
 per 10 s, no retries). Companion to `2026-09-14-puzzle-genre-survey.md`, which cites a selection;
-this file keeps every hit. Scripts: `2026-09-14-lmd-hybrid-scan/`.
+this file keeps every hit. Scripts: `finders/lmd-hybrid-scan/`.
 
 A hit is a puzzle whose page carries the Sudoku tag (tag_id 1001), or whose title or rules text
 contains "doku". The `how` field says which. Tags with fewer than 60 puzzles were read in full;

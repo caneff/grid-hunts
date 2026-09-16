@@ -16,7 +16,7 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, "docs/research/2026-09-14-galaxy-copycat")
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import residual
 from copycat_rsl_solver import parse_cell, segments
 

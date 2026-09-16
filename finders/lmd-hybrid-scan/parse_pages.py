@@ -2,7 +2,7 @@
 
 A puzzle is a hybrid hit when its page carries the Sudoku tag (tag_id=1001) or its
 title or rules text contains "doku". Run from the repo root:
-    uv run docs/research/2026-09-14-lmd-hybrid-scan/parse_pages.py
+    uv run finders/lmd-hybrid-scan/parse_pages.py
 """
 
 import collections
@@ -48,7 +48,9 @@ for f in sorted(PAGES.glob("*.html")):
         re.S,
     )
     text = re.sub(r"<[^>]+>", " ", body.group(0) if body else "")
-    text = re.sub(r"\(Published on[^)]*\)", " ", text)  # author names like SudokuExplorer
+    text = re.sub(
+        r"\(Published on[^)]*\)", " ", text
+    )  # author names like SudokuExplorer
     rules_hit = bool(re.search(r"doku(?!\s?pad|maker|\s+like)", text, re.I))
     tagged = "1001" in page_tags
     if not (tagged or rules_hit):
@@ -66,7 +68,7 @@ lines = [
     "Date: 2026-09-14. Source: every puzzle listed on the newest 3 pages (60 puzzles) of each of",
     f"{len(tags)} LMD genre tag listings, then each puzzle page opened once ({n_pages} pages, one request",
     "per 10 s, no retries). Companion to `2026-09-14-puzzle-genre-survey.md`, which cites a selection;",
-    "this file keeps every hit. Scripts: `2026-09-14-lmd-hybrid-scan/`.",
+    "this file keeps every hit. Scripts: `finders/lmd-hybrid-scan/`.",
     "",
     "A hit is a puzzle whose page carries the Sudoku tag (tag_id 1001), or whose title or rules text",
     'contains "doku". The `how` field says which. Tags with fewer than 60 puzzles were read in full;',

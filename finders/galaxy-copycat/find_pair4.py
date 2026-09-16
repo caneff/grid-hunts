@@ -24,7 +24,7 @@ from collections import Counter
 from itertools import combinations
 from pathlib import Path
 
-sys.path.insert(0, "docs/research/2026-09-14-galaxy-copycat")
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from copycat_rsl_solver import Collector, build, parse_cell, segments, value_of
 from ortools.sat.python import cp_model
 from segment_openers import line_multisets

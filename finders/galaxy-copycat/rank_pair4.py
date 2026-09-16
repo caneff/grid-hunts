@@ -20,7 +20,7 @@ import sys
 import time
 from pathlib import Path
 
-sys.path.insert(0, "docs/research/2026-09-14-galaxy-copycat")
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from copycat_rsl_solver import build, parse_cell
 from ortools.sat.python import cp_model
 

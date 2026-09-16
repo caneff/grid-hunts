@@ -22,7 +22,7 @@ import time
 from itertools import combinations
 from pathlib import Path
 
-sys.path.insert(0, "docs/research/2026-09-14-galaxy-copycat")
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from copycat_rsl_solver import build, parse_cell
 from ortools.sat.python import cp_model
 
@@ -38,8 +38,15 @@ base = json.loads(Path(args.board).read_text())
 SEED = json.loads(Path(args.seed).read_text()) if args.seed else {}
 shape = tuple(int(x) for x in args.shape.split(","))
 lines_file = Path(args.pairs.replace(".pairs.jsonl", ".lines.jsonl"))
-STRUCT = {r["cells"]: tuple(r["struct"]) for r in map(json.loads, lines_file.read_text().splitlines())}
-pairs = [json.loads(x) for x in Path(args.pairs).read_text().splitlines() if x.startswith("{")]
+STRUCT = {
+    r["cells"]: tuple(r["struct"])
+    for r in map(json.loads, lines_file.read_text().splitlines())
+}
+pairs = [
+    json.loads(x)
+    for x in Path(args.pairs).read_text().splitlines()
+    if x.startswith("{")
+]
 pairs = [p for p in pairs if STRUCT[p["X"]] == shape and STRUCT[p["Y"]] == shape]
 feas = {frozenset((p["X"], p["Y"])) for p in pairs}
 si, sn = (int(x) for x in args.shard.split("/"))
@@ -76,7 +83,9 @@ def solver(t):
 def model(ls):
     setup = {
         **SEED,
-        "lines": dict(base["lines"], **{"ABCD"[i]: n.split("-") for i, n in enumerate(ls)}),
+        "lines": dict(
+            base["lines"], **{"ABCD"[i]: n.split("-") for i, n in enumerate(ls)}
+        ),
         "pairs": base["pairs"],
     }
     m, digit, cc, _ = build(setup)
@@ -99,7 +108,10 @@ def model(ls):
     for k, prs in enumerate(MATCH):
         for x, y in prs:
             for v in range(1, 10):
-                m.Add(sum(isv[r, c, v] for r, c in lc[x]) == sum(isv[r, c, v] for r, c in lc[y])).OnlyEnforceIf(mt[k])
+                m.Add(
+                    sum(isv[r, c, v] for r, c in lc[x])
+                    == sum(isv[r, c, v] for r, c in lc[y])
+                ).OnlyEnforceIf(mt[k])
     return m, digit, cc, val, mt, lc
 
 
@@ -111,7 +123,11 @@ for qi, q in enumerate(quads):
     if qi % sn != si:
         continue
     ls = sorted(q)
-    cat = [k for k, prs in enumerate(MATCH) if all(frozenset((ls[x], ls[y])) in feas for x, y in prs)]
+    cat = [
+        k
+        for k, prs in enumerate(MATCH)
+        if all(frozenset((ls[x], ls[y])) in feas for x, y in prs)
+    ]
     t = time.time()
     m, digit, cc, val, mt, lc = model(ls)
     sols = []
@@ -137,7 +153,9 @@ for qi, q in enumerate(quads):
         bs.append(mt[mk].Not())
         m.AddBoolOr(bs)
     if not sols:
-        print(f"quad {qi + 1}/{len(quads)} infeasible {time.time() - t:.1f}s", flush=True)
+        print(
+            f"quad {qi + 1}/{len(quads)} infeasible {time.time() - t:.1f}s", flush=True
+        )
         continue
     admits = set(sols)
     for k in range(3):
@@ -148,7 +166,11 @@ for qi, q in enumerate(quads):
         m2.Add(mt2[k] == 1)
         if solver(60).Solve(m2) in (cp_model.OPTIMAL, cp_model.FEASIBLE):
             admits.add(k)
-    coincide = [key(ls, k) for k, prs in enumerate(MATCH) if k != sols[0] and all(holds(first, x, y) for x, y in prs)]
+    coincide = [
+        key(ls, k)
+        for k, prs in enumerate(MATCH)
+        if k != sols[0] and all(holds(first, x, y) for x, y in prs)
+    ]
     row = {
         "lines": ls,
         "n": len(sols),
@@ -161,6 +183,9 @@ for qi, q in enumerate(quads):
     }
     with OUT.open("a") as f:
         print(json.dumps(row), file=f, flush=True)
-    print(f"quad {qi + 1}/{len(quads)} n={row['n']} m={row['matchings']} {row['t']}s", flush=True)
+    print(
+        f"quad {qi + 1}/{len(quads)} n={row['n']} m={row['matchings']} {row['t']}s",
+        flush=True,
+    )
 with OUT.open("a") as f:
     print("DONE", file=f)

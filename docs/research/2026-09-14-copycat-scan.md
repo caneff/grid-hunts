@@ -1,7 +1,7 @@
 # Copycat sudokus on LMD — rulesets, setters, and pencil-puzzle hybrids
 
 Date: 2026-09-14. Companion to `2026-09-14-puzzle-genre-survey.md` and
-`2026-09-14-lmd-hybrid-scan.md`. Scripts: `2026-09-14-copycat-scan/`.
+`2026-09-14-lmd-hybrid-scan.md`. Scripts: `finders/copycat-scan/`.
 
 ## Method
 

@@ -13,7 +13,7 @@ from collections import Counter
 from itertools import permutations
 from pathlib import Path
 
-sys.path.insert(0, "docs/research/2026-09-14-galaxy-copycat")
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from copycat_rsl_solver import Collector, build, segments
 from ortools.sat.python import cp_model
 from segment_openers import line_multisets, partitions

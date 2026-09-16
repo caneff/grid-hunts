@@ -325,7 +325,7 @@ dead (every size is nine). Everything else in the pairings list applies.
 ## Result: equal-size symmetric regions cannot tile the grid irregularly
 
 Checked 2026-09-14 by exhaustive search
-(`2026-09-14-galaxy-copycat/symmetric_region_tilings.py`; shape counts
+(`finders/galaxy-copycat/symmetric_region_tilings.py`; shape counts
 cross-checked against the known 9,910 fixed nonominoes).
 
 | Grid | Point-symmetric n-ominoes (fixed) | Tilings by n of them | Distinct up to symmetry | Without any 1xn bar |
@@ -444,7 +444,7 @@ inside one box. Single-cell segments are fine.
 
 ### Segment-structure survey (2026-09-14)
 
-`2026-09-14-galaxy-copycat/segment_openers.py` enumerates every pair of
+`finders/galaxy-copycat/segment_openers.py` enumerates every pair of
 segment structures up to length 8 (parts of any size, singles included) and
 lists which (S_A, S_B) can be realised and how many in-segment duplicates
 (copycats) that needs. Geometry-free relaxation: rows and columns are
@@ -539,7 +539,7 @@ only says the sums are equal, 11 to 17. Branch lists come from
 
 ### Checker (2026-09-14)
 
-`2026-09-14-galaxy-copycat/copycat_rsl_solver.py` is the CP-SAT model of the
+`finders/galaxy-copycat/copycat_rsl_solver.py` is the CP-SAT model of the
 chosen ruleset: sudoku, nine copycats (one per row, column, box, nine
 different digits, value = digit of the 180-degree opposite cell), region
 sum lines on values, and copycat pairs as equal value multisets. It takes a
