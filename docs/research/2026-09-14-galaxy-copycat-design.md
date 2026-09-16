@@ -1059,3 +1059,28 @@ The repeat case is notable: L5's 3-segment is three cells of row 4
 showing 8, 8, 3, so the repeat itself proves a copycat sits on the
 segment. Repeats cost freedom (646 against 1,249) because they pin a
 copycat on the line.
+
+**Human break-in ranking of the 201 unique (3,4) pairs (2026-09-16).**
+Board 22 (`boards/board22-pair7-copycats.json`, the pair with a copycat on
+each line, L5 r5c2-r5c1-r6c1-r6c2 | r7c2-r8c2-r8c3, L6 r9c5-r8c5-r8c6-r7c6 |
+r7c7-r8c7-r9c7) is unique but has no human break-in: the two lines' sums
+leave 989 states, equal sums 121, and no single count argument places a
+digit; the first placements need equal sums plus the 8-count together (4
+states), i.e. a case split over sums 15/16/18/20. A ladder was measured
+for every unique pair off the residual set (`.scratch/copycat-rsl/p7/ladder.py`):
+lines-only, then equal segment sums, then per-digit count arguments added
+greedily; per rung the state count and the digits/copycats placed. 135 of
+201 pairs place digits on only two rungs, 38 on three, 4 on four; none
+place a digit from the lines alone, 95 from equal sums.
+
+**Board 23** (`boards/board23-pair7-ladder.json`): L5 =
+r1c3-r1c2-r2c2-r3c2 | r4c2-r5c2-r6c2 (boxes 1, 4), L6 = r7c8-r8c8-r8c7 |
+r8c6-r8c5-r9c5-r9c6 (boxes 9, 8); solution values 4,2,5,7 | 8,1,9 and
+5,4,9 | 7,1,8,2, both sums 18; unique; no copycat lands on the lines
+(r4c2 and r8c7 are possible copycats until the sums exclude them). Ladder:
+lines only 279 states; L5's box-4 segment is r4c2+1+r6c2 so L5 makes only
+10/12/15/16/17/18 and the common sums are 15 or 18, which places r1c3=4,
+r5c5=4, r6c1=4, r7c5=6 and the box-4 copycat r4c1 (17 states); at sum 15
+L5 is 4,3,2,6 | 9,1,5 with no 7 while L6 must show a 7, so sum 18 (3
+states, 26 digits); the 3-count or the full match finishes. Rendered with
+the ladder in the session artifact.
