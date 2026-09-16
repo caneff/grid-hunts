@@ -7,13 +7,17 @@ new hunt; an `--out` that already has one resumes it: seeds with a
 `seed_done` event are skipped, the dedupe set is rebuilt from the durable
 log, and a finder's optional `save_state`/`load_state` round-trip through
 state.json. A differing argv versus the recorded run refuses to start; a
-differing git sha only warns. The grid helpers, CP-SAT helpers,
-deferred verification and the render hook are the other later tickets
-(#485-#490) under the parent spec (#483). `--workers` (default 3, set on
-the finder before the first seed) and the 1-minute load gate (refuses above
-24 unless `--force-load`) are #488.
+differing git sha only warns. `--no-verify` skips `finder.verify` while
+searching, and `hunt verify DIR` (#489) runs it afterwards over everything
+`--no-verify` saved, writing one verdict per examples.jsonl line to
+verified.jsonl. `--workers` (default 3, set on the finder before the first
+seed) and the 1-minute load gate (refuses above 24 unless `--force-load`)
+are #488. The render hook is the other later ticket (#490) under the
+parent spec (#483).
 
     uv run finders/hunt/toy_finder.py --out DIR --seeds START:END
+    uv run finders/hunt/toy_finder.py --out DIR --seeds START:END --no-verify
+    uv run finders/hunt/toy_finder.py verify DIR
 
 Every accepted example carries a driver-owned `__dedupe_key__` field
 alongside whatever `finder.record()` returned, so the dedupe set can be
@@ -45,7 +49,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dedupe import D4, IDENTITY, canonical_key, validate_group
-from protocol import DEFAULT_WORKERS
+from protocol import DEFAULT_WORKERS, Verdict
 
 OUTPUT_FILES = (
     "examples.jsonl",
@@ -53,6 +57,7 @@ OUTPUT_FILES = (
     "progress.jsonl",
     "run.json",
     "state.json",
+    "verified.jsonl",
 )
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -147,7 +152,14 @@ def _parse_args(argv):
     parser.add_argument("--seeds", required=True, type=_parse_seeds)
     parser.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     parser.add_argument("--force-load", action="store_true")
+    parser.add_argument("--no-verify", action="store_true")
     return parser.parse_args(_merge_seeds_token(argv))
+
+
+def _parse_verify_args(argv):
+    parser = argparse.ArgumentParser(prog="hunt verify")
+    parser.add_argument("dir")
+    return parser.parse_args(argv)
 
 
 def _git_sha():
@@ -226,6 +238,30 @@ def _cleanup_partial_output(out):
         return
     with contextlib.suppress(OSError):
         out.rmdir()  # unrelated content still present, or already gone
+
+
+def _acquire_lock(out):
+    """Exclusive, non-blocking flock on out/.lock -- the one lock a hunt
+    and `hunt verify` (#489/#523 Codex pass 1) both take, so `hunt verify`
+    can't read examples.jsonl mid-write by a running hunt and publish a
+    verified.jsonl that silently omits the tail, and two verify runs can't
+    race on the same verified.jsonl.tmp. `flock` is tied to the open fd, so
+    a SIGKILLed holder releases it the instant the process dies -- no stale
+    lock to clean up before the next run. Returns the lock fd, or None if
+    another process already holds it."""
+    out.mkdir(parents=True, exist_ok=True)
+    lock_fd = os.open(out / ".lock", os.O_CREAT | os.O_RDWR)
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        os.close(lock_fd)
+        return None
+    return lock_fd
+
+
+def _release_lock(lock_fd):
+    fcntl.flock(lock_fd, fcntl.LOCK_UN)
+    os.close(lock_fd)
 
 
 def _to_hashable(value):
@@ -367,17 +403,23 @@ def _load_state(finder, out):
     load(json.loads(state_path.read_text())["state"])
 
 
-def _process_seed(finder, seed, seen, symmetry, examples_f, progress_f, counts):
+def _process_seed(
+    finder, seed, seen, symmetry, examples_f, progress_f, counts, no_verify
+):
     """Run one seed and append its outcome to examples.jsonl/progress.jsonl,
     updating `seen` and `counts` in place. Shared by the fresh and resumed
-    loops so the two can't drift apart on what a seed's outcome means."""
+    loops so the two can't drift apart on what a seed's outcome means.
+
+    `no_verify` (#489) skips the call to `finder.verify` -- a candidate
+    that would be rejected is recorded anyway, so `hunt verify DIR` can
+    check it later over everything the search saved."""
     candidate = finder.propose(random.Random(seed))
     event = {"event": "seed_done", "seed": seed}
     if candidate is None:
         counts["empty"] += 1
         event["outcome"] = "empty"
     else:
-        verdict = finder.verify(candidate)
+        verdict = Verdict(ok=True) if no_verify else finder.verify(candidate)
         if not verdict.ok:
             counts["rejected"] += 1
             event["outcome"] = "rejected"
@@ -414,7 +456,9 @@ def _process_seed(finder, seed, seen, symmetry, examples_f, progress_f, counts):
     counts["seeds_done"] += 1
 
 
-def _hunt_loop(finder, out, seed_start, seed_end, seen, counts, skip=frozenset()):
+def _hunt_loop(
+    finder, out, seed_start, seed_end, seen, counts, no_verify, skip=frozenset()
+):
     symmetry = getattr(finder, "symmetry", D4)
     with (
         (out / "examples.jsonl").open("a") as examples_f,
@@ -423,7 +467,16 @@ def _hunt_loop(finder, out, seed_start, seed_end, seen, counts, skip=frozenset()
         for seed in range(seed_start, seed_end):
             if seed in skip:
                 continue
-            _process_seed(finder, seed, seen, symmetry, examples_f, progress_f, counts)
+            _process_seed(
+                finder,
+                seed,
+                seen,
+                symmetry,
+                examples_f,
+                progress_f,
+                counts,
+                no_verify=no_verify,
+            )
             _write_json_atomic(out / "summary.json", dict(counts))
             _save_state(finder, out, seed)
 
@@ -448,7 +501,9 @@ def _fresh(finder, argv, args, out):
     }
     _write_json_atomic(out / "summary.json", dict(counts))
 
-    _hunt_loop(finder, out, seed_start, seed_end, set(), counts)
+    _hunt_loop(
+        finder, out, seed_start, seed_end, set(), counts, no_verify=args.no_verify
+    )
     return 0
 
 
@@ -489,12 +544,99 @@ def _resume(finder, argv, args, out, prior):
     _write_json_atomic(out / "summary.json", dict(counts))
     _load_state(finder, out)
 
-    _hunt_loop(finder, out, seed_start, seed_end, seen, counts, skip=done_seeds)
+    _hunt_loop(
+        finder,
+        out,
+        seed_start,
+        seed_end,
+        seen,
+        counts,
+        skip=done_seeds,
+        no_verify=args.no_verify,
+    )
     return 0
 
 
+def _run_verify(finder, argv):
+    """`hunt verify DIR` (#489): run `finder.verify` over every line in
+    DIR/examples.jsonl and write one verdict per line to DIR/verified.jsonl
+    -- the deferred half of a `--no-verify` hunt. Returns the process exit
+    code: 0 on success, 2 when DIR has no examples.jsonl to verify.
+
+    Reads examples.jsonl through `_read_valid_lines` -- the same kill
+    tolerance `run`'s own resume gives progress.jsonl/examples.jsonl. Each
+    verified.jsonl line carries its own record, not just position, so it
+    still joins back to examples.jsonl after a resume appends more lines.
+    A record that fails to turn into a candidate and verify (most likely a
+    finder with no `candidate_from_record` whose record() isn't itself
+    verify-able, but possibly a genuine bug in `verify` itself -- the
+    driver can't tell which) refuses with both named as possible causes,
+    rather than propagating a raw traceback; everything already verified
+    for earlier records is kept, not thrown away with it.
+
+    Takes the same out/.lock a hunt takes (`_acquire_lock`), before
+    examples.jsonl is even opened -- so this can't read a hunt's
+    still-being-written examples.jsonl and publish a verified.jsonl that
+    silently omits the tail, and two `hunt verify` runs can't race on the
+    same verified.jsonl.tmp (#489/#523 Codex pass 1)."""
+    args = _parse_verify_args(argv)
+    out = Path(args.dir)
+
+    lock_fd = _acquire_lock(out)
+    if lock_fd is None:
+        print(
+            f"hunt verify: refusing -- {args.dir} is locked (a hunt or "
+            "another verify is using it)",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        examples_path = out / "examples.jsonl"
+        if not examples_path.exists():
+            print(
+                f"hunt verify: refusing -- {args.dir} has no examples.jsonl",
+                file=sys.stderr,
+            )
+            return 2
+
+        to_candidate = getattr(finder, "candidate_from_record", lambda record: record)
+        _, records = _read_valid_lines(examples_path)
+        verified_path = out / "verified.jsonl"
+        tmp = verified_path.with_suffix(verified_path.suffix + ".tmp")
+        verified_count = 0
+        with tmp.open("w") as verified_f:
+            for record in records:
+                try:
+                    verdict = finder.verify(to_candidate(record))
+                except Exception as e:
+                    verified_f.flush()
+                    tmp.replace(verified_path)
+                    print(
+                        "hunt verify: refusing -- turning a record from "
+                        "examples.jsonl into a candidate and verifying it "
+                        f"raised ({type(e).__name__}: {e}). Either record() "
+                        "isn't itself a verify-able candidate and the finder "
+                        "needs a candidate_from_record, or this is a bug in "
+                        f"verify() itself -- {verified_count} verdict(s) "
+                        "already computed were kept.",
+                        file=sys.stderr,
+                    )
+                    return 2
+                entry = {"record": record, "ok": verdict.ok}
+                if verdict.reason:
+                    entry["reason"] = verdict.reason
+                verified_f.write(json.dumps(entry) + "\n")
+                verified_count += 1
+        tmp.replace(verified_path)
+        return 0
+    finally:
+        _release_lock(lock_fd)
+
+
 def run(finder, argv):
-    """Run or resume a hunt for `finder` over the seed range in `argv`.
+    """Run or resume a hunt for `finder` over the seed range in `argv`, or
+    (`argv[0] == "verify"`) run deferred verification -- see
+    `_run_verify`.
 
     A fresh `--out` (no run.json) starts a new hunt, refusing when it
     already holds any other output file with no run.json to explain it. An
@@ -510,6 +652,9 @@ def run(finder, argv):
     match the recorded run, or a second process already holding this
     --out's lock).
     """
+    if argv and argv[0] == "verify":
+        return _run_verify(finder, argv[1:])
+
     args = _parse_args(argv)
     if args.workers < 1:
         print(
@@ -525,7 +670,6 @@ def run(finder, argv):
     if refusal is not None:
         return refusal
     out = Path(args.out)
-    out.mkdir(parents=True, exist_ok=True)
 
     # Taken before anything about --out's state is inspected, not just
     # before anything is written: classifying --out as fresh or resumed by
@@ -536,14 +680,9 @@ def run(finder, argv):
     # process's complete fresh hunt has already finished and released it.
     # Acting on that stale "no run.json" belief overwrites the finished
     # hunt and replays every seed. Locking first makes every read below an
-    # authoritative one. `flock` is tied to the open fd, so a SIGKILLed
-    # holder releases it the instant the process dies -- no stale lock to
-    # clean up before the next, real resume.
-    lock_fd = os.open(out / ".lock", os.O_CREAT | os.O_RDWR)
-    try:
-        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except OSError:
-        os.close(lock_fd)
+    # authoritative one.
+    lock_fd = _acquire_lock(out)
+    if lock_fd is None:
         return _refuse(args.out, "an active hunt (locked)")
 
     is_resume = False
@@ -605,5 +744,4 @@ def run(finder, argv):
             _cleanup_partial_output(out)
         return 2
     finally:
-        fcntl.flock(lock_fd, fcntl.LOCK_UN)
-        os.close(lock_fd)
+        _release_lock(lock_fd)

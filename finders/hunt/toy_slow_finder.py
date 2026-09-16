@@ -39,6 +39,9 @@ class SlowToyFinder:
     def key(self, candidate):
         return candidate
 
+    def candidate_from_record(self, record):
+        return tuple(record["grid"])
+
 
 if __name__ == "__main__":
     sys.exit(run(SlowToyFinder(), sys.argv[1:]))

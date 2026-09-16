@@ -70,3 +70,13 @@ class Finder(Protocol):
     def load_state(self, state: Any) -> None:
         """Restore state a prior run's `save_state` wrote."""
         ...
+
+    # Optional -- `hunt verify DIR` (#489) needs a candidate to hand
+    # `verify`, not the JSON `record()` wrote. A finder whose record() *is*
+    # already verify-able skips this; `hunt verify` then hands `verify` the
+    # parsed record line unchanged.
+
+    def candidate_from_record(self, record: dict) -> Any:
+        """Rebuild the candidate `verify` can check from a line `record()`
+        wrote to examples.jsonl."""
+        ...
