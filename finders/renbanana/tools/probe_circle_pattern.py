@@ -12,7 +12,10 @@ Everything here is exact -- no lazy cuts -- so an INFEASIBLE is a proof.
   "all inside banana and the whole border chocolate" (2025 clauses).
 - banana renban: component labels made *canonical* (a label's owner cell must
   itself carry that label), which is what the FEASIBILITY.md warning is about.
-- circle sizes: per circled cell, a closure+rank encoding of its own component.
+- group sizes: computed once for every cell and shared by all circles. A
+  chocolate cell's size is its row run times its column run (exact, because
+  every chocolate group is a rectangle); a banana cell's size is the count of
+  cells under its canonical label. A circle is then one `d == size` constraint.
 
     uv run --with ortools probe_circle_pattern.py --cells r1c1,r1c3,... [--seconds N]
 """
@@ -130,8 +133,9 @@ def build(circled, choc_cells=(), ban_cells=(), givens=()):
             m.add_bool_or([choc[p], choc[q], lab[lo, e].negated(), lab[hi, e]])
         for e in range(IDX[lo] + 1, IDX[hi] + 1):
             m.add_bool_or([choc[p], choc[q], lab[hi, e].negated()])
+    count = [m.new_int_var(0, MAX_BANANA, f"n{e}") for e in range(len(CELLS))]
     for e in range(len(CELLS)):
-        m.add(sum(lab[p, e] for p in CELLS if IDX[p] >= e) <= MAX_BANANA)
+        m.add(count[e] == sum(lab[p, e] for p in CELLS if IDX[p] >= e))
 
     # Labels alone are NOT canonical: two disjoint components can both claim a
     # label whose owner sits in only one of them, which lets rule 6 leak. Pin
@@ -174,33 +178,43 @@ def build(circled, choc_cells=(), ban_cells=(), givens=()):
                         [has[lo].negated(), has[hi].negated(), has[mid]]
                     )  # contiguous
 
-    # The circles: digit == size of that cell's own component.
+    # Group sizes, once per cell. Banana: the size of its canonical label.
+    size = {p: m.new_int_var(1, N * N, f"s{p}") for p in CELLS}
+    for p in CELLS:
+        for e in range(IDX[p] + 1):
+            m.add(size[p] == count[e]).only_enforce_if(lab[p, e])
+
+    # Chocolate: row run x column run through the cell, from maximal-interval
+    # indicators (45 per row, 45 per column). A chocolate cell sits in exactly
+    # one maximal interval each way, a banana cell in none.
+    run = {}
+    for axis in range(2):
+        line_run = {p: [] for p in CELLS}
+        for i in range(N):
+            line = [(i, j) if axis == 0 else (j, i) for j in range(N)]
+            for a in range(N):
+                for b in range(a, N):
+                    lits = [choc[q] for q in line[a : b + 1]]
+                    if a > 0:
+                        lits.append(choc[line[a - 1]].negated())
+                    if b < N - 1:
+                        lits.append(choc[line[b + 1]].negated())
+                    iv = m.new_bool_var("")
+                    m.add_bool_and(lits).only_enforce_if(iv)
+                    m.add_bool_or([iv, *(lit.negated() for lit in lits)])
+                    for q in line[a : b + 1]:
+                        line_run[q].append((b - a + 1, iv))
+        for p in CELLS:
+            run[p, axis] = m.new_int_var(0, N, "")
+            m.add(run[p, axis] == sum(n * iv for n, iv in line_run[p]))
+    for p in CELLS:
+        csize = m.new_int_var(0, N * N, "")
+        m.add_multiplication_equality(csize, [run[p, 0], run[p, 1]])
+        m.add(size[p] == csize).only_enforce_if(choc[p])
+
+    # The circles: digit == size of that cell's own group.
     for X in circled:
-        same = {}
-        for p in CELLS:
-            s = m.new_bool_var("")
-            m.add(choc[p] == choc[X]).only_enforce_if(s)
-            m.add(choc[p] != choc[X]).only_enforce_if(s.negated())
-            same[p] = s
-        inn = {p: m.new_bool_var("") for p in CELLS}
-        rank = {p: m.new_int_var(0, 8, "") for p in CELLS}
-        m.add(inn[X] == 1)
-        m.add(rank[X] == 0)
-        for p in CELLS:
-            m.add_implication(inn[p], same[p])
-            for q in neighbours(*p):
-                # closure: an in-cell drags in every same-coloured neighbour
-                m.add_bool_or([inn[p].negated(), same[q].negated(), inn[q]])
-            if p == X:
-                continue
-            picks = []
-            for q in neighbours(*p):
-                b = m.new_bool_var("")
-                m.add_implication(b, inn[q])
-                m.add(rank[q] + 1 == rank[p]).only_enforce_if(b)
-                picks.append(b)
-            m.add_bool_or([inn[p].negated(), *picks])  # rank: connected back to X
-        m.add(d[X] == sum(inn.values()))
+        m.add(d[X] == size[X])
     for p_ in choc_cells:
         m.add(choc[p_] == 1)
     for p_ in ban_cells:
