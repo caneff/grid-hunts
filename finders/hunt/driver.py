@@ -23,7 +23,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from dedupe import D4, canonical_key
+from dedupe import D4, IDENTITY, canonical_key, validate_group
 
 OUTPUT_FILES = ("examples.jsonl", "summary.json", "progress.jsonl", "run.json")
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -83,6 +83,16 @@ def run(finder, argv):
     hunt, 2 on either refusal.
     """
     args = _parse_args(argv)
+    symmetry = getattr(finder, "symmetry", D4)
+    if symmetry not in (D4, IDENTITY):
+        try:
+            validate_group(symmetry)
+        except ValueError as e:
+            print(
+                f"hunt: refusing to run -- invalid symmetry group: {e}",
+                file=sys.stderr,
+            )
+            return 2
     out = Path(args.out)
     other_files = [
         name for name in OUTPUT_FILES if name != "run.json" and (out / name).exists()
@@ -118,8 +128,6 @@ def run(finder, argv):
         "empty": 0,
     }
     _write_json_atomic(out / "summary.json", dict(counts))
-
-    symmetry = getattr(finder, "symmetry", D4)
 
     with (
         (out / "examples.jsonl").open("a") as examples_f,

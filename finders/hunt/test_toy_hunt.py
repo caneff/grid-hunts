@@ -151,4 +151,101 @@ with tempfile.TemporaryDirectory() as tmp:
         summary.get("seeds_done") == 0 and summary.get("examples") == 0,
     )
 
+with tempfile.TemporaryDirectory() as tmp:
+    # A finder whose declared symmetry group isn't closed under composition
+    # ([identity, rotate90] on a 2x2 board is missing rotate180 and
+    # rotate270) must be refused before any output file exists (#508) --
+    # not partway through the seed loop, on the first candidate that
+    # reaches canonical_key.
+    out = Path(tmp) / "hunt-out"
+    bad_finder_script = f"""
+import sys
+sys.path.insert(0, {str(HERE)!r})
+from driver import run
+from protocol import Verdict
+
+class PartialGroupFinder:
+    symmetry = [(0, 1, 2, 3), (1, 3, 0, 2)]
+
+    def propose(self, rng):
+        return (0, 0, 0, 0)
+
+    def verify(self, candidate):
+        return Verdict(ok=True)
+
+    def record(self, candidate):
+        return {{"grid": list(candidate)}}
+
+    def key(self, candidate):
+        return candidate
+
+sys.exit(run(PartialGroupFinder(), sys.argv[1:]))
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", bad_finder_script, "--out", str(out), "--seeds", "0:5"],
+        capture_output=True,
+        text=True,
+    )
+    # Exact code 2 and the refusal message, not just "nonzero" -- an
+    # unrelated crash (an uncaught exception exits 1 with a traceback) would
+    # also satisfy a bare nonzero check without proving the pre-flight gate
+    # ran at all (#508 review).
+    check(
+        f"a finder with a partial symmetry group exits 2 (stderr: "
+        f"{result.stderr[-300:]})",
+        result.returncode == 2,
+    )
+    check(
+        "the refusal names the invalid symmetry group",
+        "invalid symmetry group" in result.stderr,
+    )
+    check(
+        "a finder with a partial symmetry group writes nothing",
+        not out.exists(),
+    )
+
+with tempfile.TemporaryDirectory() as tmp:
+    # A typo'd string symmetry (e.g. "d4" instead of dedupe.D4) must not
+    # slip past the pre-flight gate: the old `isinstance(symmetry, str)`
+    # dispatch treated every string as a built-in group and let it reach
+    # `canonical_key` uncaught mid-loop, after output already existed
+    # (#508 review).
+    out = Path(tmp) / "hunt-out"
+    typo_finder_script = f"""
+import sys
+sys.path.insert(0, {str(HERE)!r})
+from driver import run
+from protocol import Verdict
+
+class TypoSymmetryFinder:
+    symmetry = "d4"
+
+    def propose(self, rng):
+        return (0, 0, 0, 0)
+
+    def verify(self, candidate):
+        return Verdict(ok=True)
+
+    def record(self, candidate):
+        return {{"grid": list(candidate)}}
+
+    def key(self, candidate):
+        return candidate
+
+sys.exit(run(TypoSymmetryFinder(), sys.argv[1:]))
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", typo_finder_script, "--out", str(out), "--seeds", "0:5"],
+        capture_output=True,
+        text=True,
+    )
+    check(
+        f"a typo'd string symmetry exits 2 (stderr: {result.stderr[-300:]})",
+        result.returncode == 2,
+    )
+    check(
+        "a typo'd string symmetry writes nothing",
+        not out.exists(),
+    )
+
 sys.exit(0 if ok else 1)

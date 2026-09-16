@@ -126,4 +126,54 @@ try:
 except ValueError:
     check("an empty custom group is rejected", True)
 
+# A custom group must be closed under composition, not merely a list of
+# valid permutations -- otherwise canonicalizing as the minimum image isn't
+# an equivalence relation, and two unrelated grids can collide on the same
+# key (#508). [identity, rotate90] on a 2x2 board is missing rotate180 and
+# rotate270, so composing rotate90 with itself escapes the declared set.
+identity_2x2 = (0, 1, 2, 3)
+rotate90_2x2 = (1, 3, 0, 2)  # (r, c) -> (c, n-1-r) on a 2x2 board, flat index
+rotate180_2x2 = (3, 2, 1, 0)
+
+try:
+    canonical_key(flat(tiny), [identity_2x2, rotate90_2x2])
+    check("[identity, rotate90] (not closed) is rejected", False)
+except ValueError:
+    check("[identity, rotate90] (not closed) is rejected", True)
+
+try:
+    canonical_key(flat(tiny), [rotate90_2x2, rotate180_2x2, rotate180_2x2])
+    check("a custom group missing the identity is rejected", False)
+except ValueError:
+    check("a custom group missing the identity is rejected", True)
+
+try:
+    canonical_key(flat(tiny), [identity_2x2, rotate180_2x2])
+    check("identity + 180-degree rotation (a valid subgroup) is accepted", True)
+except ValueError:
+    check("identity + 180-degree rotation (a valid subgroup) is accepted", False)
+
+try:
+    canonical_key(flat(SHAPE), D4)
+    check("D4 still passes", True)
+except ValueError:
+    check("D4 still passes", False)
+
+try:
+    canonical_key(flat(SHAPE), IDENTITY)
+    check("IDENTITY still passes", True)
+except ValueError:
+    check("IDENTITY still passes", False)
+
+# A custom group given as a set (not a list) must fail cleanly, not with an
+# unhandled TypeError from indexing it -- `_normalize_group` must list() it
+# first (#508 correctness review).
+try:
+    canonical_key(flat(tiny), {identity_2x2, rotate90_2x2})
+    check("a non-closed custom group given as a set is rejected", False)
+except ValueError:
+    check("a non-closed custom group given as a set is rejected", True)
+except TypeError:
+    check("a non-closed custom group given as a set is rejected", False)
+
 sys.exit(0 if ok else 1)
