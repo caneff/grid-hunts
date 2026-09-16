@@ -23,6 +23,7 @@ its own comment for why). Kinds of interruption exercised:
 """
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -31,6 +32,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dedupe import D4, canonical_key
+from subprocess_env import success_env
 
 HERE = Path(__file__).resolve().parent
 SLOW_FINDER = HERE / "toy_slow_finder.py"
@@ -59,6 +61,7 @@ def run_cli(finder, out, seeds):
         [sys.executable, str(finder), "--out", str(out), f"--seeds={seeds}"],
         capture_output=True,
         text=True,
+        env=success_env(),
     )
 
 
@@ -77,6 +80,7 @@ def kill_partway(finder, out, seeds, min_seed_done_events=3):
         [sys.executable, str(finder), "--out", str(out), f"--seeds={seeds}"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        env=success_env(),
     )
     progress_path = out / "progress.jsonl"
     deadline = time.time() + 10
@@ -285,6 +289,7 @@ with tempfile.TemporaryDirectory() as tmp:
         [sys.executable, str(TOY_FINDER), "--out", str(out), "--seeds", "-3:-1"],
         capture_output=True,
         text=True,
+        env=success_env(),
     )
     check(
         f"--seeds and a negative range as two argv tokens exits 0 "
@@ -486,6 +491,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # otherwise acquire the lock, until the main thread has run a complete
     # hunt (thread A) to completion on the same --out.
     import threading
+    from unittest import mock
 
     sys.path.insert(0, str(HERE))
     import driver as driver_module
@@ -507,26 +513,33 @@ with tempfile.TemporaryDirectory() as tmp:
 
     driver_module.fcntl.flock = _patched_flock
     b_result = {}
+    # This drives driver.run() in-process, so it reads the real
+    # HUNT_FAKE_LOAD1/os.environ at call time, not a subprocess env dict --
+    # force the gate idle here too so a busy box doesn't refuse either
+    # thread's hunt (#526).
     try:
-        b_thread = threading.Thread(
-            target=lambda: b_result.__setitem__(
-                "code", driver_module.run(ToyFinder(), argv)
-            ),
-            name="hunt-B",
-        )
-        b_thread.start()
-        check("thread B reached its lock acquisition", b_ready.wait(timeout=10))
+        with mock.patch.dict(os.environ, {"HUNT_FAKE_LOAD1": "0"}):
+            b_thread = threading.Thread(
+                target=lambda: b_result.__setitem__(
+                    "code", driver_module.run(ToyFinder(), argv)
+                ),
+                name="hunt-B",
+            )
+            b_thread.start()
+            check("thread B reached its lock acquisition", b_ready.wait(timeout=10))
 
-        a_code = driver_module.run(ToyFinder(), argv)
-        check("thread A's hunt (run first, in the main thread) exits 0", a_code == 0)
-        a_progress = read_jsonl(out / "progress.jsonl")
-        check(
-            "thread A ran the full range before B's lock was released",
-            len(a_progress) == 30,
-        )
+            a_code = driver_module.run(ToyFinder(), argv)
+            check(
+                "thread A's hunt (run first, in the main thread) exits 0", a_code == 0
+            )
+            a_progress = read_jsonl(out / "progress.jsonl")
+            check(
+                "thread A ran the full range before B's lock was released",
+                len(a_progress) == 30,
+            )
 
-        release_b.set()
-        b_thread.join(timeout=15)
+            release_b.set()
+            b_thread.join(timeout=15)
     finally:
         driver_module.fcntl.flock = real_flock
 

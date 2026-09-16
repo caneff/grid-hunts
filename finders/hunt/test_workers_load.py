@@ -9,11 +9,13 @@ production argv never carries a test-only knob.
 """
 
 import json
-import os
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from subprocess_env import success_env
 
 HERE = Path(__file__).resolve().parent
 
@@ -51,9 +53,7 @@ def check(name, cond):
 
 
 def run_cli(out, extra_args, env=None):
-    full_env = dict(os.environ)
-    if env:
-        full_env.update(env)
+    full_env = success_env(env)
     return subprocess.run(
         [
             sys.executable,
@@ -140,12 +140,11 @@ with tempfile.TemporaryDirectory() as tmp:
         f"base hunt for genuine-mismatch check exits 0 (stderr: {first.stderr[-500:]})",
         first.returncode == 0,
     )
-    full_env = dict(os.environ)
     mismatched = subprocess.run(
         [sys.executable, "-c", WORKERS_FINDER, "--out", str(out), "--seeds", "0:5"],
         capture_output=True,
         text=True,
-        env=full_env,
+        env=success_env(),
     )
     check(
         "a genuinely differing --seeds still refuses",
@@ -155,12 +154,25 @@ with tempfile.TemporaryDirectory() as tmp:
 with tempfile.TemporaryDirectory() as tmp:
     # An exported-but-empty HUNT_FAKE_LOAD1 (the ordinary shape of
     # `export HUNT_FAKE_LOAD1=$X` with X unset) is not an override -- it
-    # must read as "no override", never crash (#488 review C2).
+    # must read as "no override", never crash (#488 review C2). "No
+    # override" itself falls through to the real box's load (driver.py's
+    # `if not override`), so it can't be pinned to a fixed exit code the
+    # way every other case here is (#526 review C1/S1/P1) -- it's compared
+    # against a reference call with the var truly unset (`None` deletes the
+    # key -- see subprocess_env.success_env) instead, so both sides see the
+    # same real load and the check holds however busy the box is.
     out = Path(tmp) / "hunt-out"
     result = run_cli(out, [], env={"HUNT_FAKE_LOAD1": ""})
+    ref_out = Path(tmp) / "hunt-out-unset"
+    reference = run_cli(ref_out, [], env={"HUNT_FAKE_LOAD1": None})
     check(
         f"empty HUNT_FAKE_LOAD1 does not crash (stderr: {result.stderr[-500:]})",
-        result.returncode == 0,
+        "Traceback" not in result.stderr,
+    )
+    check(
+        "empty HUNT_FAKE_LOAD1 behaves exactly like no override at all "
+        f"(exit {result.returncode} vs {reference.returncode})",
+        result.returncode == reference.returncode,
     )
 
 with tempfile.TemporaryDirectory() as tmp:

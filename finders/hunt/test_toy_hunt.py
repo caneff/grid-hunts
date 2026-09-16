@@ -15,6 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dedupe import D4, canonical_key
+from subprocess_env import success_env
 
 HERE = Path(__file__).resolve().parent
 TOY_FINDER = HERE / "toy_finder.py"
@@ -36,6 +37,7 @@ with tempfile.TemporaryDirectory() as tmp:
         [sys.executable, str(TOY_FINDER), "--out", str(out), "--seeds", "0:200"],
         capture_output=True,
         text=True,
+        env=success_env(),
     )
     check(f"exit code 0 (stderr: {result.stderr[-500:]})", result.returncode == 0)
 
@@ -91,6 +93,7 @@ with tempfile.TemporaryDirectory() as tmp:
         [sys.executable, str(TOY_FINDER), "--out", str(out), "--seeds", "0:5"],
         capture_output=True,
         text=True,
+        env=success_env(),
     )
     check(
         "rerunning with a differing --seeds refuses (nonzero exit)",
@@ -115,6 +118,7 @@ with tempfile.TemporaryDirectory() as tmp:
             [sys.executable, str(TOY_FINDER), "--out", str(out), "--seeds", "0:50"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            env=success_env(),
         )
         for _ in range(2)
     ]
@@ -144,6 +148,7 @@ with tempfile.TemporaryDirectory() as tmp:
         [sys.executable, str(TOY_FINDER), "--out", str(out), "--seeds", "5:5"],
         capture_output=True,
         text=True,
+        env=success_env(),
     )
     check(
         f"empty range exits 0 (stderr: {result.stderr[-500:]})", result.returncode == 0
@@ -190,6 +195,7 @@ sys.exit(run(PartialGroupFinder(), sys.argv[1:]))
         [sys.executable, "-c", bad_finder_script, "--out", str(out), "--seeds", "0:5"],
         capture_output=True,
         text=True,
+        env=success_env(),
     )
     # Exact code 2 and the refusal message, not just "nonzero" -- an
     # unrelated crash (an uncaught exception exits 1 with a traceback) would
@@ -243,6 +249,7 @@ sys.exit(run(TypoSymmetryFinder(), sys.argv[1:]))
         [sys.executable, "-c", typo_finder_script, "--out", str(out), "--seeds", "0:5"],
         capture_output=True,
         text=True,
+        env=success_env(),
     )
     check(
         f"a typo'd string symmetry exits 2 (stderr: {result.stderr[-300:]})",
@@ -297,6 +304,7 @@ sys.exit(run(MismatchedLengthFinder(), sys.argv[1:]))
         ],
         capture_output=True,
         text=True,
+        env=success_env(),
     )
     check(
         f"a symmetry group whose map length doesn't match key() exits 2 "
@@ -356,6 +364,7 @@ sys.exit(run(GeneratorSymmetryFinder(), sys.argv[1:]))
         ],
         capture_output=True,
         text=True,
+        env=success_env(),
     )
     check(
         f"a generator-typed symmetry group exits 2 (stderr: {result.stderr[-300:]})",
@@ -404,6 +413,7 @@ sys.exit(run(FinderOwnBugFinder(), sys.argv[1:]))
         [sys.executable, "-c", finder_bug_script, "--out", str(out), "--seeds", "0:5"],
         capture_output=True,
         text=True,
+        env=success_env(),
     )
     check(
         "a finder's own ValueError from key() is not relabelled an invalid "
@@ -445,6 +455,7 @@ sys.exit(run(NonSquareD4Finder(), sys.argv[1:]))
         [sys.executable, "-c", d4_mismatch_script, "--out", str(out), "--seeds", "0:5"],
         capture_output=True,
         text=True,
+        env=success_env(),
     )
     check(
         "a non-square grid under the built-in D4 group is not relabelled "
@@ -477,6 +488,7 @@ with tempfile.TemporaryDirectory() as tmp:
         ],
         capture_output=True,
         text=True,
+        env=success_env(),
     )
     check(
         f"a mismatched-length refusal into a --out holding unrelated content "
@@ -532,6 +544,7 @@ with tempfile.TemporaryDirectory() as tmp:
         [sys.executable, "-c", mismatched_length_script, *argv],
         capture_output=True,
         text=True,
+        env=success_env(),
     )
     check(
         f"resuming into a symmetry mismatch still exits 2 (stderr: "
@@ -588,6 +601,7 @@ sys.exit(run(ValidGroupFinder(), sys.argv[1:]))
         [sys.executable, "-c", valid_script, "--out", str(out), "--seeds", "0:1"],
         capture_output=True,
         text=True,
+        env=success_env(),
     )
     check(
         f"base hunt for the byte-for-byte restore test exits 0 (stderr: "
@@ -615,6 +629,7 @@ sys.exit(run(ValidGroupFinder(), sys.argv[1:]))
         ],
         capture_output=True,
         text=True,
+        env=success_env(),
     )
     check(
         f"resuming an orphan-example hunt into a symmetry mismatch still "
