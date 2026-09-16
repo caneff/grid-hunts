@@ -1084,3 +1084,19 @@ r5c5=4, r6c1=4, r7c5=6 and the box-4 copycat r4c1 (17 states); at sum 15
 L5 is 4,3,2,6 | 9,1,5 with no 7 while L6 must show a 7, so sum 18 (3
 states, 26 digits); the 3-count or the full match finishes. Rendered with
 the ladder in the session artifact.
+
+**Optimising for digit-count deductions (2026-09-16).** Same ladder, but
+with only per-digit count arguments (no segment sums), the digit chosen at
+each rung being the one that places most. 134 of the 201 unique pairs
+place a digit from a single count; rungs with placements: 5 for 9 pairs,
+4 for 56, 3 for 83, 2 for 49, 1 for 4 (`.scratch/copycat-rsl/p7/ladder_counts.py`).
+
+**Board 24** (`boards/board24-pair7-counts.json`): L5 = r5c3-r6c3-r6c2 |
+r7c2-r7c1-r8c1-r9c1 (boxes 4, 7), L6 = r7c5-r8c5-r8c6-r9c6 | r9c7-r8c7-r8c8
+(boxes 8, 9); values 9,4,7 | 5,1,8,6 and 6,1,4,9 | 7,8,5, both sums 20;
+unique; copycats r9c1 (L5) and r8c7 (L6) on the lines. Count ladder from
+340 lines-only states: 1s -> 118 (r1c3=1, r6c3=4); 6s -> 52 (r1c4=8,
+r5c4=2); 9s -> 41 (r2c7=1, r5c5=4, r5c6=8, r7c5=6, r9c5=8); 8s -> 2
+(20 digits, copycats r1c9, r4c2, r9c1); 2s -> 1. Runner-up: L5
+r4c1-r5c1-r5c2-r6c2 | r7c2-r7c1-r8c1 with L6 r8c6-r8c5-r9c5-r9c6 |
+r9c7-r8c7-r8c8 (8s, 4s, 2s, 1s, 5s; one copycat on the lines).
