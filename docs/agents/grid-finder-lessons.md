@@ -42,7 +42,7 @@ failed and their numbers, is `docs/research/2026-09-15-ghosts-all-visible.md`.
 
 - **A hot loop in `ctypes` C is worth ~90x and adds no dependency.** The
   Ghosts counter is a bitmask DFS of a few dozen lines built with the system
-  `gcc` (`docs/research/ghosts/ghosts_fast.c`, loaded by `fastclimb.py`).
+  `gcc` (`finders/ghosts/ghosts_fast.c`, loaded by `fastclimb.py`).
 - **Pair it with a parity test.** Check the C against the Python on thousands
   of random inputs before trusting a result, as with the soundness harness.
 
@@ -57,5 +57,5 @@ failed and their numbers, is `docs/research/2026-09-15-ghosts-all-visible.md`.
   128 distinct examples against 102 from pool restarts, and 25 of 234 examples
   sat within 2 toggles of another.
 - **Verify the whole catalogue with code that shares nothing with the
-  finder.** `docs/research/ghosts/verify_all.py` recomputes the givens and
+  finder.** `finders/ghosts/verify_all.py` recomputes the givens and
   re-checks uniqueness with a different CP-SAT encoding.

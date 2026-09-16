@@ -1,6 +1,6 @@
 """Merge, deduplicate and independently verify all-visible ghost examples.
 
-    uv run docs/research/ghosts/verify_all.py OUT.jsonl IN.jsonl [IN.jsonl ...]
+    uv run finders/ghosts/verify_all.py OUT.jsonl IN.jsonl [IN.jsonl ...]
 
 Each input line needs a "shape" (cell indices 0-80). The check shares no code
 with the finders: givens are recomputed as ghost-neighbour counts, must be
@@ -12,13 +12,22 @@ ghosts, shape, givens, solution. A failing shape is reported and dropped.
 
 import json
 import sys
+from pathlib import Path
 
 from ortools.sat.python import cp_model
 
 
 def sym_images(cells):
-    maps = [lambda r, c: (r, c), lambda r, c: (c, 8 - r), lambda r, c: (8 - r, 8 - c), lambda r, c: (8 - c, r),
-            lambda r, c: (r, 8 - c), lambda r, c: (8 - r, c), lambda r, c: (c, r), lambda r, c: (8 - c, 8 - r)]
+    maps = [
+        lambda r, c: (r, c),
+        lambda r, c: (c, 8 - r),
+        lambda r, c: (8 - r, 8 - c),
+        lambda r, c: (8 - c, r),
+        lambda r, c: (r, 8 - c),
+        lambda r, c: (8 - r, c),
+        lambda r, c: (c, r),
+        lambda r, c: (8 - c, 8 - r),
+    ]
     return [tuple(sorted(f(r, c) for r, c in cells)) for f in maps]
 
 
@@ -26,7 +35,9 @@ def check(cells):
     ghosts = set(cells)
     given = {}
     for r, c in ghosts:
-        given[r, c] = sum((r + a, c + b) in ghosts for a in (-1, 0, 1) for b in (-1, 0, 1) if a or b)
+        given[r, c] = sum(
+            (r + a, c + b) in ghosts for a in (-1, 0, 1) for b in (-1, 0, 1) if a or b
+        )
     if not all(1 <= n <= 8 for n in given.values()) or 8 not in given.values():
         return None, given
     m = cp_model.CpModel()
@@ -60,9 +71,9 @@ def main():
     out_path, inputs = sys.argv[1], sys.argv[2:]
     seen = set()
     kept = dupes = failed = 0
-    with open(out_path, "w") as out:
+    with Path(out_path).open("w") as out:
         for path in inputs:
-            for line in open(path):
+            for line in Path(path).read_text().splitlines():
                 shape = json.loads(line)["shape"]
                 cells = [divmod(i, 9) for i in shape]
                 key = min(sym_images(cells))
@@ -76,9 +87,20 @@ def main():
                     print("FAILED", path, sorted(shape))
                     continue
                 kept += 1
-                out.write(json.dumps({"ghosts": len(shape), "shape": sorted(shape),
-                                      "givens": {f"r{r + 1}c{c + 1}": n for (r, c), n in sorted(given.items())},
-                                      "solution": sol}) + "\n")
+                out.write(
+                    json.dumps(
+                        {
+                            "ghosts": len(shape),
+                            "shape": sorted(shape),
+                            "givens": {
+                                f"r{r + 1}c{c + 1}": n
+                                for (r, c), n in sorted(given.items())
+                            },
+                            "solution": sol,
+                        }
+                    )
+                    + "\n"
+                )
     print(f"verified {kept}, duplicates {dupes}, failed {failed}")
 
 

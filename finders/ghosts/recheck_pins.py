@@ -1,6 +1,6 @@
 """Double-check the claim that r9c1+r9c2+r9c8 ghosts with r7c4 banned is impossible.
 
-    uv run docs/research/ghosts/recheck_pins.py
+    uv run finders/ghosts/recheck_pins.py
 
 Independent of connected.py: house distinctness is posted as add_all_different
 over one variable per cell, where a non-ghost gets its own dummy value instead
@@ -13,14 +13,15 @@ opinion.
 import random
 
 from ortools.sat.python import cp_model
-
-from shapes import BOX, CELLS, NEIGH
+from shapes import BOX, NEIGH
 
 FORCE = [72, 73, 79]  # r9c1, r9c2, r9c8
 BAN = [57]  # r7c4
-HOUSES = ([[r * 9 + c for c in range(9)] for r in range(9)]
-          + [[r * 9 + c for r in range(9)] for c in range(9)]
-          + [[i for i in range(81) if BOX[i] == b] for b in range(9)])
+HOUSES = (
+    [[r * 9 + c for c in range(9)] for r in range(9)]
+    + [[r * 9 + c for r in range(9)] for c in range(9)]
+    + [[i for i in range(81) if BOX[i] == b] for b in range(9)]
+)
 
 
 def model(force, ban):
@@ -48,7 +49,11 @@ def solve(force, ban, seconds=60):
     s.parameters.num_workers = 8
     s.parameters.max_time_in_seconds = seconds
     st = s.solve(m)
-    shape = {i for i in range(81) if s.value(g[i])} if st in (cp_model.OPTIMAL, cp_model.FEASIBLE) else None
+    shape = (
+        {i for i in range(81) if s.value(g[i])}
+        if st in (cp_model.OPTIMAL, cp_model.FEASIBLE)
+        else None
+    )
     return s.status_name(st), shape
 
 
@@ -69,13 +74,24 @@ def admissible(shape):
 
 def main():
     print("positive controls")
-    for label, force, ban in (("no pins", [], []), ("forced only", FORCE, []),
-                              ("ban only", [], BAN), ("two forced + ban", FORCE[:2], BAN),
-                              ("forced + ban a neighbour of r7c4", FORCE, [58])):
+    for label, force, ban in (
+        ("no pins", [], []),
+        ("forced only", FORCE, []),
+        ("ban only", [], BAN),
+        ("two forced + ban", FORCE[:2], BAN),
+        ("forced + ban a neighbour of r7c4", FORCE, [58]),
+    ):
         st, shape = solve(force, ban)
-        ok = shape is not None and admissible(shape) and all(i in shape for i in force) \
+        ok = (
+            shape is not None
+            and admissible(shape)
+            and all(i in shape for i in force)
             and not any(i in shape for i in ban)
-        print(f"  {label}: {st}" + (f", {len(shape)} ghosts, checks out: {ok}" if shape else ""))
+        )
+        print(
+            f"  {label}: {st}"
+            + (f", {len(shape)} ghosts, checks out: {ok}" if shape else "")
+        )
 
     print("the claim")
     st, shape = solve(FORCE, BAN, seconds=300)

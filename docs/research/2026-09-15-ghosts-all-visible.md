@@ -8,7 +8,7 @@ is a search over ghost shapes.
 ## Result
 
 `docs/research/ghosts/allvisible-hits.jsonl` line 0: 31 ghosts, one 8 (r7c3).
-`uv run --with pillow docs/research/ghosts/check_hit.py docs/research/ghosts/allvisible-hits.jsonl 0 sol.png puz.png`
+`uv run --with pillow finders/ghosts/check_hit.py docs/research/ghosts/allvisible-hits.jsonl 0 sol.png puz.png`
 recomputes the counts, checks the 8, and has CP-SAT (all-different model, no
 code shared with the finder) enumerate solutions: exactly 1.
 
@@ -32,7 +32,7 @@ millisecond bitmask count, while the CEGAR master re-solves a large CP-SAT
 model per cut. Seeds come from the grid+ghost CP-SAT model so every seed is
 solvable.
 
-Run: `uv run docs/research/ghosts/shapes.py --seconds 240 --climb-seconds 40 --min-ghosts 26 --seed 3 --out DIR`
+Run: `uv run finders/ghosts/shapes.py --seconds 240 --climb-seconds 40 --min-ghosts 26 --seed 3 --out DIR`
 
 ## Next
 

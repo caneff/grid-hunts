@@ -1,6 +1,6 @@
 """Independently verify an all-visible ghost shape and render it.
 
-    uv run --with pillow docs/research/ghosts/check_hit.py hits.jsonl LINE out.png puzzle.png
+    uv run --with pillow finders/ghosts/check_hit.py hits.jsonl LINE out.png puzzle.png
 
 Checks, with no code shared with shapes.py: each ghost's digit equals its
 ghost-neighbour count, some ghost shows 8, and CP-SAT finds exactly one sudoku
@@ -10,6 +10,7 @@ with those givens. Writes the solved grid (ghosts circled) and the puzzle view
 
 import json
 import sys
+from pathlib import Path
 
 from ortools.sat.python import cp_model
 from PIL import Image, ImageDraw, ImageFont
@@ -28,9 +29,13 @@ def draw(digits, ghosts, show_all, path):
             cx, cy = MARGIN + c * CELL + CELL / 2, MARGIN + r * CELL + CELL / 2
             if (r, c) in ghosts:
                 rad = CELL * 0.38
-                d.ellipse((cx - rad, cy - rad, cx + rad, cy + rad), outline="black", width=3)
+                d.ellipse(
+                    (cx - rad, cy - rad, cx + rad, cy + rad), outline="black", width=3
+                )
             if show_all or (r, c) in ghosts:
-                d.text((cx, cy), str(digits[r][c]), fill="black", font=font, anchor="mm")
+                d.text(
+                    (cx, cy), str(digits[r][c]), fill="black", font=font, anchor="mm"
+                )
     for i in range(10):
         w = 5 if i % 3 == 0 else 1
         p = MARGIN + i * CELL
@@ -40,11 +45,13 @@ def draw(digits, ghosts, show_all, path):
 
 
 def main():
-    rec = json.loads(open(sys.argv[1]).read().splitlines()[int(sys.argv[2])])
+    rec = json.loads(Path(sys.argv[1]).read_text().splitlines()[int(sys.argv[2])])
     ghosts = {divmod(i, 9) for i in rec["shape"]}
     given = {}
     for r, c in ghosts:
-        n = sum((r + a, c + b) in ghosts for a in (-1, 0, 1) for b in (-1, 0, 1) if a or b)
+        n = sum(
+            (r + a, c + b) in ghosts for a in (-1, 0, 1) for b in (-1, 0, 1) if a or b
+        )
         given[r, c] = n
     assert all(1 <= n <= 8 for n in given.values()), "a ghost count outside 1-8"
     assert 8 in given.values(), "no ghost shows 8"
@@ -71,12 +78,18 @@ def main():
                 self.stop_search()
 
     s.solve(m, Collect())
-    print(f"ghosts={len(ghosts)} givens={len(given)} eights={sum(v == 8 for v in given.values())} "
-          f"solutions_found={len(sols)} (stops at 2)")
+    print(
+        f"ghosts={len(ghosts)} givens={len(given)} eights={sum(v == 8 for v in given.values())} "
+        f"solutions_found={len(sols)} (stops at 2)"
+    )
     assert len(sols) == 1, "not unique"
     for row in sols[0]:
-        print(" ".join(f"{v}{'*' if (r, c) in ghosts else ' '}" for r, c, v in
-                       ((sols[0].index(row), c, v) for c, v in enumerate(row))))
+        print(
+            " ".join(
+                f"{v}{'*' if (r, c) in ghosts else ' '}"
+                for r, c, v in ((sols[0].index(row), c, v) for c, v in enumerate(row))
+            )
+        )
     draw(sols[0], ghosts, True, sys.argv[3])
     draw(sols[0], ghosts, False, sys.argv[4])
     print("UNIQUE OK")

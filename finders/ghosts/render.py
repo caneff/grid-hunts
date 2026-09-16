@@ -1,6 +1,6 @@
 """Picture of a Ghosts grid: digits on white, ghost cells circled.
 
-    uv run --with pillow docs/research/ghosts/render.py out.png
+    uv run --with pillow finders/ghosts/render.py out.png
 
 The grid is the probe's 8-ghost solution (2026-09-15-ghosts-eight-probe.md);
 `*` after a digit marks a ghost.
@@ -39,7 +39,9 @@ def render(rows):
             cy = MARGIN + r * CELL + CELL / 2
             if tok.endswith("*"):
                 rad = CELL * 0.38
-                draw.ellipse((cx - rad, cy - rad, cx + rad, cy + rad), outline="black", width=3)
+                draw.ellipse(
+                    (cx - rad, cy - rad, cx + rad, cy + rad), outline="black", width=3
+                )
             draw.text((cx, cy), tok[0], fill="black", font=font, anchor="mm")
     for i in range(N + 1):
         w = 5 if i % 3 == 0 else 1

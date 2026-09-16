@@ -1,6 +1,6 @@
 """Ghosts: hunt minimal clue sets whose digit solution is unique.
 
-    uv run docs/research/ghosts/minimal.py --grids 20 --seed 1 --out DIR
+    uv run finders/ghosts/minimal.py --grids 20 --seed 1 --out DIR
 
 Per grid: a random solution + ghost set with a visible ghost holding 8. Clues
 are visible ghosts (circle, no digit) and given digits, weighted equally. The
@@ -26,13 +26,19 @@ CELLS = [(r, c) for r in range(N) for c in range(N)]
 
 
 def neighbours(r, c):
-    return [(r + a, c + b) for a in (-1, 0, 1) for b in (-1, 0, 1)
-            if (a or b) and 0 <= r + a < N and 0 <= c + b < N]
+    return [
+        (r + a, c + b)
+        for a in (-1, 0, 1)
+        for b in (-1, 0, 1)
+        if (a or b) and 0 <= r + a < N and 0 <= c + b < N
+    ]
 
 
 def base_model():
     m = cp_model.CpModel()
-    x = {(r, c): [m.new_bool_var(f"x{r}{c}{d}") for d in range(1, 10)] for r, c in CELLS}
+    x = {
+        (r, c): [m.new_bool_var(f"x{r}{c}{d}") for d in range(1, 10)] for r, c in CELLS
+    }
     g = {(r, c): m.new_bool_var(f"g{r}{c}") for r, c in CELLS}
     for cell in CELLS:
         m.add_exactly_one(x[cell])
@@ -42,11 +48,15 @@ def base_model():
             m.add_exactly_one(x[r, i][d] for r in range(N))
         for br in (0, 3, 6):
             for bc in (0, 3, 6):
-                m.add_exactly_one(x[br + a, bc + b][d] for a in range(3) for b in range(3))
+                m.add_exactly_one(
+                    x[br + a, bc + b][d] for a in range(3) for b in range(3)
+                )
     for r, c in CELLS:
         digit = sum((d + 1) * x[r, c][d] for d in range(9))
         m.add(sum(g[n] for n in neighbours(r, c)) == digit).only_enforce_if(g[r, c])
-        m.add_bool_or([x[r, c][d].Not() for d in (8,)]).only_enforce_if(g[r, c])  # no 9 on a ghost
+        m.add_bool_or([x[r, c][d].Not() for d in (8,)]).only_enforce_if(
+            g[r, c]
+        )  # no 9 on a ghost
     return m, x, g
 
 
@@ -60,8 +70,15 @@ def solver(seed, limit):
 
 def random_grid(rng, min_ghosts):
     m, x, g = base_model()
-    eight = rng.choice([cell for cell in CELLS
-                        if 0 < cell[0] < 8 and 0 < cell[1] < 8 and not (cell[0] % 3 == 1 and cell[1] % 3 == 1)])
+    eight = rng.choice(
+        [
+            cell
+            for cell in CELLS
+            if 0 < cell[0] < 8
+            and 0 < cell[1] < 8
+            and not (cell[0] % 3 == 1 and cell[1] % 3 == 1)
+        ]
+    )
     m.add(g[eight] == 1)
     m.add(x[eight][7] == 1)
     m.add(sum(g.values()) >= min_ghosts)
@@ -72,7 +89,9 @@ def random_grid(rng, min_ghosts):
     s.parameters.randomize_search = True
     if s.solve(m) not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
         return None
-    digits = {cell: next(d + 1 for d in range(9) if s.value(x[cell][d])) for cell in CELLS}
+    digits = {
+        cell: next(d + 1 for d in range(9) if s.value(x[cell][d])) for cell in CELLS
+    }
     ghosts = {cell for cell in CELLS if s.value(g[cell])}
     return digits, ghosts, eight
 
@@ -89,7 +108,9 @@ def minimise(rng, digits, ghosts, eight, stats):
         m.add_implication(lit, g[cell])
         clue_lit[("ghost", cell)] = lit
     m.add(g[eight] == 1)  # the 8-ghost is visible: fixed, not removable
-    m.add_bool_or([x[cell][digits[cell] - 1].Not() for cell in CELLS])  # a second solution
+    m.add_bool_or(
+        [x[cell][digits[cell] - 1].Not() for cell in CELLS]
+    )  # a second solution
     lit_clue = {lit.index: key for key, lit in clue_lit.items()}
 
     def unique(active):
@@ -135,7 +156,9 @@ def verify(digits, eight, clues):
             m.add(g[cell] == 1)
     s = solver(0, 300)
     assert s.solve(m) in (cp_model.OPTIMAL, cp_model.FEASIBLE)
-    found = {cell: next(d + 1 for d in range(9) if s.value(x[cell][d])) for cell in CELLS}
+    found = {
+        cell: next(d + 1 for d in range(9) if s.value(x[cell][d])) for cell in CELLS
+    }
     m.add_bool_or([x[cell][found[cell] - 1].Not() for cell in CELLS])
     return found == digits and s.solve(m) == cp_model.INFEASIBLE
 
@@ -164,18 +187,28 @@ def main():
         n_ghost = len(clues) - n_digit + 1  # + the fixed 8-ghost
         total = n_digit + n_ghost
         rec = {
-            "grid": i, "seed": a.seed, "total": total, "digits_given": n_digit, "ghosts_visible": n_ghost,
-            "ghosts_in_solution": len(ghosts), "eight": eight, "verified": ok,
-            "checks": stats["checks"], "check_s": round(stats["check_s"], 2),
+            "grid": i,
+            "seed": a.seed,
+            "total": total,
+            "digits_given": n_digit,
+            "ghosts_visible": n_ghost,
+            "ghosts_in_solution": len(ghosts),
+            "eight": eight,
+            "verified": ok,
+            "checks": stats["checks"],
+            "check_s": round(stats["check_s"], 2),
             "wall_s": round(time.monotonic() - t0, 2),
             "solution": [[digits[r, c] for c in range(N)] for r in range(N)],
             "ghosts": sorted(ghosts),
             "clues": [[k, list(cell)] for k, cell in clues] + [["ghost", list(eight)]],
         }
-        with open(a.out / "progress.jsonl", "a") as f:
+        with (a.out / "progress.jsonl").open("a") as f:
             f.write(json.dumps(rec) + "\n")
-        print(f"grid {i}: total {total} (digits {n_digit}, ghosts {n_ghost}/{len(ghosts)}) "
-              f"verified={ok} checks={stats['checks']} wall={rec['wall_s']}s", flush=True)
+        print(
+            f"grid {i}: total {total} (digits {n_digit}, ghosts {n_ghost}/{len(ghosts)}) "
+            f"verified={ok} checks={stats['checks']} wall={rec['wall_s']}s",
+            flush=True,
+        )
         if ok and (best is None or total < best["total"]):
             best = rec
             (a.out / "best.json").write_text(json.dumps(rec, indent=1))

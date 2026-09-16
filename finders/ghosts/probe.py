@@ -8,9 +8,14 @@ from ortools.sat.python import cp_model
 
 N = 9
 m = cp_model.CpModel()
-x = [[[m.new_bool_var(f"x{r}{c}{d}") for d in range(1, 10)] for c in range(N)] for r in range(N)]
+x = [
+    [[m.new_bool_var(f"x{r}{c}{d}") for d in range(1, 10)] for c in range(N)]
+    for r in range(N)
+]
 g = [[m.new_bool_var(f"g{r}{c}") for c in range(N)] for r in range(N)]
-digit = [[sum((d + 1) * x[r][c][d] for d in range(9)) for c in range(N)] for r in range(N)]
+digit = [
+    [sum((d + 1) * x[r][c][d] for d in range(9)) for c in range(N)] for r in range(N)
+]
 
 for r in range(N):
     for c in range(N):
@@ -21,17 +26,25 @@ for d in range(9):
         m.add_exactly_one(x[r][i][d] for r in range(N))
     for br in range(3):
         for bc in range(3):
-            m.add_exactly_one(x[br * 3 + a][bc * 3 + b][d] for a in range(3) for b in range(3))
+            m.add_exactly_one(
+                x[br * 3 + a][bc * 3 + b][d] for a in range(3) for b in range(3)
+            )
 
 
 def neighbours(r, c):
-    return [(r + a, c + b) for a in (-1, 0, 1) for b in (-1, 0, 1)
-            if (a or b) and 0 <= r + a < N and 0 <= c + b < N]
+    return [
+        (r + a, c + b)
+        for a in (-1, 0, 1)
+        for b in (-1, 0, 1)
+        if (a or b) and 0 <= r + a < N and 0 <= c + b < N
+    ]
 
 
 for r in range(N):
     for c in range(N):
-        m.add(sum(g[i][j] for i, j in neighbours(r, c)) == digit[r][c]).only_enforce_if(g[r][c])
+        m.add(sum(g[i][j] for i, j in neighbours(r, c)) == digit[r][c]).only_enforce_if(
+            g[r][c]
+        )
 
 # Some ghost holds an 8.
 eight = []
@@ -56,12 +69,25 @@ if st in (cp_model.OPTIMAL, cp_model.FEASIBLE):
             row.append(f"{d}{'*' if s.value(g[r][c]) else ' '}")
         print(" ".join(row))
     # Independent recheck of the rule from the printed solution.
-    grid = [[next(d + 1 for d in range(9) if s.value(x[r][c][d])) for c in range(N)] for r in range(N)]
+    grid = [
+        [next(d + 1 for d in range(9) if s.value(x[r][c][d])) for c in range(N)]
+        for r in range(N)
+    ]
     gh = [[s.value(g[r][c]) for c in range(N)] for r in range(N)]
-    ok = all(sum(gh[i][j] for i, j in neighbours(r, c)) == grid[r][c]
-             for r in range(N) for c in range(N) if gh[r][c])
+    ok = all(
+        sum(gh[i][j] for i, j in neighbours(r, c)) == grid[r][c]
+        for r in range(N)
+        for c in range(N)
+        if gh[r][c]
+    )
     ok &= all(sorted(row) == list(range(1, 10)) for row in grid)
-    ok &= all(sorted(grid[r][c] for r in range(N)) == list(range(1, 10)) for c in range(N))
-    ok &= all(sorted(grid[br + a][bc + b] for a in range(3) for b in range(3)) == list(range(1, 10))
-              for br in (0, 3, 6) for bc in (0, 3, 6))
+    ok &= all(
+        sorted(grid[r][c] for r in range(N)) == list(range(1, 10)) for c in range(N)
+    )
+    ok &= all(
+        sorted(grid[br + a][bc + b] for a in range(3) for b in range(3))
+        == list(range(1, 10))
+        for br in (0, 3, 6)
+        for bc in (0, 3, 6)
+    )
     print("recheck", "OK" if ok else "FAIL")

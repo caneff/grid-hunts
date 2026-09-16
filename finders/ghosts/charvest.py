@@ -1,6 +1,6 @@
 """Ghosts, all visible: harvest unique shapes with the C climb.
 
-    uv run docs/research/ghosts/charvest.py --seconds 1200 --seed 1 --out DIR
+    uv run finders/ghosts/charvest.py --seconds 1200 --seed 1 --out DIR
 
 Each loop starts from a fresh CP-SAT seed (probability --fresh) or from a
 random shape in this process's pool of climb endpoints, then runs gf_climb
@@ -39,7 +39,6 @@ def main():
     seen = set()
     pool = []
     stats = {"seed": a.seed, "loops": 0, "fresh": 0, "hits": 0, "new": 0}
-    out = open(a.out / "examples.jsonl", "a")
     while time.monotonic() - t0 < a.seconds:
         stats["loops"] += 1
         if not pool or rng.random() < a.fresh:
@@ -50,7 +49,9 @@ def main():
         secs = min(a.climb_seconds, a.seconds - (time.monotonic() - t0))
         if secs <= 0.5:
             break
-        best, score, _ = climb(start, rng.randrange(1, 1 << 62), secs, 2000, a.t_hi, a.t_lo, a.toggles)
+        best, score, _ = climb(
+            start, rng.randrange(1, 1 << 62), secs, 2000, a.t_hi, a.t_lo, a.toggles
+        )
         if score < 0:
             continue
         pool.append(best)
@@ -66,12 +67,24 @@ def main():
         stats["new"] += 1
         sols = []
         assert count_solutions(givens(best), 2, None, sols) == 1
-        out.write(json.dumps({"seed": a.seed, "ghosts": len(best), "shape": sorted(best),
-                              "canonical": list(key), "solution": sols[0]}) + "\n")
-        out.flush()
+        with (a.out / "examples.jsonl").open("a") as out:
+            out.write(
+                json.dumps(
+                    {
+                        "seed": a.seed,
+                        "ghosts": len(best),
+                        "shape": sorted(best),
+                        "canonical": list(key),
+                        "solution": sols[0],
+                    }
+                )
+                + "\n"
+            )
         stats["elapsed_s"] = round(time.monotonic() - t0)
         (a.out / "summary.json").write_text(json.dumps(stats))
-        print(f"new #{stats['new']}: {len(best)} ghosts; {json.dumps(stats)}", flush=True)
+        print(
+            f"new #{stats['new']}: {len(best)} ghosts; {json.dumps(stats)}", flush=True
+        )
     stats["elapsed_s"] = round(time.monotonic() - t0)
     (a.out / "summary.json").write_text(json.dumps(stats))
     print("done", json.dumps(stats), flush=True)

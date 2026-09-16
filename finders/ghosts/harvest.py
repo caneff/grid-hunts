@@ -1,6 +1,6 @@
 """Ghosts, all visible: harvest as many unique shapes (with an 8) as possible.
 
-    uv run docs/research/ghosts/harvest.py --seconds 1800 --seed 1 --out DIR \
+    uv run finders/ghosts/harvest.py --seconds 1800 --seed 1 --out DIR \
         [--roots docs/research/ghosts/allvisible-hits.jsonl]
 
 Roots: shapes from --roots first, then shapes.climb runs (the settings that
@@ -24,20 +24,28 @@ import time
 from collections import deque
 from pathlib import Path
 
-from shapes import NEIGH, climb, count_solutions, givens, eight_ok, seed_shape
+from shapes import NEIGH, climb, count_solutions, eight_ok, givens, seed_shape
 
 SYMS = [
-    lambda r, c: (r, c), lambda r, c: (c, 8 - r), lambda r, c: (8 - r, 8 - c), lambda r, c: (8 - c, r),
-    lambda r, c: (r, 8 - c), lambda r, c: (8 - r, c), lambda r, c: (c, r), lambda r, c: (8 - c, 8 - r),
+    lambda r, c: (r, c),
+    lambda r, c: (c, 8 - r),
+    lambda r, c: (8 - r, 8 - c),
+    lambda r, c: (8 - c, r),
+    lambda r, c: (r, 8 - c),
+    lambda r, c: (8 - r, c),
+    lambda r, c: (c, r),
+    lambda r, c: (8 - c, 8 - r),
 ]
-MOVES = [(i,) for i in range(81)] + [(i, j) for i in range(81) for j in NEIGH[i] if j > i]
+MOVES = [(i,) for i in range(81)] + [
+    (i, j) for i in range(81) for j in NEIGH[i] if j > i
+]
 
 
 def canonical(shape):
-    out = []
-    for f in SYMS:
-        out.append(tuple(sorted(f(i // 9, i % 9)[0] * 9 + f(i // 9, i % 9)[1] for i in shape)))
-    return min(out)
+    return min(
+        tuple(sorted(f(i // 9, i % 9)[0] * 9 + f(i // 9, i % 9)[1] for i in shape))
+        for f in SYMS
+    )
 
 
 def unique_example(shape):
@@ -52,8 +60,14 @@ def score_of(g, cap):
     return (n, len(vary))
 
 
-NEAR2 = [[j for j in range(81) if j != i and max(abs(i // 9 - j // 9), abs(i % 9 - j % 9)) <= 2]
-         for i in range(81)]
+NEAR2 = [
+    [
+        j
+        for j in range(81)
+        if j != i and max(abs(i // 9 - j // 9), abs(i % 9 - j % 9)) <= 2
+    ]
+    for i in range(81)
+]
 
 
 def finish(shape, deadline):
@@ -66,7 +80,11 @@ def finish(shape, deadline):
             continue
         near = NEAR2[v]
         base = shape | {v}
-        combos = [()] + [(a,) for a in near] + [(a, b) for k, a in enumerate(near) for b in near[k + 1:]]
+        combos = (
+            [()]
+            + [(a,) for a in near]
+            + [(a, b) for k, a in enumerate(near) for b in near[k + 1 :]]
+        )
         for extra in combos:
             if time.monotonic() > deadline:
                 return
@@ -117,11 +135,21 @@ def main():
     rng = random.Random(a.seed)
     t0 = time.monotonic()
     seen = set()
-    stats = {"seed": a.seed, "climbs": 0, "roots": 0, "examples": 0, "min_ghosts": None, "max_ghosts": None,
-             "max_distance": 0}
-    ex_file = open(a.out / "examples.jsonl", "a")
+    stats = {
+        "seed": a.seed,
+        "climbs": 0,
+        "roots": 0,
+        "examples": 0,
+        "min_ghosts": None,
+        "max_ghosts": None,
+        "max_distance": 0,
+    }
     pool = []
-    given_roots = [set(json.loads(line)["shape"]) for line in open(a.roots)] if a.roots else []
+    given_roots = (
+        [set(json.loads(line)["shape"]) for line in a.roots.read_text().splitlines()]
+        if a.roots
+        else []
+    )
 
     def elapsed():
         return time.monotonic() - t0
@@ -133,10 +161,20 @@ def main():
         seen.add(key)
         n = len(shape)
         stats["examples"] += 1
-        stats["min_ghosts"] = n if stats["min_ghosts"] is None else min(stats["min_ghosts"], n)
-        stats["max_ghosts"] = n if stats["max_ghosts"] is None else max(stats["max_ghosts"], n)
+        stats["min_ghosts"] = (
+            n if stats["min_ghosts"] is None else min(stats["min_ghosts"], n)
+        )
+        stats["max_ghosts"] = (
+            n if stats["max_ghosts"] is None else max(stats["max_ghosts"], n)
+        )
         stats["max_distance"] = max(stats["max_distance"], dist)
-        ex_file.write(json.dumps({"root": root_id, "distance": dist, "ghosts": n, "shape": list(key)}) + "\n")
+        with (a.out / "examples.jsonl").open("a") as ex_file:
+            ex_file.write(
+                json.dumps(
+                    {"root": root_id, "distance": dist, "ghosts": n, "shape": list(key)}
+                )
+                + "\n"
+            )
         return 1
 
     while elapsed() < a.seconds:
@@ -153,11 +191,16 @@ def main():
                 root, score = fast_climb(rng, start, end, a.cap)
                 if 1 < score[0] <= a.finish_below:
                     t = elapsed()
-                    found = list(finish(root, t0 + min(elapsed() + a.finish_seconds, a.seconds)))
+                    found = list(
+                        finish(root, t0 + min(elapsed() + a.finish_seconds, a.seconds))
+                    )
                     stats["finishes"] = stats.get("finishes", 0) + 1
                     stats["finish_hits"] = stats.get("finish_hits", 0) + bool(found)
-                    print(f"climb {stats['climbs']}: finish from {score}: {len(found)} unique "
-                          f"in {elapsed() - t:.1f}s", flush=True)
+                    print(
+                        f"climb {stats['climbs']}: finish from {score}: {len(found)} unique "
+                        f"in {elapsed() - t:.1f}s",
+                        flush=True,
+                    )
                     if found:
                         root, score = found[0], (1, 0)
                         given_roots.extend(found[1:])
@@ -166,12 +209,18 @@ def main():
                         pool.append((score, root))
                         pool.sort(key=lambda p: p[0])
                         del pool[20:]
-                    print(f"climb {stats['climbs']}: miss (best {score}) t={elapsed():.0f}s", flush=True)
+                    print(
+                        f"climb {stats['climbs']}: miss (best {score}) t={elapsed():.0f}s",
+                        flush=True,
+                    )
                     continue
             else:
                 root, _, score, _ = climb(rng, end, 2000, a.min_ghosts)
                 if score != 1:
-                    print(f"climb {stats['climbs']}: miss (best {score}) t={elapsed():.0f}s", flush=True)
+                    print(
+                        f"climb {stats['climbs']}: miss (best {score}) t={elapsed():.0f}s",
+                        flush=True,
+                    )
                     continue
         if not unique_example(root) or canonical(root) in seen:
             continue
@@ -196,7 +245,6 @@ def main():
                 new += record(trial, root_id, len(trial ^ root))
                 if new >= a.plateau:
                     break
-        ex_file.flush()
         stats["elapsed_s"] = round(elapsed())
         (a.out / "summary.json").write_text(json.dumps(stats))
         print(f"root {root_id}: +{new} examples; {json.dumps(stats)}", flush=True)

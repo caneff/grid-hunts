@@ -1,6 +1,6 @@
 """Ghosts, all visible: dense shapes straight from CP-SAT, then a uniqueness check.
 
-    uv run docs/research/ghosts/dense.py --seconds 300 --seed 1 --out DIR
+    uv run finders/ghosts/dense.py --seconds 300 --seed 1 --out DIR
 
 Uniqueness is monotone in the givens, so many ghosts help. Each round builds
 the grid+ghost model (ghost digit = ghost-neighbour count, some ghost holds 8),
@@ -18,9 +18,8 @@ import random
 import time
 from pathlib import Path
 
-from ortools.sat.python import cp_model
-
 from harvest import canonical
+from ortools.sat.python import cp_model
 from shapes import BOX, NEIGH, count_solutions, givens, has_eight
 
 
@@ -55,7 +54,9 @@ class Model:
             m.add_hint(x[i][rng.randrange(9)], True)
 
     def cut(self, Y):
-        self.m.add_bool_or([self.on[i][d] for i in range(81) for d in range(9) if d != Y[i] - 1])
+        self.m.add_bool_or(
+            [self.on[i][d] for i in range(81) for d in range(9) if d != Y[i] - 1]
+        )
 
     def solve(self, rng, limit):
         s = cp_model.CpSolver()
@@ -66,7 +67,9 @@ class Model:
         if st not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
             return None, None
         shape = {i for i in range(81) if s.value(self.g[i])}
-        grid = [next(d + 1 for d in range(9) if s.value(self.x[i][d])) for i in range(81)]
+        grid = [
+            next(d + 1 for d in range(9) if s.value(self.x[i][d])) for i in range(81)
+        ]
         return shape, grid
 
 
@@ -84,7 +87,6 @@ def main():
     t0 = time.monotonic()
     seen = set()
     solves = hits = 0
-    out = open(a.out / "examples.jsonl", "a")
     while time.monotonic() - t0 < a.seconds:
         model = Model(rng, a.min_ghosts)
         for _ in range(a.rounds):
@@ -107,17 +109,34 @@ def main():
                 if new:
                     seen.add(key)
                     hits += 1
-                    out.write(json.dumps({"seed": a.seed, "ghosts": len(shape), "shape": sorted(shape),
-                                          "solution": grid}) + "\n")
-                    out.flush()
-                print(f"solve {solves}: UNIQUE {len(shape)} ghosts{'' if new else ' (dup)'}; "
-                      f"hits {hits} t={time.monotonic() - t0:.0f}s", flush=True)
+                    with (a.out / "examples.jsonl").open("a") as out:
+                        out.write(
+                            json.dumps(
+                                {
+                                    "seed": a.seed,
+                                    "ghosts": len(shape),
+                                    "shape": sorted(shape),
+                                    "solution": grid,
+                                }
+                            )
+                            + "\n"
+                        )
+                print(
+                    f"solve {solves}: UNIQUE {len(shape)} ghosts{'' if new else ' (dup)'}; "
+                    f"hits {hits} t={time.monotonic() - t0:.0f}s",
+                    flush=True,
+                )
                 break
             Y = next(s for s in sols if s != grid)
             model.cut(Y)
-            print(f"solve {solves}: {len(shape)} ghosts, not unique "
-                  f"(diff {sum(p != q for p, q in zip(Y, grid))}) t={time.monotonic() - t0:.0f}s", flush=True)
-    print(f"done solves={solves} hits={hits} t={time.monotonic() - t0:.0f}s", flush=True)
+            print(
+                f"solve {solves}: {len(shape)} ghosts, not unique "
+                f"(diff {sum(p != q for p, q in zip(Y, grid, strict=True))}) t={time.monotonic() - t0:.0f}s",
+                flush=True,
+            )
+    print(
+        f"done solves={solves} hits={hits} t={time.monotonic() - t0:.0f}s", flush=True
+    )
 
 
 if __name__ == "__main__":

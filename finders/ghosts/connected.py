@@ -1,6 +1,6 @@
 """Ghosts, all visible and orthogonally connected: do such shapes exist?
 
-    uv run docs/research/ghosts/connected.py --size 20 [--force 72,73,79] [--ban 57]
+    uv run finders/ghosts/connected.py --size 20 [--force 72,73,79] [--ban 57]
 
 Shape-only CP-SAT model: ghost booleans, each ghost's given is its
 ghost-neighbour count (1-8), givens distinct within every row, column and box,
@@ -18,7 +18,6 @@ import argparse
 import time
 
 from ortools.sat.python import cp_model
-
 from shapes import BOX, CELLS, NEIGH, ORTH, count_solutions, givens
 
 
@@ -50,7 +49,9 @@ def solve_connected(m, g, seconds, workers, log):
     cuts = 0
     start = time.monotonic()
     while True:
-        s.parameters.max_time_in_seconds = max(1.0, seconds - (time.monotonic() - start))
+        s.parameters.max_time_in_seconds = max(
+            1.0, seconds - (time.monotonic() - start)
+        )
         st = s.solve(m)
         if st not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
             log(f"{s.status_name(st)} after {cuts} connectivity cuts")
@@ -61,7 +62,11 @@ def solve_connected(m, g, seconds, workers, log):
             return shape, cuts
         for comp in comps:
             witness = next(i for i in shape if i not in comp)
-            m.add_bool_or([g[i].Not() for i in comp] + [g[b] for b in boundary(comp)] + [g[witness].Not()])
+            m.add_bool_or(
+                [g[i].Not() for i in comp]
+                + [g[b] for b in boundary(comp)]
+                + [g[witness].Not()]
+            )
             cuts += 1
         if time.monotonic() - start > seconds:
             log(f"time after {cuts} connectivity cuts")
@@ -76,7 +81,11 @@ def build(size_min, size_max, force, ban, eight):
         m.add(n[i] == sum(g[j] for j in NEIGH[i]))
         m.add(n[i] >= 1).only_enforce_if(g[i])
         for j in range(i + 1, 81):
-            if CELLS[i][0] == CELLS[j][0] or CELLS[i][1] == CELLS[j][1] or BOX[i] == BOX[j]:
+            if (
+                CELLS[i][0] == CELLS[j][0]
+                or CELLS[i][1] == CELLS[j][1]
+                or BOX[i] == BOX[j]
+            ):
                 m.add(n[i] != n[j]).only_enforce_if([g[i], g[j]])
     for i in force:
         m.add(g[i] == 1)
@@ -108,8 +117,10 @@ def main():
     t0 = time.monotonic()
     m, g = build(a.size_min, a.size_max, force, ban, a.eight)
     shape, cuts = solve_connected(m, g, a.seconds, a.workers, print)
-    print(f"size {a.size_min}-{a.size_max}: {'shape' if shape else 'none'} "
-          f"after {cuts} cuts in {time.monotonic() - t0:.1f}s")
+    print(
+        f"size {a.size_min}-{a.size_max}: {'shape' if shape else 'none'} "
+        f"after {cuts} cuts in {time.monotonic() - t0:.1f}s"
+    )
     if shape is None:
         return
     print("ghosts", len(shape))

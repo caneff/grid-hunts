@@ -1,6 +1,6 @@
 """Ghosts, all visible: search ghost shapes directly.
 
-    uv run docs/research/ghosts/shapes.py --seconds 120 --seed 1 --out DIR
+    uv run finders/ghosts/shapes.py --seconds 120 --seed 1 --out DIR
 
 A shape fixes its givens: each ghost shows its ghost-neighbour count. So the
 search needs no grid variables. A shape is admissible when its counts are
@@ -22,14 +22,36 @@ from pathlib import Path
 N = 9
 CELLS = [(r, c) for r in range(N) for c in range(N)]
 BOX = [(r // 3) * 3 + c // 3 for r, c in CELLS]
-NEIGH = [[(r + a) * 9 + c + b for a in (-1, 0, 1) for b in (-1, 0, 1)
-          if (a or b) and 0 <= r + a < N and 0 <= c + b < N] for r, c in CELLS]
-PEERS = [{j for j in range(81) if j != i and (CELLS[i][0] == CELLS[j][0] or CELLS[i][1] == CELLS[j][1]
-                                              or BOX[i] == BOX[j])} for i in range(81)]
+NEIGH = [
+    [
+        (r + a) * 9 + c + b
+        for a in (-1, 0, 1)
+        for b in (-1, 0, 1)
+        if (a or b) and 0 <= r + a < N and 0 <= c + b < N
+    ]
+    for r, c in CELLS
+]
+PEERS = [
+    {
+        j
+        for j in range(81)
+        if j != i
+        and (
+            CELLS[i][0] == CELLS[j][0] or CELLS[i][1] == CELLS[j][1] or BOX[i] == BOX[j]
+        )
+    }
+    for i in range(81)
+]
 
 
-ORTH = [[(r + a) * 9 + c + b for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1))
-         if 0 <= r + a < N and 0 <= c + b < N] for r, c in CELLS]
+ORTH = [
+    [
+        (r + a) * 9 + c + b
+        for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1))
+        if 0 <= r + a < N and 0 <= c + b < N
+    ]
+    for r, c in CELLS
+]
 
 
 def connected(shape):
@@ -159,7 +181,9 @@ def grow_seed(rng, size, tries=20000):
     for _ in range(tries):
         shape = set(FORCE) or {rng.choice([i for i in range(81) if i not in BAN])}
         while len(shape) < size:
-            frontier = [j for i in shape for j in ORTH[i] if j not in shape and j not in BAN]
+            frontier = [
+                j for i in shape for j in ORTH[i] if j not in shape and j not in BAN
+            ]
             frontier += [i for i in FORCE if i not in shape]
             if not frontier:
                 break
@@ -249,16 +273,31 @@ def main():
     t0 = time.monotonic()
     climbs = hits = 0
     while time.monotonic() - t0 < a.seconds:
-        shape, g, score, steps = climb(rng, min(time.monotonic() + a.climb_seconds, t0 + a.seconds), a.cap, a.min_ghosts)
+        shape, g, score, steps = climb(
+            rng,
+            min(time.monotonic() + a.climb_seconds, t0 + a.seconds),
+            a.cap,
+            a.min_ghosts,
+        )
         climbs += 1
-        rec = {"seed": a.seed, "climb": climbs, "ghosts": len(shape), "solutions_capped": score,
-               "steps": steps, "shape": sorted(shape), "givens": {str(k): v for k, v in (g or {}).items()}}
+        rec = {
+            "seed": a.seed,
+            "climb": climbs,
+            "ghosts": len(shape),
+            "solutions_capped": score,
+            "steps": steps,
+            "shape": sorted(shape),
+            "givens": {str(k): v for k, v in (g or {}).items()},
+        }
         if score == 1:
             hits += 1
-            with open(a.out / "hits.jsonl", "a") as f:
+            with (a.out / "hits.jsonl").open("a") as f:
                 f.write(json.dumps(rec) + "\n")
-        print(f"climb {climbs}: ghosts={len(shape)} solutions={score}{'+' if score >= a.cap else ''} "
-              f"steps={steps} t={time.monotonic() - t0:.0f}s", flush=True)
+        print(
+            f"climb {climbs}: ghosts={len(shape)} solutions={score}{'+' if score >= a.cap else ''} "
+            f"steps={steps} t={time.monotonic() - t0:.0f}s",
+            flush=True,
+        )
     print(f"climbs={climbs} hits={hits}")
 
 

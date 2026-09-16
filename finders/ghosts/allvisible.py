@@ -1,6 +1,6 @@
 """Ghosts, all visible: the ghost digits alone make the sudoku unique.
 
-    uv run docs/research/ghosts/allvisible.py --seed 1 --seconds 600 --out DIR
+    uv run finders/ghosts/allvisible.py --seed 1 --seconds 600 --out DIR
 
 Every ghost is shown with its digit, and those digits are the only givens. A
 ghost's digit is its ghost-neighbour count, so a ghost shape plus the grid fix
@@ -16,7 +16,7 @@ see 2026-09-15-ghosts-all-visible.md):
   check   sudoku with the ghost digits given and the master grid forbidden,
           fewest cells changed. A second grid Y cuts every (grid, shape) that
           Y also satisfies: OR over cells of (g[c] ∧ digit[c] ≠ Y[c]).
-A unique shape tightens the bound to |shape| − 1; cuts stay valid.
+A unique shape tightens the bound to |shape| - 1; cuts stay valid.
 """
 
 import argparse
@@ -29,16 +29,24 @@ from ortools.sat.python import cp_model
 
 N = 9
 CELLS = [(r, c) for r in range(N) for c in range(N)]
-BANDS = [range(0, 3), range(3, 6), range(6, 9)]
+BANDS = [range(3), range(3, 6), range(6, 9)]
 
 
 def neighbours(r, c):
-    return [(r + a, c + b) for a in (-1, 0, 1) for b in (-1, 0, 1)
-            if (a or b) and 0 <= r + a < N and 0 <= c + b < N]
+    return [
+        (r + a, c + b)
+        for a in (-1, 0, 1)
+        for b in (-1, 0, 1)
+        if (a or b) and 0 <= r + a < N and 0 <= c + b < N
+    ]
 
 
 def shares_house(p, q):
-    return p[0] == q[0] or p[1] == q[1] or (p[0] // 3 == q[0] // 3 and p[1] // 3 == q[1] // 3)
+    return (
+        p[0] == q[0]
+        or p[1] == q[1]
+        or (p[0] // 3 == q[0] // 3 and p[1] // 3 == q[1] // 3)
+    )
 
 
 def line_pairs():
@@ -60,7 +68,9 @@ def sudoku(m):
             m.add_exactly_one(x[r, i][d] for r in range(N))
         for br in (0, 3, 6):
             for bc in (0, 3, 6):
-                m.add_exactly_one(x[br + a, bc + b][d] for a in range(3) for b in range(3))
+                m.add_exactly_one(
+                    x[br + a, bc + b][d] for a in range(3) for b in range(3)
+                )
     return x
 
 
@@ -73,7 +83,9 @@ def solver(seed, limit):
 
 
 def digits_of(s, x):
-    return {cell: next(d + 1 for d in range(9) if s.value(x[cell][d])) for cell in CELLS}
+    return {
+        cell: next(d + 1 for d in range(9) if s.value(x[cell][d])) for cell in CELLS
+    }
 
 
 class Master:
@@ -125,15 +137,19 @@ class Master:
                     if i == j:
                         continue
                     for d in range(9):
-                        m.add(h[j] < h[i]).only_enforce_if(free + [x[line_b[i]][d], x[line_a[j]][d]])
+                        m.add(h[j] < h[i]).only_enforce_if(
+                            [*free, x[line_b[i]][d], x[line_a[j]][d]]
+                        )
         # Band hexagons. In one band each row and box holds one a and one b. If
         # three columns (one per stack) each hold both inside the band, swapping
         # a and b on those 6 cells keeps every house: one must be a ghost. Same
         # for a stack and three rows. has[...] is implied by x (true whenever the
         # line holds d in the band), so the clause only fires on a real hexagon.
         for transpose in (False, True):
-            def at(i, j):
+
+            def at(i, j, transpose=transpose):
                 return (j, i) if transpose else (i, j)
+
             for band in BANDS:
                 has = {}
                 for j in range(N):
@@ -142,7 +158,7 @@ class Master:
                         for i in band:
                             m.add_implication(x[at(i, j)][d], v)
                         has[j, d] = v
-                for j0 in range(0, 3):
+                for j0 in range(3):
                     for j1 in range(3, 6):
                         for j2 in range(6, 9):
                             for a in range(9):
@@ -150,7 +166,11 @@ class Master:
                                     lits = []
                                     for j in (j0, j1, j2):
                                         lits += [has[j, a].Not(), has[j, b].Not()]
-                                        lits += [on[at(i, j)][d] for i in band for d in (a, b)]
+                                        lits += [
+                                            on[at(i, j)][d]
+                                            for i in band
+                                            for d in (a, b)
+                                        ]
                                     m.add_bool_or(lits)
                 # Band segments: two columns in different stacks holding the same
                 # three digits inside the band can trade them (a 3-cycle). Rows
@@ -163,7 +183,14 @@ class Master:
                         for a in range(9):
                             for b in range(a + 1, 9):
                                 for c in range(b + 1, 9):
-                                    m.add_bool_or(ghosts + [has[j, d].Not() for j in (j0, j1) for d in (a, b, c)])
+                                    m.add_bool_or(
+                                        ghosts
+                                        + [
+                                            has[j, d].Not()
+                                            for j in (j0, j1)
+                                            for d in (a, b, c)
+                                        ]
+                                    )
         for cell in CELLS:
             m.add_hint(x[cell][rng.randrange(9)], 1)
         self.cuts = 0
@@ -196,7 +223,7 @@ class Master:
         D = [cell for cell in CELLS if Y[cell] != S[cell]]
         lits = [self.g[cell] for cell in D]
         for i, p in enumerate(D):
-            for q in D[i + 1:]:
+            for q in D[i + 1 :]:
                 if S[p] == S[q]:
                     lits.append(self._differ(p, q))
                 elif not shares_house(p, q):
@@ -211,7 +238,11 @@ class Master:
         s = solver(rng.randrange(1 << 30), limit)
         st = s.solve(self.m)
         if st in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-            return "shape", digits_of(s, self.x), {cell for cell in CELLS if s.value(self.g[cell])}
+            return (
+                "shape",
+                digits_of(s, self.x),
+                {cell for cell in CELLS if s.value(self.g[cell])},
+            )
         return ("infeasible" if st == cp_model.INFEASIBLE else "timeout"), None, None
 
 
@@ -235,7 +266,9 @@ def second_solution(S, shape, rng, limit):
 
 def verify(S, shape):
     """Fresh check: givens are neighbour counts, sudoku-consistent, an 8, unique."""
-    counts_ok = all(sum(n in shape for n in neighbours(*cell)) == S[cell] for cell in shape)
+    counts_ok = all(
+        sum(n in shape for n in neighbours(*cell)) == S[cell] for cell in shape
+    )
     has_eight = any(S[cell] == 8 for cell in shape)
     m = cp_model.CpModel()
     x = sudoku(m)
@@ -270,21 +303,31 @@ def main():
         Y = second_solution(S, shape, rng, 30)
         if Y is None:
             ok = verify(S, shape)
-            rec = {"seed": a.seed, "ghosts": len(shape), "verified": ok, "cuts": master.cuts,
-                   "elapsed_s": round(time.monotonic() - t0, 1),
-                   "solution": [[S[r, c] for c in range(N)] for r in range(N)],
-                   "shape": sorted(shape)}
-            with open(a.out / "progress.jsonl", "a") as f:
+            rec = {
+                "seed": a.seed,
+                "ghosts": len(shape),
+                "verified": ok,
+                "cuts": master.cuts,
+                "elapsed_s": round(time.monotonic() - t0, 1),
+                "solution": [[S[r, c] for c in range(N)] for r in range(N)],
+                "shape": sorted(shape),
+            }
+            with (a.out / "progress.jsonl").open("a") as f:
                 f.write(json.dumps(rec) + "\n")
-            print(f"unique: {len(shape)} ghosts verified={ok} cuts={master.cuts} t={rec['elapsed_s']}s",
-                  flush=True)
+            print(
+                f"unique: {len(shape)} ghosts verified={ok} cuts={master.cuts} t={rec['elapsed_s']}s",
+                flush=True,
+            )
             master.tighten(len(shape) - 1)
         else:
             master.cut(S, Y)
             if master.cuts % 10 == 0:
                 diff = sum(Y[c] != S[c] for c in CELLS)
-                print(f"  {master.cuts} cuts, shape {len(shape)}, diff {diff}, "
-                      f"t={time.monotonic() - t0:.0f}s", flush=True)
+                print(
+                    f"  {master.cuts} cuts, shape {len(shape)}, diff {diff}, "
+                    f"t={time.monotonic() - t0:.0f}s",
+                    flush=True,
+                )
     print(f"end={end} cuts={master.cuts} t={time.monotonic() - t0:.0f}s", flush=True)
 
 
