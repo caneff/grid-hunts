@@ -1195,7 +1195,7 @@ state and propagate only with singles.
 **A candidate-carrying human solver (2026-09-16).** Chris: "like the column 2
 8 deduction felt humanable, but checking through all states of r6c2=4
 didn't." So the ladder now runs on a solver that carries its own state and
-never consults the state set (`.scratch/copycat-rsl/p7/human_solver.py`):
+never consults the state set (`finders/galaxy-copycat/human_solver.py`):
 per cell a candidate set, a copycat status P/C/?, and for line cells the
 allowed shown options. Propagation: naked and hidden singles, locked
 candidates, one copycat per house, copycat digits distinct, the pigeonhole
@@ -1273,7 +1273,6 @@ Rendered in the session artifact.
 **Ruling (2026-09-17).** Chris: "board 28 was perfect." Board 28 is the
 design of record for the copycat + region-sum-line puzzle on board 14:
 `boards/board28-pair43x25-solved.json`, solution and copycats in the entry
-above. The human solver (`.scratch/copycat-rsl/p7/human_solver.py`, scratch,
-regenerable from this doc's description) is the acceptance test for any
-further change: a board counts as human-solvable only if it solves there
-with no case split.
+above. The human solver (`finders/galaxy-copycat/human_solver.py`, landed
+by #531) is the acceptance test for any further change: a board counts as
+human-solvable only if it solves there with no case split.

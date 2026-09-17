@@ -31,3 +31,6 @@ drivers that launch a hunt overnight stay under `docs/research/` (#469).
 - `finders/galaxy-copycat/`'s write-ups live in `docs/research/2026-09-14-copycat-scan.md`
   and `docs/research/2026-09-14-galaxy-copycat-design.md`; its boards are
   `docs/research/2026-09-14-galaxy-copycat/boards/`.
+- `finders/galaxy-copycat/human_solver.py` is the candidate-carrying human
+  solver for copycat + paired region-sum lines — the acceptance test for
+  whether a board is human-solvable (design doc, "Ruling (2026-09-17)").
