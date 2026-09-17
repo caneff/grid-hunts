@@ -1,0 +1,443 @@
+{
+  "formatVersion": "1.6.0",
+  "puzzle": {
+    "name": "",
+    "author": "ChinStrap",
+    "cells": [
+      {
+        "cornerPencilMarks": 16,
+        "colors": 4096
+      },
+      {
+        "cornerPencilMarks": 16,
+        "colors": 4096
+      },
+      {
+        "cornerPencilMarks": 16,
+        "colors": 4096
+      },
+      {
+        "cornerPencilMarks": 256,
+        "colors": 4352
+      },
+      {
+        "cornerPencilMarks": 256,
+        "colors": 4096
+      },
+      {
+        "cornerPencilMarks": 320,
+        "colors": 20480
+      },
+      {},
+      {
+        "colors": 4096
+      },
+      {},
+      {
+        "colors": 4096
+      },
+      {
+        "colors": 4096
+      },
+      {
+        "value": 8,
+        "colors": 4096
+      },
+      {
+        "value": 4,
+        "colors": 4096
+      },
+      {
+        "candidates": 744,
+        "colors": 8192
+      },
+      {
+        "cornerPencilMarks": 64,
+        "colors": 20480
+      },
+      {
+        "colors": 4096
+      },
+      {
+        "colors": 4096
+      },
+      {
+        "colors": 4096
+      },
+      {
+        "colors": 4096
+      },
+      {
+        "colors": 4096
+      },
+      {
+        "candidates": 744,
+        "colors": 8192
+      },
+      {
+        "value": 1,
+        "colors": 4096
+      },
+      {
+        "value": 2,
+        "colors": 4096
+      },
+      {
+        "cornerPencilMarks": 64,
+        "colors": 20480
+      },
+      {
+        "value": 4,
+        "colors": 4096
+      },
+      {
+        "value": 8,
+        "colors": 4096
+      },
+      {
+        "colors": 4096
+      },
+      {
+        "cornerPencilMarks": 260,
+        "colors": 262145
+      },
+      {
+        "cornerPencilMarks": 260,
+        "colors": 262145
+      },
+      {
+        "cornerPencilMarks": 4,
+        "colors": 266241
+      },
+      {
+        "value": 6,
+        "colors": 20480
+      },
+      {
+        "candidates": 680,
+        "colors": 102400
+      },
+      {
+        "candidates": 680,
+        "colors": 102400
+      },
+      {
+        "candidates": 680,
+        "colors": 135168
+      },
+      {
+        "value": 1,
+        "colors": 4096
+      },
+      {
+        "value": 4,
+        "colors": 4096
+      },
+      {
+        "colors": 151552
+      },
+      {
+        "value": 1,
+        "colors": 4096
+      },
+      {
+        "colors": 151552
+      },
+      {
+        "candidates": 260,
+        "colors": 4096
+      },
+      {
+        "candidates": 276,
+        "cornerPencilMarks": 16,
+        "colors": 4096
+      },
+      {
+        "candidates": 276,
+        "cornerPencilMarks": 16,
+        "colors": 4096
+      },
+      {
+        "candidates": 680,
+        "colors": 266240
+      },
+      {
+        "candidates": 680,
+        "colors": 40960
+      },
+      {
+        "candidates": 680,
+        "colors": 69632
+      },
+      {
+        "cornerPencilMarks": 16,
+        "colors": 45056
+      },
+      {
+        "cornerPencilMarks": 16,
+        "colors": 45056
+      },
+      {
+        "cornerPencilMarks": 16,
+        "colors": 45056
+      },
+      {
+        "candidates": 680,
+        "colors": 397312
+      },
+      {
+        "candidates": 680,
+        "colors": 397312
+      },
+      {
+        "value": 1,
+        "colors": 8192
+      },
+      {
+        "value": 6,
+        "colors": 20480
+      },
+      {
+        "value": 2,
+        "colors": 4096
+      },
+      {
+        "value": 8,
+        "colors": 4096
+      },
+      {
+        "cornerPencilMarks": 16
+      },
+      {
+        "cornerPencilMarks": 16
+      },
+      {
+        "colors": 4096
+      },
+      {
+        "colors": 40961
+      },
+      {
+        "cornerPencilMarks": 64,
+        "colors": 20480
+      },
+      {
+        "colors": 4096
+      },
+      {
+        "value": 8
+      },
+      {
+        "cornerPencilMarks": 16,
+        "colors": 4096
+      },
+      {},
+      {
+        "cornerPencilMarks": 272
+      },
+      {
+        "cornerPencilMarks": 272
+      },
+      {
+        "colors": 4096
+      },
+      {
+        "cornerPencilMarks": 256,
+        "colors": 40961
+      },
+      {
+        "value": 1,
+        "colors": 4096
+      },
+      {
+        "cornerPencilMarks": 256,
+        "colors": 4096
+      },
+      {},
+      {
+        "cornerPencilMarks": 16,
+        "colors": 4096
+      },
+      {},
+      {
+        "cornerPencilMarks": 272
+      },
+      {
+        "cornerPencilMarks": 272
+      },
+      {
+        "colors": 4096
+      },
+      {
+        "cornerPencilMarks": 256,
+        "colors": 40961
+      },
+      {
+        "cornerPencilMarks": 320,
+        "colors": 20480
+      },
+      {
+        "cornerPencilMarks": 256,
+        "colors": 4096
+      },
+      {},
+      {
+        "cornerPencilMarks": 16,
+        "colors": 4096
+      },
+      {}
+    ],
+    "constraints": [
+      {
+        "type": 0
+      },
+      {
+        "solverIgnored": true,
+        "type": 404,
+        "lines": [
+          [
+            30,
+            31,
+            32,
+            33,
+            42,
+            51
+          ],
+          [
+            75,
+            66,
+            57,
+            48,
+            49,
+            50
+          ],
+          [
+            11,
+            12,
+            13,
+            22,
+            21,
+            20
+          ],
+          [
+            37,
+            36,
+            45,
+            46,
+            55,
+            64,
+            65
+          ],
+          [
+            76,
+            67,
+            68,
+            59,
+            60,
+            69,
+            78
+          ],
+          [
+            24,
+            25,
+            34,
+            43,
+            52,
+            53
+          ]
+        ],
+        "singleRegionTotals": false,
+        "style": {
+          "color": "#2ecbff",
+          "thickness": 0.15
+        }
+      },
+      {
+        "type": 1,
+        "regions": [
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          2,
+          2,
+          2,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          2,
+          2,
+          2,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          2,
+          2,
+          2,
+          3,
+          3,
+          3,
+          4,
+          4,
+          4,
+          5,
+          5,
+          5,
+          3,
+          3,
+          3,
+          4,
+          4,
+          4,
+          5,
+          5,
+          5,
+          3,
+          3,
+          3,
+          4,
+          4,
+          4,
+          5,
+          5,
+          5,
+          6,
+          6,
+          6,
+          7,
+          7,
+          7,
+          8,
+          8,
+          8,
+          6,
+          6,
+          6,
+          7,
+          7,
+          7,
+          8,
+          8,
+          8,
+          6,
+          6,
+          6,
+          7,
+          7,
+          7,
+          8,
+          8,
+          8
+        ]
+      }
+    ]
+  }
+}
