@@ -1175,3 +1175,19 @@ state: L5 r1c1-r2c1-r3c1-r3c2 | r4c2-r4c1-r5c1 with L6 r7c8-r7c7-r8c7 |
 r9c7-r9c6-r9c5-r8c5 (1s, sums, 2s, sums). The five-rung pair L5
 r1c1-r2c1-r3c1-r3c2-r4c2-r4c1-r5c1 / L6 r8c5-r8c6-r7c6-r7c7-r8c7-r9c7-r9c8
 ends at 15 relaxed states. Rendered with the ladder in the session artifact.
+
+**Board 26, hand check of the rungs (2026-09-16).** Chris pushed on the
+first step and the narration above does not hold. Corrected: (1) the
+1-count gives only r9c1 != 1; the "box-7 segment >= 16" claim was false (a
+copycat can repeat a plain digit, so 13 is reachable) and the seven other
+eliminations each need their own column-2 argument. (2) r4c2 = 8 is not
+propagation: the 8s at r2c3, r6c9, r7c7 put column 2's 8 in r4c2/r8c2/r9c2;
+in box 7 it makes the lower segment 16 or >= 18 once r9c1 != 1, and the
+upper segment r4c2+1+r6c2 <= 17 reaches 16 only as 8+1+7, so r4c2 = 8.
+(3) The 4s rung stands. (4) The 8s rung needs r8c7 excluded as a copycat
+(true in the state set: 1 of 136 states after step 1, 0 of 27 after the
+4s) and no hand reason for that is known, so the rest of the ladder is
+solver-verified only. Lesson for `ladder_human2.py`: the projection step
+between rungs smuggles in facts (r4c2 = 8, r8c7 not a copycat) that the
+rung itself did not earn; a human ladder must carry its own candidate
+state and propagate only with singles.
