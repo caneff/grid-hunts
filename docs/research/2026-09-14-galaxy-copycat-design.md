@@ -1124,3 +1124,54 @@ r4c3=2); 4s -> 9 (r3c1=9, r4c2=9, r4c7=3, r5c7=9, r7c8=3); 5s -> 3 (nine
 digits); 2s -> 1. Runner-up with six rungs but ending at 3 relaxed states:
 L5 r2c1-r2c2-r3c2 | r4c2-r5c2-r5c1-r6c1 with L6 r9c5-r9c6-r8c6 |
 r8c7-r8c8-r9c8-r9c9.
+
+**Rungs must be readable off the line pencil marks (2026-09-16).** The
+relaxed-model ladder still credited rungs that only a joint state count can
+see: on board 25 the "7s" rung was a phantom (r6c3=4 already held in 162 of
+163 states, the real reason being the 4s-in-columns argument), and after
+the 1s, 8s and r6c3=4 no single count placed anything; the strongest, the
+3s, removed 38 candidates scattered over 32 cells, most far from the lines.
+Two stricter metrics were tried on the 201 unique pairs
+(`.scratch/copycat-rsl/p7/ladder_local.py`, `ladder_human2.py`):
+
+- *Local*: credit a rung only for candidates removed, digits placed or
+  copycat flags decided on the line cells and the boxes they cross, and
+  only for candidates alive in >= 5 % of the current states. Still too
+  loose: late rungs "remove" 50-90 local candidates by state collapse.
+- *Human-projectable* (kept): knowledge is each line cell's candidates and
+  copycat status projected from the surviving states; each line is
+  enumerated exactly over those options (own digit if it may be plain, the
+  opposite cell's candidates if it may be a copycat; distinct plain digits
+  in a shared house; one copycat per house; the line's own segment sums).
+  A rung is one argument, equal first-segment sums or one digit's count
+  equal on both lines, and it eliminates an option only when no
+  enumeration of that line uses the option with a count (sum) the other
+  line can reach. Only those eliminations are applied to the state set;
+  between rungs the relaxed model propagates (sudoku, copycat rules, L1-L4
+  region sums, no pairings). Run on all 201 pairs in 110 s.
+
+Result: 91 pairs have no human rung, 89 one, 17 two, 3 four, 1 five. Board
+22 and 23 keep one rung, board 24 none, board 25 two (the 1s and the 8s,
+matching the hand analysis exactly). Two pairs reach a single relaxed
+state on four rungs.
+
+**Board 26** (`boards/board26-pair7-human.json`): L5 = r4c2-r5c2-r6c2 |
+r7c2-r8c2-r9c2-r9c1 (boxes 4, 7), L6 = r7c8-r8c8-r8c7 | r8c6-r8c5-r9c5-r9c6
+(boxes 9, 8); values 8,1,9 | 2,7,6,3 and 9,6,3 | 2,1,8,7, sums 18; unique,
+and unique already in the relaxed set. r8c2 is the box-7 copycat (digit 4,
+shows 7); no copycat on L6. Ladder from 286 lines-only states: 1s (L6 has
+exactly the plain 1 at r8c5, L5 has r5c2, so r9c1 is not 1; then L5's box-7
+segment is >= 16 and its box-4 segment r4c2+1+r6c2 <= 17, so r4c2 is not a
+copycat, r4c2 and r6c2 are from 7/8/9, and r7c2, r9c2 lose 8, 9 while r8c2
+cannot show 8 or 9) -> 136, propagation gives r4c2=8; 4s (L5 cannot show a
+4: box 7's 4 is the copycat, no possible copycat on L5 shows 4, and r6c2=4
+fails L5's sums, so r7c8, r8c8, r8c6, r9c5, r9c6 lose 4) -> 27; 8s (L5 shows
+the 8 at r4c2, L6 at most one, so r9c1 is not 8 and L6's one 8 must be
+r9c5) -> 3; sums (L5 16 or 18, L6 18 or 20, so 18: r6c2=9, r9c1=3, r8c7=3,
+r9c6=7, r8c2 shows 7) -> 1. Not measured: the difficulty of the relaxed
+propagation between rungs (17 -> 21 -> 46 -> 81 placed digits), which uses
+L1-L4's sums but not their pairings. Runner-up, also four rungs to one
+state: L5 r1c1-r2c1-r3c1-r3c2 | r4c2-r4c1-r5c1 with L6 r7c8-r7c7-r8c7 |
+r9c7-r9c6-r9c5-r8c5 (1s, sums, 2s, sums). The five-rung pair L5
+r1c1-r2c1-r3c1-r3c2-r4c2-r4c1-r5c1 / L6 r8c5-r8c6-r7c6-r7c7-r8c7-r9c7-r9c8
+ends at 15 relaxed states. Rendered with the ladder in the session artifact.
