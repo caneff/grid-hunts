@@ -1236,3 +1236,36 @@ none of them either; digits placed beyond the 16 forced: 0 for 21 pairs,
 change the verdict: the solver is a lower bound (no casework, no chaining
 two arguments, no bifurcation on a copycat cell), a third pair or a
 different line shape, or accepting some casework as the intended break-in.
+
+**Human solver, fixes, and (3,4) x (5,2) pairs (2026-09-17).** Chris: "what
+about a 3/4 and 5/2 pair". Paired lines carry the same seven values, so a
+(5,2) partner's 2-cell segment equals its 5-cell segment: 15 to 17 with no
+copycat on either segment, 11 to 18 with one (a copycat may repeat a
+value; Chris's correction). All (5,2) paths off L1-L4 were paired with the
+(3,4) paths exactly on the residual set (`.scratch/copycat-rsl/p7/pairs_52.py`,
+2 s): 249 feasible (5,2) lines, 1,337 feasible pairs, 128 unique by
+coverage (`boards/board14-pair7-52.unique.jsonl`). Solver fixes on the way:
+a line cell's candidates were not synced when its copycat status was
+decided after its options were pruned; naked subsets over the boxes'
+copycat-digit sets (boxes 2 and 6 both {5,7} make box 8's copycat its 3).
+Rerun of all three sets on the fixed solver (`hb_*.jsonl`): shuffled
+(3,4): none solved, best 23 digits; unshuffled (3,4): none, best 18;
+(3,4) x (5,2): one solved outright, next best 57.
+
+**Board 27** (`boards/board27-pair34x52.json`): L5 r7c5-r8c5-r9c5-r9c6 |
+r9c7-r9c8-r9c9, L6 r1c1-r1c2-r2c2-r2c1-r3c1 | r4c1-r4c2, sums 17, r4c1 the
+box-4 copycat holding 8 and showing 8. Seven rungs to 57 digits, then one
+case split (r1c7 as box 3's copycat contradicts) finishes. Chris: "lame",
+box 1's copycat is r3c3 from the start, so the five-cell segment is plain
+and the squeeze is free.
+
+**Board 28** (`boards/board28-pair43x25-solved.json`): L5 r4c3-r4c2-r5c2-r6c2
+| r7c2-r8c2-r9c2 (boxes 4, 7), L6 r2c6-r1c6 | r1c7-r1c8-r2c8-r2c9-r3c9
+(boxes 2, 3); values 2,5,1,9 | 3,8,6 and 9,8 | 1,6,5,2,3, sums 17; unique;
+copycats on both lines: r9c2 (box 7, digit 4, shows r1c8 = 6) and r1c7
+(box 3, digit 9, shows r9c3 = 1), so the five-cell segment is not plain
+from the start. Solved by the human solver in six rungs: L1/L2 6s (r7c4 is
+box 8's copycat, 17 digits), L5/L6 1s (19), sums, 7s, 3s, then L1/L2 sums,
+after which propagation fills the grid. Caveat: that final propagation
+runs from 19 to 81 placed digits and its by-hand length is unmeasured.
+Rendered in the session artifact.
