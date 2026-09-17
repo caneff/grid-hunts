@@ -1269,3 +1269,11 @@ box 8's copycat, 17 digits), L5/L6 1s (19), sums, 7s, 3s, then L1/L2 sums,
 after which propagation fills the grid. Caveat: that final propagation
 runs from 19 to 81 placed digits and its by-hand length is unmeasured.
 Rendered in the session artifact.
+
+**Ruling (2026-09-17).** Chris: "board 28 was perfect." Board 28 is the
+design of record for the copycat + region-sum-line puzzle on board 14:
+`boards/board28-pair43x25-solved.json`, solution and copycats in the entry
+above. The human solver (`.scratch/copycat-rsl/p7/human_solver.py`, scratch,
+regenerable from this doc's description) is the acceptance test for any
+further change: a board counts as human-solvable only if it solves there
+with no case split.
