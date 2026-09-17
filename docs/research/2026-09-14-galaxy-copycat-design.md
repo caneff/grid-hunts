@@ -1223,3 +1223,16 @@ sum). Conclusion: no shuffled (3,4) pair on board 14 has a human path
 under single pair arguments plus basic propagation; the solver-projected
 ladders above were all leaning on joint state facts. Next: the unshuffled
 (3,4) pairs, per Chris's fallback.
+
+**Unshuffled (3,4) pairs (2026-09-16).** Chris's fallback. No new CP-SAT
+run: the stage-1 catalogue (507 feasible 7-cell lines) was paired exactly on
+the residual set (`.scratch/copycat-rsl/p7/pairs_all.py`, 3 s): 4,241
+feasible disjoint pairs, 408 unique, of which 41 are new by cell coverage,
+i.e. unique pairs whose two lines take the same split
+(`boards/board14-pair7.unique-unshuffled.jsonl`). The human solver solves
+none of them either; digits placed beyond the 16 forced: 0 for 21 pairs,
+1 for 14, 2 for 6. Worse than the shuffled set. So with this solver no
+(3,4) pair on board 14, shuffled or not, has a human path. What could
+change the verdict: the solver is a lower bound (no casework, no chaining
+two arguments, no bifurcation on a copycat cell), a third pair or a
+different line shape, or accepting some casework as the intended break-in.
