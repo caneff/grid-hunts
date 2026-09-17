@@ -1191,3 +1191,35 @@ solver-verified only. Lesson for `ladder_human2.py`: the projection step
 between rungs smuggles in facts (r4c2 = 8, r8c7 not a copycat) that the
 rung itself did not earn; a human ladder must carry its own candidate
 state and propagate only with singles.
+
+**A candidate-carrying human solver (2026-09-16).** Chris: "like the column 2
+8 deduction felt humanable, but checking through all states of r6c2=4
+didn't." So the ladder now runs on a solver that carries its own state and
+never consults the state set (`.scratch/copycat-rsl/p7/human_solver.py`):
+per cell a candidate set, a copycat status P/C/?, and for line cells the
+allowed shown options. Propagation: naked and hidden singles, locked
+candidates, one copycat per house, copycat digits distinct, the pigeonhole
+"only box 7 can copycat a 4, so box 7's copycat is its 4" (every other
+box has its 4 pinned away from its copycat cells), a plain cell never
+holds its box's copycat digit, and each line pruned by exact enumeration
+of its shown options (distinct plain digits in a shared house, one copycat
+per house, equal run sums, a digit confined to the line inside a house
+must sit on it). A rung is one argument on one of the three pairs: equal
+line totals (L3 has three box runs, L4 two, so totals not run sums) or one
+digit's count equal. Every elimination is checked against the solution.
+Start state: board 14's forced facts plus the centre and corner marks of
+Chris's link (corner marks read as "digit confined to these cells of the
+box"). Two model bugs it caught: the earlier r4c2 = 8 argument ignored
+r4c2 as a copycat *holding* 8 while showing 2, and r9c1 as a copycat
+showing 2.
+
+Result over the 201 unique shuffled pairs (`human_batch.jsonl`, 5 min):
+none solves. Digits placed beyond the 16 forced: 0 for 162 pairs, 1 for 22,
+2 for 8, 3 for 6, then one each at 4, 5, 7. Board 26 places 4 (r4c2 = 8
+from the 1s then the 2s, the 4s rung, r9c1 != 8 from the 8s) and stalls
+at 20 digits, 6 copycats. Best is L5 r2c2-r3c2-r3c1 | r4c1-r5c1-r5c2-r5c3
+with L6 r8c5-r8c6-r9c6 | r9c7-r9c8-r8c8-r8c9 at 23 digits (4s, 1s, 6s,
+sum). Conclusion: no shuffled (3,4) pair on board 14 has a human path
+under single pair arguments plus basic propagation; the solver-projected
+ladders above were all leaning on joint state facts. Next: the unshuffled
+(3,4) pairs, per Chris's fallback.
