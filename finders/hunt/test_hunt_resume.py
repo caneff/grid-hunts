@@ -71,13 +71,20 @@ def read_jsonl(path):
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
-def kill_partway(finder, out, seeds, min_seed_done_events=3):
+def kill_partway(finder, out, seeds, min_seed_done_events=3, extra_args=()):
     """Start `finder` on `seeds`, SIGKILL it once progress.jsonl has grown,
     and return once the process has exited. The finder must sleep per seed
     (see toy_slow_finder.py) so this doesn't race a hunt that finishes
     before the kill lands."""
     proc = subprocess.Popen(
-        [sys.executable, str(finder), "--out", str(out), f"--seeds={seeds}"],
+        [
+            sys.executable,
+            str(finder),
+            "--out",
+            str(out),
+            f"--seeds={seeds}",
+            *extra_args,
+        ],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         env=success_env(),
@@ -576,5 +583,55 @@ with tempfile.TemporaryDirectory() as tmp:
         rerun.returncode == 0,
     )
     check("a differing git sha prints a warning", "sha" in rerun.stderr.lower())
+
+for base_no_verify, resume_no_verify, label in (
+    (True, False, "no-verify-then-verify"),
+    (False, True, "verify-then-no-verify"),
+):
+    with tempfile.TemporaryDirectory() as tmp:
+        # #527: a killed --no-verify hunt resumed without the flag would
+        # verify later seeds inline while earlier seeds kept unverified
+        # candidates (and the inverse) -- the resume identity must pin the
+        # verification mode, refusing a mode-changing resume and writing
+        # nothing, the same as a seeds mismatch does above. A genuinely
+        # killed, partial hunt is required here: a base hunt run to
+        # completion has no un-done seed left for a wrongly-accepted resume
+        # to touch, so it can't tell the fix from the bug (#527 review C1).
+        out = Path(tmp) / label
+        base_extra = ("--no-verify",) if base_no_verify else ()
+        kill_partway(SLOW_FINDER, out, "0:60", extra_args=base_extra)
+        progress_before = read_jsonl(out / "progress.jsonl")
+        check(
+            f"the kill left a genuine partial {label} hunt",
+            0 < len(progress_before) < 60,
+        )
+
+        before = sorted(p.name for p in out.iterdir())
+        before_contents = {name: (out / name).read_bytes() for name in before}
+
+        resume_extra = ["--no-verify"] if resume_no_verify else []
+        resumed = subprocess.run(
+            [
+                sys.executable,
+                str(SLOW_FINDER),
+                "--out",
+                str(out),
+                "--seeds=0:60",
+                *resume_extra,
+            ],
+            capture_output=True,
+            text=True,
+            env=success_env(),
+        )
+        check(
+            f"resuming a mode-changing {label} hunt refuses",
+            resumed.returncode != 0,
+        )
+        after = sorted(p.name for p in out.iterdir())
+        after_contents = {name: (out / name).read_bytes() for name in after}
+        check(
+            "a mode-changing resume writes nothing -- not one new file, not one changed byte",
+            before == after and before_contents == after_contents,
+        )
 
 sys.exit(0 if ok else 1)

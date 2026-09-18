@@ -194,14 +194,17 @@ def _write_text_atomic(path, text):
 
 
 def _resume_key(argv):
-    """The parts of `argv` that define a hunt's search space: `--out` and
-    `--seeds`. Box-safety knobs (`--workers`, `--force-load`) are excluded
-    on purpose (#488 review C1/P2) -- the box's load or a chosen worker
-    count differing between two invocations of the same hunt is not a
-    differing search, and the load gate's own "use --force-load" advice
-    must not be something the resume check then refuses."""
+    """The parts of `argv` that define a hunt's search space and how its
+    results are trustworthy: `--out`, `--seeds`, and `--no-verify` (#527 --
+    a killed `--no-verify` hunt resumed without the flag would verify later
+    seeds inline while earlier seeds kept unverified candidates, and the
+    inverse). Box-safety knobs (`--workers`, `--force-load`) are excluded on
+    purpose (#488 review C1/P2) -- the box's load or a chosen worker count
+    differing between two invocations of the same hunt is not a differing
+    search, and the load gate's own "use --force-load" advice must not be
+    something the resume check then refuses."""
     args = _parse_args(argv)
-    return (args.out, args.seeds)
+    return (args.out, args.seeds, args.no_verify)
 
 
 def _refuse(out_arg, why):
@@ -751,8 +754,10 @@ def _run_verify(finder, argv):
     finder with no `candidate_from_record` whose record() isn't itself
     verify-able, but possibly a genuine bug in `verify` itself -- the
     driver can't tell which) refuses with both named as possible causes,
-    rather than propagating a raw traceback; everything already verified
-    for earlier records is kept, not thrown away with it.
+    rather than propagating a raw traceback. verified.jsonl is published
+    only on a complete, successful run: a failure partway discards the
+    scratch verdicts and the .tmp file, leaving whatever verified.jsonl
+    already existed (absent, or a previously complete file) untouched (#527).
 
     Takes the same out/.lock a hunt takes (`_acquire_lock`), before
     examples.jsonl is even opened -- so this can't read a hunt's
@@ -789,8 +794,6 @@ def _run_verify(finder, argv):
                 try:
                     verdict = finder.verify(to_candidate(record))
                 except Exception as e:
-                    verified_f.flush()
-                    tmp.replace(verified_path)
                     print(
                         "hunt verify: refusing -- turning a record from "
                         "examples.jsonl into a candidate and verifying it "
@@ -798,9 +801,12 @@ def _run_verify(finder, argv):
                         "isn't itself a verify-able candidate and the finder "
                         "needs a candidate_from_record, or this is a bug in "
                         f"verify() itself -- {verified_count} verdict(s) "
-                        "already computed were kept.",
+                        "already computed this run were discarded, and any "
+                        "previously published verified.jsonl was left "
+                        "untouched.",
                         file=sys.stderr,
                     )
+                    tmp.unlink(missing_ok=True)
                     return 2
                 entry = {"record": record, "ok": verdict.ok}
                 if verdict.reason:

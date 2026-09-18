@@ -247,8 +247,8 @@ sys.exit(run(WrappedRecordFinder(), sys.argv[1:]))
 
 with tempfile.TemporaryDirectory() as tmp:
     # A record partway through examples.jsonl that fails to verify must not
-    # discard the verdicts already computed for the records before it
-    # (#489 review, correctness V1).
+    # publish a partial verified.jsonl -- a failure publishes only on
+    # complete success (#527).
     out = Path(tmp) / "hunt-out"
     out.mkdir()
     (out / "examples.jsonl").write_text(
@@ -271,15 +271,69 @@ with tempfile.TemporaryDirectory() as tmp:
         f"{verify_result.returncode}, stderr: {verify_result.stderr[-500:]})",
         verify_result.returncode == 2,
     )
-    verified = [
-        json.loads(line)
-        for line in (out / "verified.jsonl").read_text().splitlines()
-        if line
-    ]
     check(
-        "the two verdicts computed before the failing record were kept, "
-        "not thrown away with it",
-        len(verified) == 2,
+        "verified.jsonl was not published for a failed run that had "
+        "nothing to preserve -- a failure publishes only on complete "
+        "success (#527)",
+        not (out / "verified.jsonl").exists(),
+    )
+
+with tempfile.TemporaryDirectory() as tmp:
+    # #527: a failed re-verify must not destroy a previously complete,
+    # correct verified.jsonl -- only publish on a fully successful run.
+    out = Path(tmp) / "hunt-out"
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(TOY_FINDER),
+            "--out",
+            str(out),
+            "--seeds",
+            "0:20",
+            "--no-verify",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    check(
+        f"seeding for the retry-after-success test exits 0 (stderr: "
+        f"{result.stderr[-300:]})",
+        result.returncode == 0,
+    )
+
+    first_verify = subprocess.run(
+        [sys.executable, str(TOY_FINDER), "verify", str(out)],
+        capture_output=True,
+        text=True,
+    )
+    check(
+        f"first (complete) verify exits 0 (stderr: {first_verify.stderr[-500:]})",
+        first_verify.returncode == 0,
+    )
+    complete_verified_bytes = (out / "verified.jsonl").read_bytes()
+    complete_verified_inode = (out / "verified.jsonl").stat().st_ino
+
+    with (out / "examples.jsonl").open("a") as f:
+        f.write(json.dumps({"broken": True}) + "\n")
+
+    retry_verify = subprocess.run(
+        [sys.executable, str(TOY_FINDER), "verify", str(out)],
+        capture_output=True,
+        text=True,
+    )
+    check(
+        f"a retry that fails on the new record exits non-zero (stderr: "
+        f"{retry_verify.stderr[-500:]})",
+        retry_verify.returncode == 2,
+    )
+    check(
+        "the previously complete verified.jsonl is byte-for-byte unchanged",
+        (out / "verified.jsonl").read_bytes() == complete_verified_bytes,
+    )
+    check(
+        "the file itself was never replaced (same inode), not just "
+        "coincidentally rewritten with matching bytes",
+        (out / "verified.jsonl").stat().st_ino == complete_verified_inode,
     )
 
 with tempfile.TemporaryDirectory() as tmp:
