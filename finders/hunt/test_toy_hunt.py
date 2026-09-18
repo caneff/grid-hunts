@@ -317,8 +317,9 @@ sys.exit(run(MismatchedLengthFinder(), sys.argv[1:]))
         in result.stderr,
     )
     check(
-        "a mismatched-length symmetry group leaves no partial output behind",
-        not out.exists(),
+        "a mismatched-length symmetry group leaves only .lock behind (#519, "
+        "see driver.py's _cleanup_partial_output)",
+        out.exists() and {p.name for p in out.iterdir()} == {".lock"},
     )
 
 with tempfile.TemporaryDirectory() as tmp:
@@ -375,8 +376,9 @@ sys.exit(run(GeneratorSymmetryFinder(), sys.argv[1:]))
         "must not be empty" in result.stderr,
     )
     check(
-        "a generator-typed symmetry group leaves no partial output behind",
-        not out.exists(),
+        "a generator-typed symmetry group leaves only .lock behind (#519, "
+        "see driver.py's _cleanup_partial_output)",
+        out.exists() and {p.name for p in out.iterdir()} == {".lock"},
     )
 
 with tempfile.TemporaryDirectory() as tmp:
@@ -503,6 +505,13 @@ with tempfile.TemporaryDirectory() as tmp:
     check(
         "the hunt's own output files are still removed from --out",
         not (out / "run.json").exists() and not (out / "summary.json").exists(),
+    )
+    check(
+        "--out/.lock survives the cleanup (#519): unlinking it here while "
+        "this process's own finally block still holds its flock would let "
+        "a second process's fresh .lock (a new inode, same path) be locked "
+        "while this process is still inside its own now-meaningless unlock",
+        (out / ".lock").exists(),
     )
 
 with tempfile.TemporaryDirectory() as tmp:

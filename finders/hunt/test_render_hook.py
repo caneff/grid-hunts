@@ -383,8 +383,10 @@ sys.exit(run(RenderMismatchedLengthFinder(), sys.argv[1:]))
         result.returncode == 2,
     )
     check(
-        "renders/ being a directory doesn't stop full cleanup after the mismatch",
-        not out.exists(),
+        "renders/ being a directory doesn't stop full cleanup after the "
+        "mismatch, and leaves only .lock behind (#519, see driver.py's "
+        "_cleanup_partial_output)",
+        out.exists() and {p.name for p in out.iterdir()} == {".lock"},
     )
 
 sys.exit(0 if ok else 1)

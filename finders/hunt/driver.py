@@ -40,7 +40,6 @@ ahead of anything, before resume rebuilds anything from the logs.
 """
 
 import argparse
-import contextlib
 import fcntl
 import json
 import math
@@ -222,20 +221,32 @@ class SymmetryMismatch(Exception):
 
 def _cleanup_partial_output(out):
     """Remove only the files this run may itself have written -- the
-    OUTPUT_FILES set plus its lock -- leaving anything else in `out`
-    untouched (#509 review, finding C1): the pre-flight this mirrors never
-    touches a pre-existing directory at all, so a blanket `rmtree` here
-    would destroy content this run never created. A file that can't be
-    removed (a symlink, a read-only parent, ...) is reported instead of
-    silently left behind (#509 review, C2) -- swallowing that failure
-    would violate "no partial output files" with no signal it happened.
+    OUTPUT_FILES set -- leaving anything else in `out` untouched (#509
+    review, finding C1): the pre-flight this mirrors never touches a
+    pre-existing directory at all, so a blanket `rmtree` here would
+    destroy content this run never created. A file that can't be removed
+    (a symlink, a read-only parent, ...) is reported instead of silently
+    left behind (#509 review, C2) -- swallowing that failure would violate
+    "no partial output files" with no signal it happened.
+
+    `.lock` is deliberately excluded (#519): `run()`'s `finally` still
+    holds this process's `flock` on it here, and unlinking would let a
+    second process re-`open` the path as a fresh inode and lock that one
+    -- two processes each believing they hold `--out`'s lock. The pre-
+    flight (`other_files` above) ignores a lone `.lock`, so leaving it
+    behind never blocks a later run -- the same state a normal completed
+    hunt already leaves `--out` in.
+
+    Since `.lock` always exists here (`_acquire_lock` created it before
+    any call to this function), `out` itself is therefore never removed
+    on this path -- only its OUTPUT_FILES contents.
 
     `renders/` (#490) is the one OUTPUT_FILES entry that's a directory, not
     a file -- `unlink()` raises `IsADirectoryError` on it, so it gets
     `rmtree` instead.
     """
     failures = []
-    for name in (*OUTPUT_FILES, ".lock"):
+    for name in OUTPUT_FILES:
         path = out / name
         try:
             if name == "renders":
@@ -252,9 +263,6 @@ def _cleanup_partial_output(out):
             "hunt: warning -- could not remove partial output: " + "; ".join(failures),
             file=sys.stderr,
         )
-        return
-    with contextlib.suppress(OSError):
-        out.rmdir()  # unrelated content still present, or already gone
 
 
 def _acquire_lock(out):
