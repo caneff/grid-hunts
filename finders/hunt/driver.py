@@ -14,10 +14,8 @@ verified.jsonl. A finder's optional `render` (#490) gets a picture saved to
 renders/<seed>.png right after that seed's example is accepted; a finder
 with no `render` gets no renders/ directory at all. `--workers` (default 3,
 set on the finder before the first seed) and the 1-minute load gate
-(refuses above 24 unless `--force-load`) are #488. This is the last ticket
-under the parent spec (#483) -- an unresumed killed hunt's renders/ can
-still hold a seed with no matching examples.jsonl line (#522), tracked
-separately.
+(refuses above 24 unless `--force-load`) are #488. A resume also
+reconciles renders/ itself for a stateless finder (#522, `_reconcile_renders`).
 
     uv run finders/hunt/toy_finder.py --out DIR --seeds START:END
     uv run finders/hunt/toy_finder.py --out DIR --seeds START:END --no-verify
@@ -45,6 +43,7 @@ import json
 import math
 import os
 import random
+import re
 import shutil
 import subprocess
 import sys
@@ -413,6 +412,63 @@ def _reconcile(
     return progress_lines, progress_events, examples_lines, examples_records
 
 
+_SEED_STEM = re.compile(r"-?\d+")
+
+
+def _reconcile_renders(finder, out, progress_events):
+    """Delete a stray renders/<seed>.png left by a seed whose example
+    didn't survive `_reconcile` (#522): a kill between an accepted seed's
+    render write and its progress.jsonl event leaves examples.jsonl's line
+    for that seed trimmed away on this resume, but the render itself
+    untouched. The seed then reruns in `_hunt_loop` and normally overwrites
+    the same file (the seed is deterministic), self-healing before this
+    resume even finishes -- but a second kill landing during that rerun,
+    before it reaches its own render or progress write, leaves the file
+    orphaned for good if the hunt is never resumed a third time: nothing
+    else would ever revisit it.
+
+    Compares every PNG on disk against progress.jsonl's post-reconcile
+    confirmed "example" seeds -- not examples.jsonl, whose records don't
+    all carry a seed field (a finder's own `record()` decides that) -- and
+    removes anything that isn't there for a real, confirmed reason.
+    `_SEED_STEM` requires the whole stem to be an optionally-negative run of
+    digits, not just whatever `int()` tolerates (underscores, surrounding
+    whitespace, a leading "+") -- a stray file that only looks
+    seed-numbered by `int()`'s loose grammar must not be silently swept up.
+
+    Only for a finder with no `save_state`/`load_state`, the same carve-out
+    `_repair_renders` makes and for the same reason it does: a stateless
+    finder's missing render always gets retried by `_repair_renders` on a
+    *later* resume if this one's own rerun happens to fail (#524), so
+    deleting the stray file first costs nothing even in the worst case. A
+    stateful finder gets no such retry, so deleting eagerly would bet an
+    intact picture against a rerun's render with no safety net if that bet
+    is lost (#522 correctness review, finding C1) -- left alone instead,
+    same as `_repair_renders` leaves a stateful finder's missing render.
+
+    This means a stateful finder can still hit #522's exact failure
+    sequence: reconciliation trims the unconfirmed seed's line out of
+    examples.jsonl, this carve-out leaves its PNG in place, and a second
+    kill before the rerun finishes leaves that PNG with no matching
+    example -- a deliberate, known gap, not a theoretical one (pinned by
+    the stateful test in test_hunt_resume.py). It stays open until #538
+    gives a stateful finder a state-safe render-repair path; only then can
+    this carve-out come out too, since only then does deleting eagerly stop
+    betting on a rerun with no way back.
+    """
+    if hasattr(finder, "load_state"):
+        return
+    renders_dir = out / "renders"
+    if not renders_dir.is_dir():
+        return
+    confirmed = {e["seed"] for e in progress_events if e.get("outcome") == "example"}
+    for png in renders_dir.glob("*.png"):
+        if not _SEED_STEM.fullmatch(png.stem):
+            continue
+        if int(png.stem) not in confirmed:
+            png.unlink(missing_ok=True)
+
+
 def _repair_renders(finder, out, progress_lines, progress_events):
     """Resume re-attempts a missing renders/<seed>.png for every
     already-accepted example (#524 Codex pass 1): a transient render
@@ -427,9 +483,12 @@ def _repair_renders(finder, out, progress_lines, progress_events):
     (finder.record() need not be invertible), and a stateful finder's
     `propose` can have side effects state.json owns (toy_stateful_finder.py
     increments a counter there) -- calling it again here to repair a render
-    would double that side effect. A stateful finder's mismatched render
-    stays a known gap (#522) rather than risk silently corrupting its
-    state.
+    would double that side effect. A stateful finder's missing render stays
+    unrepaired rather than risk silently corrupting its state -- the same
+    reason `_reconcile_renders` (#522) also skips a stateful finder outright
+    rather than delete a stray render it can't safely regenerate here. #538
+    tracks giving a stateful finder a state-safe repair path; until then,
+    both carve-outs stay.
     """
     render = getattr(finder, "render", None)
     if render is None or hasattr(finder, "load_state"):
@@ -715,6 +774,7 @@ def _resume(finder, argv, args, out, prior):
 
     _truncate_to_valid(out / "progress.jsonl", progress_lines)
     _truncate_to_valid(out / "examples.jsonl", examples_lines)
+    _reconcile_renders(finder, out, progress_events)
 
     progress_lines, progress_events = _repair_renders(
         finder, out, progress_lines, progress_events
