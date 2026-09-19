@@ -34,3 +34,11 @@ drivers that launch a hunt overnight stay under `docs/research/` (#469).
 - `finders/galaxy-copycat/human_solver.py` is the candidate-carrying human
   solver for copycat + paired region-sum lines — the acceptance test for
   whether a board is human-solvable (design doc, "Ruling (2026-09-17)").
+- **Before starting a hunt, answer the preflight** at the top of
+  `docs/agents/grid-finder-lessons.md` in writing, and keep a decision log as
+  the hunt runs. Six lessons in that file were re-derived the expensive way by
+  a later hunt that never read it; the preflight is what closes that loop.
+  The doc also covers what to search, when cuts beat a counter, reading solver
+  status honestly, profiling the loop, the `ctypes` C port and counting what
+  you found. A worked log:
+  `docs/research/2026-09-16-counting-shaded-connected-decision-log.md`.
