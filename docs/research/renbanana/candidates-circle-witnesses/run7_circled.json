@@ -1,0 +1,31 @@
+{
+ "objective": "circle 7 witness from CIRCLE-VALUES.md (#374)",
+ "grid": [
+  "169475823",
+  "375289614",
+  "842361795",
+  "938712456",
+  "654938172",
+  "721546389",
+  "586194237",
+  "217653948",
+  "493827561"
+ ],
+ "shading": [
+  "CbCbbbCbb",
+  "bbbCbbbCb",
+  "bbCbCCCbC",
+  "CCbbbbbbb",
+  "bbCCCCCCC",
+  "bCbbbbbbb",
+  "CbCCCCbCb",
+  "bbbbbbCbC",
+  "bCCCCCbbC"
+ ],
+ "circles": [
+  [
+   4,
+   7
+  ]
+ ]
+}

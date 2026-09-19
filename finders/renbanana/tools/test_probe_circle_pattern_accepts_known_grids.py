@@ -28,6 +28,14 @@ from ortools.sat.python import cp_model as cp
 POOL = Path("docs/research/renbanana")
 CANDIDATES = sorted(POOL.glob("candidates*/cand_*.json"))
 CIRCLE_PATTERN_GRIDS = 119  # the circle-pattern pool #401 names
+# Hand-picked legal grids for the large chocolate shapes the pool never circles
+# (#498). Made with `renbanana_cpsat`, not `probe_circle_pattern`, and each one
+# re-checked by `renbanana_verify`. A size-5 group cannot be circled (no
+# multi-cell chocolate group holds a 5), and 1x8 and 1x9 do not exist in a
+# legal grid (RECTANGLE-CATALOGUE.md "Circle 5 is impossible"; FEASIBILITY.md
+# 1x8 and 1x9 rows). So the pool holds an uncircled 1x5 run, a circled 1x6 and
+# 1x7, and a circled 3x3.
+WITNESSES = sorted(POOL.glob("candidates-circle-witnesses/*.json"))
 
 
 def group_sizes(is_choc):
@@ -82,6 +90,16 @@ def covering_grids():
     return picked
 
 
+def chocolate_groups(path):
+    """(short side, long side, circled) for every chocolate group of a grid, circled meaning some
+    cell of it reads the group's size."""
+    grid, is_choc, _ = rv.load(path)
+    return {
+        (*sorted(rv.shape(g)), any(grid[p] == len(g) for p in g))
+        for g in rv.components(is_choc, True)
+    }
+
+
 def assert_accepted(paths):
     rejected = []
     for path in paths:
@@ -100,11 +118,20 @@ def test_every_known_grid_is_accepted():
     pattern = [p for p in CANDIDATES if p.parent.name == "candidates-circle-pattern"]
     assert len(pattern) == CIRCLE_PATTERN_GRIDS, f"{len(pattern)} circle-pattern grids"
     assert len(CANDIDATES) > len(pattern), "the older verified witnesses are missing"
-    assert_accepted(CANDIDATES)
+    assert_accepted(CANDIDATES + WITNESSES)
 
 
 def test_a_grid_for_every_circled_shape_is_accepted():
-    assert_accepted(covering_grids())
+    assert_accepted(covering_grids() + WITNESSES)
+
+
+def test_witnesses_cover_the_large_chocolate_shapes():
+    """Straight runs of 5, 6 and 7, and a 3x3, are in the pool; the 6, 7 and the
+    3x3 carry a circle. Without them an edit that caps `run` at 4 or botches
+    the 3x3 area would pass the known-grid guard."""
+    have = set().union(*(chocolate_groups(p) for p in WITNESSES))
+    for need in [(1, 5, False), (1, 6, True), (1, 7, True), (3, 3, True)]:
+        assert need in have, f"no witness has chocolate {need} (short, long, circled)"
 
 
 def test_a_circle_on_a_cell_that_misreads_its_size_is_refused():
@@ -121,6 +148,7 @@ def test_a_circle_on_a_cell_that_misreads_its_size_is_refused():
 
 if __name__ == "__main__":
     test_a_circle_on_a_cell_that_misreads_its_size_is_refused()
+    test_witnesses_cover_the_large_chocolate_shapes()
     if "--cover" in sys.argv[1:]:
         test_a_grid_for_every_circled_shape_is_accepted()
     else:
