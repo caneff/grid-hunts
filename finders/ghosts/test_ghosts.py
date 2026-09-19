@@ -274,3 +274,10 @@ def test_lazy_connectivity_cuts_return_a_connected_shape():
     assert len(connected.components(shape)) == 1
     assert shapes.connected(shape)
     assert shapes.givens(shape) is not None
+
+
+def test_build_dir_is_a_cache_merge_cleanup_sweeps():
+    # merge-cleanup (#559) sweeps an ignored file unasked only when it sits in
+    # a cache-named directory (here `target`) whose own .gitignore is `*`.
+    assert fastclimb.BUILD.name == "target"
+    assert "*" in (fastclimb.BUILD / ".gitignore").read_text().splitlines()

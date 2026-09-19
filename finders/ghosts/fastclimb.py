@@ -15,13 +15,17 @@ HERE = Path(__file__).resolve().parent
 SRC = HERE / "ghosts_fast.c"
 REPO = HERE.parents[1]
 DATA = REPO / "docs" / "research" / "ghosts"  # notes, hits and images stayed there
-BUILD = REPO / ".scratch" / "ghosts" / "build"
+# Named `target` and holding a committed `*` .gitignore so merge-cleanup's
+# CACHE_DIRS sweeps the compiled artifact with the worktree instead of
+# refusing cleanup; see #559.
+BUILD = REPO / ".scratch" / "ghosts" / "target"
 SO = BUILD / "ghosts_fast.so"
 
 
 def _load():
     if not SO.exists() or SO.stat().st_mtime < SRC.stat().st_mtime:
         BUILD.mkdir(parents=True, exist_ok=True)
+        (BUILD / ".gitignore").write_text("*\n")
         subprocess.run(
             [
                 "gcc",
