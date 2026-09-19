@@ -430,7 +430,7 @@ unique by just some cave clues being given". A cave clue is a cell whose digit
 equals the number of same-colour cells it sees orthogonally, itself included.
 Sheet `counting_shaded/six-by-six-latin-cave-clues.png`.
 
-Puzzle model (`.scratch/counting_shaded/six/tools/cave_unique.py`, CP-SAT,
+Puzzle model (`finders/counting_shaded/tools/cave_unique.py`, CP-SAT,
 solutions are grid+shading pairs, solve-then-forbid at cap 2): Latin square
 1-6; shaded and unshaded each orthogonally connected; a shaded cell's digit is
 its shaded king-neighbour count; every given digit is a cave clue in whichever
@@ -501,7 +501,7 @@ B C C F F E         D D E E E E
 B B F F F F         F F F F F F
 ```
 
-Tool `.scratch/counting_shaded/six/tools/regions.py`; the first 50 partitions
+Tool `finders/counting_shaded/tools/regions.py`; the first 50 partitions
 of each grid in `.scratch/counting_shaded/six/regions.json`.
 
 ## 6x6: two corners on one side cannot both be shaded
@@ -510,7 +510,7 @@ Chris: "find me any solution where there is a given shaded in r6c1 and r6c6,
 and where one given somewhere (not on the given shadeds) makes it unique",
 then "what about r1c1 and r6c1". Neither pair admits any solution at all.
 
-- Puzzle model (`.scratch/counting_shaded/six/tools/pinpuzzle.py`: digits and
+- Puzzle model (`finders/counting_shaded/tools/pinpuzzle.py`: digits and
   shading jointly, shaded connected, r6c1 and r6c6 shaded, no distinct-count
   floor): 0 solutions with no given, under sudoku 2x3 with the plain count and
   with the self count.
@@ -594,7 +594,7 @@ in the doc's scratch folder `.scratch/counting_shaded/six-pin3034/`.
 
 ### r2c6 + r6c1 shaded on 6x6
 
-Chris: "r2c6 and r6c1?". Same enumeration (`.scratch/counting_shaded/six/tools/pairsheet.py`),
+Chris: "r2c6 and r6c1?". Same enumeration (`finders/counting_shaded/tools/pairsheet.py`),
 pair forced, no distinct floor, sizes 4-24. Sudoku 2x3: 10 shapes, 4 with a
 grid, one unique (the 12-cell shape [3, 9, 10, 11, 15, 20, 21, 22, 26, 30,
 31, 32], already on the unpinned unique list). Latin: 103 shapes, 38 with a
