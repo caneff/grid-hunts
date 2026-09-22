@@ -74,7 +74,7 @@ tr.tie td{color:var(--clue)}
   <div class="board"><svg id="svg" viewBox="0 0 604 604" role="img" aria-label="Sudoku grid with quad ranks"></svg>
     <div class="legend" style="margin-top:8px">
       <span class="l-win">selected window</span><span class="l-cel">selected cell + its windows</span>
-      <span class="l-clue">opener clue (10 real; 58+, 51–56, QQRR 5 assumed)</span><span class="l-hyp">entered digit / uncircled mark</span><span class="l-tie">tied cell numbers that see each other</span><span class="l-lo">51–56 spot: top-left 8, rank 51–56, sees r4c1</span><span class="l-hi">58+ spot: top-left 9, rank 58+, sees r4c1</span>
+      <span class="l-clue">opener clue (10 real; 58+, 51–56, QQRR 5 assumed)</span><span class="l-hyp">entered digit / uncircled mark</span><span class="l-tie">tied cell numbers that see each other</span><span class="l-lo">51–56 spot: top-left 8, rank 51–56, sees the bounded cell (r4c1 with the cage at r5c1, r1c4 with it at r1c5)</span><span class="l-hi">58+ spot: top-left 9, rank 58+, sees the bounded cell</span>
     </div>
   </div>
   <div class="box ctl">
@@ -86,7 +86,7 @@ tr.tie td{color:var(--clue)}
         <label><input type="checkbox" id="showQQ" checked> cell ranks</label>
         <label><input type="checkbox" id="showOpener" checked> opener overlay</label>
         <label><input type="checkbox" id="showTies" checked> mark ties</label>
-        <label><input type="checkbox" id="showBands" checked> band spots for r4c1</label>
+        <label><input type="checkbox" id="showBands" checked> band spots</label>
       </div>
       <details style="margin-top:8px"><summary style="cursor:pointer;color:var(--muted);font-size:13px">Paste your own grid</summary>
         <textarea id="gridText" rows="9" spellcheck="false"></textarea>
@@ -108,6 +108,7 @@ tr.tie td{color:var(--clue)}
 <script>
 const N=9, W=N-1;
 const PRESETS=[
+["33 at r1c5, QR 10 at r6c6, r1c4 < 8 · 7-digit tie r5c4 = r6c5 (5435325, QQRR 48, box only) · bl","563781429/987425136/124396875/218537964/745169283/396842517/439278651/652913748/871654392","bl","0,4",{"5,5":"10"}],
 ["33 at r5c1, QR 10 at r3c3, r4c1 < 8 · 7-digit tie r4c5 = r5c6 (3241513, QQRR 40, box only) · br #2","537291648/681347925/492568371/763814592/859632714/124975836/216789453/375426189/948153267","br","4,0",{"2,2":"10"}],
 ["33 at r5c1, QR 10 at r3c3, r4c1 < 8 · 7-digit tie r5c5 = r5c8 (4156232, QQRR 46) · br #1","681374529/359261748/472589361/794132685/836957412/125846973/217495836/543628197/968713254","br","4,0",{"2,2":"10"}],
 ["33 at r5c1, QR 10 at r3c3, r4c1 < 8 · 7-digit tie r6c4 = r6c8 (6455315, QQRR 50) · tl","657381249/983462175/142579863/795814326/261753984/438296517/376928451/529147638/814635792","tl","4,0",{"2,2":"10"}],
@@ -175,7 +176,7 @@ function css(v){return getComputedStyle(document.documentElement).getPropertyVal
 
 function draw(){
   svg.replaceChildren();
-  const showEnt=cage==="0,4"; const showBands=document.getElementById("showBands").checked, TARGET=[3,0];
+  const showEnt=cage==="0,4"&&CLUES===CLUES0; const showBands=document.getElementById("showBands").checked, TARGET=cage==="0,4"?[0,3]:[3,0];  // the bounded cell: r1c4 for the r1c5 cage, r4c1 for the r5c1 cage
   const bandSpot=(r,c)=>{if(!sees([r,c],TARGET))return null;const d=grid[r][c],k=A.rank[r][c];if(d===8&&k>=51&&k<=56)return"lo";if(d===9&&k>=58)return"hi";return null}; const showQR=document.getElementById("showQR").checked, showQQ=document.getElementById("showQQ").checked, showOp=document.getElementById("showOpener").checked;
   const hiCells=new Set(), hiWins=new Set();
   if(sel&&sel.type==="win"){hiWins.add(sel.r+","+sel.c);for(const [dr,dc] of [[0,0],[0,1],[1,0],[1,1]])hiCells.add((sel.r+dr)+","+(sel.c+dc))}
