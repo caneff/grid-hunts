@@ -4,6 +4,10 @@ Grid finders: JavaScript-adjacent Python code that hunts, verifies, and
 renders candidate grids for constraint prototypes. The `.py` finder code
 lives here; notes, hunt outputs, precomputed catalogues, and the `.sh`
 drivers that launch a hunt overnight stay under `docs/research/` (#469).
+A finder's own input fixture stays beside its code: `finders/qqrr/` holds
+the opener link, its decoded JSON and the notes that classify its marks,
+because the checker reads them and nothing under `docs/research/` does
+(owner ruling on #595, S1).
 
 ## Renbanana chocolate facts are precalculated (always on)
 
