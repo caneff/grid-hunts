@@ -197,7 +197,7 @@ function draw(){
       g.appendChild(el("rect",{x:x+4,y:y+4,width:S-8,height:S-8,fill:"none",stroke:css("--clue"),"stroke-width":1.5,"stroke-dasharray":"4 3"}));
       g.appendChild(el("text",{x:x+S/2,y:y+15,"font-size":12,"font-weight":600,"text-anchor":"middle",fill:css("--clue"),"font-family":css("--sans")},cageCells[k]));
     }
-    g.addEventListener("click",()=>select({type:"cell",r,c}));
+    g.addEventListener("click",()=>select(sel&&sel.type==="cell"&&sel.r===r&&sel.c===c?null:{type:"cell",r,c}));
     svg.appendChild(g);
   }
   if(document.getElementById("showTies").checked)for(const t of A.ties){
@@ -224,7 +224,7 @@ function draw(){
     g.appendChild(el("rect",{x:x-Math.max(rw,36)/2,y:y-18,width:Math.max(rw,36),height:36,fill:"transparent"}));
     g.appendChild(el("rect",{x:x-rw/2,y:y-11,width:rw,height:22,rx:11,fill,stroke,"stroke-width":sw}));
     g.appendChild(el("text",{x,y:y+4.5,"font-size":12.5,"text-anchor":"middle","font-family":css("--mono"),"font-weight":600,fill:col},txt));
-    g.addEventListener("click",e=>{e.stopPropagation();select({type:"win",r,c})});
+    g.addEventListener("click",e=>{e.stopPropagation();select(sel&&sel.type==="win"&&sel.r===r&&sel.c===c?null:{type:"win",r,c})});
     svg.appendChild(g);
   }
 }
