@@ -5,19 +5,19 @@
 :root{
   --paper:#f6f4ee; --panel:#fffdf8; --ink:#1e2229; --muted:#6b6f78; --line:#d5d1c7; --grid:#2a2d33;
   --win:#1f7a8c; --win-soft:#d7ecef; --cell:#c2620f; --cell-soft:#fbe4cf;
-  --clue:#b8322f; --clue-soft:#f8dcd9; --hyp:#2c4f9e; --hyp-soft:#dde5f7; --mark:#e9e6df;
+  --clue:#b8322f; --clue-soft:#f8dcd9; --hyp:#2c4f9e; --hyp-soft:#dde5f7; --mark:#e9e6df; --tie:#7a3fa8; --tie-soft:#ecdcf7;
   --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
   --sans:"Source Sans 3","Segoe UI",system-ui,sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --paper:#16181c; --panel:#1f2227; --ink:#e8e6df; --muted:#9a9ea8; --line:#3a3e46; --grid:#c9ccd3;
   --win:#5fc0d2; --win-soft:#173a41; --cell:#f0a25a; --cell-soft:#4a2e14;
-  --clue:#f07672; --clue-soft:#4a1f1e; --hyp:#8fb0ff; --hyp-soft:#20305a; --mark:#2a2e35;
+  --clue:#f07672; --clue-soft:#4a1f1e; --hyp:#8fb0ff; --hyp-soft:#20305a; --mark:#2a2e35; --tie:#c78cf0; --tie-soft:#3a2350;
 }}
 :root[data-theme="dark"]{
   --paper:#16181c; --panel:#1f2227; --ink:#e8e6df; --muted:#9a9ea8; --line:#3a3e46; --grid:#c9ccd3;
   --win:#5fc0d2; --win-soft:#173a41; --cell:#f0a25a; --cell-soft:#4a2e14;
-  --clue:#f07672; --clue-soft:#4a1f1e; --hyp:#8fb0ff; --hyp-soft:#20305a; --mark:#2a2e35;
+  --clue:#f07672; --clue-soft:#4a1f1e; --hyp:#8fb0ff; --hyp-soft:#20305a; --mark:#2a2e35; --tie:#c78cf0; --tie-soft:#3a2350;
 }
 body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.4;padding-inline:16px;padding-block:16px 40px}
 h1{font-size:20px;font-weight:700;margin:0 0 4px;text-wrap:balance}
@@ -58,6 +58,8 @@ tr.tie td{color:var(--clue)}
 .legend .l-cel::before{background:var(--cell-soft);border-color:var(--cell)}
 .legend .l-clue::before{background:var(--clue-soft);border-color:var(--clue)}
 .legend .l-hyp::before{background:var(--hyp-soft);border-color:var(--hyp)}
+.legend .l-tie::before{background:var(--tie-soft);border-color:var(--tie)}
+.chip.tie{border-color:var(--tie);color:var(--tie)}
 .err{color:var(--clue);font-size:13px;margin-top:6px;min-height:1em}
 </style>
 
@@ -68,7 +70,7 @@ tr.tie td{color:var(--clue)}
   <div class="board"><svg id="svg" viewBox="0 0 640 640" role="img" aria-label="Sudoku grid with quad ranks"></svg>
     <div class="legend" style="margin-top:8px">
       <span class="l-win">selected window</span><span class="l-cel">selected cell + its windows</span>
-      <span class="l-clue">opener clue (10 real; 58+, 51–56, QQRR 5 assumed)</span><span class="l-hyp">entered digit / uncircled mark</span>
+      <span class="l-clue">opener clue (10 real; 58+, 51–56, QQRR 5 assumed)</span><span class="l-hyp">entered digit / uncircled mark</span><span class="l-tie">tied cell numbers that see each other</span>
     </div>
   </div>
   <div class="side">
@@ -80,12 +82,14 @@ tr.tie td{color:var(--clue)}
         <label><input type="checkbox" id="showQR" checked> quad ranks</label>
         <label><input type="checkbox" id="showQQ" checked> cell ranks</label>
         <label><input type="checkbox" id="showOpener" checked> opener overlay</label>
+        <label><input type="checkbox" id="showTies" checked> mark ties</label>
       </div>
       <details style="margin-top:8px"><summary style="cursor:pointer;color:var(--muted);font-size:13px">Paste your own grid</summary>
         <textarea id="gridText" rows="9" spellcheck="false"></textarea>
         <div class="row"><button id="apply">Use this grid</button><span class="err" id="err"></span></div>
       </details>
     </div>
+    <div class="box"><h2>Ties in sight</h2><div class="detail" id="ties"></div></div>
     <div class="box"><h2>Selection</h2><div class="detail" id="detail">Nothing selected.</div></div>
     <div class="box"><h2>Rankings</h2>
       <div class="tables">
@@ -128,7 +132,12 @@ function analyse(g){
   const num=[],nflat=[];
   for(let r=0;r<N;r++){num.push([]);for(let c=0;c<N;c++){const s=windowsOf(r,c).map(([a,b])=>String(rank[a][b])).join("");const n=parseInt(s,10);num[r].push(n);nflat.push(n)}}
   const cr=sqlRank(nflat), crank=[];for(let r=0;r<N;r++)crank.push(cr.slice(r*N,r*N+N));
-  return {val,rank,num,crank};
+  const lists={};for(let r=0;r<N;r++)for(let c=0;c<N;c++)lists[r+","+c]=windowsOf(r,c).map(([a,b])=>rank[a][b]).join("|");
+  const sees=(a,b)=>a[0]===b[0]||a[1]===b[1]||(Math.floor(a[0]/3)===Math.floor(b[0]/3)&&Math.floor(a[1]/3)===Math.floor(b[1]/3));
+  const ties=[],cells=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)cells.push([r,c]);
+  for(let i=0;i<cells.length;i++)for(let j=i+1;j<cells.length;j++){const a=cells[i],b=cells[j];
+    if(num[a[0]][a[1]]===num[b[0]][b[1]]&&sees(a,b))ties.push({a,b,n:num[a[0]][a[1]],k:crank[a[0]][a[1]],kind:lists[a.join(",")]!==lists[b.join(",")]?"coincidence":"tied windows",la:lists[a.join(",")],lb:lists[b.join(",")]})}
+  return {val,rank,num,crank,ties};
 }
 function parseGrid(t){
   const rows=t.trim().split(/[\n\/]+/).map(l=>l.replace(/[^1-9]/g,""));
@@ -165,6 +174,10 @@ function draw(){
     }
     g.addEventListener("click",()=>select({type:"cell",r,c}));
     svg.appendChild(g);
+  }
+  if(document.getElementById("showTies").checked)for(const t of A.ties){
+    for(const [r,c] of [t.a,t.b])svg.appendChild(el("rect",{x:M+c*S+3,y:M+r*S+3,width:S-6,height:S-6,fill:"none",stroke:css("--tie"),"stroke-width":3,rx:4,"pointer-events":"none"}));
+    svg.appendChild(el("line",{x1:M+t.a[1]*S+S/2,y1:M+t.a[0]*S+S/2,x2:M+t.b[1]*S+S/2,y2:M+t.b[0]*S+S/2,stroke:css("--tie"),"stroke-width":3,"stroke-dasharray":"6 5","pointer-events":"none",opacity:.75}));
   }
   for(let i=0;i<=N;i++){const w=i%3===0?3:1;
     svg.appendChild(el("line",{x1:M,y1:M+i*S,x2:M+N*S,y2:M+i*S,stroke:css("--grid"),"stroke-width":w}));
@@ -228,14 +241,18 @@ function renderTables(){
     tr.innerHTML=`<td>${x.k}</td><td>${fmt(x.r,x.c)}</td><td>${x.n}</td>`;tr.addEventListener("click",()=>select({type:"cell",r:x.r,c:x.c}));return tr}));
   const row=document.querySelector("tr.sel, tr.selc");if(row)row.scrollIntoView({block:"nearest"});
 }
+function renderTies(){const box=document.getElementById("ties");
+  if(!A.ties.length){box.innerHTML='<span class="k">No two cells that see each other share a cell number.</span>';return}
+  box.innerHTML=A.ties.map(t=>`<div style="margin-bottom:6px"><span class="chip tie" data-r="${t.a[0]}" data-c="${t.a[1]}">${fmt(...t.a)} ${t.la}</span>=<span class="chip tie" data-r="${t.b[0]}" data-c="${t.b[1]}">${fmt(...t.b)} ${t.lb}</span> <span class="k">number ${t.n}, both QQRR <b style="color:var(--tie)">${t.k}</b>, ${t.kind}</span></div>`).join("");
+  box.querySelectorAll(".chip").forEach(ch=>ch.addEventListener("click",()=>select({type:"cell",r:+ch.dataset.r,c:+ch.dataset.c})))}
 function select(s){sel=s;draw();renderDetail();renderTables()}
-function load(g,cn){grid=g;corner=cn;A=analyse(grid);sel=null;draw();renderDetail();renderTables();document.getElementById("gridText").value=grid.map(r=>r.join(" ")).join("\n")}
+function load(g,cn){grid=g;corner=cn;A=analyse(grid);sel=null;draw();renderDetail();renderTables();renderTies();document.getElementById("gridText").value=grid.map(r=>r.join(" ")).join("\n")}
 
 const preset=document.getElementById("preset");
 PRESETS.forEach((p,i)=>{const o=document.createElement("option");o.value=i;o.textContent=p[0];preset.appendChild(o)});
 preset.addEventListener("change",()=>{const p=PRESETS[preset.value];load(parseGrid(p[1]),p[2])});
 document.getElementById("apply").addEventListener("click",()=>{const e=document.getElementById("err");try{load(parseGrid(document.getElementById("gridText").value),corner);e.textContent=""}catch(x){e.textContent=x.message}});
-["showQR","showQQ","showOpener"].forEach(id=>document.getElementById(id).addEventListener("change",draw));
+["showQR","showQQ","showOpener","showTies"].forEach(id=>document.getElementById(id).addEventListener("change",draw));
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change",draw);
 new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
 load(parseGrid(PRESETS[0][1]),PRESETS[0][2]);
