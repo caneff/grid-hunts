@@ -81,6 +81,8 @@ tr.tie td{color:var(--clue)}
       <h2>Grid</h2>
       <label for="preset">Found solution</label>
       <select id="preset"></select>
+      <label for="sortBy" style="margin-top:6px">Order</label>
+      <select id="sortBy"><option value="found">as found, newest first</option><option value="ten">by the QR 10 window's value</option><option value="tie">by the tied number</option></select>
       <div class="row">
         <label><input type="checkbox" id="showQR" checked> quad ranks</label>
         <label><input type="checkbox" id="showQQ" checked> cell ranks</label>
@@ -264,7 +266,16 @@ function select(s){sel=s;draw();renderDetail();renderTables()}
 function load(g,cn,cg,cl){grid=g;corner=cn;cage=cg||"0,4";CLUES=cl||CLUES0;A=analyse(grid);sel=null;draw();renderDetail();renderTables();renderTies();document.getElementById("gridText").value=grid.map(r=>r.join(" ")).join("\n")}
 
 const preset=document.getElementById("preset");
-PRESETS.forEach((p,i)=>{const o=document.createElement("option");o.value=i;o.textContent=p[0];preset.appendChild(o)});
+// Per preset: the four-digit value of the QR-10 window (the preset's clue map names it) and the tied number.
+const PINFO=PRESETS.map(p=>{const g=parseGrid(p[1]);const k=Object.keys(p[4]||CLUES0).find(k=>(p[4]||CLUES0)[k]==="10");const [r,c]=k.split(",").map(Number);
+  const ten=Number(""+g[r][c]+g[r][c+1]+g[r+1][c]+g[r+1][c+1]);const m=p[0].match(/\((\d{7})/);return {ten,tie:m?Number(m[1]):0}});
+function fillPresets(){const by=document.getElementById("sortBy").value;const idx=PRESETS.map((_,i)=>i);
+  if(by==="ten")idx.sort((a,b)=>PINFO[a].ten-PINFO[b].ten);else if(by==="tie")idx.sort((a,b)=>PINFO[a].tie-PINFO[b].tie);
+  const cur=preset.value;preset.innerHTML="";
+  idx.forEach(i=>{const o=document.createElement("option");o.value=i;o.textContent=(by==="ten"?"QR 10 = "+PINFO[i].ten+" · ":"")+PRESETS[i][0];preset.appendChild(o)});
+  if(cur!=="")preset.value=cur}
+fillPresets();
+document.getElementById("sortBy").addEventListener("change",fillPresets);
 preset.addEventListener("change",()=>{const p=PRESETS[preset.value];load(parseGrid(p[1]),p[2],p[3],p[4])});
 document.getElementById("apply").addEventListener("click",()=>{const e=document.getElementById("err");try{load(parseGrid(document.getElementById("gridText").value),corner,cage);e.textContent=""}catch(x){e.textContent=x.message}});
 ["showQR","showQQ","showOpener","showTies","showBands"].forEach(id=>document.getElementById(id).addEventListener("change",draw));
