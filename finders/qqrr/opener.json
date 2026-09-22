@@ -1,0 +1,406 @@
+{
+  "formatVersion": "1.6.0",
+  "puzzle": {
+    "name": "",
+    "author": "",
+    "cells": [
+      {
+        "colors": 528
+      },
+      {
+        "colors": 512
+      },
+      {
+        "colors": 512
+      },
+      {
+        "value": 7,
+        "colors": 512
+      },
+      {
+        "colors": 512
+      },
+      {
+        "colors": 512
+      },
+      {
+        "colors": 512
+      },
+      {
+        "colors": 528
+      },
+      {
+        "colors": 512
+      },
+      {
+        "value": 9,
+        "colors": 16
+      },
+      {},
+      {},
+      {
+        "value": 2
+      },
+      {
+        "value": 8
+      },
+      {},
+      {},
+      {
+        "colors": 16
+      },
+      {},
+      {
+        "value": 1,
+        "colors": 16
+      },
+      {
+        "value": 2
+      },
+      {
+        "value": 8
+      },
+      {},
+      {},
+      {},
+      {},
+      {
+        "colors": 16
+      },
+      {},
+      {
+        "value": 2,
+        "colors": 16
+      },
+      {
+        "value": 1
+      },
+      {},
+      {
+        "value": 9
+      },
+      {},
+      {},
+      {},
+      {
+        "colors": 16
+      },
+      {},
+      {
+        "colors": 16
+      },
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {
+        "colors": 16
+      },
+      {},
+      {
+        "colors": 16
+      },
+      {},
+      {},
+      {},
+      {},
+      {
+        "value": 2
+      },
+      {
+        "value": 8
+      },
+      {
+        "colors": 16
+      },
+      {},
+      {
+        "colors": 16
+      },
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {
+        "colors": 16
+      },
+      {},
+      {
+        "colors": 528
+      },
+      {
+        "colors": 512
+      },
+      {
+        "colors": 512
+      },
+      {
+        "colors": 512
+      },
+      {
+        "colors": 512
+      },
+      {
+        "colors": 512
+      },
+      {
+        "colors": 512
+      },
+      {
+        "colors": 528
+      },
+      {
+        "colors": 512
+      },
+      {
+        "value": 8,
+        "colors": 16
+      },
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {
+        "colors": 16
+      },
+      {}
+    ],
+    "constraints": [
+      {
+        "type": 0
+      },
+      {
+        "type": 1,
+        "regions": [
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          2,
+          2,
+          2,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          2,
+          2,
+          2,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          2,
+          2,
+          2,
+          3,
+          3,
+          3,
+          4,
+          4,
+          4,
+          5,
+          5,
+          5,
+          3,
+          3,
+          3,
+          4,
+          4,
+          4,
+          5,
+          5,
+          5,
+          3,
+          3,
+          3,
+          4,
+          4,
+          4,
+          5,
+          5,
+          5,
+          6,
+          6,
+          6,
+          7,
+          7,
+          7,
+          8,
+          8,
+          8,
+          6,
+          6,
+          6,
+          7,
+          7,
+          7,
+          8,
+          8,
+          8,
+          6,
+          6,
+          6,
+          7,
+          7,
+          7,
+          8,
+          8,
+          8
+        ]
+      },
+      {
+        "name": "QR Circles",
+        "type": 2002,
+        "params": [
+          {
+            "type": "ellipse",
+            "rx": 0.2,
+            "ry": 0.2,
+            "angle": 0,
+            "fill": "#ffffff",
+            "stroke": "#000000",
+            "strokeWidth": 0.02
+          }
+        ],
+        "symbols": [
+          [
+            6,
+            6
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            2
+          ]
+        ]
+      },
+      {
+        "name": "QR Ranks",
+        "type": 2002,
+        "params": [
+          {
+            "type": "text",
+            "text": "10",
+            "size": 0.25,
+            "angle": 0,
+            "strokeWidth": 0.02,
+            "stroke": "#ffffff",
+            "fill": "#000000"
+          },
+          {
+            "type": "text",
+            "text": "58+",
+            "size": 0.25,
+            "angle": 0,
+            "strokeWidth": 0.02,
+            "stroke": "#ffffff",
+            "fill": "#000000"
+          },
+          {
+            "type": "text",
+            "text": "9",
+            "size": 0.25,
+            "angle": 0,
+            "strokeWidth": 0.02,
+            "stroke": "#ffffff",
+            "fill": "#000000"
+          },
+          {
+            "type": "text",
+            "text": "8",
+            "size": 0.25,
+            "angle": 0,
+            "strokeWidth": 0.02,
+            "stroke": "#ffffff",
+            "fill": "#000000"
+          },
+          {
+            "type": "text",
+            "text": "1",
+            "size": 0.25,
+            "angle": 0,
+            "strokeWidth": 0.02,
+            "stroke": "#ffffff",
+            "fill": "#000000"
+          },
+          {
+            "type": "text",
+            "text": "51-56",
+            "size": 0.25,
+            "angle": 0,
+            "strokeWidth": 0.02,
+            "stroke": "#ffffff",
+            "fill": "#000000"
+          }
+        ],
+        "symbols": [
+          [
+            6,
+            6
+          ],
+          [
+            4,
+            4,
+            1
+          ],
+          [
+            2,
+            3,
+            2
+          ],
+          [
+            1,
+            4,
+            3
+          ],
+          [
+            1,
+            3,
+            4
+          ],
+          [
+            5,
+            2,
+            5
+          ]
+        ]
+      },
+      {
+        "name": "QQRR Ranks",
+        "type": 2001,
+        "cages": [
+          {
+            "value": "33",
+            "cells": [
+              4
+            ]
+          }
+        ],
+        "style": {
+          "text": {
+            "color": "#000000"
+          },
+          "cage": {
+            "color": "#000000"
+          }
+        }
+      }
+    ]
+  }
+}
