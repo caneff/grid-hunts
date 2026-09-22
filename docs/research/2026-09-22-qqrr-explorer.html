@@ -183,10 +183,12 @@ function draw(){
   if(sel&&sel.type==="win"){hiWins.add(sel.r+","+sel.c);for(const [dr,dc] of [[0,0],[0,1],[1,0],[1,1]])hiCells.add((sel.r+dr)+","+(sel.c+dc))}
   if(sel&&sel.type==="cell"){hiCells.add(sel.r+","+sel.c);for(const [a,b] of windowsOf(sel.r,sel.c))hiWins.add(a+","+b)}
   const cageCells={[cage]:"33"}; if(corner)cageCells[CORNER[corner].join(",")]="5";
+  const q34=new Set(document.getElementById("showQ34").checked?q34Cells(A).map(([r,c])=>r+","+c):[]);
   for(let r=0;r<N;r++)for(let c=0;c<N;c++){
     const x=M+c*S,y=M+r*S,k=r+","+c;
     let fill=css("--panel");
     if(showOp&&showEnt&&k in ENTERED)fill=css("--hyp-soft");
+    if(q34.has(k))fill=css("--q34-soft");
     if(hiCells.has(k))fill=sel.type==="win"?css("--win-soft"):css("--cell-soft");
     const g=el("g",{class:"cell",style:"cursor:pointer"});
     g.appendChild(el("rect",{x,y,width:S,height:S,fill,stroke:css("--line")}));
@@ -203,10 +205,6 @@ function draw(){
   if(document.getElementById("showTies").checked)for(const t of A.ties){
     for(const [r,c] of [t.a,t.b])svg.appendChild(el("rect",{x:M+c*S+3,y:M+r*S+3,width:S-6,height:S-6,fill:"none",stroke:css("--tie"),"stroke-width":3,rx:4,"pointer-events":"none"}));
     svg.appendChild(el("line",{x1:M+t.a[1]*S+S/2,y1:M+t.a[0]*S+S/2,x2:M+t.b[1]*S+S/2,y2:M+t.b[0]*S+S/2,stroke:css("--tie"),"stroke-width":3,"stroke-dasharray":"6 5","pointer-events":"none",opacity:.75}));
-  }
-  if(document.getElementById("showQ34").checked)for(const [r,c] of q34Cells(A)){
-    svg.appendChild(el("rect",{x:M+c*S+7,y:M+r*S+7,width:S-14,height:S-14,fill:css("--q34-soft"),"fill-opacity":.55,stroke:css("--q34"),"stroke-width":3,rx:S/2,"pointer-events":"none"}));
-    svg.appendChild(el("text",{x:M+c*S+S-6,y:M+r*S+13,"font-size":9.5,"font-weight":700,"text-anchor":"end",fill:css("--q34"),"font-family":css("--sans"),"pointer-events":"none"},"34–36"));
   }
   for(let i=0;i<=N;i++){const w=i%3===0?3:1;
     svg.appendChild(el("line",{x1:M,y1:M+i*S,x2:M+N*S,y2:M+i*S,stroke:css("--grid"),"stroke-width":w}));
