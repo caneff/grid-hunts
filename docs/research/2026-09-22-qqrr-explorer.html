@@ -239,7 +239,7 @@ function renderTables(){
   ct.replaceChildren(...cs.map(x=>{const tr=document.createElement("tr");
     if(sel&&sel.type==="cell"&&sel.r===x.r&&sel.c===x.c)tr.className="selc";if(ncount[x.n]>1)tr.classList.add("tie");
     tr.innerHTML=`<td>${x.k}</td><td>${fmt(x.r,x.c)}</td><td>${x.n}</td>`;tr.addEventListener("click",()=>select({type:"cell",r:x.r,c:x.c}));return tr}));
-  const row=document.querySelector("tr.sel, tr.selc");if(row)row.scrollIntoView({block:"nearest"});
+  for(const row of document.querySelectorAll("tr.sel, tr.selc")){const box=row.closest(".tbl");const top=row.offsetTop-box.clientHeight/2+row.offsetHeight/2;box.scrollTop=Math.max(0,top)}
 }
 function renderTies(){const box=document.getElementById("ties");
   if(!A.ties.length){box.innerHTML='<span class="k">No two cells that see each other share a cell number.</span>';return}
