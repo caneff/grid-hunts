@@ -29,9 +29,9 @@ HERE = Path(__file__).resolve().parent
 op = checker.load_opener(HERE / "opener.json")
 
 assert op.n == 9
-assert op.window_clues == {(6, 6): (10, 10), (2, 5): (51, 56), (4, 4): (58, 64)}
+assert op.window_clues == {(5, 5): (10, 10), (1, 4): (51, 56), (3, 3): (58, 64)}
 assert op.cell_clues == {(0, 4): 33}
-assert op.window_hypotheses == {(3, 2): (9, 9), (4, 1): (8, 8), (3, 1): (1, 1)}
+assert op.window_hypotheses == {(2, 1): (9, 9), (3, 0): (8, 8), (2, 0): (1, 1)}
 assert op.digit_hypotheses[(0, 3)] == 7
 assert op.digit_hypotheses[(8, 0)] == 8
 assert len(op.digit_hypotheses) == 13
@@ -165,6 +165,16 @@ assert variant(
 assert variant(
     lambda p: named(p, checker.CELL_CAGES)["cages"][0].__setitem__("cells", [4, 5]),
     "one cell",
+)
+# A mark on a border intersection (x=0 or y=0) has no window around it: the
+# offset (y-1, x-1) would be negative, silently pointing at the wrong window.
+assert variant(
+    lambda p: named(p, checker.WINDOW_MARKS)["symbols"][0].__setitem__(0, 0),
+    "border intersection",
+)
+assert variant(
+    lambda p: named(p, checker.WINDOW_MARKS)["symbols"][0].__setitem__(1, 0),
+    "border intersection",
 )
 assert not variant(lambda p: None)
 
