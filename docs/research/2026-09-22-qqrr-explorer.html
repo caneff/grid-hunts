@@ -1,4 +1,4 @@
-<!-- QQRR explorer. Tie-sample presets first: r4c1 reads window ranks 1|8 = 18 (the uncircled marks), tying a corner window whose rank is 18. Published artifact: https://claude.ai/artifact/QH1ZpnXoLkQj6R6x899Axh -- republish this file with that url to update it. Presets are the #593 rerun grids; paste any 9x9 grid to re-rank. -->
+<!-- QQRR explorer. A preset may carry a 4th field, the QQRR 33 cage cell as "row,col" 0-based (default "0,4"); when it is not r1c5 the entered-digit overlay is off since those digits belong to the r1c5 opener. Tie-sample presets next: r4c1 reads window ranks 1|8 = 18 (the uncircled marks), tying a corner window whose rank is 18. Published artifact: https://claude.ai/artifact/QH1ZpnXoLkQj6R6x899Axh -- republish this file with that url to update it. Presets are the #593 rerun grids; paste any 9x9 grid to re-rank. -->
 <title>Quad Quad Rank Rank Explorer</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Source+Sans+3:wght@400;600;700&display=swap">
 <style>
@@ -105,6 +105,8 @@ tr.tie td{color:var(--clue)}
 <script>
 const N=9, W=N-1;
 const PRESETS=[
+["33 at r5c1, no digits · 7-digit tie r7c2 = r7c8 (3241454, QQRR 43) · br #1","591247638/672183954/438695127/865934271/927516483/143872569/284369715/716458392/359721846","br","4,0"],
+["33 at r5c1, no digits · 7-digit tie r5c2 = r8c2 (5411233, QQRR 46) · br #2","781235469/692184735/534769281/825973614/413856972/976412358/169527843/257348196/348691527","br","4,0"],
 ["tie sample · QQRR 5 top-right · r4c1 = 18 ties r1c1 · tr #7","365741298/947286513/128395467/216938754/483517629/579462831/651873942/734629185/892154376","tr"],
 ["tie sample · QQRR 5 top-right · r4c1 = 18 ties r9c1 · tr #11","436751289/975283614/128649357/213978546/587416932/694532871/742895163/359167428/861324795","tr"],
 ["tie sample · QQRR 5 bottom-right · r4c1 = 18 ties r9c1 · br #34","635791482/947283516/128564937/213958764/584376129/769142853/492835671/356417298/871629345","br"],
@@ -147,7 +149,7 @@ function parseGrid(t){
   return rows.map(r=>[...r].map(Number));
 }
 
-let grid, A, sel=null, corner=null; // sel: {type:"win"|"cell", r, c}
+let grid, A, sel=null, corner=null, cage="0,4"; // sel: {type:"win"|"cell", r, c}
 const svg=document.getElementById("svg"), detail=document.getElementById("detail");
 const S=64, M=14, NS="http://www.w3.org/2000/svg";
 function el(t,a,txt){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;return e}
@@ -155,19 +157,19 @@ function css(v){return getComputedStyle(document.documentElement).getPropertyVal
 
 function draw(){
   svg.replaceChildren();
-  const showQR=document.getElementById("showQR").checked, showQQ=document.getElementById("showQQ").checked, showOp=document.getElementById("showOpener").checked;
+  const showEnt=cage==="0,4"; const showQR=document.getElementById("showQR").checked, showQQ=document.getElementById("showQQ").checked, showOp=document.getElementById("showOpener").checked;
   const hiCells=new Set(), hiWins=new Set();
   if(sel&&sel.type==="win"){hiWins.add(sel.r+","+sel.c);for(const [dr,dc] of [[0,0],[0,1],[1,0],[1,1]])hiCells.add((sel.r+dr)+","+(sel.c+dc))}
   if(sel&&sel.type==="cell"){hiCells.add(sel.r+","+sel.c);for(const [a,b] of windowsOf(sel.r,sel.c))hiWins.add(a+","+b)}
-  const cageCells={"0,4":"33"}; if(corner)cageCells[CORNER[corner].join(",")]="5";
+  const cageCells={[cage]:"33"}; if(corner)cageCells[CORNER[corner].join(",")]="5";
   for(let r=0;r<N;r++)for(let c=0;c<N;c++){
     const x=M+c*S,y=M+r*S,k=r+","+c;
     let fill=css("--panel");
-    if(showOp&&k in ENTERED)fill=css("--hyp-soft");
+    if(showOp&&showEnt&&k in ENTERED)fill=css("--hyp-soft");
     if(hiCells.has(k))fill=sel.type==="win"?css("--win-soft"):css("--cell-soft");
     const g=el("g",{class:"cell",style:"cursor:pointer"});
     g.appendChild(el("rect",{x,y,width:S,height:S,fill,stroke:css("--line")}));
-    const isEnt=showOp&&k in ENTERED;
+    const isEnt=showOp&&showEnt&&k in ENTERED;
     g.appendChild(el("text",{x:x+S/2,y:y+S/2+8,"font-size":28,"text-anchor":"middle","font-family":css("--mono"),fill:isEnt?css("--hyp"):css("--ink")},grid[r][c]));
     if(showQQ)g.appendChild(el("text",{x:x+S/2,y:y+S-5,"font-size":10.5,"text-anchor":"middle","font-family":css("--mono"),fill:css("--muted")},A.crank[r][c]));
     if(showOp&&k in cageCells){
@@ -189,7 +191,7 @@ function draw(){
     const x=M+(c+1)*S,y=M+(r+1)*S,k=r+","+c;
     let txt=String(A.rank[r][c]),fill=css("--panel"),stroke=css("--muted"),col=css("--ink"),sw=1;
     if(showOp&&k in CLUES){txt=CLUES[k];fill=css("--clue-soft");stroke=css("--clue");col=css("--clue");sw=1.5}
-    else if(showOp&&k in MARKS){fill=css("--mark");stroke=css("--muted")}
+    else if(showOp&&showEnt&&k in MARKS){fill=css("--mark");stroke=css("--muted")}
     if(hiWins.has(k)){stroke=sel.type==="win"?css("--win"):css("--cell");sw=2.5;if(!(showOp&&k in CLUES)){fill=sel.type==="win"?css("--win-soft"):css("--cell-soft")}}
     const rw=txt.length>2?44:24;
     const g=el("g",{style:"cursor:pointer"});
@@ -249,15 +251,15 @@ function renderTies(){const box=document.getElementById("ties");
   box.innerHTML=A.ties.map(t=>`<div style="margin-bottom:6px"><span class="chip tie" data-r="${t.a[0]}" data-c="${t.a[1]}">${fmt(...t.a)} ${t.la}</span>=<span class="chip tie" data-r="${t.b[0]}" data-c="${t.b[1]}">${fmt(...t.b)} ${t.lb}</span> <span class="k">number ${t.n}, both QQRR <b style="color:var(--tie)">${t.k}</b>, ${t.kind}</span></div>`).join("");
   box.querySelectorAll(".chip").forEach(ch=>ch.addEventListener("click",()=>select({type:"cell",r:+ch.dataset.r,c:+ch.dataset.c})))}
 function select(s){sel=s;draw();renderDetail();renderTables()}
-function load(g,cn){grid=g;corner=cn;A=analyse(grid);sel=null;draw();renderDetail();renderTables();renderTies();document.getElementById("gridText").value=grid.map(r=>r.join(" ")).join("\n")}
+function load(g,cn,cg){grid=g;corner=cn;cage=cg||"0,4";A=analyse(grid);sel=null;draw();renderDetail();renderTables();renderTies();document.getElementById("gridText").value=grid.map(r=>r.join(" ")).join("\n")}
 
 const preset=document.getElementById("preset");
 PRESETS.forEach((p,i)=>{const o=document.createElement("option");o.value=i;o.textContent=p[0];preset.appendChild(o)});
-preset.addEventListener("change",()=>{const p=PRESETS[preset.value];load(parseGrid(p[1]),p[2])});
-document.getElementById("apply").addEventListener("click",()=>{const e=document.getElementById("err");try{load(parseGrid(document.getElementById("gridText").value),corner);e.textContent=""}catch(x){e.textContent=x.message}});
+preset.addEventListener("change",()=>{const p=PRESETS[preset.value];load(parseGrid(p[1]),p[2],p[3])});
+document.getElementById("apply").addEventListener("click",()=>{const e=document.getElementById("err");try{load(parseGrid(document.getElementById("gridText").value),corner,cage);e.textContent=""}catch(x){e.textContent=x.message}});
 ["showQR","showQQ","showOpener","showTies"].forEach(id=>document.getElementById(id).addEventListener("change",draw));
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change",draw);
 new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
-load(parseGrid(PRESETS[0][1]),PRESETS[0][2]);
-select({type:"cell",r:8,c:8});
+load(parseGrid(PRESETS[0][1]),PRESETS[0][2],PRESETS[0][3]);
+select({type:"cell",r:6,c:1});
 </script>
