@@ -1,0 +1,239 @@
+<!-- QQRR explorer. Published artifact: https://claude.ai/artifact/QH1ZpnXoLkQj6R6x899Axh -- republish this file with that url to update it. Presets are the #593 rerun grids; paste any 9x9 grid to re-rank. -->
+<title>Quad Quad Rank Rank Explorer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+:root{
+  --paper:#f6f4ee; --panel:#fffdf8; --ink:#1e2229; --muted:#6b6f78; --line:#d5d1c7; --grid:#2a2d33;
+  --win:#1f7a8c; --win-soft:#d7ecef; --cell:#c2620f; --cell-soft:#fbe4cf;
+  --clue:#b8322f; --clue-soft:#f8dcd9; --hyp:#2c4f9e; --hyp-soft:#dde5f7; --mark:#e9e6df;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --sans:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#16181c; --panel:#1f2227; --ink:#e8e6df; --muted:#9a9ea8; --line:#3a3e46; --grid:#c9ccd3;
+  --win:#5fc0d2; --win-soft:#173a41; --cell:#f0a25a; --cell-soft:#4a2e14;
+  --clue:#f07672; --clue-soft:#4a1f1e; --hyp:#8fb0ff; --hyp-soft:#20305a; --mark:#2a2e35;
+}}
+:root[data-theme="dark"]{
+  --paper:#16181c; --panel:#1f2227; --ink:#e8e6df; --muted:#9a9ea8; --line:#3a3e46; --grid:#c9ccd3;
+  --win:#5fc0d2; --win-soft:#173a41; --cell:#f0a25a; --cell-soft:#4a2e14;
+  --clue:#f07672; --clue-soft:#4a1f1e; --hyp:#8fb0ff; --hyp-soft:#20305a; --mark:#2a2e35;
+}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.4;padding-inline:16px;padding-block:16px 40px}
+h1{font-size:20px;font-weight:700;margin:0 0 4px;text-wrap:balance}
+.sub{color:var(--muted);margin:0 0 14px;max-width:70ch}
+.wrap{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.board{flex:0 1 640px;max-width:100%}
+svg{width:100%;height:auto;display:block;user-select:none}
+.side{flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.box{background:var(--panel);border:1px solid var(--line);padding:12px 14px}
+.box h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:600}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+select,textarea,button{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);padding:6px 8px;max-width:100%}
+select{width:100%}
+textarea{width:100%;font-family:var(--mono);font-size:13px;line-height:1.35;box-sizing:border-box}
+button{cursor:pointer}
+button:hover{border-color:var(--ink)}
+button:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--win);outline-offset:1px}
+.row{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:8px}
+.row label{display:inline-flex;align-items:center;gap:6px;margin:0;color:var(--ink)}
+.detail{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:14px}
+.detail .big{font-size:26px;font-weight:600;margin:2px 0 6px}
+.detail .k{color:var(--muted);font-family:var(--sans);font-size:13px}
+.chip{display:inline-block;padding:1px 7px;border:1px solid var(--line);margin:2px 4px 2px 0;font-family:var(--mono);cursor:pointer}
+.chip.win{border-color:var(--win);color:var(--win)}
+.chip.cel{border-color:var(--cell);color:var(--cell)}
+.tables{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:520px){.tables{grid-template-columns:1fr}}
+.tbl{max-height:360px;overflow:auto;border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:12.5px}
+th{position:sticky;top:0;background:var(--panel);text-align:left;font-family:var(--sans);font-weight:600;font-size:12px;color:var(--muted);padding:4px 6px;border-bottom:1px solid var(--line)}
+td{padding:2px 6px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap}
+tr.sel td{background:var(--win-soft)}
+tr.selc td{background:var(--cell-soft)}
+tr.tie td{color:var(--clue)}
+.legend{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 14px}
+.legend span::before{content:"";display:inline-block;width:11px;height:11px;margin-right:5px;vertical-align:-1px;border:1px solid var(--line)}
+.legend .l-win::before{background:var(--win-soft);border-color:var(--win)}
+.legend .l-cel::before{background:var(--cell-soft);border-color:var(--cell)}
+.legend .l-clue::before{background:var(--clue-soft);border-color:var(--clue)}
+.legend .l-hyp::before{background:var(--hyp-soft);border-color:var(--hyp)}
+.err{color:var(--clue);font-size:13px;margin-top:6px;min-height:1em}
+</style>
+
+<h1>Quad Quad Rank Rank Explorer</h1>
+<p class="sub">Click an intersection circle to inspect that 2×2 window's quad rank. Click a cell to see how its up-to-four window ranks concatenate and where that number ranks among all 81 cells. Ties use SQL RANK at both levels.</p>
+
+<div class="wrap">
+  <div class="board"><svg id="svg" viewBox="0 0 640 640" role="img" aria-label="Sudoku grid with quad ranks"></svg>
+    <div class="legend" style="margin-top:8px">
+      <span class="l-win">selected window</span><span class="l-cel">selected cell + its windows</span>
+      <span class="l-clue">opener clue (10 real; 58+, 51–56, QQRR 5 assumed)</span><span class="l-hyp">entered digit / uncircled mark</span>
+    </div>
+  </div>
+  <div class="side">
+    <div class="box">
+      <h2>Grid</h2>
+      <label for="preset">Found solution</label>
+      <select id="preset"></select>
+      <div class="row">
+        <label><input type="checkbox" id="showQR" checked> quad ranks</label>
+        <label><input type="checkbox" id="showQQ" checked> cell ranks</label>
+        <label><input type="checkbox" id="showOpener" checked> opener overlay</label>
+      </div>
+      <details style="margin-top:8px"><summary style="cursor:pointer;color:var(--muted);font-size:13px">Paste your own grid</summary>
+        <textarea id="gridText" rows="9" spellcheck="false"></textarea>
+        <div class="row"><button id="apply">Use this grid</button><span class="err" id="err"></span></div>
+      </details>
+    </div>
+    <div class="box"><h2>Selection</h2><div class="detail" id="detail">Nothing selected.</div></div>
+    <div class="box"><h2>Rankings</h2>
+      <div class="tables">
+        <div><label>Windows by quad rank</label><div class="tbl"><table id="winTable"><thead><tr><th>#</th><th>window</th><th>value</th></tr></thead><tbody></tbody></table></div></div>
+        <div><label>Cells by QQRR</label><div class="tbl"><table id="cellTable"><thead><tr><th>#</th><th>cell</th><th>number</th></tr></thead><tbody></tbody></table></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const N=9, W=N-1;
+const PRESETS=[
+["hypotheses on · QQRR 5 bottom-right · #1","356791428/974286531/128534967/215948673/483617295/697352814/562873149/749165382/831429756","br"],
+["hypotheses on · QQRR 5 bottom-right · #2","536791284/974283615/128546739/217958346/483167952/659432871/391674528/762815493/845329167","br"],
+["hypotheses on · QQRR 5 top-right · #1","453761298/967285314/128394567/214958736/685137429/379642851/591873642/746529183/832416975","tr"],
+["hypotheses on · QQRR 5 top-right · #2","345761289/976284315/128539746/213978564/684315972/597642831/462893157/739156428/851427693","tr"],
+["hypotheses on · no corner pinned · #1","465791382/937286514/128435976/213958467/586374129/749162835/692843751/354617298/871529643",null],
+["hypotheses on · no corner pinned · #2","536791428/947283651/128546739/215968347/683417295/479352816/391874562/754629183/862135974",null],
+["hypotheses off · QQRR 5 top-right · #1","563741289/974286513/128539746/215978634/486315972/397462851/732894165/649157328/851623497","tr"],
+["hypotheses off · QQRR 5 top-right · #2","563741289/974286513/128539746/215978634/386415972/497362851/732894165/649157328/851623497","tr"],
+["hypotheses off · QQRR 5 bottom-right · #1","653749128/974281563/128635749/215978436/487356912/396412857/542893671/739164285/861527394","br"],
+["hypotheses off · QQRR 5 bottom-right · #2","653749128/974281563/128635749/215978436/387456912/496312857/542893671/739164285/861527394","br"],
+];
+const CLUES={"5,5":"10","3,3":"58+","1,4":"51–56"};  // window top-left -> clue
+const MARKS={"2,1":"9","3,0":"8","2,0":"1"};         // uncircled marks
+const ENTERED={"0,3":7,"1,0":9,"1,3":2,"1,4":8,"2,0":1,"2,1":2,"2,2":8,"3,0":2,"3,1":1,"3,3":9,"5,5":2,"5,6":8,"8,0":8};
+const CORNER={tl:[0,0],tr:[0,8],bl:[8,0],br:[8,8]};
+
+function sqlRank(vals){return vals.map(v=>1+vals.filter(u=>u<v).length)}
+function windowsOf(r,c){const o=[];for(const wr of [r-1,r])for(const wc of [c-1,c])if(wr>=0&&wr<=W-1&&wc>=0&&wc<=W-1)o.push([wr,wc]);return o}
+function analyse(g){
+  const val=[],flat=[];
+  for(let r=0;r<W;r++){val.push([]);for(let c=0;c<W;c++){const v=1000*g[r][c]+100*g[r][c+1]+10*g[r+1][c]+g[r+1][c+1];val[r].push(v);flat.push(v)}}
+  const fr=sqlRank(flat), rank=[];for(let r=0;r<W;r++)rank.push(fr.slice(r*W,r*W+W));
+  const num=[],nflat=[];
+  for(let r=0;r<N;r++){num.push([]);for(let c=0;c<N;c++){const s=windowsOf(r,c).map(([a,b])=>String(rank[a][b])).join("");const n=parseInt(s,10);num[r].push(n);nflat.push(n)}}
+  const cr=sqlRank(nflat), crank=[];for(let r=0;r<N;r++)crank.push(cr.slice(r*N,r*N+N));
+  return {val,rank,num,crank};
+}
+function parseGrid(t){
+  const rows=t.trim().split(/[\n\/]+/).map(l=>l.replace(/[^1-9]/g,""));
+  if(rows.length!==9||rows.some(r=>r.length!==9))throw new Error("need 9 rows of 9 digits 1–9");
+  return rows.map(r=>[...r].map(Number));
+}
+
+let grid, A, sel=null, corner=null; // sel: {type:"win"|"cell", r, c}
+const svg=document.getElementById("svg"), detail=document.getElementById("detail");
+const S=64, M=32, NS="http://www.w3.org/2000/svg";
+function el(t,a,txt){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;return e}
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+
+function draw(){
+  svg.replaceChildren();
+  const showQR=document.getElementById("showQR").checked, showQQ=document.getElementById("showQQ").checked, showOp=document.getElementById("showOpener").checked;
+  const hiCells=new Set(), hiWins=new Set();
+  if(sel&&sel.type==="win"){hiWins.add(sel.r+","+sel.c);for(const [dr,dc] of [[0,0],[0,1],[1,0],[1,1]])hiCells.add((sel.r+dr)+","+(sel.c+dc))}
+  if(sel&&sel.type==="cell"){hiCells.add(sel.r+","+sel.c);for(const [a,b] of windowsOf(sel.r,sel.c))hiWins.add(a+","+b)}
+  const cageCells={"0,4":"33"}; if(corner)cageCells[CORNER[corner].join(",")]="5";
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const x=M+c*S,y=M+r*S,k=r+","+c;
+    let fill=css("--panel");
+    if(showOp&&k in ENTERED)fill=css("--hyp-soft");
+    if(hiCells.has(k))fill=sel.type==="win"?css("--win-soft"):css("--cell-soft");
+    const g=el("g",{class:"cell",style:"cursor:pointer"});
+    g.appendChild(el("rect",{x,y,width:S,height:S,fill,stroke:css("--line")}));
+    const isEnt=showOp&&k in ENTERED;
+    g.appendChild(el("text",{x:x+S/2,y:y+S/2+8,"font-size":28,"text-anchor":"middle","font-family":css("--mono"),fill:isEnt?css("--hyp"):css("--ink")},grid[r][c]));
+    if(showQQ)g.appendChild(el("text",{x:x+S/2,y:y+S-5,"font-size":10.5,"text-anchor":"middle","font-family":css("--mono"),fill:css("--muted")},A.crank[r][c]));
+    if(showOp&&k in cageCells){
+      g.appendChild(el("rect",{x:x+4,y:y+4,width:S-8,height:S-8,fill:"none",stroke:css("--clue"),"stroke-width":1.5,"stroke-dasharray":"4 3"}));
+      g.appendChild(el("text",{x:x+S/2,y:y+15,"font-size":12,"font-weight":600,"text-anchor":"middle",fill:css("--clue"),"font-family":css("--sans")},cageCells[k]));
+    }
+    g.addEventListener("click",()=>select({type:"cell",r,c}));
+    svg.appendChild(g);
+  }
+  for(let i=0;i<=N;i++){const w=i%3===0?3:1;
+    svg.appendChild(el("line",{x1:M,y1:M+i*S,x2:M+N*S,y2:M+i*S,stroke:css("--grid"),"stroke-width":w}));
+    svg.appendChild(el("line",{x1:M+i*S,y1:M,x2:M+i*S,y2:M+N*S,stroke:css("--grid"),"stroke-width":w}));
+  }
+  if(showQR)for(let r=0;r<W;r++)for(let c=0;c<W;c++){
+    const x=M+(c+1)*S,y=M+(r+1)*S,k=r+","+c;
+    let txt=String(A.rank[r][c]),fill=css("--panel"),stroke=css("--muted"),col=css("--ink"),sw=1;
+    if(showOp&&k in CLUES){txt=CLUES[k];fill=css("--clue-soft");stroke=css("--clue");col=css("--clue");sw=1.5}
+    else if(showOp&&k in MARKS){fill=css("--mark");stroke=css("--muted")}
+    if(hiWins.has(k)){stroke=sel.type==="win"?css("--win"):css("--cell");sw=2.5;if(!(showOp&&k in CLUES)){fill=sel.type==="win"?css("--win-soft"):css("--cell-soft")}}
+    const rw=txt.length>2?44:24;
+    const g=el("g",{style:"cursor:pointer"});
+    g.appendChild(el("rect",{x:x-rw/2,y:y-11,width:rw,height:22,rx:11,fill,stroke,"stroke-width":sw}));
+    g.appendChild(el("text",{x,y:y+4.5,"font-size":12.5,"text-anchor":"middle","font-family":css("--mono"),"font-weight":600,fill:col},txt));
+    g.addEventListener("click",e=>{e.stopPropagation();select({type:"win",r,c})});
+    svg.appendChild(g);
+  }
+}
+
+function fmt(r,c){return "r"+(r+1)+"c"+(c+1)}
+function renderDetail(){
+  if(!sel){detail.textContent="Nothing selected.";return}
+  const {r,c}=sel;
+  if(sel.type==="win"){
+    const d=[grid[r][c],grid[r][c+1],grid[r+1][c],grid[r+1][c+1]];
+    const v=A.val[r][c],rk=A.rank[r][c];
+    const ties=A.val.flat().filter(u=>u===v).length-1;
+    const readers=[];for(const [dr,dc] of [[0,0],[0,1],[1,0],[1,1]])readers.push([r+dr,c+dc]);
+    detail.innerHTML=`<div class="k">window with top-left ${fmt(r,c)} · digits ${d.join(" ")}</div>
+      <div class="big">${v} → quad rank <span style="color:var(--win)">${rk}</span></div>
+      <div class="k">${rk-1} window${rk-1===1?"":"s"} have a smaller value${ties?`; ${ties} tie with this one`:""}.</div>
+      <div class="k" style="margin-top:6px">read by cells</div>
+      ${readers.map(([a,b])=>`<span class="chip cel" data-r="${a}" data-c="${b}">${fmt(a,b)} → ${A.num[a][b]}</span>`).join("")}`;
+  }else{
+    const wins=windowsOf(r,c),parts=wins.map(([a,b])=>A.rank[a][b]);
+    const n=A.num[r][c],rk=A.crank[r][c];
+    const ties=A.num.flat().filter(u=>u===n).length-1;
+    detail.innerHTML=`<div class="k">cell ${fmt(r,c)} · digit ${grid[r][c]} · ${wins.length} window${wins.length===1?"":"s"}</div>
+      <div class="big">${parts.map(p=>`<span style="color:var(--win)">${p}</span>`).join("<span style='color:var(--muted)'>‖</span>")} = ${n}</div>
+      <div class="big">QQRR <span style="color:var(--cell)">${rk}</span></div>
+      <div class="k">${rk-1} cell${rk-1===1?"":"s"} have a smaller number${ties?`; ${ties} tie with this one`:""}.</div>
+      <div class="k" style="margin-top:6px">its windows (reading order)</div>
+      ${wins.map(([a,b])=>`<span class="chip win" data-r="${a}" data-c="${b}">${fmt(a,b)}… ${A.val[a][b]} → ${A.rank[a][b]}</span>`).join("")}`;
+  }
+  detail.querySelectorAll(".chip").forEach(ch=>ch.addEventListener("click",()=>select({type:ch.classList.contains("win")?"win":"cell",r:+ch.dataset.r,c:+ch.dataset.c})));
+}
+function renderTables(){
+  const wt=document.querySelector("#winTable tbody"),ct=document.querySelector("#cellTable tbody");
+  const ws=[];for(let r=0;r<W;r++)for(let c=0;c<W;c++)ws.push({r,c,v:A.val[r][c],k:A.rank[r][c]});
+  ws.sort((a,b)=>a.k-b.k||a.r-b.r||a.c-b.c);
+  const vcount={};ws.forEach(w=>vcount[w.v]=(vcount[w.v]||0)+1);
+  wt.replaceChildren(...ws.map(w=>{const tr=document.createElement("tr");
+    if(sel&&sel.type==="win"&&sel.r===w.r&&sel.c===w.c)tr.className="sel";if(vcount[w.v]>1)tr.classList.add("tie");
+    tr.innerHTML=`<td>${w.k}</td><td>${fmt(w.r,w.c)}</td><td>${w.v}</td>`;tr.addEventListener("click",()=>select({type:"win",r:w.r,c:w.c}));return tr}));
+  const cs=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)cs.push({r,c,n:A.num[r][c],k:A.crank[r][c]});
+  cs.sort((a,b)=>a.k-b.k||a.r-b.r||a.c-b.c);
+  const ncount={};cs.forEach(x=>ncount[x.n]=(ncount[x.n]||0)+1);
+  ct.replaceChildren(...cs.map(x=>{const tr=document.createElement("tr");
+    if(sel&&sel.type==="cell"&&sel.r===x.r&&sel.c===x.c)tr.className="selc";if(ncount[x.n]>1)tr.classList.add("tie");
+    tr.innerHTML=`<td>${x.k}</td><td>${fmt(x.r,x.c)}</td><td>${x.n}</td>`;tr.addEventListener("click",()=>select({type:"cell",r:x.r,c:x.c}));return tr}));
+  const row=document.querySelector("tr.sel, tr.selc");if(row)row.scrollIntoView({block:"nearest"});
+}
+function select(s){sel=s;draw();renderDetail();renderTables()}
+function load(g,cn){grid=g;corner=cn;A=analyse(grid);sel=null;draw();renderDetail();renderTables();document.getElementById("gridText").value=grid.map(r=>r.join(" ")).join("\n")}
+
+const preset=document.getElementById("preset");
+PRESETS.forEach((p,i)=>{const o=document.createElement("option");o.value=i;o.textContent=p[0];preset.appendChild(o)});
+preset.addEventListener("change",()=>{const p=PRESETS[preset.value];load(parseGrid(p[1]),p[2])});
+document.getElementById("apply").addEventListener("click",()=>{const e=document.getElementById("err");try{load(parseGrid(document.getElementById("gridText").value),corner);e.textContent=""}catch(x){e.textContent=x.message}});
+["showQR","showQQ","showOpener"].forEach(id=>document.getElementById(id).addEventListener("change",draw));
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",draw);
+new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+load(parseGrid(PRESETS[0][1]),PRESETS[0][2]);
+select({type:"cell",r:8,c:8});
+</script>
