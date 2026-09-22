@@ -1,4 +1,4 @@
-<!-- QQRR explorer. A preset may carry a 4th field, the QQRR 33 cage cell as "row,col" 0-based (default "0,4"); when it is not r1c5 the entered-digit overlay is off since those digits belong to the r1c5 opener. Tie-sample presets next: r4c1 reads window ranks 1|8 = 18 (the uncircled marks), tying a corner window whose rank is 18. Published artifact: https://claude.ai/artifact/QH1ZpnXoLkQj6R6x899Axh -- republish this file with that url to update it. Presets are the #593 rerun grids; paste any 9x9 grid to re-rank. -->
+<!-- QQRR explorer. A preset may carry a 4th field, the QQRR 33 cage cell as "row,col" 0-based (default "0,4"); when it is not r1c5 the entered-digit overlay is off since those digits belong to the r1c5 opener. Tie-sample presets next: r4c1 reads window ranks 1|8 = 18 (the uncircled marks), tying a corner window whose rank is 18. Published artifact: https://claude.ai/artifact/QH1ZpnXoLkQj6R6x899Axh -- republish this file with that url to update it. Presets are the tie-hunt grids and the tie samples (the #593 rerun grids were dropped on 2026-09-22); paste any 9x9 grid to re-rank. -->
 <title>Quad Quad Rank Rank Explorer</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Source+Sans+3:wght@400;600;700&display=swap">
 <style>
@@ -132,16 +132,6 @@ const PRESETS=[
 ["tie sample · QQRR 5 top-right · r4c1 = 18 ties r9c1 · tr #11","436751289/975283614/128649357/213978546/587416932/694532871/742895163/359167428/861324795","tr"],
 ["tie sample · QQRR 5 bottom-right · r4c1 = 18 ties r9c1 · br #34","635791482/947283516/128564937/213958764/584376129/769142853/492835671/356417298/871629345","br"],
 ["tie sample · QQRR 5 bottom-right · r4c1 = 18 ties r1c1 · br #7","364791528/957283461/128456973/213968745/786145392/549372816/692834157/435617289/871529634","br"],
-["hypotheses on · QQRR 5 bottom-right · #1","356791428/974286531/128534967/215948673/483617295/697352814/562873149/749165382/831429756","br"],
-["hypotheses on · QQRR 5 bottom-right · #2","536791284/974283615/128546739/217958346/483167952/659432871/391674528/762815493/845329167","br"],
-["hypotheses on · QQRR 5 top-right · #1","453761298/967285314/128394567/214958736/685137429/379642851/591873642/746529183/832416975","tr"],
-["hypotheses on · QQRR 5 top-right · #2","345761289/976284315/128539746/213978564/684315972/597642831/462893157/739156428/851427693","tr"],
-["hypotheses on · no corner pinned · #1","465791382/937286514/128435976/213958467/586374129/749162835/692843751/354617298/871529643",null],
-["hypotheses on · no corner pinned · #2","536791428/947283651/128546739/215968347/683417295/479352816/391874562/754629183/862135974",null],
-["hypotheses off · QQRR 5 top-right · #1","563741289/974286513/128539746/215978634/486315972/397462851/732894165/649157328/851623497","tr"],
-["hypotheses off · QQRR 5 top-right · #2","563741289/974286513/128539746/215978634/386415972/497362851/732894165/649157328/851623497","tr"],
-["hypotheses off · QQRR 5 bottom-right · #1","653749128/974281563/128635749/215978436/487356912/396412857/542893671/739164285/861527394","br"],
-["hypotheses off · QQRR 5 bottom-right · #2","653749128/974281563/128635749/215978436/387456912/496312857/542893671/739164285/861527394","br"],
 ];
 const CLUES0={"5,5":"10","3,3":"58+","1,4":"51–56"};  // window top-left -> clue (the opener)
 let CLUES=CLUES0;  // a preset may carry its own clue map as a 5th field
