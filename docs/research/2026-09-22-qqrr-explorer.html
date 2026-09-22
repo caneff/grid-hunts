@@ -22,10 +22,12 @@
 body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.4;padding-inline:16px;padding-block:16px 40px}
 h1{font-size:20px;font-weight:700;margin:0 0 4px;text-wrap:balance}
 .sub{color:var(--muted);margin:0 0 14px;max-width:70ch}
-.wrap{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
-.board{flex:0 1 640px;max-width:100%}
-svg{width:100%;height:auto;display:block;user-select:none}
-.side{flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.wrap{display:grid;grid-template-columns:minmax(0,640px) minmax(300px,1fr);grid-template-areas:"board ctl" "board sel" "board rank";gap:16px 24px;align-items:start}
+.board{grid-area:board;max-width:100%}
+.ctl{grid-area:ctl}.selg{grid-area:sel;display:flex;flex-direction:column;gap:14px}.rank{grid-area:rank}
+@media (max-width:760px){.wrap{grid-template-columns:1fr;grid-template-areas:"board" "sel" "ctl" "rank"}.detail .big{font-size:22px}}
+svg{width:100%;height:auto;display:block;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button,select,.chip{touch-action:manipulation}
 .box{background:var(--panel);border:1px solid var(--line);padding:12px 14px}
 .box h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:600}
 label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
@@ -67,14 +69,13 @@ tr.tie td{color:var(--clue)}
 <p class="sub">Click an intersection circle to inspect that 2×2 window's quad rank. Click a cell to see how its up-to-four window ranks concatenate and where that number ranks among all 81 cells. Ties use SQL RANK at both levels.</p>
 
 <div class="wrap">
-  <div class="board"><svg id="svg" viewBox="0 0 640 640" role="img" aria-label="Sudoku grid with quad ranks"></svg>
+  <div class="board"><svg id="svg" viewBox="0 0 604 604" role="img" aria-label="Sudoku grid with quad ranks"></svg>
     <div class="legend" style="margin-top:8px">
       <span class="l-win">selected window</span><span class="l-cel">selected cell + its windows</span>
       <span class="l-clue">opener clue (10 real; 58+, 51–56, QQRR 5 assumed)</span><span class="l-hyp">entered digit / uncircled mark</span><span class="l-tie">tied cell numbers that see each other</span>
     </div>
   </div>
-  <div class="side">
-    <div class="box">
+  <div class="box ctl">
       <h2>Grid</h2>
       <label for="preset">Found solution</label>
       <select id="preset"></select>
@@ -88,15 +89,16 @@ tr.tie td{color:var(--clue)}
         <textarea id="gridText" rows="9" spellcheck="false"></textarea>
         <div class="row"><button id="apply">Use this grid</button><span class="err" id="err"></span></div>
       </details>
-    </div>
-    <div class="box"><h2>Ties in sight</h2><div class="detail" id="ties"></div></div>
+  </div>
+  <div class="selg">
     <div class="box"><h2>Selection</h2><div class="detail" id="detail">Nothing selected.</div></div>
-    <div class="box"><h2>Rankings</h2>
+    <div class="box"><h2>Ties in sight</h2><div class="detail" id="ties"></div></div>
+  </div>
+  <div class="box rank"><h2>Rankings</h2>
       <div class="tables">
         <div><label>Windows by quad rank</label><div class="tbl"><table id="winTable"><thead><tr><th>#</th><th>window</th><th>value</th></tr></thead><tbody></tbody></table></div></div>
         <div><label>Cells by QQRR</label><div class="tbl"><table id="cellTable"><thead><tr><th>#</th><th>cell</th><th>number</th></tr></thead><tbody></tbody></table></div></div>
       </div>
-    </div>
   </div>
 </div>
 
@@ -147,7 +149,7 @@ function parseGrid(t){
 
 let grid, A, sel=null, corner=null; // sel: {type:"win"|"cell", r, c}
 const svg=document.getElementById("svg"), detail=document.getElementById("detail");
-const S=64, M=32, NS="http://www.w3.org/2000/svg";
+const S=64, M=14, NS="http://www.w3.org/2000/svg";
 function el(t,a,txt){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;return e}
 function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
 
@@ -191,6 +193,7 @@ function draw(){
     if(hiWins.has(k)){stroke=sel.type==="win"?css("--win"):css("--cell");sw=2.5;if(!(showOp&&k in CLUES)){fill=sel.type==="win"?css("--win-soft"):css("--cell-soft")}}
     const rw=txt.length>2?44:24;
     const g=el("g",{style:"cursor:pointer"});
+    g.appendChild(el("rect",{x:x-Math.max(rw,36)/2,y:y-18,width:Math.max(rw,36),height:36,fill:"transparent"}));
     g.appendChild(el("rect",{x:x-rw/2,y:y-11,width:rw,height:22,rx:11,fill,stroke,"stroke-width":sw}));
     g.appendChild(el("text",{x,y:y+4.5,"font-size":12.5,"text-anchor":"middle","font-family":css("--mono"),"font-weight":600,fill:col},txt));
     g.addEventListener("click",e=>{e.stopPropagation();select({type:"win",r,c})});
