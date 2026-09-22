@@ -1,4 +1,4 @@
-<!-- QQRR explorer. Published artifact: https://claude.ai/artifact/QH1ZpnXoLkQj6R6x899Axh -- republish this file with that url to update it. Presets are the #593 rerun grids; paste any 9x9 grid to re-rank. -->
+<!-- QQRR explorer. Tie-sample presets first: r4c1 reads window ranks 1|8 = 18 (the uncircled marks), tying a corner window whose rank is 18. Published artifact: https://claude.ai/artifact/QH1ZpnXoLkQj6R6x899Axh -- republish this file with that url to update it. Presets are the #593 rerun grids; paste any 9x9 grid to re-rank. -->
 <title>Quad Quad Rank Rank Explorer</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Source+Sans+3:wght@400;600;700&display=swap">
 <style>
@@ -99,6 +99,10 @@ tr.tie td{color:var(--clue)}
 <script>
 const N=9, W=N-1;
 const PRESETS=[
+["tie sample · QQRR 5 top-right · r4c1 = 18 ties r1c1 · tr #7","365741298/947286513/128395467/216938754/483517629/579462831/651873942/734629185/892154376","tr"],
+["tie sample · QQRR 5 top-right · r4c1 = 18 ties r9c1 · tr #11","436751289/975283614/128649357/213978546/587416932/694532871/742895163/359167428/861324795","tr"],
+["tie sample · QQRR 5 bottom-right · r4c1 = 18 ties r9c1 · br #34","635791482/947283516/128564937/213958764/584376129/769142853/492835671/356417298/871629345","br"],
+["tie sample · QQRR 5 bottom-right · r4c1 = 18 ties r1c1 · br #7","364791528/957283461/128456973/213968745/786145392/549372816/692834157/435617289/871529634","br"],
 ["hypotheses on · QQRR 5 bottom-right · #1","356791428/974286531/128534967/215948673/483617295/697352814/562873149/749165382/831429756","br"],
 ["hypotheses on · QQRR 5 bottom-right · #2","536791284/974283615/128546739/217958346/483167952/659432871/391674528/762815493/845329167","br"],
 ["hypotheses on · QQRR 5 top-right · #1","453761298/967285314/128394567/214958736/685137429/379642851/591873642/746529183/832416975","tr"],
