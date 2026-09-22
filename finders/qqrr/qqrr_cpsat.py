@@ -1,11 +1,12 @@
 """Check the QQRR opener: is it still satisfiable, and how open is it?
 
     uv run finders/qqrr/qqrr_cpsat.py [opener.json] --corner tl|tr|bl|br|none
-        [--hypotheses] [--count N] [--workers W] [--timeout S] [--progress FILE]
+        [--hypotheses] [--tie] [--count N] [--workers W] [--timeout S] [--progress FILE]
 
 One run per corner pin and hypothesis setting (map #591's protocol is eight).
 `--hypotheses` fixes the entered digits and the uncircled rank marks; without
-it they steer the search as hints only. The verdict stops at `--count`
+it they steer the search as hints only. `--tie` requires a 7-digit tie
+between two interior cells that see each other (#601) and prints the pair. The verdict stops at `--count`
 solutions. Every grid printed has been re-ranked by the oracle. The report
 goes to stdout and is appended to `--progress`, each solution as it lands, so
 a killed run keeps what it found. Exit 0 on a verdict, 2 on a timeout, 1 on
@@ -28,6 +29,7 @@ def main(argv=None):
     ap.add_argument("opener", nargs="?", default=HERE / "opener.json")
     ap.add_argument("--corner", choices=[*checker.CORNERS, "none"], default="none")
     ap.add_argument("--hypotheses", action="store_true")
+    ap.add_argument("--tie", action="store_true")
     ap.add_argument("--count", type=int, default=2)
     ap.add_argument("--workers", type=int, default=6)
     ap.add_argument("--timeout", type=float, default=600)
@@ -54,6 +56,7 @@ def main(argv=None):
         return 1
     log(
         f"qqrr: corner={a.corner} hypotheses={'on' if a.hypotheses else 'off'} "
+        f"tie={'on' if a.tie else 'off'} "
         f"count<={a.count} workers={a.workers} timeout={a.timeout:.0f}s"
     )
     try:
@@ -64,6 +67,7 @@ def main(argv=None):
             count=a.count,
             workers=a.workers,
             timeout=a.timeout,
+            tie=a.tie,
             on_solution=lambda sol, i: log(checker.render_solution(sol, i)),
         )
     except Exception as e:

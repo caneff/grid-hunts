@@ -32,6 +32,7 @@ class Model:
     rank: list  # rank[wr][wc]: the window's quad rank
     num: list  # num[r][c]: the cell number
     q: dict  # (r, c) -> the cell's quad quad rank rank, for ranked cells only
+    wide: list  # wide[wr][wc]: true when the window's rank is two digits wide
 
 
 def windows_of(n, r, c):
@@ -180,7 +181,7 @@ def build(n=9, ranked_cells=()):
     q = {}
     for r, c in ranked_cells:
         q[(r, c)] = add_cell_rank(m, num, bounds, (r, c), f"q{r}{c}")
-    return Model(n, m, x, v, rank, num, q)
+    return Model(n, m, x, v, rank, num, q, wide)
 
 
 def add_cell_rank(m, num, bounds, cell, name):
@@ -194,3 +195,58 @@ def add_cell_rank(m, num, bounds, cell, name):
         if (rr, cc) != cell and bounds[rr][cc][0] < ceiling
     ]
     return add_rank(m, others, num[r][c], name, hi=len(num) * len(num[0]))
+
+
+def add_tie_pair(m, num_a, num_b, wide_a, wide_b, name):
+    """A literal that, when true, makes two interior cells a 7-digit tie (#601).
+
+    `wide_a` and `wide_b` are the four width literals of each cell's windows,
+    in reading order. The numbers are equal and 7 digits wide, so exactly one
+    window per cell has a one-digit rank; the rank lists differ exactly when
+    that window sits in a different slot, which is "no slot is narrow in both".
+    """
+    p = m.NewBoolVar(name)
+    m.Add(num_a == num_b).OnlyEnforceIf(p)
+    m.Add(sum(wide_a) == 3).OnlyEnforceIf(p)
+    m.Add(sum(wide_b) == 3).OnlyEnforceIf(p)
+    for a, b in zip(wide_a, wide_b, strict=True):
+        m.AddBoolOr([a, b, p.Not()])
+    return p
+
+
+def sees(n, a, b):
+    """Two distinct cells of an n x n grid share a row, a column or a box."""
+    box = int(n**0.5)
+    return a != b and (
+        a[0] == b[0]
+        or a[1] == b[1]
+        or (a[0] // box, a[1] // box) == (b[0] // box, b[1] // box)
+    )
+
+
+def add_seeing_tie(q):
+    """Require a 7-digit tie between two interior cells that see each other.
+
+    One `add_tie_pair` literal per unordered pair of interior cells (rows and
+    columns 1..n-2) in one row, column or box, and at least one of them true.
+    Returns the pair literals keyed by the two cells in reading order.
+    """
+    n = q.n
+    interior = [(r, c) for r in range(1, n - 1) for c in range(1, n - 1)]
+    pairs = {}
+    for i, a in enumerate(interior):
+        for b in interior[i + 1 :]:
+            if not sees(n, a, b):
+                continue
+            pairs[(a, b)] = add_tie_pair(
+                q.m,
+                q.num[a[0]][a[1]],
+                q.num[b[0]][b[1]],
+                *(
+                    [q.wide[wr][wc] for wr, wc in windows_of(n, *cell)]
+                    for cell in (a, b)
+                ),
+                f"tie{a[0]}{a[1]}_{b[0]}{b[1]}",
+            )
+    q.m.AddBoolOr(list(pairs.values()))
+    return pairs

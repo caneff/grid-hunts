@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import checker
 import model
 import oracle
-from grids import random_sudoku
+from grids import TIE_WITNESS, random_sudoku
 
 from examples._shared import cpsat
 
@@ -199,5 +199,130 @@ assert solver.Solve(qm.m) in cpsat.SOLVED
 assert checker._extract(solver, qm, [(0, 4)]).grid == grid
 for bad in ("rank00", "num44", "q04"):
     assert refuses(checker._extract, Stub(solver, bad), qm, [(0, 4)]), bad
+
+
+# The tie hunt (#601): on a run fixed to the witness grid the reported pair is
+# the oracle's, and it is flagged when a tied cell shares a window with a
+# clued cell (r2c4..r2c6 share one with r1c5). A grid without a tie has no
+# answer under the constraint.
+def pinned(g, cell_clues):
+    digits = {(r, c): g[r][c] for r in range(9) for c in range(9)}
+    return checker.Opener(9, {}, cell_clues, {}, digits)
+
+
+w_ranks = oracle.window_ranks(TIE_WITNESS)
+w_cranks = oracle.cell_ranks(oracle.cell_numbers(w_ranks))
+report = checker.run(
+    pinned(TIE_WITNESS, {(8, 8): w_cranks[8][8]}),
+    corner=None,
+    hypotheses=True,
+    count=2,
+    workers=1,
+    timeout=60,
+    tie=True,
+)
+assert report.status == "unique", report.status
+(sol,) = report.solutions
+assert sol.tie == oracle.seven_digit_ties(w_ranks)[0]
+assert sol.tie_touches == []
+assert "tie: r4c6 2|25|12|46 = r5c4 22|51|24|6, number 2251246, QQRR 39" in (
+    checker.render_solution(sol, 1)
+)
+# r4c6 reads the window with top-left r3c5, which r3c5 itself also reads.
+report = checker.run(
+    pinned(TIE_WITNESS, {(2, 4): w_cranks[2][4]}),
+    corner=None,
+    hypotheses=True,
+    count=1,
+    workers=1,
+    timeout=60,
+    tie=True,
+)
+assert report.solutions[0].tie_touches == [(2, 4)]
+assert "touches the QQRR cage at r3c5" in checker.render_solution(
+    report.solutions[0], 1
+)
+report = checker.run(
+    fixed, corner=None, hypotheses=True, count=2, workers=1, timeout=60, tie=True
+)
+assert report.status == "infeasible", report.status
+
+# The oracle recheck of the pair is live: a model pair literal the oracle
+# does not confirm is refused, not reported.
+qt = model.build(9)
+pairs = model.add_seeing_tie(qt)
+for r in range(9):
+    for c in range(9):
+        qt.m.Add(qt.x[r][c] == TIE_WITNESS[r][c])
+solver = cpsat.solver(30)
+assert solver.Solve(qt.m) in cpsat.SOLVED
+assert checker._extract(solver, qt, [], pairs).tie[:2] == ((3, 5), (4, 3))
+
+
+class Lying:
+    def __init__(self, s, pairs):
+        self.s, self.names = s, {p.Name(): k for k, p in pairs.items()}
+
+    def Value(self, v):
+        key = self.names.get(v.Name())
+        if key is not None:
+            return int(key == ((1, 1), (1, 2)))
+        return self.s.Value(v)
+
+
+assert refuses(checker._extract, Lying(solver, pairs), qt, [], pairs, saying="tie")
+# `_extract` fills the whole tie report, the cage flag included.
+sol = checker._extract(solver, qt, [], pairs, clued=[(2, 4), (8, 8)])
+assert sol.tie_touches == [(2, 4)]
+
+# The recheck is on the path `run` takes: an oracle that finds no tie refuses
+# the model's pair there too.
+real = checker.oracle.seven_digit_ties
+checker.oracle.seven_digit_ties = lambda ranks: []
+try:
+    assert refuses(
+        checker.run,
+        pinned(TIE_WITNESS, {}),
+        corner=None,
+        hypotheses=True,
+        count=1,
+        workers=1,
+        timeout=60,
+        tie=True,
+        saying="tie",
+    )
+finally:
+    checker.oracle.seven_digit_ties = real
+
+# The verdict line says the tie constraint was on: "infeasible" under it
+# means no tie, not a dead opener.
+text = checker.render(
+    checker.run(
+        fixed, corner=None, hypotheses=True, count=2, workers=1, timeout=60, tie=True
+    )
+)
+assert text.startswith("infeasible:") and "tie=on" in text, text
+assert "tie=off" in checker.render(
+    checker.run(fixed, corner=None, hypotheses=True, count=2, workers=1, timeout=60)
+)
+
+# The CLI hands --tie to the run, and leaves it off without the flag.
+import qqrr_cpsat
+
+seen = []
+real_run = checker.run
+checker.run = lambda op, **kw: (
+    seen.append(kw["tie"]),
+    real_run(op, **{**kw, "timeout": 0}),
+)[1]
+try:
+    for argv in (
+        ["--tie", "--count", "1", "--workers", "1"],
+        ["--count", "1", "--workers", "1"],
+    ):
+        qqrr_cpsat.main(argv)
+finally:
+    checker.run = real_run
+assert seen == [True, False], seen
 
 print("ok test_checker")

@@ -6,8 +6,9 @@ uncircled one a hypothesis, an entered digit a hypothesis, the cage a clue.
 `run` builds the model for one corner and one hypothesis setting, then
 solves, forbids and solves again up to `count` times; every grid it returns
 has been re-ranked by `oracle.py` and matched against the model's own rank
-variables. `render_solution` is a grid with all three tables; `render` is the
-one-line verdict.
+variables. With `tie` it also requires the 7-digit tie of #601 and reports
+the pair, rechecked against `oracle.seven_digit_ties`. `render_solution` is a
+grid with all three tables; `render` is the one-line verdict.
 """
 
 import json
@@ -46,6 +47,8 @@ class Solution:
     window_ranks: list
     cell_numbers: list
     cell_ranks: list
+    tie: tuple | None = None  # an `oracle.seven_digit_ties` entry, on a tie run
+    tie_touches: list | None = None  # clued cells sharing a window with a tied cell
 
 
 @dataclass
@@ -57,6 +60,7 @@ class Report:
     hypotheses: bool
     count: int
     note: str = ""
+    tie: bool = False
 
 
 def parse_band(text, top):
@@ -112,13 +116,16 @@ def load_opener(path):
     return Opener(n, window_clues, cell_clues, window_hypotheses, digit_hypotheses)
 
 
-def run(op, *, corner, hypotheses, count, workers, timeout, on_solution=None):
+def run(
+    op, *, corner, hypotheses, count, workers, timeout, on_solution=None, tie=False
+):
     """Solve the opener under one corner pin and one hypothesis setting.
 
     `corner` is a CORNERS key or None. With `hypotheses` the entered digits
     and uncircled marks are fixed; without it they are solution hints. Stops
     at `count` solutions, or when CP-SAT proves there is no next one, or when
-    `timeout` seconds have elapsed across the whole loop.
+    `timeout` seconds have elapsed across the whole loop. With `tie`, every
+    grid must hold the 7-digit tie (`model.add_seeing_tie`).
     """
     if count < 1:
         raise ValueError(f"count must be at least 1, got {count}")
@@ -136,6 +143,7 @@ def run(op, *, corner, hypotheses, count, workers, timeout, on_solution=None):
             ranked.append(pinned)
     q = model.build(n, ranked_cells=ranked)
     m = q.m
+    pairs = model.add_seeing_tie(q) if tie else None
     for (wr, wc), (lo, hi) in op.window_clues.items():
         m.AddLinearConstraint(q.rank[wr][wc], lo, hi)
         # Pre-prune the top-left digit from the leading-digit band (speed item 5).
@@ -180,7 +188,7 @@ def run(op, *, corner, hypotheses, count, workers, timeout, on_solution=None):
             break
         if result not in cpsat.SOLVED:
             raise RuntimeError(f"CP-SAT returned {s.StatusName(result)}; no verdict")
-        sol = _extract(s, q, ranked)
+        sol = _extract(s, q, ranked, pairs, op.cell_clues)
         solutions.append(sol)
         if on_solution:
             on_solution(sol, len(solutions))
@@ -200,12 +208,24 @@ def run(op, *, corner, hypotheses, count, workers, timeout, on_solution=None):
     elif status == "timeout":
         note = f"{len(solutions)} solutions found before the {timeout:.0f}s ceiling; no verdict"
     return Report(
-        status, solutions, time.monotonic() - start, corner, hypotheses, count, note
+        status,
+        solutions,
+        time.monotonic() - start,
+        corner,
+        hypotheses,
+        count,
+        note,
+        tie,
     )
 
 
-def _extract(s, q, ranked):
-    """Read the grid back and assert the model's ranks are the oracle's."""
+def _extract(s, q, ranked, pairs=None, clued=()):
+    """Read the grid back and assert the model's ranks are the oracle's.
+
+    With `pairs` (from `model.add_seeing_tie`), the first pair the model set
+    true must be one the oracle finds; that entry is the solution's `tie`, and
+    `tie_touches` lists the `clued` cells sharing a window with it.
+    """
     n = q.n
     grid = [[s.Value(q.x[r][c]) for c in range(n)] for r in range(n)]
     ranks, numbers, cranks = oracle.rank_grid(grid)
@@ -225,7 +245,26 @@ def _extract(s, q, ranked):
             raise AssertionError(
                 f"model cell rank at {(r, c)} is {v}, oracle says {cranks[r][c]}"
             )
-    return Solution(grid, ranks, numbers, cranks)
+    tie = touches = None
+    if pairs is not None:
+        chosen = next(k for k, p in pairs.items() if s.Value(p))
+        tie = next((t for t in oracle.seven_digit_ties(ranks) if t[:2] == chosen), None)
+        if tie is None:
+            raise AssertionError(
+                f"model tie pair {chosen} is not a tie the oracle finds"
+            )
+        touches = _touching(n, tie, clued)
+    return Solution(grid, ranks, numbers, cranks, tie, touches)
+
+
+def _touching(n, tie, clued):
+    """The clued cells that share a window with either cell of the tie."""
+    wins = {w for cell in tie[:2] for w in model.windows_of(n, *cell)}
+    return [cell for cell in clued if wins & set(model.windows_of(n, *cell))]
+
+
+def _cell(rc):
+    return f"r{rc[0] + 1}c{rc[1] + 1}"
 
 
 def _table(rows, width):
@@ -233,9 +272,21 @@ def _table(rows, width):
 
 
 def render_solution(sol, index):
+    head = [f"solution {index}"]
+    if sol.tie:
+        a, b, number, la, lb = sol.tie
+        line = (
+            f"tie: {_cell(a)} {'|'.join(map(str, la))} = {_cell(b)} {'|'.join(map(str, lb))}, "
+            f"number {number}, QQRR {sol.cell_ranks[a[0]][a[1]]}"
+        )
+        if sol.tie_touches:
+            line += " -- touches the QQRR cage at " + ", ".join(
+                map(_cell, sol.tie_touches)
+            )
+        head.append(line)
     return "\n".join(
         [
-            f"solution {index}",
+            *head,
             _table(sol.grid, 1),
             "window ranks (by top-left cell)",
             _table(sol.window_ranks, 2),
@@ -251,6 +302,6 @@ def render(report):
     """The one-line verdict."""
     head = (
         f"{report.status}: corner={report.corner or 'none'} hypotheses={'on' if report.hypotheses else 'off'} "
-        f"count<={report.count} {report.seconds:.1f}s"
+        f"tie={'on' if report.tie else 'off'} count<={report.count} {report.seconds:.1f}s"
     )
     return head + (f" -- {report.note}" if report.note else "")

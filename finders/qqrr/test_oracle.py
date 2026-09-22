@@ -13,6 +13,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import oracle
+from grids import TIE_WITNESS, parse
+
+# The first tie-sample preset in docs/research/2026-09-22-qqrr-explorer.html.
+TIE_SAMPLE_TR7 = parse(
+    "365741298/947286513/128395467/216938754/483517629/579462831/651873942/734629185/892154376"
+)
 
 GRID = [
     [1, 2, 1, 2],
@@ -71,5 +77,37 @@ assert oracle.windows_of(9, 4, 4) == [(3, 3), (3, 4), (4, 3), (4, 4)]
 
 # SQL RANK on its own: ties share the lower rank and the next rank is skipped.
 assert oracle.sql_rank([30, 10, 20, 10]) == [4, 1, 3, 1]
+
+# The 7-digit tie (#601), read off the witness by hand: r4c6 concatenates
+# 2|25|12|46 and r5c4 concatenates 22|51|24|6, both 2251246, one box.
+assert oracle.seven_digit_ties(oracle.window_ranks(TIE_WITNESS)) == [
+    ((3, 5), (4, 3), 2251246, [2, 25, 12, 46], [22, 51, 24, 6])
+]
+# The tie-sample grids' only tie is 18 = 1|8 in column 1, an edge cell: no hit.
+assert oracle.seven_digit_ties(oracle.window_ranks(TIE_SAMPLE_TR7)) == []
+
+
+# Near misses, planted on a rank table whose every rank is two digits wide,
+# so no interior number ties until a plant makes one. r5c5 reads the windows
+# with top-left cells r4c4, r4c5, r5c4, r5c5; r5c7 and r7c7 read their own four.
+def planted(plants):
+    table = [[10 + (8 * r + c) % 55 for c in range(8)] for r in range(8)]
+    for (r, c), ranks in plants.items():
+        for (wr, wc), rank in zip(oracle.windows_of(9, r, c), ranks, strict=True):
+            table[wr][wc] = rank
+    return oracle.seven_digit_ties(table)
+
+
+assert planted({}) == []
+# 1|23|45|61 and 12|3|45|61 in one row: the tie.
+assert planted({(4, 4): [1, 23, 45, 61], (4, 6): [12, 3, 45, 61]}) == [
+    ((4, 4), (4, 6), 1234561, [1, 23, 45, 61], [12, 3, 45, 61])
+]
+# The same number in cells that share no row, column or box.
+assert planted({(4, 4): [1, 23, 45, 61], (6, 6): [12, 3, 45, 61]}) == []
+# The same rank list twice: equal numbers, no coincidence.
+assert planted({(4, 4): [1, 23, 45, 61], (4, 6): [1, 23, 45, 61]}) == []
+# A coincidence six digits long.
+assert planted({(4, 4): [1, 2, 34, 56], (4, 6): [12, 3, 4, 56]}) == []
 
 print("ok test_oracle")

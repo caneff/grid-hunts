@@ -77,3 +77,37 @@ def rank_grid(grid):
     ranks = window_ranks(grid)
     numbers = cell_numbers(ranks)
     return ranks, numbers, cell_ranks(numbers)
+
+
+def seven_digit_ties(ranks):
+    """Pairs of interior cells that see each other, whose cell numbers are
+    equal and 7 digits long and whose window-rank lists differ (#601).
+
+    `ranks` is a window-rank table (`window_ranks`). Each entry is (a, b,
+    number, ranks of a, ranks of b), cells in reading order; the empty list
+    when the table gives none.
+    """
+    n = len(ranks) + 1
+    numbers = cell_numbers(ranks)
+    interior = [(r, c) for r in range(1, n - 1) for c in range(1, n - 1)]
+    box = int(n**0.5)
+    out = []
+    for i, a in enumerate(interior):
+        for b in interior[i + 1 :]:
+            same_house = (
+                a[0] == b[0]
+                or a[1] == b[1]
+                or (a[0] // box, a[1] // box) == (b[0] // box, b[1] // box)
+            )
+            number = numbers[a[0]][a[1]]
+            lists = [
+                [ranks[wr][wc] for wr, wc in windows_of(n, *cell)] for cell in (a, b)
+            ]
+            if (
+                same_house
+                and number == numbers[b[0]][b[1]]
+                and len(str(number)) == 7
+                and lists[0] != lists[1]
+            ):
+                out.append((a, b, number, *lists))
+    return out
