@@ -105,6 +105,7 @@ tr.tie td{color:var(--clue)}
 <script>
 const N=9, W=N-1;
 const PRESETS=[
+["33 at r5c1, no bands, r4c1 < 8 · 7-digit tie r7c2 = r7c5 (4352517, QQRR 45) · bl","591236748/642178935/378945612/764351829/283794561/159682473/436819257/915427386/827563194","bl","4,0",{"5,5":"10"}],
 ["33 at r5c1, no digits · 7-digit tie r7c2 = r7c8 (3241454, QQRR 43) · br #1","591247638/672183954/438695127/865934271/927516483/143872569/284369715/716458392/359721846","br","4,0"],
 ["33 at r5c1, no digits · 7-digit tie r5c2 = r8c2 (5411233, QQRR 46) · br #2","781235469/692184735/534769281/825973614/413856972/976412358/169527843/257348196/348691527","br","4,0"],
 ["tie sample · QQRR 5 top-right · r4c1 = 18 ties r1c1 · tr #7","365741298/947286513/128395467/216938754/483517629/579462831/651873942/734629185/892154376","tr"],
@@ -122,7 +123,8 @@ const PRESETS=[
 ["hypotheses off · QQRR 5 bottom-right · #1","653749128/974281563/128635749/215978436/487356912/396412857/542893671/739164285/861527394","br"],
 ["hypotheses off · QQRR 5 bottom-right · #2","653749128/974281563/128635749/215978436/387456912/496312857/542893671/739164285/861527394","br"],
 ];
-const CLUES={"5,5":"10","3,3":"58+","1,4":"51–56"};  // window top-left -> clue
+const CLUES0={"5,5":"10","3,3":"58+","1,4":"51–56"};  // window top-left -> clue (the opener)
+let CLUES=CLUES0;  // a preset may carry its own clue map as a 5th field
 const MARKS={"2,1":"9","3,0":"8","2,0":"1"};         // uncircled marks
 const ENTERED={"0,3":7,"1,0":9,"1,3":2,"1,4":8,"2,0":1,"2,1":2,"2,2":8,"3,0":2,"3,1":1,"3,3":9,"5,5":2,"5,6":8,"8,0":8};
 const CORNER={tl:[0,0],tr:[0,8],bl:[8,0],br:[8,8]};
@@ -251,15 +253,15 @@ function renderTies(){const box=document.getElementById("ties");
   box.innerHTML=A.ties.map(t=>`<div style="margin-bottom:6px"><span class="chip tie" data-r="${t.a[0]}" data-c="${t.a[1]}">${fmt(...t.a)} ${t.la}</span>=<span class="chip tie" data-r="${t.b[0]}" data-c="${t.b[1]}">${fmt(...t.b)} ${t.lb}</span> <span class="k">number ${t.n}, both QQRR <b style="color:var(--tie)">${t.k}</b>, ${t.kind}</span></div>`).join("");
   box.querySelectorAll(".chip").forEach(ch=>ch.addEventListener("click",()=>select({type:"cell",r:+ch.dataset.r,c:+ch.dataset.c})))}
 function select(s){sel=s;draw();renderDetail();renderTables()}
-function load(g,cn,cg){grid=g;corner=cn;cage=cg||"0,4";A=analyse(grid);sel=null;draw();renderDetail();renderTables();renderTies();document.getElementById("gridText").value=grid.map(r=>r.join(" ")).join("\n")}
+function load(g,cn,cg,cl){grid=g;corner=cn;cage=cg||"0,4";CLUES=cl||CLUES0;A=analyse(grid);sel=null;draw();renderDetail();renderTables();renderTies();document.getElementById("gridText").value=grid.map(r=>r.join(" ")).join("\n")}
 
 const preset=document.getElementById("preset");
 PRESETS.forEach((p,i)=>{const o=document.createElement("option");o.value=i;o.textContent=p[0];preset.appendChild(o)});
-preset.addEventListener("change",()=>{const p=PRESETS[preset.value];load(parseGrid(p[1]),p[2],p[3])});
+preset.addEventListener("change",()=>{const p=PRESETS[preset.value];load(parseGrid(p[1]),p[2],p[3],p[4])});
 document.getElementById("apply").addEventListener("click",()=>{const e=document.getElementById("err");try{load(parseGrid(document.getElementById("gridText").value),corner,cage);e.textContent=""}catch(x){e.textContent=x.message}});
 ["showQR","showQQ","showOpener","showTies"].forEach(id=>document.getElementById(id).addEventListener("change",draw));
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change",draw);
 new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
-load(parseGrid(PRESETS[0][1]),PRESETS[0][2],PRESETS[0][3]);
+load(parseGrid(PRESETS[0][1]),PRESETS[0][2],PRESETS[0][3],PRESETS[0][4]);
 select({type:"cell",r:6,c:1});
 </script>
