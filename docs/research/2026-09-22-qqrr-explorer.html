@@ -39,6 +39,7 @@ button:hover{border-color:var(--ink)}
 button:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--win);outline-offset:1px}
 .row{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:8px}
 .row label{display:inline-flex;align-items:center;gap:6px;margin:0;color:var(--ink)}
+.filters select{width:auto;font-size:13px;padding:4px 6px}
 .detail{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:14px}
 .detail .big{font-size:26px;font-weight:600;margin:2px 0 6px}
 .detail .k{color:var(--muted);font-family:var(--sans);font-size:13px}
@@ -82,6 +83,15 @@ tr.tie td{color:var(--clue)}
       <h2>Grid</h2>
       <label for="preset">Found solution</label>
       <select id="preset"></select>
+      <label style="margin-top:6px">Filter</label>
+      <div class="row filters" style="margin-top:0">
+        <select id="fCage"><option value="">any cage</option><option value="4,0">33 at r5c1</option><option value="0,4">33 at r1c5</option></select>
+        <select id="fTen"><option value="">any QR 10 window</option><option value="5,5">QR 10 at r6c6</option><option value="5,6">QR 10 at r6c7</option><option value="6,5">QR 10 at r7c6</option><option value="6,6">QR 10 at r7c7</option></select>
+        <select id="fCorner"><option value="">any corner</option><option value="tl">tl</option><option value="tr">tr</option><option value="bl">bl</option><option value="br">br</option></select>
+        <select id="fQ34"><option value="">34–36: any</option><option value="y">has a 34–36 cell</option><option value="n">no 34–36 cell</option></select>
+        <select id="fTie"><option value="">tie: any</option><option value="row">row or column</option><option value="box">box only</option></select>
+        <span id="fCount" style="font-size:13px;color:var(--muted)"></span>
+      </div>
       <label for="sortBy" style="margin-top:6px">Order</label>
       <select id="sortBy"><option value="found">as found, newest first</option><option value="ten">by the QR 10 window's value</option><option value="tie">by the tied number</option><option value="q34">34–36 grids first</option></select>
       <div class="row">
@@ -329,14 +339,21 @@ const preset=document.getElementById("preset");
 // Per preset: the four-digit value of the QR-10 window (the preset's clue map names it) and the tied number.
 const PINFO=PRESETS.map(p=>{const g=parseGrid(p[1]);const k=Object.keys(p[4]||CLUES0).find(k=>(p[4]||CLUES0)[k]==="10");const [r,c]=k.split(",").map(Number);
   const ten=Number(""+g[r][c]+g[r][c+1]+g[r+1][c]+g[r+1][c+1]);const m=p[0].match(/\((\d{7})/);
-  const q34=q34Cells(analyse(g)).map(([a,b])=>"r"+(a+1)+"c"+(b+1));return {ten,tie:m?Number(m[1]):0,q34}});
-function fillPresets(){const by=document.getElementById("sortBy").value;const idx=PRESETS.map((_,i)=>i);
+  const q34=q34Cells(analyse(g)).map(([a,b])=>"r"+(a+1)+"c"+(b+1));
+  return {ten,tie:m?Number(m[1]):0,q34,cage:p[3]||"0,4",win:k,corner:p[2]||"",box:/box only/.test(p[0])}});
+const FILTERS=["fCage","fTen","fCorner","fQ34","fTie"];
+function keep(i){const f=Object.fromEntries(FILTERS.map(id=>[id,document.getElementById(id).value])),x=PINFO[i];
+  return (!f.fCage||x.cage===f.fCage)&&(!f.fTen||x.win===f.fTen)&&(!f.fCorner||x.corner===f.fCorner)
+    &&(!f.fQ34||(f.fQ34==="y")===(x.q34.length>0))&&(!f.fTie||(f.fTie==="box")===x.box)}
+function fillPresets(){const by=document.getElementById("sortBy").value;const idx=PRESETS.map((_,i)=>i).filter(keep);
+  document.getElementById("fCount").textContent=idx.length+" of "+PRESETS.length;
   if(by==="ten")idx.sort((a,b)=>PINFO[a].ten-PINFO[b].ten);else if(by==="tie")idx.sort((a,b)=>PINFO[a].tie-PINFO[b].tie);else if(by==="q34")idx.sort((a,b)=>(PINFO[b].q34.length>0)-(PINFO[a].q34.length>0));
   const cur=preset.value;preset.innerHTML="";
   idx.forEach(i=>{const o=document.createElement("option");o.value=i;o.textContent=(by==="ten"?"QR 10 = "+PINFO[i].ten+" · ":"")+PRESETS[i][0]+(PINFO[i].q34.length?" · 34–36 at "+PINFO[i].q34.join(", "):"");preset.appendChild(o)});
-  if(cur!=="")preset.value=cur}
+  if(cur!==""&&idx.includes(+cur))preset.value=cur;else if(idx.length){preset.value=idx[0];preset.dispatchEvent(new Event("change"))}}
 fillPresets();
 document.getElementById("sortBy").addEventListener("change",fillPresets);
+FILTERS.forEach(id=>document.getElementById(id).addEventListener("change",fillPresets));
 preset.addEventListener("change",()=>{const p=PRESETS[preset.value];load(parseGrid(p[1]),p[2],p[3],p[4])});
 document.getElementById("apply").addEventListener("click",()=>{const e=document.getElementById("err");try{load(parseGrid(document.getElementById("gridText").value),corner,cage);e.textContent=""}catch(x){e.textContent=x.message}});
 ["showQR","showQQ","showOpener","showTies","showBands","showQ34"].forEach(id=>document.getElementById(id).addEventListener("change",draw));
