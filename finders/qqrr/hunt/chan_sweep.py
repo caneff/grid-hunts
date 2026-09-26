@@ -11,10 +11,11 @@ import re
 import sys
 import time
 from multiprocessing import Pool
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+import hunt_common
+from hunt_common import HUNTS
+
+# isort: split
 import checker
 import model
 import oracle
@@ -22,54 +23,54 @@ from ortools.sat.python import cp_model
 
 from examples._shared import cpsat
 
-corner, procs, timeout, logp, hunt = (
-    sys.argv[1],
-    int(sys.argv[2]),
-    float(sys.argv[3]),
-    sys.argv[4],
-    sys.argv[5],
-)
-workers = int(sys.argv[6]) if len(sys.argv) > 6 and sys.argv[6].isdigit() else 1
-only = None
-FLAGS = {a for a in sys.argv[6:] if a in ("nohint", "tables", "lin2")}
-TEN = (5, 5)
-for a in sys.argv[6:]:
-    if a.startswith("ten="):
-        m_ = re.match(r"ten=r(\d)c(\d)", a)
-        TEN = (int(m_[1]) - 1, int(m_[2]) - 1)
-for a in sys.argv[6:]:
-    if a.startswith("from="):
-        # the pairs whose last result in a pair_sweep.py log is a timeout
-        last = {}
-        for line in open(a[5:]):
-            m_ = re.match(r"(HIT )?pair r(\d)c(\d)=r(\d)c(\d) (\w+)", line)
-            if m_:
-                last[
-                    ((int(m_[2]) - 1, int(m_[3]) - 1), (int(m_[4]) - 1, int(m_[5]) - 1))
-                ] = "HIT" if m_[1] else m_[6]
-        only = {p for p, st in last.items() if st == "timeout"}
-    if a.startswith("pairs="):
-        only = set()
-        for t in a[6:].split(","):
-            m_ = re.match(r"r(\d)c(\d)=r(\d)c(\d)", t)
-            only.add(
-                ((int(m_[1]) - 1, int(m_[2]) - 1), (int(m_[3]) - 1, int(m_[4]) - 1))
-            )
 n = 9
-HUNTS = {
-    "r5c1": (
-        (4, 0),
-        (3, 0),
-        "591247638/672183954/438695127/865934271/927516483/143872569/284369715/716458392/359721846",
-    ),
-    "r1c5": (
-        (0, 4),
-        (0, 3),
-        "356791428/974286531/128534967/215948673/483617295/697352814/562873149/749165382/831429756",
-    ),
-}
-CAGE, TARGET, SEED = HUNTS[hunt]
-PIN = checker.CORNERS[corner]
+
+
+def configure(argv):
+    """Set the run's parameters from the command-line arguments (no program name)."""
+    global corner, procs, timeout, logp, hunt, workers, only, FLAGS, TEN
+    global CAGE, TARGET, SEED, PIN
+    corner, procs, timeout, logp, hunt = (
+        argv[0],
+        int(argv[1]),
+        float(argv[2]),
+        argv[3],
+        argv[4],
+    )
+    workers = int(argv[5]) if len(argv) > 5 and argv[5].isdigit() else 1
+    only = None
+    FLAGS = {a for a in argv[5:] if a in ("nohint", "tables", "lin2")}
+    TEN = (5, 5)
+    for a in argv[5:]:
+        if a.startswith("ten="):
+            m_ = re.match(r"ten=r(\d)c(\d)", a)
+            TEN = (int(m_[1]) - 1, int(m_[2]) - 1)
+    for a in argv[5:]:
+        if a.startswith("from="):
+            # the pairs whose last result in a pair_sweep.py log is a timeout
+            last = {}
+            for line in open(a[5:]):
+                m_ = re.match(r"(HIT )?pair r(\d)c(\d)=r(\d)c(\d) (\w+)", line)
+                if m_:
+                    last[
+                        (
+                            (int(m_[2]) - 1, int(m_[3]) - 1),
+                            (int(m_[4]) - 1, int(m_[5]) - 1),
+                        )
+                    ] = "HIT" if m_[1] else m_[6]
+            only = {p for p, st in last.items() if st == "timeout"}
+        if a.startswith("pairs="):
+            only = set()
+            for t in a[6:].split(","):
+                m_ = re.match(r"r(\d)c(\d)=r(\d)c(\d)", t)
+                only.add(
+                    (
+                        (int(m_[1]) - 1, int(m_[2]) - 1),
+                        (int(m_[3]) - 1, int(m_[4]) - 1),
+                    )
+                )
+    CAGE, TARGET, SEED = HUNTS[hunt]
+    PIN = checker.CORNERS[corner]
 
 
 def build(pair, ia, ib):
@@ -123,7 +124,7 @@ def build(pair, ia, ib):
     a, b = pair
     sa, sb = seq(a, ia), seq(b, ib)
     assert len(sa) == len(sb) == 7
-    for da, db in zip(sa, sb):
+    for da, db in zip(sa, sb, strict=True):
         m.Add(da == db)
     m.Add(
         q.num[a[0]][a[1]] == q.num[b[0]][b[1]]
@@ -150,7 +151,7 @@ def solve(task):
     if res not in cpsat.SOLVED:
         return f"pair {tag} Error {s.StatusName(res)}"
     grid = [[s.Value(q.x[r][c]) for c in range(n)] for r in range(n)]
-    ranks, nums, cr = oracle.rank_grid(grid)
+    ranks, _nums, cr = oracle.rank_grid(grid)
     assert ranks == [[s.Value(v) for v in row] for row in q.rank]
     ties = oracle.seven_digit_ties(ranks)
     assert any({ta, tb} == {a, b} for ta, tb, *_ in ties), (
@@ -158,17 +159,16 @@ def solve(task):
     )
     lines = [f"HIT pair {tag} {dt:.1f}s"]
     for ta, tb, num, la, lb in ties:
-        lines.append(
-            f"  tie r{ta[0] + 1}c{ta[1] + 1} {'|'.join(map(str, la))} = r{tb[0] + 1}c{tb[1] + 1} {'|'.join(map(str, lb))}, number {num}, QQRR {cr[ta[0]][ta[1]]}"
-        )
+        lines.append(hunt_common.tie_line(ta, tb, num, la, lb, cr[ta[0]][ta[1]]))
     lines.append(
         f"  QQRR cage {cr[CAGE[0]][CAGE[1]]} corner {cr[PIN[0]][PIN[1]]} QR r6c6 {ranks[TEN[0]][TEN[1]]} bounded cell {grid[TARGET[0]][TARGET[1]]}"
     )
-    lines.append("  grid " + "/".join("".join(map(str, r)) for r in grid))
+    lines.append(hunt_common.grid_line(grid))
     return "\n".join(lines)
 
 
 if __name__ == "__main__":
+    configure(sys.argv[1:])
     interior = [(r, c) for r in range(1, n - 1) for c in range(1, n - 1)]
     pairs = [
         (a, b)
@@ -210,7 +210,7 @@ if __name__ == "__main__":
     )
     start = time.monotonic()
     counts = {"infeasible": 0, "timeout": 0, "HIT": 0}
-    with Pool(procs) as pool:
+    with Pool(procs, initializer=configure, initargs=(sys.argv[1:],)) as pool:
         for line in pool.imap_unordered(solve, tasks):
             out(line)
             for k in counts:

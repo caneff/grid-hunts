@@ -9,10 +9,11 @@ last logged result is a timeout; otherwise pairs already logged are skipped."""
 import sys
 import time
 from multiprocessing import Pool
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+import hunt_common
+from hunt_common import HUNTS
+
+# isort: split
 import checker
 import model
 import oracle
@@ -31,21 +32,6 @@ workers = int(sys.argv[6]) if len(sys.argv) > 6 else 1
 retry = len(sys.argv) > 7 and sys.argv[7] == "retry"
 n = 9
 TEN = (5, 5)
-HUNTS = {
-    # cage cell, bounded cell, seed grid (a found grid satisfying all but the tie)
-    # r5c1 seed: the first br grid found with the bands kept; everything but r4c1 <= 7 holds.
-    "r5c1": (
-        (4, 0),
-        (3, 0),
-        "591247638/672183954/438695127/865934271/927516483/143872569/284369715/716458392/359721846",
-    ),
-    # r1c5 seed: #593 rerun grid 1 (hypotheses on, br): 33 at r1c5, QR 10, r1c4 = 7.
-    "r1c5": (
-        (0, 4),
-        (0, 3),
-        "356791428/974286531/128534967/215948673/483617295/697352814/562873149/749165382/831429756",
-    ),
-}
 CAGE, TARGET, SEED = HUNTS[hunt]
 PIN = checker.CORNERS[corner]
 SEEDS = [SEED]
@@ -85,17 +71,15 @@ def solve_pair(pair):
     if res not in cpsat.SOLVED:
         return f"pair {tag} Error {s.StatusName(res)}"
     grid = [[s.Value(q.x[r][c]) for c in range(n)] for r in range(n)]
-    ranks, nums, cr = oracle.rank_grid(grid)
+    ranks, _nums, cr = oracle.rank_grid(grid)
     assert ranks == [[s.Value(v) for v in row] for row in q.rank]
     lines = [f"HIT pair {tag} {dt:.1f}s"]
     for ta, tb, num, la, lb in oracle.seven_digit_ties(ranks):
-        lines.append(
-            f"  tie r{ta[0] + 1}c{ta[1] + 1} {'|'.join(map(str, la))} = r{tb[0] + 1}c{tb[1] + 1} {'|'.join(map(str, lb))}, number {num}, QQRR {cr[ta[0]][ta[1]]}"
-        )
+        lines.append(hunt_common.tie_line(ta, tb, num, la, lb, cr[ta[0]][ta[1]]))
     lines.append(
         f"  QQRR cage {cr[CAGE[0]][CAGE[1]]} corner {cr[PIN[0]][PIN[1]]} QR r6c6 {ranks[TEN[0]][TEN[1]]} bounded cell {grid[TARGET[0]][TARGET[1]]}"
     )
-    lines.append("  grid " + "/".join("".join(map(str, r)) for r in grid))
+    lines.append(hunt_common.grid_line(grid))
     return "\n".join(lines)
 
 

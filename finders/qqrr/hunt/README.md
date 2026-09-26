@@ -20,5 +20,8 @@ and the box rules in `AGENTS.md` before launching, and run one hunt at a time.
   `sync_presets.py [<explorer.html>]`
 - `check_3436.py` — oracle check of the 34–36 criterion over found grids.
   `check_3436.py`
-- `measure.py` — solver-settings timing on timed-out channelled tasks.
+- `hunt_common.py` — what the scripts share: the hunt table, `$HUNT_LOGS`, the q34
+  criterion, the HIT-block log lines and their parser. `import hunt_common` comes
+  first in a script and puts `finders/qqrr` and the repo root on `sys.path`.
+- `measure.py` — solver-settings timing on timed-out channelled tasks (calls `chan_sweep.configure`).
   `measure.py <log>`

@@ -5,6 +5,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import chan_sweep as cs
+
 logp = sys.argv[1]
 TASKS = [(((3, 1), (4, 2)), 3, 0), (((4, 2), (4, 4)), 0, 3), (((4, 2), (4, 5)), 0, 2)]
 CONFIGS = [
@@ -18,11 +20,7 @@ CONFIGS = [
 log = open(logp, "a")
 for name, flags, w in CONFIGS:
     for task in TASKS:
-        sys.argv = ["x", "tr", "1", "180", "/dev/null", "r5c1", str(w)] + flags
-        if "chan_sweep" in sys.modules:
-            del sys.modules["chan_sweep"]
-        import chan_sweep as cs
-
+        cs.configure(["tr", "1", "180", "/dev/null", "r5c1", str(w), *flags])
         r = cs.solve(task)
         print(f"{name:26s} {r.splitlines()[0]}", file=log, flush=True)
 print("measure done", file=log, flush=True)

@@ -10,14 +10,13 @@ flags: tables lin2 hint warm forbid-known criteria=<name,...>. `forbid-known` po
 `accept` (oracle-side filter on a found grid; a rejected grid is forbidden and the loop continues)."""
 
 import glob
-import os
 import re
 import sys
 import time
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+import hunt_common as hc
+
+# isort: split
 import checker
 import model
 import oracle
@@ -38,23 +37,7 @@ FLAGS = set(sys.argv[7:])
 m_ = re.match(r"r(\d)c(\d)", ten_s)
 TEN = (int(m_[1]) - 1, int(m_[2]) - 1)
 n = 9
-HUNTS = {
-    "r5c1": (
-        (4, 0),
-        (3, 0),
-        "591247638/672183954/438695127/865934271/927516483/143872569/284369715/716458392/359721846",
-    ),
-    "r1c5": (
-        (0, 4),
-        (0, 3),
-        "356791428/974286531/128534967/215948673/483617295/697352814/562873149/749165382/831429756",
-    ),
-}
-LOGS = Path(
-    os.environ.get(
-        "HUNT_LOGS", Path(__file__).resolve().parents[3] / ".scratch" / "place"
-    )
-)
+HUNTS, LOGS = hc.HUNTS, hc.LOGS
 CAGE, TARGET, SEED = HUNTS[hunt]
 PIN = checker.CORNERS[corner]
 log = open(logp, "a")
@@ -80,23 +63,11 @@ def earlier_hits(h=None):
     hits = []
     for p in glob.glob(str(LOGS / ("big-%s-*.log" % (h or hunt)))):
         _, _, t, c = p.rsplit("/", 1)[-1][:-4].split("-")[:4]
-        for line in open(p):
-            if line.startswith("  grid "):
-                hits.append((t, c, line.split()[1]))
+        hits += [(t, c, g) for g in hc.logged_grids(p)]
     return sorted(hits, key=lambda h: (h[0] != ten_s) + (h[1] != corner))
 
 
-def q34_zone(r, c):
-    """Top-left cells of every window sharing a cell with one of (r, c)'s four windows."""
-    return [
-        (wr, wc)
-        for wr in range(r - 2, r + 2)
-        for wc in range(c - 2, c + 2)
-        if 0 <= wr <= n - 2 and 0 <= wc <= n - 2
-    ]
-
-
-Q34_CELLS = [(r, c) for r in range(1, n - 1) for c in range(1, n - 1)]
+Q34_CELLS = hc.q34_cells(n)
 
 
 def q34_model(m, q):
@@ -115,20 +86,13 @@ def q34_model(m, q):
         b = m.NewBoolVar(f"q34_{r}{c}")
         sel.append(b)
         m.AddLinearConstraint(qq, 34, 36).OnlyEnforceIf(b)
-        for wr, wc in q34_zone(r, c):
+        for wr, wc in hc.q34_zone(n, r, c):
             m.Add(q.rank[wr][wc] != 1).OnlyEnforceIf(b)
     m.AddBoolOr(sel)
 
 
 def q34_accept(grid, ranks, nums, cr):
-    ones = {
-        (wr, wc) for wr in range(n - 1) for wc in range(n - 1) if ranks[wr][wc] == 1
-    }
-    return [
-        (r, c)
-        for r, c in Q34_CELLS
-        if 34 <= cr[r][c] <= 36 and not ones & set(q34_zone(r, c))
-    ]
+    return hc.q34_accept(ranks, cr)
 
 
 CRITERIA = {"q34": {"model": q34_model, "accept": q34_accept}}
@@ -282,13 +246,11 @@ while found < count:
         out(f"  {name}: " + " ".join(f"r{r + 1}c{c + 1}={cr[r][c]}" for r, c in w))
     out(f"HIT {found} {time.monotonic() - start:.1f}s")
     for ta, tb, num, la, lb in ties:
-        out(
-            f"  tie r{ta[0] + 1}c{ta[1] + 1} {'|'.join(map(str, la))} = r{tb[0] + 1}c{tb[1] + 1} {'|'.join(map(str, lb))}, number {num}, QQRR {cr[ta[0]][ta[1]]}"
-        )
+        out(hc.tie_line(ta, tb, num, la, lb, cr[ta[0]][ta[1]]))
     out(
         f"  QQRR cage {cr[CAGE[0]][CAGE[1]]} corner {cr[PIN[0]][PIN[1]]} QR r{TEN[0] + 1}c{TEN[1] + 1} {ranks[TEN[0]][TEN[1]]} bounded cell {grid[TARGET[0]][TARGET[1]]}"
     )
-    out("  grid " + "/".join("".join(map(str, r)) for r in grid))
+    out(hc.grid_line(grid))
     cpsat.forbid(m, cells, {rc: grid[rc[0]][rc[1]] for rc in cells}, tag=str(found))
 if status is None:
     status = "multiple"
