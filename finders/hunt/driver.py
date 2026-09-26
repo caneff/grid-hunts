@@ -15,7 +15,14 @@ renders/<seed>.png right after that seed's example is accepted; a finder
 with no `render` gets no renders/ directory at all. `--workers` (default 3,
 set on the finder before the first seed) and the 1-minute load gate
 (refuses above 24 unless `--force-load`) are #488. A resume also
-reconciles renders/ itself for a stateless finder (#522, `_reconcile_renders`).
+reconciles renders/ itself (#522, `_reconcile_renders`) and repairs a missing
+picture: by re-proposing for a stateless finder, from the examples.jsonl
+record via `candidate_from_record` for a stateful one (#538). That hook must
+return the candidate as `propose` produced it (everything `verify` and
+`render` read); the driver does not guard that, but it does restore the
+finder's state around the call. A stateful finder with a `render` but no `candidate_from_record`
+gets neither repair nor sweep -- the gap is part of the finder contract
+(protocol.py).
 
     uv run finders/hunt/toy_finder.py --out DIR --seeds START:END
     uv run finders/hunt/toy_finder.py --out DIR --seeds START:END --no-verify
@@ -436,27 +443,15 @@ def _reconcile_renders(finder, out, progress_events):
     whitespace, a leading "+") -- a stray file that only looks
     seed-numbered by `int()`'s loose grammar must not be silently swept up.
 
-    Only for a finder with no `save_state`/`load_state`, the same carve-out
-    `_repair_renders` makes and for the same reason it does: a stateless
-    finder's missing render always gets retried by `_repair_renders` on a
-    *later* resume if this one's own rerun happens to fail (#524), so
-    deleting the stray file first costs nothing even in the worst case. A
-    stateful finder gets no such retry, so deleting eagerly would bet an
-    intact picture against a rerun's render with no safety net if that bet
-    is lost (#522 correctness review, finding C1) -- left alone instead,
-    same as `_repair_renders` leaves a stateful finder's missing render.
-
-    This means a stateful finder can still hit #522's exact failure
-    sequence: reconciliation trims the unconfirmed seed's line out of
-    examples.jsonl, this carve-out leaves its PNG in place, and a second
-    kill before the rerun finishes leaves that PNG with no matching
-    example -- a deliberate, known gap, not a theoretical one (pinned by
-    the stateful test in test_hunt_resume.py). It stays open until #538
-    gives a stateful finder a state-safe render-repair path; only then can
-    this carve-out come out too, since only then does deleting eagerly stop
-    betting on a rerun with no way back.
+    Only for a finder `_can_repair_renders` accepts: deleting a stray
+    picture eagerly bets an intact one against the rerun's own render, and
+    that bet is only safe when a *later* resume's `_repair_renders` can
+    regenerate the picture if the rerun's render fails (#522 correctness
+    review, finding C1). A stateful finder with no `candidate_from_record`
+    has no such retry -- its `propose()` can't be called again -- so its
+    stray render is left alone, a documented gap (protocol.py, `render`).
     """
-    if hasattr(finder, "load_state"):
+    if not _can_repair_renders(finder):
         return
     renders_dir = out / "renders"
     if not renders_dir.is_dir():
@@ -469,7 +464,31 @@ def _reconcile_renders(finder, out, progress_events):
             png.unlink(missing_ok=True)
 
 
-def _repair_renders(finder, out, progress_lines, progress_events):
+def _can_repair_renders(finder):
+    """Whether `_repair_renders` can regenerate a missing picture (#538).
+
+    A stateless finder can: `propose()` on the seed rebuilds the candidate.
+    A stateful finder's `propose()` can have side effects state.json owns
+    (toy_stateful_finder.py increments a counter there), so it never gets
+    called again; it can be repaired only from the examples.jsonl record,
+    through its optional `candidate_from_record`, which must return the
+    candidate as `propose` produced it (protocol.py; the driver does not
+    check that) and leave the finder's state unchanged (`_repair_renders`
+    restores it regardless). Without that hook, or without `save_state`
+    to snapshot the state (fail closed), the finder's missing render
+    stays unrepaired -- part of the finder contract (protocol.py,
+    `render`)."""
+    if getattr(finder, "render", None) is None:
+        return False
+    if hasattr(finder, "load_state"):
+        return (
+            getattr(finder, "candidate_from_record", None) is not None
+            and getattr(finder, "save_state", None) is not None
+        )
+    return True
+
+
+def _repair_renders(finder, out, progress_lines, progress_events, examples_records):
     """Resume re-attempts a missing renders/<seed>.png for every
     already-accepted example (#524 Codex pass 1): a transient render
     failure (a full disk, a bug in the finder's own render() since fixed)
@@ -478,31 +497,46 @@ def _repair_renders(finder, out, progress_lines, progress_events):
     "example" -- a done seed never reruns, so nothing else would ever
     retry it.
 
-    Only for a finder with no `save_state`/`load_state`: `propose()` is the
-    only way to regenerate the seed's candidate without the record it wrote
-    (finder.record() need not be invertible), and a stateful finder's
-    `propose` can have side effects state.json owns (toy_stateful_finder.py
-    increments a counter there) -- calling it again here to repair a render
-    would double that side effect. A stateful finder's missing render stays
-    unrepaired rather than risk silently corrupting its state -- the same
-    reason `_reconcile_renders` (#522) also skips a stateful finder outright
-    rather than delete a stray render it can't safely regenerate here. #538
-    tracks giving a stateful finder a state-safe repair path; until then,
-    both carve-outs stay.
+    A stateless finder's candidate is regenerated with `propose()`. A
+    stateful finder's is rebuilt from its examples.jsonl record with
+    `candidate_from_record` (#538) -- `propose()` is never called for it.
+    The finder's state is snapshotted (a JSON round trip of `save_state()`)
+    before each hook call and restored after it, even if the hook raises,
+    so a hook that mutates state never reaches state.json (Codex gate 2).
+    That the candidate is what `propose` produced stays the hook's
+    contract, unchecked (protocol.py). The k-th "example" event pairs with
+    the k-th record: `_reconcile` leaves the two counts equal. A finder
+    `_can_repair_renders` refuses is left as it is.
     """
-    render = getattr(finder, "render", None)
-    if render is None or hasattr(finder, "load_state"):
+    if not _can_repair_renders(finder):
         return progress_lines, progress_events
+    stateful = hasattr(finder, "load_state")
+    records = iter(examples_records)
     for i, event in enumerate(progress_events):
         if event.get("outcome") != "example":
             continue
+        record = next(records)
         seed = event["seed"]
         if (out / "renders" / f"{seed}.png").exists():
             continue
-        candidate = finder.propose(random.Random(seed))
         new_event = dict(event)
         new_event.pop("render_error", None)
-        _render_example(finder, out, seed, candidate, new_event)
+        if stateful:
+            snapshot = json.loads(json.dumps(finder.save_state()))
+        try:
+            if stateful:
+                candidate = finder.candidate_from_record(record)
+            else:
+                candidate = finder.propose(random.Random(seed))
+        except Exception as e:
+            # Same rule as `_render_example`: a presentation-layer fault
+            # lands on the seed's event, it never stops the resume.
+            new_event["render_error"] = f"{type(e).__name__}: {e}"
+        else:
+            _render_example(finder, out, seed, candidate, new_event)
+        finally:
+            if stateful:
+                finder.load_state(snapshot)
         if new_event != event:
             progress_events[i] = new_event
             progress_lines[i] = json.dumps(new_event) + "\n"
@@ -777,7 +811,7 @@ def _resume(finder, argv, args, out, prior):
     _reconcile_renders(finder, out, progress_events)
 
     progress_lines, progress_events = _repair_renders(
-        finder, out, progress_lines, progress_events
+        finder, out, progress_lines, progress_events, examples_records
     )
     _truncate_to_valid(out / "progress.jsonl", progress_lines)
 
