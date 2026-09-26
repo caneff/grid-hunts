@@ -16,7 +16,7 @@ with no `render` gets no renders/ directory at all. `--workers` (default 3,
 set on the finder before the first seed) and the 1-minute load gate
 (refuses above 24 unless `--force-load`) are #488. A resume also
 reconciles renders/ itself (#522, `_reconcile_renders`) and repairs a missing
-picture: by re-proposing for a stateless finder, from the examples.jsonl
+or undecodable picture: by re-proposing for a stateless finder, from the examples.jsonl
 record via `candidate_from_record` for a stateful one (#538). That hook must
 return the candidate as `propose` produced it (everything `verify` and
 `render` read); the driver does not guard that, but it does restore the
@@ -443,7 +443,8 @@ def _reconcile_renders(finder, out, progress_events):
     whitespace, a leading "+") -- a stray file that only looks
     seed-numbered by `int()`'s loose grammar must not be silently swept up.
 
-    Only for a finder `_can_repair_renders` accepts: deleting a stray
+    The temp-file sweep (#537) runs for every finder. The stray-picture
+    deletion is only for a finder `_can_repair_renders` accepts: deleting a stray
     picture eagerly bets an intact one against the rerun's own render, and
     that bet is only safe when a *later* resume's `_repair_renders` can
     regenerate the picture if the rerun's render fails (#522 correctness
@@ -451,10 +452,15 @@ def _reconcile_renders(finder, out, progress_events):
     has no such retry -- its `propose()` can't be called again -- so its
     stray render is left alone, a documented gap (protocol.py, `render`).
     """
-    if not _can_repair_renders(finder):
-        return
     renders_dir = out / "renders"
     if not renders_dir.is_dir():
+        return
+    # A kill mid-save leaves a temp file (#537); only a name the driver
+    # itself writes is swept, never a file that merely looks like one.
+    for tmp in renders_dir.iterdir():
+        if _RENDER_TMP.fullmatch(tmp.name):
+            tmp.unlink(missing_ok=True)
+    if not _can_repair_renders(finder):
         return
     confirmed = {e["seed"] for e in progress_events if e.get("outcome") == "example"}
     for png in renders_dir.glob("*.png"):
@@ -489,7 +495,7 @@ def _can_repair_renders(finder):
 
 
 def _repair_renders(finder, out, progress_lines, progress_events, examples_records):
-    """Resume re-attempts a missing renders/<seed>.png for every
+    """Resume re-attempts a missing or undecodable renders/<seed>.png for every
     already-accepted example (#524 Codex pass 1): a transient render
     failure (a full disk, a bug in the finder's own render() since fixed)
     must not leave examples.jsonl and renders/ permanently mismatched with
@@ -517,7 +523,7 @@ def _repair_renders(finder, out, progress_lines, progress_events, examples_recor
             continue
         record = next(records)
         seed = event["seed"]
-        if (out / "renders" / f"{seed}.png").exists():
+        if _render_intact(out / "renders" / f"{seed}.png"):
             continue
         new_event = dict(event)
         new_event.pop("render_error", None)
@@ -574,9 +580,48 @@ def _render_example(finder, out, seed, candidate, event):
     try:
         renders_dir = out / "renders"
         renders_dir.mkdir(exist_ok=True)
-        render(candidate).save(renders_dir / f"{seed}.png")
+        _save_render_atomic(render(candidate), renders_dir / f"{seed}.png")
     except Exception as e:
         event["render_error"] = f"{type(e).__name__}: {e}"
+
+
+_RENDER_TMP_MARK = ".tmp-"
+_RENDER_TMP = re.compile(_SEED_STEM.pattern + re.escape(_RENDER_TMP_MARK) + r"\d+\.png")
+
+
+def _save_render_atomic(image, dest):
+    """Save to a per-render temp file beside `dest`, then `Path.replace` it
+    into place, so `dest` only ever exists complete (#537): a save that
+    dies partway (a full disk) leaves the temp file, which is removed, and
+    never a half-written picture that resume would take for a finished one.
+    The temp name ends in `.png` (the image's save infers the format from
+    it) but its stem is not a seed, so `_reconcile_renders` never reads it
+    as one."""
+    tmp = dest.with_name(f"{dest.stem}{_RENDER_TMP_MARK}{os.getpid()}.png")
+    try:
+        image.save(tmp)
+        tmp.replace(dest)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
+
+
+def _render_intact(path):
+    """Whether `path` is a complete PNG. Existence is not enough (#537): a
+    picture left truncated or damaged, whatever wrote it, must be
+    re-rendered by `_repair_renders`, not counted done."""
+    from PIL import Image
+
+    try:
+        # verify() walks the chunk stream through IEND and checks each CRC,
+        # which load() alone doesn't: a tail-truncated file can still decode.
+        with Image.open(path) as img:
+            img.verify()
+        with Image.open(path) as img:
+            img.load()
+    except Exception:
+        return False
+    return True
 
 
 def _propose_and_key(finder, seed, symmetry, no_verify=False):
