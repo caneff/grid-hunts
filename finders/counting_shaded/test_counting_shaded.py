@@ -303,3 +303,11 @@ def test_build_dir_is_a_cache_merge_cleanup_sweeps():
     # a cache-named directory (here `target`) whose own .gitignore is `*`.
     assert fastclimb.BUILD.name == "target"
     assert "*" in (fastclimb.BUILD / ".gitignore").read_text().splitlines()
+
+
+def test_build_dir_is_outside_scratch_so_a_worker_sweep_cannot_delete_it():
+    # #633: a `rm -rf .scratch` sweep must never reach this tracked anchor.
+    # Checked relative to the repo, not the absolute path: a checkout under
+    # a directory that happens to be named .scratch (e.g. a seam worktree)
+    # would otherwise fail this test for a reason the sweep can't cause.
+    assert ".scratch" not in fastclimb.BUILD.relative_to(fastclimb.REPO).parts

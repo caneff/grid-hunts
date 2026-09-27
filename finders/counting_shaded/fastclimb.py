@@ -2,7 +2,7 @@
 
     uv run finders/counting_shaded/fastclimb.py --test
 
-The .so is built on first import into the worktree's git-ignored .scratch.
+The .so is built on first import into a git-ignored `target/` beside this file.
 """
 
 import ctypes
@@ -19,8 +19,9 @@ DATA = (
 )  # notes, hits and images stayed there
 # Named `target` and holding a committed `*` .gitignore so merge-cleanup's
 # CACHE_DIRS sweeps the compiled artifact with the worktree instead of
-# refusing cleanup; see #559.
-BUILD = REPO / ".scratch" / "counting_shaded" / "target"
+# refusing cleanup; see #559. Kept outside `.scratch/` (#633), so a worker's
+# "clear .scratch/" step (`rm -rf .scratch`) can't delete this tracked anchor.
+BUILD = HERE / "target"
 SO = BUILD / "counting_shaded_fast.so"
 
 
