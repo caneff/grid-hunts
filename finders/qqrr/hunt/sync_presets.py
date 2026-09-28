@@ -27,12 +27,12 @@ for p in sorted(glob.glob(str(LOGS / "big-*-q34.log"))):
         if grid in s:
             continue
         tie = hit["ties"][0]
-        a, b = tie[0], tie[1]
+        a, b = tie.a, tie.b
         box = (int(a[1]) - 1) // 3 == (int(b[1]) - 1) // 3 and (int(a[3]) - 1) // 3 == (
             int(b[3]) - 1
         ) // 3
         boxonly = ", box only" if box and a[1] != b[1] and a[3] != b[3] else ""
-        label = f"33 at {hunt}, {BOUND[hunt][0]} < 8, QR 10 at {ten} · tie {a} = {b} ({tie[2]}, QQRR {tie[3]}{boxonly}) · {corner} #{n} · 34–36 hunt"
+        label = f"33 at {hunt}, {BOUND[hunt][0]} < 8, QR 10 at {ten} · tie {a} = {b} ({tie.number}, QQRR {tie.qqrr}{boxonly}) · {corner} #{n} · 34–36 hunt"
         new.append(
             f'["{label}","{grid}","{corner}","{BOUND[hunt][1]}",{{"{wkey}":"10"}}],'
         )

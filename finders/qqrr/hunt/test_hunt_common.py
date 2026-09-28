@@ -61,12 +61,33 @@ hits = hc.parse_hits(text)
 assert [h["grid"] for h in hits] == [G1, G2]
 assert [len(h["ties"]) for h in hits] == [1, 2]
 assert hits[1]["ties"][1] == ("r4c2", "r4c5", "7654321", "34")
+tie = hits[1]["ties"][1]
+assert (tie.a, tie.b, tie.number, tie.qqrr) == ("r4c2", "r4c5", "7654321", "34")
 assert hc.parse_hits("no hits here\n") == []
 # a log cut after a HIT line, or after HIT and one tie, parses to the complete blocks before it
 done = "HIT 1 1s\n" + TIE_A + "\n" + QQRR + "\n  grid " + G1 + "\n"
 assert [h["grid"] for h in hc.parse_hits(done + "HIT 2 2s\n")] == [G1]
 assert [h["grid"] for h in hc.parse_hits(done + "HIT 2 2s\n" + TIE_B + "\n")] == [G1]
 assert hc.parse_hits("HIT 1 1s\n") == []
+# a malformed marker line makes its block incomplete, rather than crashing or reading as whole
+BAD_TIES = [
+    TIE_A + " trailing",
+    "  tie r3c2 1|2 = r3c5",
+    "  tie r3c2 1|2 = r3c5 3|4, number x, QQRR 12",
+]
+for bad in BAD_TIES:
+    block = "HIT 2 2s\n" + bad + "\n  grid " + G2 + "\n"
+    assert [h["grid"] for h in hc.parse_hits(done + block)] == [G1], bad
+    # beside a good tie, so the block drops for the bad line and not for having no tie
+    block = "HIT 2 2s\n" + TIE_B + "\n" + bad + "\n  grid " + G2 + "\n"
+    assert [h["grid"] for h in hc.parse_hits(done + block)] == [G1], bad
+BAD_GRIDS = [G2[:-1], G2 + "/123456789", G2.replace("9", "x", 1), G2 + " extra"]
+for bad in BAD_GRIDS:
+    block = "HIT 2 2s\n" + TIE_B + "\n  grid " + bad + "\n"
+    assert [h["grid"] for h in hc.parse_hits(done + block)] == [G1], bad
+    # followed by a good grid line, so the block drops for the bad line and not for a missing grid
+    block += "  grid " + G2 + "\n"
+    assert [h["grid"] for h in hc.parse_hits(done + block)] == [G1], bad
 # logged_grids reads every grid line of a log file
 import tempfile
 
@@ -76,6 +97,11 @@ with tempfile.TemporaryDirectory() as d:
         "HIT 1 1s\n" + TIE_A + "\n  grid " + G1 + "\nHIT 2 2s\n  grid " + G2 + "\n"
     )
     assert hc.logged_grids(log) == [G1, G2]
+    # a malformed grid line is skipped, not returned as a grid
+    log.write_text(
+        "  grid " + G1[:-1] + "\n  grid " + G1 + " extra\n  grid " + G2 + "\n"
+    )
+    assert hc.logged_grids(log) == [G2]
 
 # tie_line and grid_line are what parse_hits reads back.
 grid = [[(r + c) % 9 + 1 for c in range(9)] for r in range(9)]
@@ -87,6 +113,10 @@ assert line == "  tie r3c2 1|2 = r3c5 3|4, number 1234567, QQRR 12", line
 assert hc.parse_hits("HIT 1 1s\n" + line + "\n" + hc.grid_line(grid))[0]["ties"] == [
     ("r3c2", "r3c5", "1234567", "12")
 ]
+
+# qqrr_line is the cage line every finder prints, the QR window named by its own cell.
+assert hc.qqrr_line(33, 5, (5, 5), 10, 7) == QQRR
+assert hc.qqrr_line(33, 5, (4, 4), 10, 7) == QQRR.replace("r6c6", "r5c5")
 
 # HUNTS: one table, the seed a 9x9 grid of digits.
 assert set(hc.HUNTS) == {"r5c1", "r1c5"}

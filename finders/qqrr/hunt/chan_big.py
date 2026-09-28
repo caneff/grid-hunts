@@ -280,7 +280,13 @@ def main(argv):
         for ta, tb, num, la, lb in ties:
             out(hc.tie_line(ta, tb, num, la, lb, cr[ta[0]][ta[1]]))
         out(
-            f"  QQRR cage {cr[CAGE[0]][CAGE[1]]} corner {cr[PIN[0]][PIN[1]]} QR r{TEN[0] + 1}c{TEN[1] + 1} {ranks[TEN[0]][TEN[1]]} bounded cell {grid[TARGET[0]][TARGET[1]]}"
+            hc.qqrr_line(
+                cr[CAGE[0]][CAGE[1]],
+                cr[PIN[0]][PIN[1]],
+                TEN,
+                ranks[TEN[0]][TEN[1]],
+                grid[TARGET[0]][TARGET[1]],
+            )
         )
         out(hc.grid_line(grid))
         cpsat.forbid(m, cells, {rc: grid[rc[0]][rc[1]] for rc in cells}, tag=str(found))

@@ -73,6 +73,13 @@ def configure(argv):
     PIN = checker.CORNERS[corner]
 
 
+def pool(procs, argv):
+    """The worker pool for `solve`. A forkserver worker imports this module fresh, so the
+    initializer is what gives it the run's parameters; without it every task dies with
+    NameError."""
+    return Pool(procs, initializer=configure, initargs=(argv,))
+
+
 def build(pair, ia, ib):
     q = model.build(n, ranked_cells=[CAGE, PIN])
     m = q.m
@@ -161,7 +168,13 @@ def solve(task):
     for ta, tb, num, la, lb in ties:
         lines.append(hunt_common.tie_line(ta, tb, num, la, lb, cr[ta[0]][ta[1]]))
     lines.append(
-        f"  QQRR cage {cr[CAGE[0]][CAGE[1]]} corner {cr[PIN[0]][PIN[1]]} QR r6c6 {ranks[TEN[0]][TEN[1]]} bounded cell {grid[TARGET[0]][TARGET[1]]}"
+        hunt_common.qqrr_line(
+            cr[CAGE[0]][CAGE[1]],
+            cr[PIN[0]][PIN[1]],
+            TEN,
+            ranks[TEN[0]][TEN[1]],
+            grid[TARGET[0]][TARGET[1]],
+        )
     )
     lines.append(hunt_common.grid_line(grid))
     return "\n".join(lines)
@@ -210,8 +223,8 @@ if __name__ == "__main__":
     )
     start = time.monotonic()
     counts = {"infeasible": 0, "timeout": 0, "HIT": 0}
-    with Pool(procs, initializer=configure, initargs=(sys.argv[1:],)) as pool:
-        for line in pool.imap_unordered(solve, tasks):
+    with pool(procs, sys.argv[1:]) as workers_pool:
+        for line in workers_pool.imap_unordered(solve, tasks):
             out(line)
             for k in counts:
                 if k in line.split()[:6]:

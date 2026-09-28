@@ -77,7 +77,13 @@ def solve_pair(pair):
     for ta, tb, num, la, lb in oracle.seven_digit_ties(ranks):
         lines.append(hunt_common.tie_line(ta, tb, num, la, lb, cr[ta[0]][ta[1]]))
     lines.append(
-        f"  QQRR cage {cr[CAGE[0]][CAGE[1]]} corner {cr[PIN[0]][PIN[1]]} QR r6c6 {ranks[TEN[0]][TEN[1]]} bounded cell {grid[TARGET[0]][TARGET[1]]}"
+        hunt_common.qqrr_line(
+            cr[CAGE[0]][CAGE[1]],
+            cr[PIN[0]][PIN[1]],
+            TEN,
+            ranks[TEN[0]][TEN[1]],
+            grid[TARGET[0]][TARGET[1]],
+        )
     )
     lines.append(hunt_common.grid_line(grid))
     return "\n".join(lines)

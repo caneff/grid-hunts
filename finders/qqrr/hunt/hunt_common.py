@@ -6,6 +6,7 @@ import os
 import re
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "finders" / "qqrr"))
@@ -68,29 +69,62 @@ def grid_line(grid):
     return "  grid " + "/".join("".join(map(str, r)) for r in grid)
 
 
+def qqrr_line(cage, corner, ten, ten_rank, bound):
+    """The cage line of a HIT block: the cage's and the corner's QQRR, the QR window at `ten`
+    and its rank, and the bounded cell's digit."""
+    return (
+        f"  QQRR cage {cage} corner {corner} QR r{ten[0] + 1}c{ten[1] + 1} {ten_rank} "
+        f"bounded cell {bound}"
+    )
+
+
 TIE = re.compile(r"  tie (r\dc\d) [\d|]+ = (r\dc\d) [\d|]+, number (\d+), QQRR (\d+)")
 
 
+class Tie(NamedTuple):
+    """One logged 7-digit tie: the two cells, the shared number and the QQRR, as logged."""
+
+    a: str
+    b: str
+    number: str
+    qqrr: str
+
+
+GRID = re.compile(r"  grid (\d{9}(?:/\d{9}){8})")
+
+
 def parse_hits(text):
-    """Each complete HIT block of a finder log as {"ties": [(a, b, number, qqrr)], "grid": str},
+    """Each complete HIT block of a finder log as {"ties": [Tie], "grid": str},
     read by the `  tie ` and `  grid ` markers, so any number of tie lines parses. chan_big
     prints a HIT only with at least one tie, so a block with no tie or no grid was cut short
-    by a kill and is left out."""
+    by a kill and is left out. A marker line that does not match its whole form makes its
+    block incomplete too."""
     hits = []
+    malformed = set()  # indexes of blocks holding a malformed marker line
     for line in text.split("\n"):
         if line.startswith("HIT"):
             hits.append({"ties": [], "grid": None})
         elif hits and line.startswith("  tie "):
-            hits[-1]["ties"].append(TIE.match(line).groups())
+            m = TIE.fullmatch(line)
+            if m:
+                hits[-1]["ties"].append(Tie(*m.groups()))
+            else:
+                malformed.add(len(hits) - 1)
         elif hits and line.startswith("  grid "):
-            hits[-1]["grid"] = line.split()[1]
-    return [h for h in hits if h["ties"] and h["grid"]]
+            m = GRID.fullmatch(line)
+            if m:
+                hits[-1]["grid"] = m[1]
+            else:
+                malformed.add(len(hits) - 1)
+    return [
+        h for i, h in enumerate(hits) if h["ties"] and h["grid"] and i not in malformed
+    ]
 
 
 def logged_grids(path):
-    """Every `  grid ` line of a finder log, as its slash-joined digit string."""
+    """Every well-formed `  grid ` line of a finder log, as its slash-joined digit string."""
     return [
-        line.split()[1]
+        m[1]
         for line in Path(path).read_text().split("\n")
-        if line.startswith("  grid ")
+        if (m := GRID.fullmatch(line))
     ]
