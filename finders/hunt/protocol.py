@@ -22,6 +22,15 @@ class Verdict(NamedTuple):
     reason: str = ""
 
 
+class Empty(NamedTuple):
+    """What `Finder.propose` may return in place of None when a seed found
+    nothing and can say why (#491) -- a solver's timeout and its proof of
+    infeasibility mean opposite things. The driver writes the reason to
+    that seed's progress event as `empty_reason`."""
+
+    reason: str = ""
+
+
 class Finder(Protocol):
     """A finder rule: propose a candidate, verify it, say how to record it.
 
@@ -40,8 +49,8 @@ class Finder(Protocol):
     workers: int = DEFAULT_WORKERS
 
     def propose(self, rng) -> Any | None:
-        """One candidate for this seed's rng, or None if this seed found
-        nothing."""
+        """One candidate for this seed's rng, or None (or `Empty(reason)`)
+        if this seed found nothing."""
         ...
 
     def verify(self, candidate: Any) -> Verdict:

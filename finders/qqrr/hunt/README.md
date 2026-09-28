@@ -8,6 +8,11 @@ and the runs that produced them: `docs/research/2026-09-22-qqrr-tie-r5c1.md`.
 worker, pool and load numbers are the ones the hunts ran with; check `uptime`
 and the box rules in `AGENTS.md` before launching, and run one hunt at a time.
 
+- `tie_finder.py` — the big channelled model on the shared hunt protocol
+  (`finders/hunt/`, #491): one seed is one solve, found grids forbidden from
+  the next, output in the standard hunt directory, `hunt verify DIR` re-reads
+  every grid with the oracle.
+  `tie_finder.py --out DIR --seeds 0:3 --hunt r1c5 --ten r7c7 --corner tr --timeout 900 [--q34]`
 - `pair_sweep.py` — one solve per seeing pair, resumable.
   `pair_sweep.py <corner> <procs> <per-pair timeout> <log> [<hunt> [<workers> [retry]]]`
 - `chan_sweep.py` — the digit-channelled pair sweep.

@@ -22,7 +22,9 @@ return the candidate as `propose` produced it (everything `verify` and
 `render` read); the driver does not guard that, but it does restore the
 finder's state around the call. A stateful finder with a `render` but no `candidate_from_record`
 gets neither repair nor sweep -- the gap is part of the finder contract
-(protocol.py).
+(protocol.py). A finder's own knobs travel as `finder.config`: run.json
+records it and a resume under a different one refuses; a seed that found
+nothing may return `Empty(reason)`, written as `empty_reason` (#491).
 
     uv run finders/hunt/toy_finder.py --out DIR --seeds START:END
     uv run finders/hunt/toy_finder.py --out DIR --seeds START:END --no-verify
@@ -59,7 +61,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dedupe import D4, IDENTITY, canonical_key, validate_group
-from protocol import DEFAULT_WORKERS, Verdict
+from protocol import DEFAULT_WORKERS, Empty, Verdict
 
 OUTPUT_FILES = (
     "examples.jsonl",
@@ -210,6 +212,15 @@ def _resume_key(argv):
     something the resume check then refuses."""
     args = _parse_args(argv)
     return (args.out, args.seeds, args.no_verify)
+
+
+def _finder_config(finder):
+    """The finder's own knobs (#491) -- `finder.config`, or None -- as JSON
+    reads them back, so a resume compares like with like against run.json.
+    A finder parses its own flags and hands `run` the rest of argv; the
+    config is what makes those flags part of the recorded search, since
+    `_resume_key` only sees the driver's."""
+    return json.loads(json.dumps(getattr(finder, "config", None)))
 
 
 def _refuse(out_arg, why):
@@ -637,7 +648,7 @@ def _propose_and_key(finder, seed, symmetry, no_verify=False):
     verify DIR` can check it later.
     """
     candidate = finder.propose(random.Random(seed))
-    if candidate is None:
+    if candidate is None or isinstance(candidate, Empty):
         return candidate, None, None
     verdict = Verdict(ok=True) if no_verify else finder.verify(candidate)
     if not verdict.ok:
@@ -665,9 +676,11 @@ def _process_seed(
     loops so the two can't drift apart on what a seed's outcome means."""
     candidate, verdict, key = _propose_and_key(finder, seed, symmetry, no_verify)
     event = {"event": "seed_done", "seed": seed}
-    if candidate is None:
+    if candidate is None or isinstance(candidate, Empty):
         counts["empty"] += 1
         event["outcome"] = "empty"
+        if isinstance(candidate, Empty) and candidate.reason:
+            event["empty_reason"] = candidate.reason
     elif not verdict.ok:
         counts["rejected"] += 1
         event["outcome"] = "rejected"
@@ -723,6 +736,7 @@ def _fresh(finder, argv, args, out):
         out / "run.json",
         {
             "argv": list(argv),
+            "config": _finder_config(finder),
             "git_sha": _git_sha(),
             "start_time": datetime.now(UTC).isoformat(),
         },
@@ -1029,6 +1043,14 @@ def run(finder, argv):
                 print(
                     "hunt: refusing to resume -- argv differs from the recorded run "
                     f"({prior_argv!r} vs {list(argv)!r})",
+                    file=sys.stderr,
+                )
+                return 2
+            config = _finder_config(finder)
+            if prior.get("config") != config:
+                print(
+                    "hunt: refusing to resume -- finder config differs from the "
+                    f"recorded run ({prior.get('config')!r} vs {config!r})",
                     file=sys.stderr,
                 )
                 return 2

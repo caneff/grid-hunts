@@ -1,0 +1,1 @@
+{"argv": ["--out", "docs/research/2026-09-27-qqrr-tie-pilot", "--seeds", "0:3", "--workers", "3"], "config": {"hunt": "r1c5", "ten": "r7c7", "corner": "tr", "timeout": 900.0, "q34": true}, "git_sha": "29bcbc04054fdcacae1ac201ecf4d6f68d60bde3", "start_time": "2026-09-27T14:30:39.382372+00:00"}
