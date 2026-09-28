@@ -1,0 +1,1 @@
+{"argv": ["--out", "docs/research/2026-09-28-qqrr-tie-kill-resume", "--seeds", "0:4", "--workers", "1"], "config": {"hunt": "r1c5", "ten": "r7c7", "corner": "tr", "timeout": 60.0, "q34": true}, "git_sha": "bcc60211774c8f510b85d53ceb5dfd7f069f4534", "start_time": "2026-09-28T19:51:47.049736+00:00"}
