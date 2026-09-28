@@ -103,8 +103,10 @@ with tempfile.TemporaryDirectory() as d:
     )
     r = run_cli("verify", str(out))
     check("hunt verify exits 0", r.returncode == 0)
+    # Line 1 is the stamp {"verified_examples": N} (#517).
     verdicts = [
-        json.loads(line) for line in (out / "verified.jsonl").read_text().splitlines()
+        json.loads(line)
+        for line in (out / "verified.jsonl").read_text().splitlines()[1:]
     ]
     for (name, _, want, reason), v in zip(cases, verdicts, strict=True):
         check(f"verify: {name} -> {want}", v["ok"] is want)

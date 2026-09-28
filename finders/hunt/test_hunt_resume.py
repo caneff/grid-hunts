@@ -934,4 +934,80 @@ for base_no_verify, resume_no_verify, label in (
             before == after and before_contents == after_contents,
         )
 
+with tempfile.TemporaryDirectory() as tmp:
+    # #517: a resume that reconciles or appends to examples.jsonl must
+    # delete verified.jsonl -- its verdicts describe the old file. Same
+    # setup as the orphan-example case above (the one seed reruns after
+    # reconciliation trims its example), with `hunt verify` run first.
+    out = Path(tmp) / "verify-then-resume"
+    run_cli(TINY_KEY_FINDER, out, "0:1")
+    verified = subprocess.run(
+        [sys.executable, str(TINY_KEY_FINDER), "verify", str(out)],
+        capture_output=True,
+        text=True,
+        env=success_env(),
+    )
+    check(
+        f"hunt verify before the resume exits 0 (stderr: {verified.stderr[-300:]})",
+        verified.returncode == 0 and (out / "verified.jsonl").exists(),
+    )
+    (out / "progress.jsonl").write_text("")
+    rerun = run_cli(TINY_KEY_FINDER, out, "0:1")
+    check(
+        f"resume that reconciles examples.jsonl exits 0 (stderr: {rerun.stderr[-300:]})",
+        rerun.returncode == 0,
+    )
+    check(
+        "a resume that reconciles and re-appends examples.jsonl deletes verified.jsonl",
+        not (out / "verified.jsonl").exists(),
+    )
+
+with tempfile.TemporaryDirectory() as tmp:
+    # #517: a resume with nothing left to run leaves examples.jsonl alone,
+    # so a current verified.jsonl survives it byte for byte.
+    out = Path(tmp) / "verify-then-noop-resume"
+    run_cli(TINY_KEY_FINDER, out, "0:5")
+    subprocess.run(
+        [sys.executable, str(TINY_KEY_FINDER), "verify", str(out)],
+        capture_output=True,
+        text=True,
+        env=success_env(),
+    )
+    before = (out / "verified.jsonl").read_bytes()
+    rerun = run_cli(TINY_KEY_FINDER, out, "0:5")
+    check(
+        f"resume of a finished hunt exits 0 (stderr: {rerun.stderr[-300:]})",
+        rerun.returncode == 0,
+    )
+    check(
+        "a resume that changes nothing keeps a current verified.jsonl",
+        (out / "verified.jsonl").exists()
+        and (out / "verified.jsonl").read_bytes() == before,
+    )
+
+with tempfile.TemporaryDirectory() as tmp:
+    # #517: a resume that appends a new example (the kill landed before the
+    # range finished) deletes verified.jsonl even with no reconciliation.
+    out = Path(tmp) / "verify-then-append"
+    kill_partway(SLOW_FINDER, out, "0:200")
+    subprocess.run(
+        [sys.executable, str(SLOW_FINDER), "verify", str(out)],
+        capture_output=True,
+        text=True,
+        env=success_env(),
+    )
+    check(
+        "verify of a killed hunt wrote verified.jsonl",
+        (out / "verified.jsonl").exists(),
+    )
+    rerun = run_cli(SLOW_FINDER, out, "0:200")
+    check(
+        f"resume of the killed hunt exits 0 (stderr: {rerun.stderr[-300:]})",
+        rerun.returncode == 0,
+    )
+    check(
+        "a resume that appends examples deletes verified.jsonl",
+        not (out / "verified.jsonl").exists(),
+    )
+
 sys.exit(0 if ok else 1)

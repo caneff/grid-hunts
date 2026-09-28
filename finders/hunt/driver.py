@@ -9,8 +9,9 @@ log, and a finder's optional `save_state`/`load_state` round-trip through
 state.json. A differing argv versus the recorded run refuses to start; a
 differing git sha only warns. `--no-verify` skips `finder.verify` while
 searching, and `hunt verify DIR` (#489) runs it afterwards over everything
-`--no-verify` saved, writing one verdict per examples.jsonl line to
-verified.jsonl. A finder's optional `render` (#490) gets a picture saved to
+`--no-verify` saved, writing to verified.jsonl a stamp line (the count of
+examples verified, #517) and then one verdict per examples.jsonl line. A
+resume that may change examples.jsonl deletes verified.jsonl. A finder's optional `render` (#490) gets a picture saved to
 renders/<seed>.png right after that seed's example is accepted; a finder
 with no `render` gets no renders/ directory at all. `--workers` (default 3,
 set on the finder before the first seed) and the 1-minute load gate
@@ -867,6 +868,8 @@ def _resume(finder, argv, args, out, prior):
     progress_lines, progress_events = _read_valid_lines(out / "progress.jsonl")
     examples_lines, examples_records = _read_valid_lines(out / "examples.jsonl")
 
+    raw_examples_count = len(examples_lines)
+
     # Reconciliation itself only edits these in-memory lists -- every write
     # (`_truncate_to_valid`, `_repair_renders`, summary.json) is held off
     # until the symmetry check below has passed, so nothing is on disk yet
@@ -893,6 +896,15 @@ def _resume(finder, argv, args, out, prior):
         examples_records,
         args.no_verify,
     )
+
+    # verified.jsonl describes the examples.jsonl `hunt verify` read (#517).
+    # This resume reconciled it, or has a seed left that may append to it
+    # (whether one does is only known once it runs). Deleted before either
+    # write, so a kill in between can't leave a stale file.
+    if len(examples_lines) != raw_examples_count or any(
+        seed not in done_seeds for seed in range(seed_start, seed_end)
+    ):
+        (out / "verified.jsonl").unlink(missing_ok=True)
 
     _truncate_to_valid(out / "progress.jsonl", progress_lines)
     _truncate_to_valid(out / "examples.jsonl", examples_lines)
@@ -932,14 +944,15 @@ def _resume(finder, argv, args, out, prior):
 
 def _run_verify(finder, argv):
     """`hunt verify DIR` (#489): run `finder.verify` over every line in
-    DIR/examples.jsonl and write one verdict per line to DIR/verified.jsonl
+    DIR/examples.jsonl and write a stamp line, then one verdict per line, to
+    DIR/verified.jsonl
     -- the deferred half of a `--no-verify` hunt. Returns the process exit
     code: 0 on success, 2 when DIR has no examples.jsonl to verify.
 
     Reads examples.jsonl through `_read_valid_lines` -- the same kill
     tolerance `run`'s own resume gives progress.jsonl/examples.jsonl. Each
-    verified.jsonl line carries its own record, not just position, so it
-    still joins back to examples.jsonl after a resume appends more lines.
+    verdict line carries its own record, not just position, so it joins back
+    to examples.jsonl by content.
     A record that fails to turn into a candidate and verify (most likely a
     finder with no `candidate_from_record` whose record() isn't itself
     verify-able, but possibly a genuine bug in `verify` itself -- the
@@ -980,6 +993,9 @@ def _run_verify(finder, argv):
         tmp = verified_path.with_suffix(verified_path.suffix + ".tmp")
         verified_count = 0
         with tmp.open("w") as verified_f:
+            # The stamp (#517): how many examples this pass verified, so a
+            # reader can compare it to the count of valid examples.jsonl lines.
+            verified_f.write(json.dumps({"verified_examples": len(records)}) + "\n")
             for record in records:
                 try:
                     verdict = finder.verify(to_candidate(record))

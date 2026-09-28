@@ -3,7 +3,7 @@
 `--no-verify` skips `finder.verify` while searching, so a candidate the
 verifier would reject still reaches examples.jsonl. `hunt verify DIR` then
 runs `finder.verify` over every line in examples.jsonl afterwards and writes
-one verdict per line to verified.jsonl.
+a stamp line and then one verdict per line to verified.jsonl (#517).
 
     uv run finders/hunt/test_hunt_verify.py
 """
@@ -29,6 +29,13 @@ def check(name, cond):
     if not cond:
         ok = False
     print(f"{status}: {name}")
+
+
+def read_verified(path):
+    """(stamp, verdicts): verified.jsonl's first line is the stamp
+    {"verified_examples": N} (#517), every later line one verdict."""
+    lines = [json.loads(line) for line in path.read_text().splitlines() if line]
+    return lines[0], lines[1:]
 
 
 with tempfile.TemporaryDirectory() as tmp:
@@ -76,11 +83,11 @@ with tempfile.TemporaryDirectory() as tmp:
     )
     check("verified.jsonl was written", (out / "verified.jsonl").exists())
 
-    verified = [
-        json.loads(line)
-        for line in (out / "verified.jsonl").read_text().splitlines()
-        if line
-    ]
+    stamp, verified = read_verified(out / "verified.jsonl")
+    check(
+        "verified.jsonl opens with the count of examples it verified (#517)",
+        stamp == {"verified_examples": len(examples)},
+    )
     check(
         "verified.jsonl has one line per examples.jsonl line",
         len(verified) == len(examples),
@@ -139,11 +146,11 @@ with tempfile.TemporaryDirectory() as tmp:
         f"{corrupted_verify.stderr[-500:]})",
         corrupted_verify.returncode == 0,
     )
-    reverified = [
-        json.loads(line)
-        for line in (out / "verified.jsonl").read_text().splitlines()
-        if line
-    ]
+    restamp, reverified = read_verified(out / "verified.jsonl")
+    check(
+        "the stamp counts the lines verified, not a half-written tail",
+        restamp == {"verified_examples": len(examples)},
+    )
     check(
         "a half-written trailing line is dropped, not counted",
         len(reverified) == len(examples),
