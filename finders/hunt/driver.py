@@ -365,7 +365,7 @@ def _state_seed(finder, out):
     this finder doesn't save state or hasn't saved any yet -- None, since
     `--seeds` accepts negative integers and no numeric sentinel is safe
     from colliding with a real one (#516)."""
-    if not hasattr(finder, "load_state"):
+    if not _is_stateful(finder):
         return None
     state_path = out / "state.json"
     if not state_path.exists():
@@ -402,7 +402,7 @@ def _reconcile(
     durable the first time.
     """
     state_seed = _state_seed(finder, out)
-    tracks_state = hasattr(finder, "load_state")
+    tracks_state = _is_stateful(finder)
     while progress_events:
         example_confirmed = sum(
             1 for e in progress_events if e.get("outcome") == "example"
@@ -481,6 +481,12 @@ def _reconcile_renders(finder, out, progress_events):
             png.unlink(missing_ok=True)
 
 
+def _is_stateful(finder):
+    """A finder that has `load_state` is stateful: its `propose()` can have
+    side effects state.json owns. The one place that says so (#627 S5)."""
+    return hasattr(finder, "load_state")
+
+
 def _can_repair_renders(finder):
     """Whether `_repair_renders` can regenerate a missing picture (#538).
 
@@ -497,12 +503,34 @@ def _can_repair_renders(finder):
     `render`)."""
     if getattr(finder, "render", None) is None:
         return False
-    if hasattr(finder, "load_state"):
+    if _is_stateful(finder):
         return (
             getattr(finder, "candidate_from_record", None) is not None
             and getattr(finder, "save_state", None) is not None
         )
     return True
+
+
+def _warn_unrepaired_renders(finder, out, progress_events):
+    """Say on stderr that a finder `_can_repair_renders` refuses is leaving
+    missing or undecodable pictures unrepaired (#627 S6) -- the gap protocol.py
+    documents, otherwise silent at runtime. A finder with no `render` has
+    no pictures to miss."""
+    if getattr(finder, "render", None) is None:
+        return
+    missing = sum(
+        1
+        for e in progress_events
+        if e.get("outcome") == "example"
+        and not _render_intact(out / "renders" / f"{e['seed']}.png")
+    )
+    if missing:
+        print(
+            f"hunt: {missing} example render(s) left unrepaired -- a stateful "
+            "finder needs candidate_from_record and save_state for render "
+            "repair on resume (protocol.py, render)",
+            file=sys.stderr,
+        )
 
 
 def _repair_renders(finder, out, progress_lines, progress_events, examples_records):
@@ -526,8 +554,9 @@ def _repair_renders(finder, out, progress_lines, progress_events, examples_recor
     `_can_repair_renders` refuses is left as it is.
     """
     if not _can_repair_renders(finder):
+        _warn_unrepaired_renders(finder, out, progress_events)
         return progress_lines, progress_events
-    stateful = hasattr(finder, "load_state")
+    stateful = _is_stateful(finder)
     records = iter(examples_records)
     for i, event in enumerate(progress_events):
         if event.get("outcome") != "example":

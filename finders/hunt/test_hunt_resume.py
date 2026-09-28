@@ -37,8 +37,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dedupe import D4, canonical_key
+from protocol import Verdict
 from render import GridCanvas
 from subprocess_env import success_env
+from toy_stateful_finder import StatefulToyFinder
 from toy_tiny_key_finder import TinyKeyFinder
 
 HERE = Path(__file__).resolve().parent
@@ -56,6 +58,24 @@ class TinyKeyRenderFinder(TinyKeyFinder):
     # tests below need the same deterministic-accept property the
     # "orphan-example" case above TinyKeyFinder for, plus a render. Shared
     # here rather than redefined per block (#522 standards review, S3).
+    def render(self, candidate):
+        return GridCanvas(2, 2, cell=10).image
+
+
+class StatefulRecordRenderFinder(StatefulToyFinder):
+    # A stateful, always-accepting finder with a render and the
+    # `candidate_from_record` hook -- the shared base of the #522/#538
+    # render-orphan blocks (#627 S4).
+    def propose(self, rng):
+        self.seeds_seen += 1
+        return (rng.randint(0, 1),)
+
+    def verify(self, candidate):
+        return Verdict(ok=True)
+
+    def candidate_from_record(self, record):
+        return tuple(record["grid"])
+
     def render(self, candidate):
         return GridCanvas(2, 2, cell=10).image
 
@@ -86,6 +106,30 @@ def read_jsonl(path):
     if not path.exists():
         return []
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+
+
+class _StopBeforeRerun(Exception):
+    pass
+
+
+def resume_stopping_before_hunt_loop(driver_module, finder, argv, what):
+    """Resume in-process and stop right before `_hunt_loop` reruns anything,
+    pinning the state a *second* kill mid-rerun would leave behind. Reaching
+    the rerun anyway is a FAIL named `what`."""
+
+    def _boom(*a, **k):
+        raise _StopBeforeRerun
+
+    orig_hunt_loop = driver_module._hunt_loop
+    driver_module._hunt_loop = _boom
+    try:
+        try:
+            driver_module.run(finder, argv)
+            check(f"resume reached _hunt_loop unexpectedly ({what})", False)
+        except _StopBeforeRerun:
+            pass
+    finally:
+        driver_module._hunt_loop = orig_hunt_loop
 
 
 def kill_partway(finder, out, seeds, min_seed_done_events=3, extra_args=()):
@@ -497,22 +541,7 @@ with tempfile.TemporaryDirectory() as tmp:
     decoy = out / "renders" / "1_0.png"
     decoy.write_bytes(b"not a real seed file")
 
-    class _StopBeforeRerun(Exception):
-        pass
-
-    def _boom(*a, **k):
-        raise _StopBeforeRerun
-
-    orig_hunt_loop = driver_module._hunt_loop
-    driver_module._hunt_loop = _boom
-    try:
-        try:
-            driver_module.run(finder, argv)
-            check("resume reached _hunt_loop unexpectedly (render-orphan)", False)
-        except _StopBeforeRerun:
-            pass
-    finally:
-        driver_module._hunt_loop = orig_hunt_loop
+    resume_stopping_before_hunt_loop(driver_module, finder, argv, "render-orphan")
 
     check(
         "reconciliation removes a render whose example didn't survive it, "
@@ -539,23 +568,11 @@ with tempfile.TemporaryDirectory() as tmp:
     # file in place, a documented gap (protocol.py, `render`). The next block
     # covers the finder that has the hook.
     import driver as driver_module
-    from protocol import Verdict
-    from render import GridCanvas
-    from toy_stateful_finder import StatefulToyFinder
 
-    class StatefulRenderFinder(StatefulToyFinder):
-        def propose(self, rng):
-            self.seeds_seen += 1
-            return (rng.randint(0, 1),)
-
-        # SlowToyFinder supplies one; this case is the finder without it.
+    class StatefulRenderFinder(StatefulRecordRenderFinder):
+        # StatefulRecordRenderFinder supplies one; this case is the finder
+        # without it.
         candidate_from_record = None
-
-        def verify(self, candidate):
-            return Verdict(ok=True)
-
-        def render(self, candidate):
-            return GridCanvas(2, 2, cell=10).image
 
     out = Path(tmp) / "render-orphan-stateful"
     argv = ["--out", str(out), "--seeds=0:1"]
@@ -583,32 +600,28 @@ with tempfile.TemporaryDirectory() as tmp:
     # it first -- the same masking the render-orphan case above exists to
     # avoid. Stopping before `_hunt_loop` the same way isolates exactly
     # what reconciliation itself did to the file.
-    class _StopBeforeRerun(Exception):
-        pass
-
-    def _boom(*a, **k):
-        raise _StopBeforeRerun
+    #
+    # #537: the temp sweep runs for every finder, including one
+    # `_can_repair_renders` refuses -- this one has no candidate_from_record.
+    stale_tmp = out / "renders" / "7.tmp-99999.png"
+    stale_tmp.write_bytes(b"a save that died partway")
 
     resume_finder = StatefulRenderFinder()
-    orig_hunt_loop = driver_module._hunt_loop
-    driver_module._hunt_loop = _boom
-    try:
-        try:
-            driver_module.run(resume_finder, argv)
-            check(
-                "resume reached _hunt_loop unexpectedly (stateful render-orphan)",
-                False,
-            )
-        except _StopBeforeRerun:
-            pass
-    finally:
-        driver_module._hunt_loop = orig_hunt_loop
+    resume_stopping_before_hunt_loop(
+        driver_module, resume_finder, argv, "stateful render-orphan"
+    )
 
     check(
         "a stateful finder with no candidate_from_record keeps its stray render "
         "through reconciliation -- no repair safety net exists for it (#522 C1)",
         (out / "renders" / "0.png").exists()
         and (out / "renders" / "0.png").read_bytes() == original_png,
+    )
+
+    check(
+        "a finder _can_repair_renders refuses still has its stale render "
+        "temp file swept (#537)",
+        not stale_tmp.exists(),
     )
 
 with tempfile.TemporaryDirectory() as tmp:
@@ -618,22 +631,6 @@ with tempfile.TemporaryDirectory() as tmp:
     # confirmed "example" seeds in progress.jsonl (the seed lives there,
     # not in a record).
     import driver as driver_module
-    from protocol import Verdict
-    from toy_stateful_finder import StatefulToyFinder
-
-    class StatefulRecordRenderFinder(StatefulToyFinder):
-        def propose(self, rng):
-            self.seeds_seen += 1
-            return (rng.randint(0, 1),)
-
-        def verify(self, candidate):
-            return Verdict(ok=True)
-
-        def candidate_from_record(self, record):
-            return tuple(record["grid"])
-
-        def render(self, candidate):
-            return GridCanvas(2, 2, cell=10).image
 
     out = Path(tmp) / "render-orphan-stateful-hook"
     argv = ["--out", str(out), "--seeds=0:1"]
@@ -643,22 +640,9 @@ with tempfile.TemporaryDirectory() as tmp:
     )
     (out / "progress.jsonl").write_text("")
 
-    class _StopBeforeRerun(Exception):
-        pass
-
-    def _boom(*a, **k):
-        raise _StopBeforeRerun
-
-    orig_hunt_loop = driver_module._hunt_loop
-    driver_module._hunt_loop = _boom
-    try:
-        try:
-            driver_module.run(StatefulRecordRenderFinder(), argv)
-            check("resume reached _hunt_loop unexpectedly (stateful-hook)", False)
-        except _StopBeforeRerun:
-            pass
-    finally:
-        driver_module._hunt_loop = orig_hunt_loop
+    resume_stopping_before_hunt_loop(
+        driver_module, StatefulRecordRenderFinder(), argv, "stateful-hook"
+    )
     check(
         "a stateful finder with candidate_from_record loses its orphan render "
         "at reconciliation (#538)",

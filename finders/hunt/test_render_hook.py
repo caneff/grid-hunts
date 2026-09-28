@@ -29,6 +29,10 @@ def check(name, cond):
     print(f"{status}: {name}")
 
 
+def read_jsonl(path):
+    return [json.loads(line) for line in path.read_text().splitlines() if line]
+
+
 with tempfile.TemporaryDirectory() as tmp:
     out = Path(tmp) / "hunt-out"
     result = subprocess.run(
@@ -57,11 +61,7 @@ with tempfile.TemporaryDirectory() as tmp:
         len(png_files) == len(examples),
     )
 
-    progress = [
-        json.loads(line)
-        for line in (out / "progress.jsonl").read_text().splitlines()
-        if line
-    ]
+    progress = read_jsonl(out / "progress.jsonl")
     accepted_seeds = {e["seed"] for e in progress if e.get("outcome") == "example"}
     check(
         "each PNG is named after the seed it belongs to, not a running index",
@@ -139,11 +139,7 @@ sys.exit(run(RaisingRenderFinder(), sys.argv[1:]))
         for line in (out / "examples.jsonl").read_text().splitlines()
         if line
     ]
-    progress = [
-        json.loads(line)
-        for line in (out / "progress.jsonl").read_text().splitlines()
-        if line
-    ]
+    progress = read_jsonl(out / "progress.jsonl")
     example_events = [e for e in progress if e.get("outcome") == "example"]
     check(
         "at least one example is still written despite render() raising",
@@ -206,11 +202,7 @@ with tempfile.TemporaryDirectory() as tmp:
         "resume didn't rerun the search -- same examples, no duplicates",
         examples_after == examples_before,
     )
-    progress_after = [
-        json.loads(line)
-        for line in (out / "progress.jsonl").read_text().splitlines()
-        if line
-    ]
+    progress_after = read_jsonl(out / "progress.jsonl")
     check(
         "no seed_done event fired twice for the same seed",
         len({e["seed"] for e in progress_after}) == len(progress_after),
@@ -289,6 +281,8 @@ class StatefulRenderFinder:
 
 if os.environ.get("TOY_NO_HOOK"):
     StatefulRenderFinder.candidate_from_record = None
+if os.environ.get("TOY_NO_SAVE"):
+    StatefulRenderFinder.save_state = None
 sys.exit(run(StatefulRenderFinder(), sys.argv[1:]))
 """
     fail_env = dict(os.environ, TOY_RENDER_FAIL="1")
@@ -385,10 +379,7 @@ sys.exit(run(StatefulRenderFinder(), sys.argv[1:]))
         text=True,
         env=dict(os.environ, TOY_HOOK_RAISES="1"),
     )
-    raise_events = [
-        json.loads(line)
-        for line in (raise_out / "progress.jsonl").read_text().splitlines()
-    ]
+    raise_events = read_jsonl(raise_out / "progress.jsonl")
     check(
         f"a raising candidate_from_record doesn't stop the resume (stderr: "
         f"{raise_result.stderr[-300:]})",
@@ -420,10 +411,7 @@ sys.exit(run(StatefulRenderFinder(), sys.argv[1:]))
         text=True,
         env=dict(os.environ, TOY_NO_HOOK="1", TOY_NO_PROPOSE="1"),
     )
-    nohook_events = [
-        json.loads(line)
-        for line in (nohook_out / "progress.jsonl").read_text().splitlines()
-    ]
+    nohook_events = read_jsonl(nohook_out / "progress.jsonl")
     check(
         "a stateful finder with no candidate_from_record resumes with exit 0 "
         "and no picture",
@@ -435,6 +423,50 @@ sys.exit(run(StatefulRenderFinder(), sys.argv[1:]))
         all(
             e.get("render_error", "").startswith("RuntimeError")
             for e in nohook_events
+            if e.get("outcome") == "example"
+        ),
+    )
+
+    check(
+        "the hook-less finder's resume says on stderr that it left renders "
+        "unrepaired (#627 S6)",
+        "unrepaired" in nohook_result.stderr,
+    )
+
+    # A stateful finder with `load_state` and a hook but no `save_state`
+    # fails closed too: repair cannot snapshot its state, so the hook is
+    # never called and the failed renders keep their original render_error
+    # (#538, #627 controller-1). Only the resume drops `save_state`: the
+    # first run must leave a state.json for the resume to load, or the
+    # resume reruns every seed and renders them afresh. TOY_HOOK_RAISES would overwrite that error
+    # with a KeyError if the hook were called.
+    nosave_out = Path(tmp) / "no-save"
+    nosave_argv = ["--out", str(nosave_out), "--seeds", "0:30"]
+    subprocess.run(
+        run_argv + nosave_argv,
+        capture_output=True,
+        text=True,
+        env=dict(os.environ, TOY_RENDER_FAIL="1"),
+    )
+    nosave_result = subprocess.run(
+        run_argv + nosave_argv,
+        capture_output=True,
+        text=True,
+        env=dict(os.environ, TOY_NO_SAVE="1", TOY_HOOK_RAISES="1"),
+    )
+    nosave_events = read_jsonl(nosave_out / "progress.jsonl")
+    check(
+        f"a stateful finder with no save_state resumes with exit 0 and no "
+        f"picture (stderr: {nosave_result.stderr[-300:]})",
+        nosave_result.returncode == 0
+        and not list((nosave_out / "renders").glob("*.png")),
+    )
+    check(
+        "its events keep the original render failure: candidate_from_record "
+        "was never called",
+        all(
+            e.get("render_error", "").startswith("RuntimeError")
+            for e in nosave_events
             if e.get("outcome") == "example"
         ),
     )
