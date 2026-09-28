@@ -32,3 +32,27 @@ the 34–36 hunt found.
 
 More seeds need a new `--out`: `--seeds` is part of the resume key, so this
 directory resumes only the range 0:3.
+
+## Why no grid: the model is sound, the start was cold (2026-09-28)
+
+**Probe** (`2026-09-27-qqrr-tie-pilot/probe-model.py`, 1 CP-SAT worker, 120 s cap,
+at `e703a1b`): the three known r1c5 / r7c7 / tr grids that pass the 34–36
+criterion (`654781392/…`, from the 34–36 hunt in `2026-09-22-qqrr-tie-r5c1.md`),
+run against `tie_finder.py`'s own code.
+
+| check | grid 0 | grid 1 | grid 2 |
+|---|---|---|---|
+| `TieFinder.verify` (oracle) | ok | ok | ok |
+| pilot model (`tables`, `hint`, `criteria=q34`), every cell pinned to the grid | OPTIMAL, 0.1 s | OPTIMAL, 0.1 s | OPTIMAL, 0.1 s |
+
+The pilot's model admits every known answer, so the empty run is not a model
+bug. The same model hinted with grid 0 instead of the hunt's seed grid solved
+in **2.2 s on 1 worker** and returned grid 0. The pilot had 3 workers × 900 s
+× 3 seeds from the seed-grid hint and found nothing.
+
+What this does and does not say: the hint was the answer itself, so 2.2 s is
+an upper bound on what a warm start buys. The 2026-09-22 hunt warm-started
+from the *nearest earlier* hit of the same hunt, a different grid, and found
+5 grids in 29 min with 6 workers. The missing piece in the pilot is
+`chan_big.py`'s `warm` flag, which `tie_finder.py` did not port (#491 P1,
+accepted by Chris "for now").
