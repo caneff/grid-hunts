@@ -152,7 +152,8 @@ exists whose neighbour counts, taken as the only givens, force a sudoku.**
 Since any counting-shaded puzzle's solution shading must have that property
 (a second grid agreeing on the shaded cells is a second solution), no
 counting-shaded puzzle exists under sudoku rules. Solver caveat as
-throughout: three CP-SAT encodings agree; no second engine yet (#506).
+throughout: three CP-SAT encodings agree; the depth-first enumerator (#506, below)
+reproduces the 17-21 counts with no CP-SAT in it.
 
 Solve-then-forbid on the same size 21 found 70 of the at most 104 images in
 10 minutes on 8 workers without finishing; native enumeration is the tool.
@@ -282,7 +283,7 @@ digits, as the only givens, force the sudoku. Answer: **none, at any size.**
   under 2 s each. Re-counted by the independent distance-label encoding: same
   shapes.
 
-| size | shapes with all of 1-8 | unique |
+| size | solvable shapes with all of 1-8 | unique |
 |---|---|---|
 | 21 | 2 | 0 |
 | 20 | 2 | 0 |
@@ -308,6 +309,39 @@ A 21-cell witness with an 8 (r6c4 ringed), 1000+ solutions:
 6  9  4* 1  2  5  8  7  3
 1* 3* 2* 9  7  8  4  5  6
 ```
+
+## Second engine: depth-first shape enumerator (#506)
+
+`fastclimb.enumerate_shapes` (`gf_enumerate` in `counting_shaded_fast.c`) grows
+connected shapes cell by cell (Redelmeier's walk, each shape once), prunes on the
+local rules, on the all-digits requirement and on `gf_set_pins`, and hands each
+complete shape to `gf_count`. It shares no code or model with CP-SAT.
+
+Pruning: a shaded cell's count is settled once no open king neighbour is within
+reach of the cells left to place; a settled count of 0, or two equal settled
+counts in a row, column or box, cuts the branch. The walk picks the untried cell
+nearest the root row, which settles counts row by row (stack order was 100x
+slower: 42 s against 0.1 s for size 21 pinned).
+
+Pinned r9c1 + r9c2, all digits: shapes / solvable at 21 / 20 / 19 / 18 / 17 =
+2/2, 2/2, 2/0, 0/0, 0/0, none unique. (The table above counts solvable shapes, so 19 reads 0; the DFS and CP-SAT native
+both find 2 admissible shapes there, neither solvable.) Without all digits: 1 shape at 22
+(solvable), 1 at 24 (no grid), none at 23 and 25-30, as on record.
+
+Unpinned, symmetry on (one shape per orbit of the 8 dihedral images), all
+digits. Same counts from both engines, run on this box, 1 core each:
+
+| size | shapes | solvable | unique | DFS | CP-SAT native |
+|---|---|---|---|---|---|
+| 17 | 26 | 12 | 0 | 2.1 s | 70 s |
+| 18 | 32 | 16 | 0 | 3.9 s | 68 s |
+| 19 | 34 | 12 | 0 | 6.8 s | 54 s |
+| 20 | 16 | 6 | 0 | 11.1 s | 44 s |
+| 21 | 13 | 4 | 0 | 18.5 s | 44 s |
+
+Every run exhausted (`exhausted=True` / CP-SAT EXHAUSTED). Rebuild:
+`uv run python -c "import sys; sys.path.insert(0,'finders/counting_shaded'); import fastclimb; print(fastclimb.enumerate_shapes(21, True, True))"`
+against `uv run finders/counting_shaded/shapeenum.py --size 21 --mode native --symmetry --out DIR`.
 
 ## Method, and why
 

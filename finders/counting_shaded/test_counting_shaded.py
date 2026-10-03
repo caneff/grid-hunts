@@ -311,3 +311,118 @@ def test_build_dir_is_outside_scratch_so_a_worker_sweep_cannot_delete_it():
     # a directory that happens to be named .scratch (e.g. a seam worktree)
     # would otherwise fail this test for a reason the sweep can't cause.
     assert ".scratch" not in fastclimb.BUILD.relative_to(fastclimb.REPO).parts
+
+
+# --- depth-first shape enumerator (#506): the second engine, sharing nothing with CP-SAT ---
+
+R9C12 = (72, 73)
+
+
+def dfs(size, force=R9C12, ban=(), all_digits=True, symmetry=False, seconds=0, **kw):
+    fastclimb.pins(force, ban)
+    return fastclimb.enumerate_shapes(size, all_digits, symmetry, seconds=seconds, **kw)
+
+
+def window_ban(rows, cols):
+    """Every cell outside the rows x cols window, as a ban list."""
+    return [i for i in range(81) if i // 9 not in rows or i % 9 not in cols]
+
+
+@pytest.mark.parametrize(
+    "size, shapes_found, solvable",
+    [(21, 2, 2), (20, 2, 2), (19, 2, 0), (18, 0, 0), (17, 0, 0)],
+)
+def test_dfs_matches_record_pinned_r9c12_all_digits(size, shapes_found, solvable):
+    # docs/research/2026-09-16-counting-shaded-connected.md, "No unique shading
+    # exists under r9c1 + r9c2": two shapes at 21 and at 20, none below, no unique.
+    r = dfs(size)
+    assert r.exhausted
+    assert (r.shapes, r.solvable, r.unique) == (shapes_found, solvable, 0)
+
+
+@pytest.mark.parametrize(
+    "size, shapes_found",
+    [(22, 1), (23, 0), (24, 1), (25, 0), (26, 0), (27, 0), (28, 0), (29, 0), (30, 0)],
+)
+def test_dfs_matches_record_pinned_r9c12_without_all_digits(size, shapes_found):
+    # Same note: one shape at 22 and one at 24, none at 23 or 25 and up.
+    r = dfs(size, all_digits=False)
+    assert r.exhausted
+    assert r.shapes == shapes_found
+    # the 24-cell shape has no grid ("pinned-r9c12-24-nogrid"); the 22-cell one does
+    assert r.solvable == (1 if size == 22 else 0)
+
+
+def test_dfs_solvable_shapes_are_admissible_and_solvable_by_the_python_counter():
+    r = dfs(21)
+    assert len(r.solvable_shapes) == r.solvable == 2
+    for shape, k in r.solvable_shapes:
+        assert len(shape) == 21 and set(R9C12) <= shape
+        g = shapes.givens(shape)
+        assert shapes.eight_ok(g)
+        assert shapes.count_solutions(g, 2) == k >= 1
+
+
+def test_dfs_agrees_with_cpsat_native_enumeration_pinned(tmp_path):
+    import shapeenum
+
+    for size in (19, 20):
+        fastclimb.pins(R9C12)
+        status, n, solvable, unique = shapeenum.enumerate_native(
+            size, R9C12, (), 120, tmp_path, lambda _m: None
+        )
+        assert status == "exhausted"  # a timed-out CP-SAT count proves nothing
+        r = dfs(size)
+        assert (r.shapes, r.solvable, r.unique) == (n, solvable, unique)
+
+
+def test_dfs_reports_timeout_not_exhaustion():
+    # Unpinned size 21 cannot finish in a few milliseconds; a cut-off run must
+    # say so rather than report a count as if the size were exhausted.
+    r = dfs(21, force=(), seconds=0.05, symmetry=True)
+    assert not r.exhausted
+
+
+def test_dfs_unpinned_size_17_matches_cpsat_native_symmetry_record():
+    # `shapeenum.py --size 17 --mode native --symmetry` (CP-SAT, 70 s): 26 shapes
+    # up to the 8 dihedral images, 12 solvable, none unique.
+    r = dfs(17, force=(), symmetry=True)
+    assert r.exhausted
+    assert (r.shapes, r.solvable, r.unique) == (26, 12, 0)
+
+
+def test_dfs_flags_a_solvable_list_cut_short_by_max_stored():
+    full = dfs(21)
+    assert not full.truncated
+    capped = dfs(21, max_stored=1)
+    assert capped.solvable == 2 and len(capped.solvable_shapes) == 1
+    assert capped.truncated
+
+
+@pytest.mark.parametrize("cap", [0, 1])
+def test_dfs_refuses_a_cap_that_would_call_every_solvable_shape_unique(cap):
+    with pytest.raises(ValueError):
+        dfs(21, cap=cap)
+
+
+def test_dfs_refuses_symmetry_with_pins():
+    with pytest.raises(ValueError):
+        dfs(19, symmetry=True)
+
+
+def test_dfs_all_digits_prune_keeps_a_shape_whose_only_eight_is_two_steps_out(tmp_path):
+    # Size 14 inside rows 0-4 x columns 1-6: three shapes carry all of 1-8. One shows
+    # its only 8 on a cell two steps from the partial shape when the walk reaches it;
+    # a prune that undercounts that cell's reach drops it. CP-SAT is the second opinion.
+    import shapeenum
+
+    ban = window_ban(range(5), range(1, 7))
+    fastclimb.pins((), ban)
+    status, n, solvable, unique = shapeenum.enumerate_native(
+        14, (), ban, 120, tmp_path, lambda _m: None
+    )
+    assert status == "exhausted"
+    r = dfs(14, force=(), ban=ban)
+    assert r.exhausted
+    assert (r.shapes, r.solvable, r.unique) == (n, solvable, unique)
+    assert r.shapes == 3

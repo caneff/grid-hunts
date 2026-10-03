@@ -6,10 +6,11 @@
 // (1-8), givens are distinct within every row, column and box, and the shaded cells
 // form one orthogonally connected region. gf_require_eight(1) also demands a
 // given of 8; gf_set_pins forces cells on or off. gf_count counts sudoku solutions of a shape's givens up to a cap;
-// gf_climb anneals on log solutions (temperature t_hi -> t_lo over the run; a
+// gf_enumerate lists every connected shape of one size; gf_climb anneals on log solutions (temperature t_hi -> t_lo over the run; a
 // move toggles a short king-walk of 1..max_toggles cells) and returns the best
 // shape found.
 #include <math.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
@@ -212,4 +213,275 @@ int gf_climb(uint8_t *shape, uint64_t seed, double seconds, int cap, int64_t *st
     memcpy(shape, best, 81);
     if (steps_out) *steps_out = steps;
     return best_score;
+}
+
+// ---- gf_enumerate: every connected shape of one size, depth first -----------
+//
+// Redelmeier's walk: grow one orthogonally connected shape cell by cell from a
+// root, so each shape is built exactly once. Unpinned, the root is the shape's
+// lowest-index cell and lower cells are out. With a pinned-on cell the root is
+// that cell and nothing is cut off. A cell the walk pops and does not take is
+// out for the rest of that branch, so every cell is IN, OUT or still open.
+//
+// A shaded cell's given is its shaded king-neighbour count. A cell the shape can
+// no longer reach (more than the cells left to place away from it, over open
+// cells) is out for good, so a shaded cell with no reachable open king neighbour
+// has its count settled. The walk prunes on: a settled count of 0, two settled
+// counts equal inside a row, column or box, too few reachable cells to finish,
+// and (all_digits) a digit of 1-8 that no cell can still show. Each complete
+// shape then goes to gf_count, which stays the one judge of a shape.
+#define OPEN 0
+#define IN 1
+#define OUT 2
+
+typedef struct {
+    int size, n, all_digits, symmetry, cap;
+    uint8_t st[81];       // per cell: OPEN, IN the shape, or OUT of it
+    uint8_t visited[81];  // ever offered to the untried set on this branch
+    uint8_t shape[81];    // the shape so far, 0/1
+    uint8_t reg[81];      // count settled and entered in the house masks
+    int inn[81];          // shaded king neighbours so far
+    int key[81];          // pick order: distance from the root row, then column
+    uint16_t hr[9], hc[9], hb[81];  // settled counts used per row, column, box
+    int regstack[81], regtop;
+    int64_t shapes, solvable, unique, nodes, out_cap, stored;
+    double deadline;
+    int timed_out;
+    uint8_t *out;
+    int *out_k;
+} Enum;
+
+static int SYM[8][81];  // the 8 dihedral images as position permutations
+static int sym_ready;
+
+static void init_sym(void) {
+    if (sym_ready) return;
+    for (int t = 0; t < 8; t++)
+        for (int i = 0; i < 81; i++) {
+            int r = i / 9, c = i % 9, a = t & 1 ? 8 - r : r, b = t & 2 ? 8 - c : c;
+            SYM[t][i] = t & 4 ? b * 9 + a : a * 9 + b;
+        }
+    sym_ready = 1;
+}
+
+// Keeps the largest of a shape's 8 images, read as a 0/1 string: one per orbit.
+static int canonical(const uint8_t *sh) {
+    for (int t = 1; t < 8; t++)
+        for (int j = 0; j < 81; j++) {
+            int a = sh[SYM[t][j]];
+            if (a != sh[j]) {
+                if (a > sh[j]) return 0;
+                break;
+            }
+        }
+    return 1;
+}
+
+static void unsettle_to(Enum *e, int mark) {
+    while (e->regtop > mark) {
+        int x = e->regstack[--e->regtop];
+        uint16_t bit = 1 << e->inn[x];
+        e->hr[ROW[x]] &= ~bit; e->hc[COL[x]] &= ~bit; e->hb[BOX[x]] &= ~bit;
+        e->reg[x] = 0;
+    }
+}
+
+// Re-read the position after a decision: 0 when no completion can satisfy the rules.
+static int refresh(Enum *e) {
+    int rem = e->size - e->n, dist[81], queue[81], qh = 0, qt = 0;
+    for (int x = 0; x < 81; x++) {
+        dist[x] = e->st[x] == IN ? 0 : 99;
+        if (e->st[x] == IN) queue[qt++] = x;
+    }
+    int reachable = 0;
+    while (qh < qt) {
+        int x = queue[qh++];
+        if (dist[x] >= rem) continue;
+        for (int k = 0; k < ORTHN[x]; k++) {
+            int y = ORTH[x][k];
+            if (e->st[y] != OPEN || dist[y] <= dist[x] + 1) continue;
+            dist[y] = dist[x] + 1;
+            queue[qt++] = y;
+            reachable++;
+        }
+    }
+    if (reachable < rem) return 0;
+    for (int x = 0; x < 81; x++)
+        if (force_on[x] && e->st[x] == OPEN && dist[x] > rem) return 0;
+    int seen = 0;
+    for (int x = 0; x < 81; x++) {
+        if (dist[x] > rem) continue;
+        int open = 0;
+        for (int k = 0; k < NBN[x]; k++) open += e->st[NB[x][k]] == OPEN && dist[NB[x][k]] <= rem;
+        // Cells still to place that can raise x's count: an open x takes one of the rem
+        // slots itself, so only rem - 1 can be its neighbours; an IN cell can use all rem.
+        int lo = e->inn[x], hi = lo + open, room = e->st[x] == IN ? rem : rem - 1;
+        if (e->st[x] == IN) {
+            if (!open && !e->reg[x]) {
+                if (lo < 1) return 0;
+                uint16_t bit = 1 << lo;
+                if ((e->hr[ROW[x]] | e->hc[COL[x]] | e->hb[BOX[x]]) & bit) return 0;
+                e->hr[ROW[x]] |= bit; e->hc[COL[x]] |= bit; e->hb[BOX[x]] |= bit;
+                e->reg[x] = 1;
+                e->regstack[e->regtop++] = x;
+            }
+        }
+        if (hi > lo + room) hi = lo + room;
+        if (lo < 1) lo = 1;
+        for (int d = lo; d <= hi && d <= 8; d++) seen |= 1 << d;
+    }
+    return !e->all_digits || seen == 0x1FE;
+}
+
+// Decide cell c IN or OUT and re-read the position; returns 0 when it breaks a rule.
+// Always leaves the decision applied, so the caller undoes it either way.
+static int decide(Enum *e, int c, int state) {
+    e->st[c] = (uint8_t)state;
+    if (state == IN) {
+        e->n++;
+        for (int k = 0; k < NBN[c]; k++) e->inn[NB[c][k]]++;
+    }
+    return refresh(e);
+}
+
+static void undecide(Enum *e, int c, int state) {
+    if (state == IN) {
+        e->n--;
+        for (int k = 0; k < NBN[c]; k++) e->inn[NB[c][k]]--;
+    }
+    e->st[c] = OPEN;
+}
+
+static void leaf(Enum *e) {
+    if (e->symmetry && !canonical(e->shape)) return;
+    if (e->all_digits) {
+        int seen = 0;
+        for (int i = 0; i < 81; i++) {
+            if (!e->shape[i]) continue;
+            int n = 0;
+            for (int k = 0; k < NBN[i]; k++) n += e->shape[NB[i][k]];
+            seen |= 1 << n;
+        }
+        if ((seen & 0x1FE) != 0x1FE) return;
+    }
+    int k = gf_count(e->shape, e->cap);
+    if (k < 0) return;
+    e->shapes++;
+    if (k >= 1) {
+        if (e->stored < e->out_cap) {
+            memcpy(e->out + 81 * e->stored, e->shape, 81);
+            e->out_k[e->stored] = k;
+            e->stored++;
+        }
+        e->solvable++;
+    }
+    if (k == 1) e->unique++;
+}
+
+static void grow(Enum *e, const int *untried_in, int cnt) {
+    int entry = e->regtop, popped[81], np = 0, untried[81];
+    memcpy(untried, untried_in, cnt * sizeof(int));
+    while (cnt > 0 && !e->timed_out) {
+        if ((++e->nodes & 4095) == 0 && e->deadline > 0 && now() > e->deadline) {
+            e->timed_out = 1;
+            break;
+        }
+        // any pick order is valid; the cell nearest the root row first settles counts row by row
+        int best = 0;
+        for (int i = 1; i < cnt; i++)
+            if (e->key[untried[i]] < e->key[untried[best]]) best = i;
+        int c = untried[best];
+        untried[best] = untried[--cnt];
+        popped[np++] = c;
+        int mark = e->regtop;
+        if (decide(e, c, IN)) {
+            e->shape[c] = 1;
+            if (e->n == e->size) {
+                leaf(e);
+            } else {
+                int next[81], nn = cnt, added[4], na = 0;
+                memcpy(next, untried, cnt * sizeof(int));
+                for (int k = 0; k < ORTHN[c]; k++) {
+                    int j = ORTH[c][k];
+                    if (e->visited[j]) continue;
+                    e->visited[j] = 1;
+                    added[na++] = j;
+                    next[nn++] = j;
+                }
+                grow(e, next, nn);
+                for (int k = 0; k < na; k++) e->visited[added[k]] = 0;
+            }
+            e->shape[c] = 0;
+        }
+        unsettle_to(e, mark);
+        undecide(e, c, IN);
+        // c is out for the rest of this branch; a pinned-on cell cannot be
+        if (force_on[c]) {
+            np--;
+            break;
+        }
+        if (!decide(e, c, OUT)) break;
+    }
+    unsettle_to(e, entry);
+    for (int i = 0; i < np; i++) undecide(e, popped[i], OUT);
+}
+
+// Enumerate every orthogonally connected shape of `size` cells that satisfies the
+// local rules (and, with all_digits, shows each of 1-8), honouring gf_set_pins and
+// gf_require_eight, and count its sudoku solutions up to cap with gf_count.
+// symmetry keeps one shape per orbit of the 8 dihedral images (refused with pins).
+// seconds > 0 stops the search after that long. Solvable shapes (81 bytes each,
+// with their count in out_k) are stored up to out_cap. stats receives shapes,
+// solvable, unique, stored and 1 if the search ran to completion (0 if cut off).
+// Returns 0, or -1 on bad arguments (cap below 2 would call every solvable shape unique).
+int gf_enumerate(int size, int all_digits, int symmetry, int cap, double seconds,
+                 uint8_t *out, int *out_k, int64_t out_cap, int64_t *stats) {
+    init();
+    init_sym();
+    int pinned = 0, first_on = -1;
+    for (int i = 0; i < 81; i++) {
+        pinned |= force_on[i] | force_off[i];
+        if (force_on[i] && first_on < 0) first_on = i;
+    }
+    if (size < 1 || size > 81 || cap < 2 || (symmetry && pinned)) return -1;
+    static Enum e;
+    memset(&e, 0, sizeof e);
+    e.size = size; e.all_digits = all_digits; e.symmetry = symmetry; e.cap = cap;
+    e.out = out; e.out_k = out_k; e.out_cap = out_cap;
+    e.deadline = seconds > 0 ? now() + seconds : 0;
+    int lo = first_on >= 0 ? first_on : 0, hi = first_on >= 0 ? first_on : 80;
+    for (int root = lo; root <= hi && !e.timed_out; root++) {
+        if (force_off[root]) continue;
+        memset(e.st, OPEN, 81); memset(e.visited, 0, 81); memset(e.shape, 0, 81);
+        memset(e.reg, 0, 81); memset(e.inn, 0, sizeof e.inn);
+        memset(e.hr, 0, sizeof e.hr); memset(e.hc, 0, sizeof e.hc); memset(e.hb, 0, sizeof e.hb);
+        e.regtop = 0; e.n = 0;
+        for (int i = 0; i < 81; i++)
+            if (force_off[i] || (first_on < 0 && i < root)) {
+                e.visited[i] = 1;
+                e.st[i] = OUT;
+            }
+        for (int i = 0; i < 81; i++) e.key[i] = abs(ROW[i] - ROW[root]) * 9 + COL[i];
+        e.visited[root] = 1;
+        if (decide(&e, root, IN)) {
+            e.shape[root] = 1;
+            if (e.n == e.size) {
+                leaf(&e);
+            } else {
+                int next[81], nn = 0;
+                for (int k = 0; k < ORTHN[root]; k++) {
+                    int j = ORTH[root][k];
+                    if (e.visited[j]) continue;
+                    e.visited[j] = 1;
+                    next[nn++] = j;
+                }
+                grow(&e, next, nn);
+            }
+        }
+    }
+    if (stats) {
+        stats[0] = e.shapes; stats[1] = e.solvable; stats[2] = e.unique;
+        stats[3] = e.stored; stats[4] = !e.timed_out;
+    }
+    return 0;
 }

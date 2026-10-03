@@ -9,6 +9,7 @@ import ctypes
 import random
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -48,6 +49,17 @@ def _load():
     lib.gf_require_eight.argtypes = [ctypes.c_int]
     lib.gf_set_latin.argtypes = [ctypes.c_int]
     lib.gf_set_pins.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
+    lib.gf_enumerate.argtypes = [
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_double,
+        ctypes.c_char_p,
+        ctypes.POINTER(ctypes.c_int),
+        ctypes.c_int64,
+        ctypes.POINTER(ctypes.c_int64),
+    ]
     lib.gf_climb.argtypes = [
         ctypes.c_char_p,
         ctypes.c_uint64,
@@ -106,6 +118,48 @@ def climb(shape, seed, seconds, cap=2000, t_hi=1.0, t_lo=0.02, max_toggles=4):
         buf, seed, seconds, cap, ctypes.byref(steps), t_hi, t_lo, max_toggles
     )
     return {i for i in range(81) if buf.raw[i]}, score, steps.value
+
+
+@dataclass
+class Enumeration:
+    """What `enumerate_shapes` found. `exhausted` False means the time limit cut it off."""
+
+    exhausted: bool
+    shapes: int
+    solvable: int
+    unique: int
+    solvable_shapes: list  # [(set of cells, solutions up to cap)], at most max_stored
+
+    @property
+    def truncated(self):
+        """True when more solvable shapes were found than `solvable_shapes` holds."""
+        return self.solvable > len(self.solvable_shapes)
+
+
+def enumerate_shapes(
+    size, all_digits=True, symmetry=False, cap=2, seconds=0, max_stored=100000
+):
+    """Every connected admissible shape of `size` cells, by depth-first search.
+
+    Honours `pins`, `require_eight` and `latin`; each shape goes through the same
+    filter and counter as `count`. all_digits also demands a given of each of 1-8.
+    symmetry keeps one shape per orbit of the 8 dihedral images (no pins).
+    seconds > 0 cuts the search off; the result then says `exhausted=False`.
+    """
+    out = ctypes.create_string_buffer(81 * max_stored)
+    ks = (ctypes.c_int * max_stored)()
+    stats = (ctypes.c_int64 * 5)()
+    rc = LIB.gf_enumerate(
+        size, int(all_digits), int(symmetry), cap, seconds, out, ks, max_stored, stats
+    )
+    if rc:
+        raise ValueError(
+            "gf_enumerate: size not in 1-81, cap below 2, or symmetry with pins"
+        )
+    found = [
+        ({i for i in range(81) if out.raw[81 * s + i]}, ks[s]) for s in range(stats[3])
+    ]
+    return Enumeration(bool(stats[4]), stats[0], stats[1], stats[2], found)
 
 
 def _test():
