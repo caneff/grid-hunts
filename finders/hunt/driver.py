@@ -45,6 +45,7 @@ ahead of anything, before resume rebuilds anything from the logs.
 """
 
 import argparse
+import contextlib
 import fcntl
 import json
 import math
@@ -477,10 +478,55 @@ def _reconcile_renders(finder, out, progress_events):
             png.unlink(missing_ok=True)
 
 
+def _state_hooks(finder):
+    """`(has_load, has_save)`: which of `load_state`/`save_state` the finder
+    has. The one place that reads them."""
+    return (
+        getattr(finder, "load_state", None) is not None,
+        getattr(finder, "save_state", None) is not None,
+    )
+
+
 def _is_stateful(finder):
-    """A finder that has `load_state` is stateful: its `propose()` can have
-    side effects state.json owns. The one place that says so."""
-    return hasattr(finder, "load_state")
+    """A finder with both `load_state` and `save_state` is stateful: its
+    `propose()` can have side effects state.json owns. The one place that
+    says so; `_validate_stateful` refuses a finder with only one of them."""
+    return all(_state_hooks(finder))
+
+
+def _validate_stateful(finder):
+    """Refuse before any output exists a finder with only one of
+    `load_state`/`save_state` (#664). Load-only never writes state.json, so
+    every resume would trim each event back to the start and truncate
+    examples.jsonl; save-only writes a state it never reads back."""
+    has_load, has_save = _state_hooks(finder)
+    if has_load == has_save:
+        return None
+    have, lack = (
+        ("load_state", "save_state") if has_load else ("save_state", "load_state")
+    )
+    print(
+        f"hunt: refusing to run -- the finder has {have} but not {lack}; "
+        "a stateful finder needs both",
+        file=sys.stderr,
+    )
+    return 2
+
+
+@contextlib.contextmanager
+def _restoring_state(finder):
+    """Snapshot a stateful finder's state (a JSON round trip of
+    `save_state()`, so a finder that mutates its saved object in place cannot
+    bleed into the snapshot) and restore it on exit, even on an exception. A
+    stateless finder passes through untouched."""
+    if not _is_stateful(finder):
+        yield
+        return
+    snapshot = json.loads(json.dumps(finder.save_state()))
+    try:
+        yield
+    finally:
+        finder.load_state(snapshot)
 
 
 def _can_repair_renders(finder):
@@ -503,11 +549,8 @@ def _render_repair_gap(finder):
     before it reads the gap."""
     if getattr(finder, "render", None) is None:
         return "the finder has no render"
-    if _is_stateful(finder) and (
-        getattr(finder, "candidate_from_record", None) is None
-        or getattr(finder, "save_state", None) is None
-    ):
-        return "a stateful finder needs candidate_from_record and save_state"
+    if _is_stateful(finder) and getattr(finder, "candidate_from_record", None) is None:
+        return "a stateful finder needs candidate_from_record"
     return None
 
 
@@ -571,31 +614,29 @@ def _repair_renders(finder, out, progress_lines, progress_events, examples_recor
         seed = event["seed"]
         new_event = dict(event)
         new_event.pop("render_error", None)
-        if stateful:
-            snapshot = json.loads(json.dumps(finder.save_state()))
-        try:
-            if stateful:
-                candidate = finder.candidate_from_record(record)
+        # The restore is outside the render-fault `except`: a state restore
+        # that raises stops the resume, and `render` runs inside the window.
+        with _restoring_state(finder):
+            try:
+                if stateful:
+                    candidate = finder.candidate_from_record(record)
+                else:
+                    candidate = finder.propose(random.Random(seed))
+            except Exception as e:
+                # Same rule as `_render_example`: a presentation-layer fault
+                # lands on the seed's event, it never stops the resume.
+                new_event["render_error"] = f"{type(e).__name__}: {e}"
             else:
-                candidate = finder.propose(random.Random(seed))
-        except Exception as e:
-            # Same rule as `_render_example`: a presentation-layer fault
-            # lands on the seed's event, it never stops the resume.
-            new_event["render_error"] = f"{type(e).__name__}: {e}"
-        else:
-            if _is_empty(candidate):
-                # A rebuild that yields nothing (`None`, or the `Empty` a
-                # time-capped `propose()` returns) must not reach `render`:
-                # `Empty` is truthy and draws a wrong picture (#645). Keep
-                # the seed's failure.
-                new_event["render_error"] = event.get(
-                    "render_error", "repair could not rebuild the candidate"
-                )
-            else:
-                _render_example(finder, out, seed, candidate, new_event)
-        finally:
-            if stateful:
-                finder.load_state(snapshot)
+                if _is_empty(candidate):
+                    # A rebuild that yields nothing (`None`, or the `Empty` a
+                    # time-capped `propose()` returns) must not reach
+                    # `render`: `Empty` is truthy and draws a wrong picture
+                    # (#645). Keep the seed's failure.
+                    new_event["render_error"] = event.get(
+                        "render_error", "repair could not rebuild the candidate"
+                    )
+                else:
+                    _render_example(finder, out, seed, candidate, new_event)
         if new_event != event:
             progress_events[i] = new_event
             progress_lines[i] = json.dumps(new_event) + "\n"
@@ -603,18 +644,16 @@ def _repair_renders(finder, out, progress_lines, progress_events, examples_recor
 
 
 def _save_state(finder, out, seed):
-    save = getattr(finder, "save_state", None)
-    if save is None:
+    if not _is_stateful(finder):
         return
-    _write_json_atomic(out / "state.json", {"seed": seed, "state": save()})
+    _write_json_atomic(out / "state.json", {"seed": seed, "state": finder.save_state()})
 
 
 def _load_state(finder, out):
-    load = getattr(finder, "load_state", None)
     state_path = out / "state.json"
-    if load is None or not state_path.exists():
+    if not _is_stateful(finder) or not state_path.exists():
         return
-    load(json.loads(state_path.read_text())["state"])
+    finder.load_state(json.loads(state_path.read_text())["state"])
 
 
 def _render_example(finder, out, seed, candidate, event):
@@ -855,19 +894,13 @@ def _check_symmetry_before_mutation(
         except ValueError as e:
             raise SymmetryMismatch(str(e)) from e
 
-    save = getattr(finder, "save_state", None)
-    load = getattr(finder, "load_state", None)
-    pristine = json.loads(json.dumps(save())) if save else None
-    try:
+    with _restoring_state(finder):
         for seed in range(seed_start, seed_end):
             if seed in done_seeds:
                 continue
             _, _, key = _propose_and_key(finder, seed, symmetry, no_verify)
             if key is not None:
                 return
-    finally:
-        if save and load:
-            load(pristine)
 
 
 def _resume(finder, argv, args, out, prior):
@@ -1074,7 +1107,7 @@ def run(finder, argv):
     if refusal is not None:
         return refusal
     finder.workers = args.workers
-    refusal = _validate_symmetry(finder)
+    refusal = _validate_stateful(finder) or _validate_symmetry(finder)
     if refusal is not None:
         return refusal
     out = Path(args.out)

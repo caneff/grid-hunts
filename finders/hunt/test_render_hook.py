@@ -278,8 +278,6 @@ class StatefulRenderFinder:
 {TOY_2X2_RENDER}
 if os.environ.get("TOY_NO_HOOK"):
     StatefulRenderFinder.candidate_from_record = None
-if os.environ.get("TOY_NO_SAVE"):
-    StatefulRenderFinder.save_state = None
 sys.exit(run(StatefulRenderFinder(), sys.argv[1:]))
 """
     fail_env = dict(os.environ, TOY_RENDER_FAIL="1")
@@ -443,49 +441,6 @@ sys.exit(run(StatefulRenderFinder(), sys.argv[1:]))
         and quiet_result.returncode == 0
         and list((quiet_out / "renders").glob("*.png"))
         and "unrepaired" not in quiet_result.stderr,
-    )
-
-    # A stateful finder with `load_state` and a hook but no `save_state`
-    # fails closed too: repair cannot snapshot its state, so the hook is
-    # never called and the failed renders keep their original render_error
-    # (#538, #627 controller-1). Only the resume drops `save_state`: the
-    # first run must leave a state.json for the resume to load, or the
-    # resume reruns every seed and renders them afresh. TOY_HOOK_RAISES would
-    # overwrite that error with a KeyError if the hook were called.
-    nosave_out = Path(tmp) / "no-save"
-    nosave_argv = ["--out", str(nosave_out), "--seeds", "0:30"]
-    nosave_first = subprocess.run(
-        run_argv + nosave_argv,
-        capture_output=True,
-        text=True,
-        env=dict(os.environ, TOY_RENDER_FAIL="1"),
-    )
-    nosave_result = subprocess.run(
-        run_argv + nosave_argv,
-        capture_output=True,
-        text=True,
-        env=dict(os.environ, TOY_NO_SAVE="1", TOY_HOOK_RAISES="1"),
-    )
-    nosave_events = read_jsonl(nosave_out / "progress.jsonl")
-    check(
-        "the no-save first run exits 0 and found examples to repair",
-        nosave_first.returncode == 0
-        and any(e.get("outcome") == "example" for e in nosave_events),
-    )
-    check(
-        f"a stateful finder with no save_state resumes with exit 0 and no "
-        f"picture (stderr: {nosave_result.stderr[-300:]})",
-        nosave_result.returncode == 0
-        and not list((nosave_out / "renders").glob("*.png")),
-    )
-    check(
-        "its events keep the original render failure: candidate_from_record "
-        "was never called",
-        all(
-            e.get("render_error", "").startswith("RuntimeError")
-            for e in nosave_events
-            if e.get("outcome") == "example"
-        ),
     )
 
     # A hook that mutates finder state must not reach state.json: repair

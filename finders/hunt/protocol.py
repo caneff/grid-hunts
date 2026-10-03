@@ -74,7 +74,9 @@ class Finder(Protocol):
         `symmetry`."""
         ...
 
-    # Optional -- a finder with no expensive cuts to remember skips both.
+    # Optional -- a finder with no expensive cuts to remember skips both. A
+    # finder with only one of the two is refused at launch (#664): a
+    # load-only finder would never have a state.json to load.
     # The driver calls `save_state` after every seed and `load_state` once,
     # before a resumed hunt's first seed, round-tripping through state.json
     # (#487) so a resumed hunt doesn't relearn what it already knew.
@@ -92,9 +94,9 @@ class Finder(Protocol):
     # already verify-able skips this; `hunt verify` then hands `verify` the
     # parsed record line unchanged.
     #
-    # A stateful finder (has `load_state`) that also has `render` needs this
-    # hook, and `save_state`, for render repair on resume (#538); without
-    # them a failed render stays missing and a stray render is never deleted.
+    # A stateful finder (has `load_state` and `save_state`) that also has
+    # `render` needs this hook for render repair on resume (#538); without
+    # it a failed render stays missing and a stray render is never deleted.
 
     def candidate_from_record(self, record: dict) -> Any:
         """Rebuild the candidate, as `propose` produced it, from a line
