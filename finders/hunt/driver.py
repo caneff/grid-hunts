@@ -568,7 +568,8 @@ def _repair_renders(finder, out, progress_lines, progress_events, examples_recor
     before each hook call and restored after it, even if the hook raises,
     so a hook that mutates state never reaches state.json (Codex gate 2).
     That the candidate is what `propose` produced stays the hook's
-    contract, unchecked (protocol.py). The k-th "example" event pairs with
+    contract, unchecked (protocol.py). A rebuild that comes back `None` or
+    `Empty` keeps the seed's `render_error` and writes no picture (#645). The k-th "example" event pairs with
     the k-th record: `_reconcile` leaves the two counts equal. A finder
     `_can_repair_renders` refuses is left as it is.
     """
@@ -594,7 +595,16 @@ def _repair_renders(finder, out, progress_lines, progress_events, examples_recor
             # lands on the seed's event, it never stops the resume.
             new_event["render_error"] = f"{type(e).__name__}: {e}"
         else:
-            _render_example(finder, out, seed, candidate, new_event)
+            if _is_empty(candidate):
+                # A rebuild that yields nothing (`None`, or the `Empty` a
+                # time-capped `propose()` returns) must not reach `render`:
+                # `Empty` is truthy and draws a wrong picture (#645). Keep
+                # the seed's failure.
+                new_event["render_error"] = event.get(
+                    "render_error", "repair could not rebuild the candidate"
+                )
+            else:
+                _render_example(finder, out, seed, candidate, new_event)
         finally:
             if stateful:
                 finder.load_state(snapshot)
