@@ -646,25 +646,6 @@ def circle_candidates(sol, shade):
     return out
 
 
-def uninfected_groups(shade):
-    """Sizes of the uninfected groups (4-connected), largest first."""
-    seen, sizes = set(), []
-    for p in CELLS:
-        if shade[p] or p in seen:
-            continue
-        stack, n = [p], 0
-        seen.add(p)
-        while stack:
-            q = stack.pop()
-            n += 1
-            for r in nb(q):
-                if not shade[r] and r not in seen:
-                    seen.add(r)
-                    stack.append(r)
-        sizes.append(n)
-    return sorted(sizes, reverse=True)
-
-
 def clued_bananas(sol, shade, circ):
     return [c for c in comps(shade, 1 - RECT) if any(p in circ for p in c)]
 

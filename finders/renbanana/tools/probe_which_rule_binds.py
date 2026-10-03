@@ -24,13 +24,6 @@ from probe_inverted import Shadings, random_grid
 RULES = ("none", "whisper", "renban-consecutive", "renban-distinct", "non-rectangle")
 
 
-def relaxed(grid, drop):
-    """The shading model with one rule removed."""
-    m = Shadings.__new__(Shadings)
-    Shadings.__init__(m, grid, drop=drop)
-    return m
-
-
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--grids", type=int, default=20)

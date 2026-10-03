@@ -519,37 +519,6 @@ def batch(
             )
 
 
-def bifurcations(h):
-    """For every open fact, assume it and run; report contradictions (the
-    negation is then proven) and full solves."""
-    import copy
-
-    res = []
-
-    def trial(label, fn):
-        g = copy.deepcopy(h)
-        g.sol = None
-        try:
-            fn(g)
-            g.run()
-            res.append((label, "solved" if g.solved() else f"placed {g.placed()}"))
-        except (Unsound, RuntimeError):
-            res.append((label, "CONTRADICTION -> negation proven"))
-
-    for i in range(81):
-        if h.cc[i] == "?":
-            trial(f"{nm(i)} is the copycat", lambda g, i=i: g.set_cc(i, "C"))
-            trial(f"{nm(i)} is plain", lambda g, i=i: g.set_cc(i, "P"))
-        if 1 < len(h.cand[i]) <= 3:
-            for d in sorted(h.cand[i]):
-
-                def f(g, i=i, d=d):
-                    g.cand[i] = {d}
-
-                trial(f"{nm(i)}={d}", f)
-    return res
-
-
 if __name__ == "__main__":
     import numpy as np
 

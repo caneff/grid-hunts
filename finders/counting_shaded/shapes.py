@@ -174,26 +174,6 @@ def eight_ok(given):
     return given is not None and (not REQUIRE_EIGHT or 8 in given.values())
 
 
-def grow_seed(rng, size, tries=20000):
-    """A random connected admissible solvable shape of `size` shaded cells honouring the
-    pins, or None. Grows from the forced cells (or one random cell) by adding a
-    random orthogonal neighbour at a time."""
-    for _ in range(tries):
-        shape = set(FORCE) or {rng.choice([i for i in range(81) if i not in BAN])}
-        while len(shape) < size:
-            frontier = [
-                j for i in shape for j in ORTH[i] if j not in shape and j not in BAN
-            ]
-            frontier += [i for i in FORCE if i not in shape]
-            if not frontier:
-                break
-            shape.add(rng.choice(frontier))
-        g = givens(shape)
-        if g is not None and eight_ok(g) and count_solutions(g, 1) == 1:
-            return shape
-    return None
-
-
 def seed_shape(rng, min_shaded):
     """A random solvable admissible shape: grid and shaded cells together in CP-SAT."""
     from ortools.sat.python import cp_model
