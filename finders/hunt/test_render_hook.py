@@ -9,6 +9,7 @@ see -- files on disk and exit code, never a driver.py internal.
 
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -40,6 +41,13 @@ def check(name, cond):
     if not cond:
         ok = False
     print(f"{status}: {name}")
+
+
+def seed_pngs(out):
+    """The renders/<seed>.png files, leaving out any temp file."""
+    return [
+        p for p in (out / "renders").iterdir() if re.fullmatch(r"-?\d+\.png", p.name)
+    ]
 
 
 def read_jsonl(path):
@@ -95,7 +103,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
 with tempfile.TemporaryDirectory() as tmp:
     # A finder whose render() raises must not take the whole hunt down with
-    # it (#490 correctness review C1): the example itself is still real and
+    # it: the example itself is still real and
     # already durable in examples.jsonl by the time render() runs, so a
     # presentation-layer fault gets recorded on the seed's event, not
     # treated as a search failure.
@@ -159,7 +167,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # A render failure that clears up (a full disk that got space back, a
     # finder bug since fixed) must not leave examples.jsonl and renders/
     # permanently mismatched just because the seed's outcome was already
-    # durable when it failed (#524 Codex pass 1): resume re-attempts a
+    # durable when it failed (#524): resume re-attempts a
     # missing PNG for any already-accepted example. This block is the
     # stateless finder; the stateful blocks below cover the rest.
     out = Path(tmp) / "hunt-out"
@@ -179,7 +187,7 @@ with tempfile.TemporaryDirectory() as tmp:
     check("at least one example was found (render-fail run)", len(examples_before) > 0)
     check(
         "no PNG exists yet -- every render failed",
-        not [p for p in (out / "renders").iterdir() if p.name.count(".") == 1],
+        not seed_pngs(out),
     )
 
     resume_env = dict(os.environ)
@@ -323,7 +331,7 @@ sys.exit(run(StatefulRenderFinder(), sys.argv[1:]))
         json.loads((out / "state.json").read_text())["state"]["seeds_seen"] == 30,
     )
     # Each repaired picture is drawn from its own seed's record: a fresh
-    # hunt with rendering working the whole way is the control (#538 review C3).
+    # hunt with rendering working the whole way is the control.
     control_out = Path(tmp) / "control"
     subprocess.run(
         [
@@ -348,7 +356,7 @@ sys.exit(run(StatefulRenderFinder(), sys.argv[1:]))
     )
 
     # A record the hook cannot rebuild is a presentation-layer fault too: it
-    # lands on the seed's event and never stops the resume (#538 review C1).
+    # lands on the seed's event and never stops the resume.
     raise_out = Path(tmp) / "hook-raises"
     run_argv = [sys.executable, "-c", stateful_render_script]
     seeds_argv = ["--out", str(raise_out), "--seeds", "0:30"]
@@ -380,8 +388,7 @@ sys.exit(run(StatefulRenderFinder(), sys.argv[1:]))
     )
 
     # A stateful finder with no candidate_from_record is left alone: nothing
-    # is rebuilt, and its failed renders keep their original render_error
-    # (#538 review C2).
+    # is rebuilt, and its failed renders keep their original render_error.
     nohook_out = Path(tmp) / "no-hook"
     nohook_argv = ["--out", str(nohook_out), "--seeds", "0:30"]
     subprocess.run(
@@ -482,10 +489,10 @@ sys.exit(run(StatefulRenderFinder(), sys.argv[1:]))
     )
 
     # A hook that mutates finder state must not reach state.json: repair
-    # snapshots the state before the call and restores it after (Codex gate
-    # 2). A kill is simulated by truncating progress.jsonl, so the resume
-    # both repairs renders and reruns seeds; the persisted state must equal
-    # the one a resume with a well-behaved hook writes.
+    # snapshots the state before the call and restores it after. A kill is
+    # simulated by truncating progress.jsonl, so the resume both repairs
+    # renders and reruns seeds; the persisted state must equal the one a
+    # resume with a well-behaved hook writes.
     def resumed_state(name, resume_extra_env):
         run_out = Path(tmp) / name
         run_args = ["--out", str(run_out), "--seeds", "0:30"]
@@ -524,11 +531,10 @@ with tempfile.TemporaryDirectory() as tmp:
     # must still clean up fully: `_cleanup_partial_output` iterates
     # OUTPUT_FILES and renders/ is the one entry there that's a directory,
     # not a file -- `path.unlink()` raises `IsADirectoryError` on it if not
-    # special-cased, once a render has actually been written. Caught by
-    # rebasing this PR onto #488/#509 landing on main, not by the original
-    # render-hook review. Seed 0's candidate has a key() the length the
-    # symmetry group expects (4), so it's accepted and rendered; seed 1's
-    # has a different length, which is what canonical_key rejects.
+    # special-cased, once a render has actually been written. Seed 0's
+    # candidate has a key() the length the symmetry group expects (4), so it's
+    # accepted and rendered; seed 1's has a different length, which is what
+    # canonical_key rejects.
     out = Path(tmp) / "hunt-out"
     render_symmetry_mismatch_script = f"""
 import sys
@@ -669,7 +675,7 @@ sys.exit(run(PartialRenderFinder(), sys.argv[1:]))
 
     check(
         "a failed mid-write save leaves no file at renders/<seed>.png",
-        not [p for p in (out / "renders").iterdir() if p.name.count(".") == 1],
+        not seed_pngs(out),
     )
     check(
         "a failed mid-write save leaves no temp file behind",

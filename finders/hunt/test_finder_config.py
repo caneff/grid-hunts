@@ -100,4 +100,14 @@ with tempfile.TemporaryDirectory() as d:
         others and not any("empty_reason" in e for e in others),
     )
 
+# `Empty` has no reasonless spelling (#647).
+from protocol import Empty
+
+try:
+    Empty()
+    reasonless = True
+except TypeError:
+    reasonless = False
+check("Empty() with no reason is refused", not reasonless)
+
 sys.exit(0 if ok else 1)

@@ -17,15 +17,12 @@ with no `render` gets no renders/ directory at all. `--workers` (default 3,
 set on the finder before the first seed) and the 1-minute load gate
 (refuses above 24 unless `--force-load`) are #488. A resume also
 reconciles renders/ itself (#522, `_reconcile_renders`) and repairs a missing
-or undecodable picture: by re-proposing for a stateless finder, from the examples.jsonl
-record via `candidate_from_record` for a stateful one (#538). That hook must
-return the candidate as `propose` produced it (everything `verify` and
-`render` read); the driver does not guard that, but it does restore the
-finder's state around the call. A stateful finder with a `render` but no `candidate_from_record`
-gets neither repair nor sweep -- the gap is part of the finder contract
-(protocol.py). A finder's own knobs travel as `finder.config`: run.json
-records it and a resume under a different one refuses; a seed that found
-nothing may return `Empty(reason)`, written as `empty_reason` (#491).
+or undecodable picture: by re-proposing for a stateless finder, from the
+examples.jsonl record via `candidate_from_record` for a stateful one (#538);
+the contract for that hook, and the gap without it, is in protocol.py. A
+finder's own knobs travel as `finder.config`: run.json records it and a
+resume under a different one refuses; a seed that found nothing may return
+`Empty(reason)`, written as `empty_reason` (#491).
 
     uv run finders/hunt/toy_finder.py --out DIR --seeds START:END
     uv run finders/hunt/toy_finder.py --out DIR --seeds START:END --no-verify
@@ -143,7 +140,7 @@ def _merge_seeds_token(argv):
     heuristic for telling a negative-looking value apart from an
     unrecognized option is version-dependent: the two-token form only
     parses on Python 3.14+ here, and raises "expected one argument" on
-    3.11-3.13 (#516 Codex pass 2) even though `--seeds=-3:-2` parses on
+    3.11-3.13 even though `--seeds=-3:-2` parses on
     every version. Merging ourselves removes that ambiguity everywhere,
     without touching the caller's own argv (used verbatim for run.json's
     recorded-run comparison) -- this returns a new list.
@@ -207,7 +204,7 @@ def _resume_key(argv):
     a killed `--no-verify` hunt resumed without the flag would verify later
     seeds inline while earlier seeds kept unverified candidates, and the
     inverse). Box-safety knobs (`--workers`, `--force-load`) are excluded on
-    purpose (#488 review C1/P2) -- the box's load or a chosen worker count
+    purpose -- the box's load or a chosen worker count
     differing between two invocations of the same hunt is not a differing
     search, and the load gate's own "use --force-load" advice must not be
     something the resume check then refuses."""
@@ -239,12 +236,11 @@ class SymmetryMismatch(Exception):
 
 def _cleanup_partial_output(out):
     """Remove only the files this run may itself have written -- the
-    OUTPUT_FILES set -- leaving anything else in `out` untouched (#509
-    review, finding C1): the pre-flight this mirrors never touches a
-    pre-existing directory at all, so a blanket `rmtree` here would
-    destroy content this run never created. A file that can't be removed
-    (a symlink, a read-only parent, ...) is reported instead of silently
-    left behind (#509 review, C2) -- swallowing that failure would violate
+    OUTPUT_FILES set -- leaving anything else in `out` untouched: the
+    pre-flight this mirrors never touches a pre-existing directory at all, so
+    a blanket `rmtree` here would destroy content this run never created. A
+    file that can't be removed (a symlink, a read-only parent, ...) is reported
+    instead of silently left behind -- swallowing that failure would violate
     "no partial output files" with no signal it happened.
 
     `.lock` is deliberately excluded (#519): `run()`'s `finally` still
@@ -285,7 +281,7 @@ def _cleanup_partial_output(out):
 
 def _acquire_lock(out):
     """Exclusive, non-blocking flock on out/.lock -- the one lock a hunt
-    and `hunt verify` (#489/#523 Codex pass 1) both take, so `hunt verify`
+    and `hunt verify` (#489) both take, so `hunt verify`
     can't read examples.jsonl mid-write by a running hunt and publish a
     verified.jsonl that silently omits the tail, and two verify runs can't
     race on the same verified.jsonl.tmp. `flock` is tied to the open fd, so
@@ -393,7 +389,7 @@ def _reconcile(
     - ahead of state.json: the seed's own contribution to the finder's
       state was never saved -- and since a "done" seed never reruns, that
       contribution would otherwise be lost for good with no error, because
-      nothing about the hunt looks broken (#812 Codex pass 1, finding 2).
+      nothing about the hunt looks broken.
 
     Only progress.jsonl's very tail can ever be ahead -- every earlier line
     was already durable everywhere before the kill happened -- so this
@@ -459,10 +455,9 @@ def _reconcile_renders(finder, out, progress_events):
     deletion is only for a finder `_can_repair_renders` accepts: deleting a stray
     picture eagerly bets an intact one against the rerun's own render, and
     that bet is only safe when a *later* resume's `_repair_renders` can
-    regenerate the picture if the rerun's render fails (#522 correctness
-    review, finding C1). A stateful finder with no `candidate_from_record`
-    has no such retry -- its `propose()` can't be called again -- so its
-    stray render is left alone, a documented gap (protocol.py, `render`).
+    regenerate the picture if the rerun's render fails. A finder
+    `_can_repair_renders` refuses has no such retry, so its stray render is
+    left alone.
     """
     renders_dir = out / "renders"
     if not renders_dir.is_dir():
@@ -484,7 +479,7 @@ def _reconcile_renders(finder, out, progress_events):
 
 def _is_stateful(finder):
     """A finder that has `load_state` is stateful: its `propose()` can have
-    side effects state.json owns. The one place that says so (#627 S5)."""
+    side effects state.json owns. The one place that says so."""
     return hasattr(finder, "load_state")
 
 
@@ -493,15 +488,10 @@ def _can_repair_renders(finder):
 
     A stateless finder can: `propose()` on the seed rebuilds the candidate.
     A stateful finder's `propose()` can have side effects state.json owns
-    (toy_stateful_finder.py increments a counter there), so it never gets
-    called again; it can be repaired only from the examples.jsonl record,
-    through its optional `candidate_from_record`, which must return the
-    candidate as `propose` produced it (protocol.py; the driver does not
-    check that) and leave the finder's state unchanged (`_repair_renders`
-    restores it regardless). Without that hook, or without `save_state`
-    to snapshot the state (fail closed), the finder's missing render
-    stays unrepaired -- part of the finder contract (protocol.py,
-    `render`). `_render_repair_gap` names the refusal."""
+    (toy_stateful_finder.py increments a counter there), so it is repaired
+    only through `candidate_from_record` and `save_state` (the contract is
+    in protocol.py); without them its missing render stays unrepaired.
+    `_render_repair_gap` names the refusal."""
     return _render_repair_gap(finder) is None
 
 
@@ -554,24 +544,22 @@ def _warn_unrepaired_renders(finder, out, progress_events):
 
 def _repair_renders(finder, out, progress_lines, progress_events, examples_records):
     """Resume re-attempts a missing or undecodable renders/<seed>.png for every
-    already-accepted example (#524 Codex pass 1): a transient render
-    failure (a full disk, a bug in the finder's own render() since fixed)
-    must not leave examples.jsonl and renders/ permanently mismatched with
-    no error, just because the seed's outcome was already durable as
-    "example" -- a done seed never reruns, so nothing else would ever
-    retry it.
+    already-accepted example (#524): a transient render failure (a full disk, a
+    bug in the finder's own render() since fixed) must not leave
+    examples.jsonl and renders/ permanently mismatched with no error, just
+    because the seed's outcome was already durable as "example" -- a done
+    seed never reruns, so nothing else would ever retry it.
 
     A stateless finder's candidate is regenerated with `propose()`. A
     stateful finder's is rebuilt from its examples.jsonl record with
     `candidate_from_record` (#538) -- `propose()` is never called for it.
     The finder's state is snapshotted (a JSON round trip of `save_state()`)
     before each hook call and restored after it, even if the hook raises,
-    so a hook that mutates state never reaches state.json (Codex gate 2).
-    That the candidate is what `propose` produced stays the hook's
-    contract, unchecked (protocol.py). A rebuild that comes back `None` or
-    `Empty` keeps the seed's `render_error` and writes no picture (#645). The k-th "example" event pairs with
-    the k-th record: `_reconcile` leaves the two counts equal. A finder
-    `_can_repair_renders` refuses is left as it is.
+    so a hook that mutates state never reaches state.json. A rebuild that
+    comes back `None` or `Empty` keeps the seed's `render_error` and writes no
+    picture (#645). The k-th "example" event pairs with the k-th record:
+    `_reconcile` leaves the two counts equal. A finder `_can_repair_renders`
+    refuses is left as it is.
     """
     if not _can_repair_renders(finder):
         _warn_unrepaired_renders(finder, out, progress_events)
@@ -635,7 +623,7 @@ def _render_example(finder, out, seed, candidate, event):
     renders/ directory only ever appears for a finder that offers one.
 
     The example is already durable in examples.jsonl by the time this runs
-    (#490 correctness review C1), so a presentation-layer fault -- a
+    so a presentation-layer fault -- a
     missing font, a full disk, a bug in the finder's own render() -- must
     not take the whole hunt down with it: it's recorded on the seed's own
     event instead, the same way a rejection's reason is."""
@@ -692,11 +680,11 @@ def _render_intact(path):
 def _propose_and_key(finder, seed, symmetry, no_verify=False):
     """The propose -> verify -> key -> canonical_key sequence, shared by
     `_process_seed` (which writes the outcome) and
-    `_check_symmetry_before_mutation` (which only wants the key) so the
-    two can't drift on what counts as a mismatch (#509 review, P1; #525
-    review, S3). Returns `(candidate, verdict, key)`; `verdict` and `key`
-    are `None` when there's nothing further to compute -- no candidate,
-    or a rejected one. `no_verify` (#489) skips the call to
+    `_check_symmetry_before_mutation` (which only wants the key) so the two
+    can't drift on what counts as a mismatch. Returns `(candidate, verdict,
+    key)`; `verdict` and `key` are `None` when there's nothing further to
+    compute -- no candidate, or a rejected one. `no_verify` (#489) skips the
+    call to
     `finder.verify` the same way `_process_seed` always has -- a
     candidate that would be rejected is treated as accepted, so `hunt
     verify DIR` can check it later.
@@ -712,10 +700,10 @@ def _propose_and_key(finder, seed, symmetry, no_verify=False):
         key = canonical_key(cell_values, symmetry)
     except ValueError as e:
         # Only a custom group's own shape can raise here -- D4's "needs a
-        # square grid" is a separate, out-of-scope bug (#509 review, C3)
+        # square grid" is a separate, out-of-scope bug
         # and finder.key() itself is called above, outside this try, so a
         # finder's own ValueError is never relabelled as a symmetry
-        # failure (#509 review, P1).
+        # failure.
         if symmetry in (D4, IDENTITY):
             raise
         raise SymmetryMismatch(str(e)) from e
@@ -738,7 +726,7 @@ def _process_seed(
     if _is_empty(candidate):
         counts["empty"] += 1
         event["outcome"] = "empty"
-        if isinstance(candidate, Empty) and candidate.reason:
+        if isinstance(candidate, Empty):
             event["empty_reason"] = candidate.reason
     elif not verdict.ok:
         counts["rejected"] += 1
@@ -828,35 +816,34 @@ def _check_symmetry_before_mutation(
        examples.jsonl, with no finder call at all -- catches a resume
        whose entire seed range is already done, where check 2 below never
        has an un-done seed to probe and so would otherwise never notice a
-       stale recorded shape (Codex pass 1 on PR 530, finding 1).
+       stale recorded shape (PR 530).
     2. The first not-yet-done seed's *actual* key -- for a finder whose
        `key()` shape changed since the run being resumed last succeeded,
        where the group's own length still happens to match the *old*
        recorded shape and check 1 can't see the drift without a real
-       candidate (#525 review C2/P1's own regression test depends on
+       candidate (a regression test depends on
        this).
 
     `symmetry in (D4, IDENTITY)` skips both: D4's own "needs a square
-    grid" ValueError is a separate, out-of-scope bug (#509 review C3),
+    grid" ValueError is a separate, out-of-scope bug,
     never converted to `SymmetryMismatch` either way, so neither check
     can ever produce a refusal on that path -- running them anyway would
     only spend an unconditional extra propose/verify per resume for
-    nothing (#525 review C4, #529).
+    nothing (#529).
 
     `done_seeds` must be the reconciled set `_hunt_loop` will actually
-    skip, not a raw read of progress.jsonl (#525 review C2/P1). Calling
+    skip, not a raw read of progress.jsonl. Calling
     `finder.propose`/`verify` again for check 2 is only safe for a
     stateless finder; a stateful one's `save_state`/`load_state`
     round-trips the in-memory state around the probe so it can't
-    double-count whatever the probed seed did (#525 review C1) --
+    double-count whatever the probed seed did --
     `_resume` must call `_load_state` before this runs, so the snapshot
     taken here is the resumed state, not the finder's fresh default. That
     snapshot is a deep copy (`json.loads(json.dumps(...))`), not the live
     object `save_state()` returned -- a finder that mutates its own saved
     state in place (rather than returning a fresh one each call) would
     otherwise see the probe's mutation bleed into the "restored" state
-    too, since restoring a reference restores nothing (Codex pass 1 on
-    PR 530, finding 2).
+    too, since restoring a reference restores nothing.
     """
     if symmetry in (D4, IDENTITY):
         return
@@ -902,8 +889,8 @@ def _resume(finder, argv, args, out, prior):
     # Reconciliation itself only edits these in-memory lists -- every write
     # (`_truncate_to_valid`, `_repair_renders`, summary.json) is held off
     # until the symmetry check below has passed, so nothing is on disk yet
-    # for it to protect (#525; #525 review C2/P1 -- `_repair_renders` (#524)
-    # writes too, and moved ahead of the same check on rebase).
+    # for it to protect (#525; `_repair_renders` (#524)
+    # writes too).
     progress_lines, progress_events, examples_lines, examples_records = _reconcile(
         finder, out, progress_lines, progress_events, examples_lines, examples_records
     )
@@ -995,7 +982,7 @@ def _run_verify(finder, argv):
     examples.jsonl is even opened -- so this can't read a hunt's
     still-being-written examples.jsonl and publish a verified.jsonl that
     silently omits the tail, and two `hunt verify` runs can't race on the
-    same verified.jsonl.tmp (#489/#523 Codex pass 1)."""
+    same verified.jsonl.tmp (#489)."""
     args = _parse_verify_args(argv)
     out = Path(args.dir)
 
@@ -1095,7 +1082,7 @@ def run(finder, argv):
     # Taken before anything about --out's state is inspected, not just
     # before anything is written: classifying --out as fresh or resumed by
     # reading run.json *before* acquiring this lock is itself a race
-    # (#812 Codex pass 1, finding 1) -- a second process can see no
+    # -- a second process can see no
     # run.json, then, delayed by ordinary scheduling rather than by
     # blocking on this non-blocking lock, acquire it only after a first
     # process's complete fresh hunt has already finished and released it.
