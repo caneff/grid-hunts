@@ -72,6 +72,28 @@ def criteria(flags):
     return crit
 
 
+def nearest_first(hits, ten_s, corner):
+    """(ten, corner, grid) hits, nearest to (ten_s, corner) first: a window or a corner
+    that differs counts one each."""
+    return sorted(hits, key=lambda h: (h[0] != ten_s) + (h[1] != corner))
+
+
+def criterion_first(hits, crit):
+    """The hits in order, those whose grid every criterion in `crit` accepts first
+    (stable: nearest first within each group)."""
+
+    def passes(h):
+        g = [[int(d) for d in row] for row in h[2].split("/")]
+        rk, nm, cr = oracle.rank_grid(g)
+        return all(
+            CRITERIA[c]["accept"](g, rk, nm, cr)
+            for c in crit
+            if "accept" in CRITERIA[c]
+        )
+
+    return sorted(hits, key=lambda h: not passes(h))
+
+
 def earlier_hits(hunt, ten_s, corner):
     """(ten, corner, grid) for every hit of `hunt` in the finder logs, nearest to
     (ten_s, corner) first."""
@@ -79,12 +101,15 @@ def earlier_hits(hunt, ten_s, corner):
     for p in glob.glob(str(LOGS / f"big-{hunt}-*.log")):
         _, _, t, c = p.rsplit("/", 1)[-1][:-4].split("-")[:4]
         hits += [(t, c, g) for g in hc.logged_grids(p)]
-    return sorted(hits, key=lambda h: (h[0] != ten_s) + (h[1] != corner))
+    return nearest_first(hits, ten_s, corner)
 
 
-def build(hunt, ten_s, corner, flags):
+def build(hunt, ten_s, corner, flags, hits=None):
     """The big channelled model for one (hunt, QR-10 window, corner) under `flags`.
-    Returns (q, warm_from, known): the model, the earlier hit it is warm-started
+    `hits` are the (ten, corner, grid) hits `warm` hints from, where the finder logs
+    are not the source (the tie finder's `--warm-from`); they are taken in the order
+    given, the caller having ordered them.
+    Returns (q, warm_from, known): the model, the hit it is warm-started
     from (or None) and how many known grids it forbids."""
     TEN = parse_ten(ten_s)
     CAGE, TARGET, SEED = HUNTS[hunt]
@@ -104,20 +129,8 @@ def build(hunt, ten_s, corner, flags):
             CRITERIA[name]["model"](m, q)
     warm_from = None
     if "warm" in flags:
-        hits = earlier_hits(hunt, ten_s, corner)
-
-        def passes(h):
-            g = [[int(d) for d in row] for row in h[2].split("/")]
-            rk, nm, cr = oracle.rank_grid(g)
-            return all(
-                CRITERIA[c]["accept"](g, rk, nm, cr)
-                for c in CRIT
-                if "accept" in CRITERIA[c]
-            )
-
-        hits.sort(
-            key=lambda h: not passes(h)
-        )  # stable: criterion-passing hits first, nearest first within each
+        if hits is None:
+            hits = criterion_first(earlier_hits(hunt, ten_s, corner), CRIT)
         if hits:
             warm_from = hits[0]
     if "hint" in flags or warm_from:

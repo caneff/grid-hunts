@@ -126,3 +126,36 @@ if status in ("OPTIMAL", "FEASIBLE"):
     got = tf.hc.grid_text(tf.grid_rows(tuple(s.Value(q.x[r][c]) for r in range(N) for c in range(N))))
 print(f"C hinted with grid 0 -> {status} in {secs} s {got}", flush=True)
 ```
+
+## Warm-start demonstration (#643, 2026-10-03)
+
+**Outcome, 3 seeds: 0 found, 3 timed out, 0 proven infeasible.** A capped
+empty run is not a proof, and this one says nothing about whether a grid exists.
+It shows that `--warm-from` runs end to end and that, at this cap, warming from
+the r1c5 grids of other corners and windows (same hunt, not this block's own) did not
+reproduce the 2026-09-22 find.
+
+**Run.** `finders/qqrr/hunt/tie_finder.py --out docs/research/2026-10-03-qqrr-tie-warm-demo
+--seeds 0:3 --workers 1 --hunt r1c5 --ten r7c7 --corner tr --timeout 300 --q34
+--warm-from docs/research/2026-10-03-qqrr-tie-warm-source`, under
+`job-run --name qqrr-tie-warm-643`, 1 worker, 3 × 300 s, started 14:20 UTC at
+`604b4ea` (the commit before the README edit; no solve path differs).
+
+**Warm source** (`2026-10-03-qqrr-tie-warm-source/examples.jsonl`): the 8 r1c5
+grids of `2026-09-22-qqrr-tie-r5c1.md` § Big channelled finder, cage at r1c5,
+*minus* the r7c7 / tr answers (the first tr grid and the 518 s one). It holds
+no grid for the block being searched. The nearest grid is the r7c7 / br #2
+grid (`645781329/…`: same window, other corner, and it passes the 34–36
+criterion), recorded in the demo's `run.json` under `config.warm_from`.
+
+**Against the pilot.** Same block, same criterion; the pilot had 3 workers ×
+900 s with the seed-grid hint. This run had 1 worker × 300 s, so it is a third
+of the pilot's time per seed on a third of the workers. It is a weaker budget
+than either earlier run, not a like-for-like comparison. The 2026-09-22 hunt
+that found 5 grids used 6 workers and 30-minute solves.
+
+Not tried (each is a new launch, left for the owner to rule on): the pilot's
+3 workers × 900 s with `--warm-from`; the hint from a grid of the block itself
+(the 2.2 s probe above, an upper bound only).
+
+Output: `2026-10-03-qqrr-tie-warm-demo/` (`.lock` not committed).

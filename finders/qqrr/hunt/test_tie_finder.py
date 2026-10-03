@@ -4,7 +4,9 @@
 hunt found (explorer preset "33 at r1c5, r1c4 < 8, QR 10 at r7c7 ... bl #1")
 and three corruptions of it; then a fresh hunt with a solve cap too short to
 find anything, for the config run.json records and the empty seed's reason.
-One CP-SAT worker; about ten seconds in all.
+One CP-SAT worker; about ten seconds in all. Also the `--warm-from` sources the
+finder refuses (a malformed example) or tolerates (a blank line), and a resume
+after the source changed (#643); the warm start's own checks are test_tie_warm.py.
 
     uv run finders/qqrr/hunt/test_tie_finder.py
 """
@@ -156,5 +158,41 @@ with tempfile.TemporaryDirectory() as d:
     r = run_cli("--out", str(out), "--seeds=0:1", *flags)
     check("a hunt with a window off the board refuses (exit 2)", r.returncode == 2)
     check("the refused hunt wrote no run.json", not (out / "run.json").exists())
+
+with tempfile.TemporaryDirectory() as d:
+    flags = ["--hunt", "r1c5", "--ten", "r7c7", "--corner", "bl", "--timeout", "1"]
+    flags += ["--seeds=0:1", "--q34"]
+    good = json.dumps(record(GOOD)) + "\n"
+    for name, text in [
+        ("a half-written last line", good + '{"grid": "4367'),
+        ("a record of another finder", good + '{"x": 1}\n'),
+        ("a grid with a short row", good + json.dumps(record(GOOD[:-1])) + "\n"),
+        (
+            "a grid with no slashes",
+            good + json.dumps(record(GOOD.replace("/", ""))) + "\n",
+        ),
+    ]:
+        src = Path(d) / name.replace(" ", "-")
+        src.mkdir()
+        (src / "examples.jsonl").write_text(text)
+        r = run_cli(
+            "--out", str(Path(d) / ("o-" + src.name)), *flags, "--warm-from", str(src)
+        )
+        check(f"--warm-from over {name} refuses (exit 2)", r.returncode == 2)
+        check(f"... naming the file and line ({name})", "examples.jsonl:2" in r.stderr)
+    src = Path(d) / "edited"
+    src.mkdir()
+    low = record(SEED_R1C5, ten="r1c1", corner="tl")
+    (src / "examples.jsonl").write_text(good + json.dumps(low) + "\n")
+    out = str(Path(d) / "o-edited")
+    run_cli("--out", out, *flags, "--warm-from", str(src))
+    (src / "examples.jsonl").write_text(good)
+    r = run_cli("--out", out, *flags, "--warm-from", str(src))
+    check("resuming after the warm source lost a lower grid refuses", r.returncode == 2)
+    src = Path(d) / "blank"
+    src.mkdir()
+    (src / "examples.jsonl").write_text(good + "\n")
+    r = run_cli("--out", str(Path(d) / "o-blank"), *flags, "--warm-from", str(src))
+    check("--warm-from tolerates a trailing blank line", r.returncode == 0)
 
 sys.exit(0 if ok else 1)
