@@ -31,9 +31,6 @@ because the checker reads them and nothing under `docs/research/` does
   is a minimal worked example; `finders/qqrr/hunt/tie_finder.py`, a new finder
   over `chan_big.py`'s model, is the first real one. Other existing finders
   are not ported onto it.
-- Before writing a new finder — what to search, when cuts beat a counter,
-  profiling the loop, the `ctypes` C port, counting what you found:
-  `docs/agents/grid-finder-lessons.md`.
 - `finders/galaxy-copycat/`'s write-ups live in `docs/research/2026-09-14-copycat-scan.md`
   and `docs/research/2026-09-14-galaxy-copycat-design.md`; its boards are
   `docs/research/2026-09-14-galaxy-copycat/boards/`.
