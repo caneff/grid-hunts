@@ -64,30 +64,17 @@ def circled_shapes(path):
     """The group shapes this grid circles: (h, w) for a chocolate rectangle,
     the size for a banana group -- the cases the size encoding tells apart."""
     grid, is_choc, _ = rv.load(path)
-    shapes = set()
-    for colour in (True, False):
-        for g in rv.components(is_choc, colour):
-            if not any(grid[p] == len(g) for p in g):
-                continue
-            if colour:
-                shapes.add(
-                    ("chocolate", len({r for r, _ in g}), len({c for _, c in g}))
-                )
-            else:
-                shapes.add(("banana", len(g)))
-    return shapes
+    return {
+        rv.group_key(g, colour)
+        for colour in (True, False)
+        for g in rv.components(is_choc, colour)
+        if any(grid[p] == len(g) for p in g)
+    }
 
 
 def covering_grids():
     """A few grids that between them circle every shape the pool circles."""
-    shapes = {p: circled_shapes(p) for p in CANDIDATES}
-    need = set().union(*shapes.values())
-    picked = []
-    while need:
-        best = max(CANDIDATES, key=lambda p: len(shapes[p] & need))
-        picked.append(best)
-        need -= shapes[best]
-    return picked
+    return rv.covering(CANDIDATES, circled_shapes)
 
 
 def chocolate_groups(path):

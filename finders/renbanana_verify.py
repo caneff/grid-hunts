@@ -74,6 +74,28 @@ def shape(group):
     return (max(rows) - min(rows) + 1, max(cols) - min(cols) + 1)
 
 
+def group_key(group, chocolate):
+    """What a group exercises in a probe's model: a chocolate rectangle's
+    (rows, cols) or a banana group's size."""
+    if chocolate:
+        return ("chocolate", len({r for r, _ in group}), len({c for _, c in group}))
+    return ("banana", len(group))
+
+
+def covering(paths, keys_of):
+    """Greedy cover: a few of `paths` whose `keys_of(path)` sets between them
+    hold every key any path holds. A tie goes to the earliest path."""
+    paths = list(paths)
+    keys = {p: keys_of(p) for p in paths}
+    need = set().union(*keys.values())
+    picked = []
+    while need:
+        best = max(paths, key=lambda p: len(keys[p] & need))
+        picked.append(best)
+        need -= keys[best]
+    return picked
+
+
 def group_sizes(is_choc):
     """Each cell's maximal group size, chocolate or banana: what a circle reads."""
     return {

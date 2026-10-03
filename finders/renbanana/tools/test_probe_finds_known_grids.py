@@ -31,25 +31,16 @@ def shape_keys(path):
     chocolate rectangle's shape (the catalogue's dead-placement clauses) and
     each banana group's size (the renban label encoding)."""
     _, is_choc, _ = rv.load(path)
-    keys = set()
-    for g in rv.components(is_choc, True):
-        rows, cols = sorted({r for r, _ in g}), sorted({c for _, c in g})
-        keys.add(("chocolate", len(rows), len(cols)))
-    for g in rv.components(is_choc, False):
-        keys.add(("banana", len(g)))
-    return keys
+    return {
+        rv.group_key(g, colour)
+        for colour in (True, False)
+        for g in rv.components(is_choc, colour)
+    }
 
 
 def covering_grids():
     """A few grids that between them hold every key the pool holds."""
-    keys = {p: shape_keys(p) for p in CANDIDATES}
-    need = set().union(*keys.values())
-    picked = []
-    while need:
-        best = max(CANDIDATES, key=lambda p: len(keys[p] & need))
-        picked.append(best)
-        need -= keys[best]
-    return picked
+    return rv.covering(CANDIDATES, shape_keys)
 
 
 def check(path):
