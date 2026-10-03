@@ -60,12 +60,10 @@ from pathlib import Path
 from ortools.sat.python import cp_model as cp
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import renbanana_model as rm
 import renbanana_verify as rv
+from renbanana_model import ADJACENT, CELLS, IDX, MAX_BANANA, N
 
-N = 9
-CELLS = [(r, c) for r in range(N) for c in range(N)]
-IDX = {p: i for i, p in enumerate(CELLS)}
-MAX_BANANA = 9  # a renban group holds distinct consecutive digits, so <= 9 cells
 NOISE = 100  # per-variable random weight range for diversity
 BIG = 100_000  # objective multiplier: the objective outranks all noise
 SHADING_SLICE = 5.0  # seconds for one stage-1 solve inside a seed's budget
@@ -78,16 +76,6 @@ STATUS = {
     cp.MODEL_INVALID: "model invalid",
 }
 
-
-def neighbours(r, c):
-    return [
-        (a, b)
-        for a, b in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1))
-        if 0 <= a < N and 0 <= b < N
-    ]
-
-
-ADJACENT = [(p, q) for p in CELLS for q in neighbours(*p) if IDX[q] > IDX[p]]
 
 CATALOGUE = json.loads(
     (
@@ -218,38 +206,13 @@ class Shadings:
         self.choc = {p: m.new_bool_var(f"c{p}") for p in CELLS}
         self.cuts = []
 
-        # Rule 3, exactly: no 2x2 window holds exactly three chocolate cells.
-        for r in range(N - 1):
-            for c in range(N - 1):
-                window = [
-                    self.choc[r, c],
-                    self.choc[r, c + 1],
-                    self.choc[r + 1, c],
-                    self.choc[r + 1, c + 1],
-                ]
-                m.add(sum(window) != 3)
+        rm.rectangle_lemma(m, self.choc)
 
-        # Banana size cap, structurally. Each banana cell carries exactly one
-        # label; adjacent banana cells share theirs; a label covers <= 9 cells.
-        # Labels are restricted to "min cell index in the component", which is
-        # always available to every member, so the restriction loses nothing.
-        lab = {
-            (p, ell): m.new_bool_var(f"l{p}_{ell}")
-            for p in CELLS
-            for ell in range(IDX[p] + 1)
-        }
-        for p in CELLS:
-            m.add(sum(lab[p, ell] for ell in range(IDX[p] + 1)) == 1 - self.choc[p])
-        for p, q in ADJACENT:
-            lo, hi = (p, q) if IDX[p] < IDX[q] else (q, p)
-            for ell in range(IDX[lo] + 1):
-                # both banana and `lo` labelled ell  =>  `hi` labelled ell
-                m.add_bool_or(
-                    [self.choc[p], self.choc[q], lab[lo, ell].negated(), lab[hi, ell]]
-                )
-            for ell in range(IDX[lo] + 1, IDX[hi] + 1):
-                # a label above `lo`'s index cannot be shared with it
-                m.add_bool_or([self.choc[p], self.choc[q], lab[hi, ell].negated()])
+        # Banana size cap, structurally, on component labels. Unpinned: the
+        # solver may let two components share a label, but it can always give
+        # each its own least index, so no legal shading is lost; the pin would
+        # only add clauses to a model that has no per-label digit rule.
+        lab = rm.banana_labels(m, self.choc, pin=False)
         for ell in range(len(CELLS)):
             covering = [lab[p, ell] for p in CELLS if IDX[p] >= ell]
             m.add(sum(covering) <= MAX_BANANA)
@@ -317,21 +280,11 @@ class Shadings:
         1936 placements a 9x9 has room for, every one of which used to reach
         the digit stage only to fail there.
         """
-        for a in range(1, N + 1):
-            for b in range(1, N + 1):
-                for r in range(N - a + 1):
-                    for c in range(N - b + 1):
-                        if fillings_at(a, b, r % 3, c % 3):
-                            continue
-                        inside = [(r + i, c + j) for i in range(a) for j in range(b)]
-                        border = {
-                            q for p in inside for q in neighbours(*p) if q not in inside
-                        }
-                        # not (all inside chocolate and all border banana)
-                        self.m.add_bool_or(
-                            [self.choc[p].negated() for p in inside]
-                            + [self.choc[q] for q in border]
-                        )
+        rm.forbid_dead_chocolate(
+            self.m,
+            self.choc,
+            lambda a, b, r, c: not fillings_at(a, b, r % 3, c % 3),
+        )
 
     def _where_the_fives_go(self):
         """The one digit fact cheap enough to state on the shading alone, and the
@@ -350,7 +303,7 @@ class Shadings:
         for p in CELLS:
             here = m.new_bool_var(f"lone{p}")
             m.add_implication(here, self.choc[p])
-            for q in neighbours(*p):
+            for q in rv.neighbours(*p):
                 m.add_implication(here, self.choc[q].negated())
             lone[p] = here
         five = {p: m.new_bool_var(f"five{p}") for p in CELLS}
@@ -397,22 +350,12 @@ class Shadings:
         """One bool for the `a` by `b` maximal chocolate component with its
         top-left at (r, c): true only if those cells are chocolate and every
         bordering cell banana. Implication one way only."""
-        inside = [(r + i, c + j) for i in range(a) for j in range(b)]
-        border = {q for p in inside for q in neighbours(*p) if q not in inside}
-        here = self.m.new_bool_var(f"p{a}x{b}@{r},{c}")
-        for p in inside:
-            self.m.add_implication(here, self.choc[p])
-        for q in border:
-            self.m.add_implication(here, self.choc[q].negated())
-        return here
+        return rm.chocolate_spot(self.m, self.choc, a, b, r, c, f"p{a}x{b}@{r},{c}")
 
     def forbid_component(self, group):
         """Cut exactly one illegal pattern: these cells banana with a fully
         chocolate border. Valid forever — no legal grid contains it."""
-        border = {q for p in group for q in neighbours(*p) if q not in group}
-        self.m.add_bool_or(
-            [self.choc[p] for p in group] + [self.choc[q].negated() for q in border]
-        )
+        rm.forbid_banana_group(self.m, self.choc, group)
         self.cuts.append(("component", tuple(group)))
 
     def forbid_shading(self, is_choc):
@@ -487,14 +430,7 @@ def digit_model(is_choc, objective=None, rng=None, circled=()):
     """
     m = cp.CpModel()
     d = {p: m.new_int_var(1, 9, f"d{p}") for p in CELLS}
-    for i in range(N):
-        m.add_all_different([d[i, c] for c in range(N)])
-        m.add_all_different([d[r, i] for r in range(N)])
-    for br in range(3):
-        for bc in range(3):
-            m.add_all_different(
-                [d[br * 3 + r, bc * 3 + c] for r in range(3) for c in range(3)]
-            )
+    rm.sudoku(m, d)
 
     # The whisper, stated as the checkerboard it forces rather than left for
     # the solver to rediscover on every shading. If a chocolate cell has a
@@ -503,7 +439,7 @@ def digit_model(is_choc, objective=None, rng=None, circled=()):
     # A lone 1x1 keeps the full domain, 5 included.
     high = {}
     for p in CELLS:
-        if is_choc[p] and any(is_choc[q] for q in neighbours(*p)):
+        if is_choc[p] and any(is_choc[q] for q in rv.neighbours(*p)):
             hi = m.new_bool_var(f"hi{p}")
             m.add(d[p] >= 6).only_enforce_if(hi)
             m.add(d[p] <= 4).only_enforce_if(hi.negated())
@@ -511,11 +447,7 @@ def digit_model(is_choc, objective=None, rng=None, circled=()):
     for p, q in ADJACENT:
         if is_choc[p] and is_choc[q]:
             m.add(high[p] != high[q])
-            gap = m.new_int_var(-8, 8, f"g{p}{q}")
-            m.add(gap == d[p] - d[q])
-            abs_gap = m.new_int_var(0, 8, f"a{p}{q}")
-            m.add_abs_equality(abs_gap, gap)
-            m.add(abs_gap >= 5)
+    rm.whisper_on_shading(m, d, is_choc)
 
     # Per-cell domains from the catalogue, for every chocolate rectangle.
     for group in rv.components(is_choc, True):

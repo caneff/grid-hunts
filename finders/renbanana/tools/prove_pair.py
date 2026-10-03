@@ -22,15 +22,19 @@ What is exact here and what is lazy:
   rectangle. So rule 3 alone carries it.
 - Banana size cap: exact, structurally, on component labels.
 - Whisper: exact -- two adjacent chocolate cells differ by 5 or more.
-- Renban: exact, and this is the expensive half. Per label, the member digits
-  are distinct and span a run: max - min == size - 1. It cannot be lazy the way
-  rule 4 is, because a component shape that is illegal with one set of digits
-  is legal with another, so a shape-level cut would be unsound.
-- Banana non-rectangle: lazy, exactly as stage 1 does it. A rectangular banana
-  group is illegal whatever its digits, so forbidding that one pattern is
-  sound forever.
+- Renban: a filter, and this is the expensive half. Per label, the member
+  digits are distinct and span a run: max - min == size - 1. It cannot be lazy
+  the way rule 4 is, because a component shape that is illegal with one set of
+  digits is legal with another, so a shape-level cut would be unsound. Two
+  disjoint banana components may still share a label (`banana_labels`), so a
+  hit can break renban; `rv.check` re-checks every hit and `violations` says so.
+- Banana non-rectangle: exact, up front -- one clause per rectangle placement
+  forbidding it as a maximal banana group. A rectangular banana group is
+  illegal whatever its digits. `solve` still cuts any rectangular group a
+  solution shows, as a guard.
 
-An INFEASIBLE is therefore a proof for that geometry.
+Everything above is exact or a relaxation, so an INFEASIBLE is a proof for that
+geometry.
 
     uv run --with ortools finders/renbanana/tools/prove_pair.py \
         --procs 20 --seconds 120 --limit 50 --out docs/research/renbanana/pair-proof
@@ -48,15 +52,10 @@ from ortools.sat.python import cp_model as cp
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import canon
-import count_circled_pairs as ccp
 import renbanana_cpsat as rc
+import renbanana_model as rm
 import renbanana_verify as rv
-
-N = 9
-CELLS = [(r, c) for r in range(N) for c in range(N)]
-IDX = {p: i for i, p in enumerate(CELLS)}
-ADJACENT = [(p, q) for p in CELLS for q in rv.neighbours(*p) if IDX[q] > IDX[p]]
-MAX_BANANA = 9
+from renbanana_model import ADJACENT, CELLS, IDX, MAX_BANANA, N
 
 
 class JointPair:
@@ -73,28 +72,13 @@ class JointPair:
         choc = {p: m.new_bool_var(f"c{p}") for p in CELLS}
         self.choc = choc
 
-        for i in range(N):
-            m.add_all_different([d[i, c] for c in range(N)])
-            m.add_all_different([d[r, i] for r in range(N)])
-        for br in range(3):
-            for bc in range(3):
-                m.add_all_different(
-                    [d[br * 3 + r, bc * 3 + c] for r in range(3) for c in range(3)]
-                )
-
-        # Rule 3. With connectivity this is the whole chocolate-rectangle rule.
-        for r in range(N - 1):
-            for c in range(N - 1):
-                m.add(sum(choc[r + i, c + j] for i in range(2) for j in range(2)) != 3)
+        rm.sudoku(m, d)
+        rm.rectangle_lemma(m, choc)  # with connectivity, the whole rectangle rule
 
         # The pinned pair: chocolate inside, banana all round, so each is a
         # maximal group, and its own size on a cell the catalogue allows.
         for a, b, r0, c0 in pair:
-            inside = ccp.cells_of(a, b, r0, c0)
-            for p in inside:
-                m.add(choc[p] == 1)
-            for q in {q for p in inside for q in rv.neighbours(*p)} - inside:
-                m.add(choc[q] == 0)
+            m.add_bool_and(rm.maximal_chocolate_lits(choc, a, b, r0, c0))
             # The catalogue's per-cell digit domains for this shape at this
             # box offset. Layer B -- the rectangle plus the boxes -- so a real
             # grid only narrows them and handing them over is sound. It is the
@@ -117,18 +101,7 @@ class JointPair:
                 got.append(v)
             m.add(sum(got) >= 1)
 
-        # Whisper: two adjacent chocolate cells differ by 5 or more. The
-        # magnitude gets its own variable and `far` is a genuine reification of
-        # it -- enforcing one branch on `far` and the other on its negation
-        # would demand every adjacent pair differ by 5, chocolate or not, which
-        # no sudoku satisfies.
-        for p, q in ADJACENT:
-            mag = m.new_int_var(0, 8, f"m{p}{q}")
-            m.add_abs_equality(mag, d[p] - d[q])
-            far = m.new_bool_var(f"far{p}{q}")
-            m.add(mag >= 5).only_enforce_if(far)
-            m.add(mag <= 4).only_enforce_if(far.negated())
-            m.add_bool_or([choc[p].negated(), choc[q].negated(), far])
+        rm.whisper(m, d, choc)
 
         # Rule 6 is the whole cost of this model: a label bool per cell pair,
         # a digit indicator per cell, and a product var per member per digit.
@@ -136,39 +109,8 @@ class JointPair:
         # settles exactly on fixed digits in a second or two -- generate
         # loosely, verify exactly.
         if renban:
-            # Component labels for the banana groups, as stage 1 builds them.
-            lab = {
-                (p, ell): m.new_bool_var(f"l{p}_{ell}")
-                for p in CELLS
-                for ell in range(IDX[p] + 1)
-            }
+            lab = rm.banana_labels(m, choc, pin=pin_labels)
             self.lab = lab
-            for p in CELLS:
-                m.add(sum(lab[p, ell] for ell in range(IDX[p] + 1)) == 1 - choc[p])
-            for p, q in ADJACENT:
-                lo, hi = (p, q) if IDX[p] < IDX[q] else (q, p)
-                for ell in range(IDX[lo] + 1):
-                    m.add_bool_or(
-                        [choc[p], choc[q], lab[lo, ell].negated(), lab[hi, ell]]
-                    )
-                for ell in range(IDX[lo] + 1, IDX[hi] + 1):
-                    m.add_bool_or([choc[p], choc[q], lab[hi, ell].negated()])
-
-            # Pin each label to be *exactly* its component's least cell index, not
-            # merely at most it. Without this a label is only bounded above, so two
-            # disjoint components can both claim a label below both their minimums
-            # and renban then lands on their union -- a gap in one component
-            # plugged by a digit from the other. Requiring that whoever uses label
-            # `ell` shares it with the cell whose index *is* `ell` closes that: the
-            # owner cell lies in exactly one component, so no second component can
-            # claim the label. It rules no legal grid out, since a component can
-            # always take its own least index.
-            if pin_labels:
-                for ell in range(len(CELLS)):
-                    owner = CELLS[ell]
-                    for p in CELLS:
-                        if IDX[p] >= ell and p != owner:
-                            m.add_implication(lab[p, ell], lab[owner, ell])
 
             # Renban per label: distinct digits spanning exactly their own count.
             # max - min == size - 1 with all members distinct is precisely "a set of
@@ -203,35 +145,11 @@ class JointPair:
                         )
                         <= 1
                     )
-        self._forbid_banana_rectangles()
+        # Rule 4 outright, up front: a cut per solution would cost a full
+        # joint solve each.
+        rm.forbid_banana_rectangles(m, choc)
         self._forbid_dead_chocolate()
         self._fives_are_lonely()
-
-    def _forbid_banana_rectangles(self):
-        """Rule 4 exactly, up front, instead of one cut at a time.
-
-        Stage 1 cuts rectangular banana groups lazily because a shading solve is
-        cheap. Here every cut costs a full joint solve, and the measured loop
-        ran a median of 31 of them per geometry -- which is why 20 of 40
-        geometries timed out. But the rule is finite: a 9x9 holds 45 * 45 =
-        2025 rectangle placements, and forbidding each as a maximal banana
-        group is one clause apiece. Stating them all removes the loop.
-        """
-        for a in range(1, N + 1):
-            for b in range(1, N + 1):
-                for r0 in range(N - a + 1):
-                    for c0 in range(N - b + 1):
-                        inside = {(r0 + i, c0 + j) for i in range(a) for j in range(b)}
-                        border = {
-                            q
-                            for pp in inside
-                            for q in rv.neighbours(*pp)
-                            if q not in inside
-                        }
-                        self.m.add_bool_or(
-                            [self.choc[pp] for pp in inside]
-                            + [self.choc[q].negated() for q in border]
-                        )
 
     def _forbid_dead_chocolate(self):
         """No maximal chocolate rectangle the catalogue says cannot be filled.
@@ -240,25 +158,13 @@ class JointPair:
         at this box offset (3x3 at (0,0), 4x4 at eight of nine) appears in no
         grid, so the solver should never be free to propose one.
         """
-        self.dead = 0
-        for a in range(1, N + 1):
-            for b in range(1, N + 1):
-                for r0 in range(N - a + 1):
-                    for c0 in range(N - b + 1):
-                        if max(a, b) <= 8 and rc.fillings_at(a, b, r0 % 3, c0 % 3):
-                            continue
-                        inside = [(r0 + i, c0 + j) for i in range(a) for j in range(b)]
-                        border = {
-                            q
-                            for pp in inside
-                            for q in rv.neighbours(*pp)
-                            if q not in set(inside)
-                        }
-                        self.m.add_bool_or(
-                            [self.choc[pp].negated() for pp in inside]
-                            + [self.choc[q] for q in border]
-                        )
-                        self.dead += 1
+        self.dead = rm.forbid_dead_chocolate(
+            self.m,
+            self.choc,
+            lambda a, b, r0, c0: (
+                max(a, b) > 8 or not rc.fillings_at(a, b, r0 % 3, c0 % 3)
+            ),
+        )
 
     def _fives_are_lonely(self):
         """No chocolate cell with a chocolate neighbour holds a 5.
@@ -281,10 +187,7 @@ class JointPair:
         return z
 
     def forbid_component(self, group):
-        border = {q for p in group for q in rv.neighbours(*p) if q not in group}
-        self.m.add_bool_or(
-            [self.choc[p] for p in group] + [self.choc[q].negated() for q in border]
-        )
+        rm.forbid_banana_group(self.m, self.choc, group)
         self.cuts += 1
 
     def solve(self, seconds, workers, seed):

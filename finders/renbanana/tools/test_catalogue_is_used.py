@@ -8,6 +8,7 @@ the catalogue is layer B (the rectangle and the boxes, nothing outside), so a
 real grid can only narrow its answers, never contradict them.
 """
 
+import contextlib
 import json
 import sys
 from pathlib import Path
@@ -18,8 +19,119 @@ DATA_ROOT = CODE_ROOT.parent / "docs" / "research" / "renbanana"
 
 import renbanana_cpsat as R
 import renbanana_verify as rv
+from ortools.sat.python import cp_model as cp
 
 FAIL = []
+
+
+@contextlib.contextmanager
+def poisoned(name, replacement):
+    """Swap one catalogue reader for the duration of a run. A call site that
+    reads the catalogue changes its answer; one that does not keeps it."""
+    real = getattr(R, name)
+    setattr(R, name, replacement)
+    try:
+        yield
+    finally:
+        setattr(R, name, real)
+
+
+def pool_shading():
+    path = sorted(DATA_ROOT.glob("candidates*/cand_*.json"))[0]
+    return rv.load(path)[1]
+
+
+def solve_status(model):
+    s = cp.CpSolver()
+    s.parameters.max_time_in_seconds = 30
+    s.parameters.num_workers = 1
+    return s.status_name(s.solve(model))
+
+
+def stage_1_forbids_dead_placements():
+    """Pinning a placement the catalogue calls dead must be refused, and the
+    same pin on a live placement must not be."""
+    live = (2, 2, 3, 3)
+    real_fillings = R.fillings_at
+    assert R.fillings_at(2, 2, 0, 0)
+    got = {}
+    for label, patch in (
+        ("real", R.fillings_at),
+        (
+            "2x2 dead",
+            lambda a, b, ro, co: 0 if (a, b) == (2, 2) else real_fillings(a, b, ro, co),
+        ),
+    ):
+        with poisoned("fillings_at", patch):
+            model = R.Shadings(lemmas=False)
+            model.m.add_bool_or([model.spot(*live)])
+            got[label] = solve_status(model.m)
+    check(
+        "stage 1 forbids catalogue-dead placements",
+        got["real"] in ("OPTIMAL", "FEASIBLE") and got["2x2 dead"] == "INFEASIBLE",
+        str(got),
+    )
+
+
+def stage_1_circleable_spots_follow_the_catalogue():
+    model = R.Shadings(lemmas=False)
+    every = len(model._spots(2, 2))
+    want = sum(
+        1 for r in range(8) for c in range(8) if R.circle_cells_at(2, 2, r % 3, c % 3)
+    )
+    got = len(model._spots(2, 2, circleable=True))
+    check(
+        "stage 1 places circled shapes only where a circle is possible",
+        got == want and 0 < got < every,
+        f"{got} of {every} 2x2 spots",
+    )
+
+
+def stage_3_domains_and_circles_come_from_the_catalogue():
+    is_choc = pool_shading()
+    status, _, _ = R.fill_digits(is_choc, 30, 1)
+    with poisoned(
+        "support_at",
+        lambda a, b, ro, co: (
+            tuple(tuple(frozenset() for _ in range(b)) for _ in range(a))
+            if max(a, b) <= 8
+            else None
+        ),
+    ):
+        poisoned_status, _, _ = R.fill_digits(is_choc, 30, 1)
+    check(
+        "stage 3 takes cell domains from the catalogue",
+        status == cp.OPTIMAL and poisoned_status == cp.INFEASIBLE,
+        f"{status} vs {poisoned_status}",
+    )
+    _, _, real = R.fill_digits(is_choc, 30, 1, objective="circles")
+    with poisoned("circle_cells_at", lambda a, b, ro, co: ()):
+        _, _, none = R.fill_digits(is_choc, 30, 1, objective="circles")
+    check(
+        "stage 3 scores circles only on catalogue circle cells",
+        real and real > 0 and none == 0,
+        f"{real} vs {none}",
+    )
+
+
+def whisper_holds():
+    """Stage 3 keeps the whisper gap on the pool shading's first chocolate
+    pair. 2/9 and 8/1 are rejected only because the neighbours of the pair
+    cannot keep the gap to them -- they pass if the gap is dropped -- and 1/6
+    is a legal pin that must solve."""
+    is_choc = pool_shading()
+    p, q = next((p, q) for p, q in R.ADJACENT if is_choc[p] and is_choc[q])
+    got = {}
+    for pin in ((2, 9), (8, 1), (1, 6)):
+        m, d, _ = R.digit_model(is_choc)
+        m.add(d[p] == pin[0])
+        m.add(d[q] == pin[1])
+        got[pin] = solve_status(m)
+    return (
+        got[2, 9] == "INFEASIBLE"
+        and got[8, 1] == "INFEASIBLE"
+        and got[1, 6] in ("OPTIMAL", "FEASIBLE")
+    )
 
 
 def check(name, ok, detail=""):
@@ -29,34 +141,15 @@ def check(name, ok, detail=""):
 
 
 def main():
-    src = (CODE_ROOT / "renbanana_cpsat.py").read_text()
-
     check(
         "SHAPES drops shapes no grid can hold",
         len(R.SHAPES) == 34,
         f"{len(R.SHAPES)} of 64",
     )
-    check(
-        "stage 1 forbids catalogue-dead placements",
-        "_forbid_dead_placements" in src and "self._forbid_dead_placements()" in src,
-    )
-    check(
-        "stage 1 places circled shapes only where a circle is possible",
-        "circleable=True" in src,
-    )
-    check(
-        "stage 3 takes cell domains from the catalogue",
-        "support_at(" in src and "add_allowed_assignments" in src,
-    )
-    check(
-        "stage 3 scores circles only on catalogue circle cells",
-        src.count("circle_cells_at(") >= 3,
-        f"{src.count('circle_cells_at(')} call sites",
-    )
-    check(
-        "the whisper is stated as the checkerboard it forces",
-        "high[p] != high[q]" in src,
-    )
+    stage_1_forbids_dead_placements()
+    stage_1_circleable_spots_follow_the_catalogue()
+    stage_3_domains_and_circles_come_from_the_catalogue()
+    check("stage 3 states the whisper gap", whisper_holds())
 
     # Soundness: nothing the catalogue rules out appears in a grid we accepted.
     cells = dead = circles = unpredicted = 0

@@ -29,23 +29,9 @@ from pathlib import Path
 from ortools.sat.python import cp_model as cp
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+import renbanana_model as rm
 import renbanana_verify as rv
-
-N = 9
-CELLS = [(r, c) for r in range(N) for c in range(N)]
-IDX = {p: i for i, p in enumerate(CELLS)}
-MAX_BANANA = 9
-
-
-def neighbours(r, c):
-    return [
-        (a, b)
-        for a, b in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1))
-        if 0 <= a < N and 0 <= b < N
-    ]
-
-
-ADJACENT = [(p, q) for p in CELLS for q in neighbours(*p) if IDX[q] > IDX[p]]
+from renbanana_model import CELLS, IDX, MAX_BANANA, N
 
 
 def parse_cells(text):
@@ -69,70 +55,20 @@ def build(circled, choc_cells=(), ban_cells=(), givens=()):
             m.add(d[p] == v).only_enforce_if(eq[p, v])
             m.add(d[p] != v).only_enforce_if(eq[p, v].negated())
 
-    for i in range(N):
-        m.add_all_different([d[i, c] for c in range(N)])
-        m.add_all_different([d[r, i] for r in range(N)])
-    for br in range(3):
-        for bc in range(3):
-            m.add_all_different(
-                [d[br * 3 + r, bc * 3 + c] for r in range(3) for c in range(3)]
-            )
+    rm.sudoku(m, d)
 
     # Rule 3: chocolate components are rectangles.
-    for r in range(N - 1):
-        for c in range(N - 1):
-            m.add(
-                choc[r, c] + choc[r, c + 1] + choc[r + 1, c] + choc[r + 1, c + 1] != 3
-            )
+    rm.rectangle_lemma(m, choc)
 
     # Rule 5: German Chocolate on chocolate adjacencies.
-    for p, q in ADJACENT:
-        both = m.new_bool_var("")
-        m.add_bool_or([choc[p].negated(), choc[q].negated(), both])
-        m.add_implication(both, choc[p])
-        m.add_implication(both, choc[q])
-        gap = m.new_int_var(-8, 8, "")
-        m.add(gap == d[p] - d[q])
-        ab = m.new_int_var(0, 8, "")
-        m.add_abs_equality(ab, gap)
-        m.add(ab >= 5).only_enforce_if(both)
+    rm.whisper(m, d, choc)
 
-    # Rule 4: no banana component is a rectangle. Forbid every placement of
-    # "inside all banana, whole border chocolate" -- that pattern is exactly a
-    # maximal banana rectangle.
-    for r0 in range(N):
-        for c0 in range(N):
-            for h in range(1, N - r0 + 1):
-                for w in range(1, N - c0 + 1):
-                    lits = [choc[r0 + i, c0 + j] for i in range(h) for j in range(w)]
-                    border = set()
-                    for i in range(h):
-                        border |= {(r0 + i, c0 - 1), (r0 + i, c0 + w)}
-                    for j in range(w):
-                        border |= {(r0 - 1, c0 + j), (r0 + h, c0 + j)}
-                    lits += [
-                        choc[p].negated()
-                        for p in border
-                        if 0 <= p[0] < N and 0 <= p[1] < N
-                    ]
-                    m.add_bool_or(lits)
+    # Rule 4: no banana component is a rectangle.
+    rm.forbid_banana_rectangles(m, choc)
 
-    # Canonical banana component labels: a label's owner must carry it, so a
-    # label is exactly one component (the unsoundness FEASIBILITY.md warns of).
-    lab = {
-        (p, e): m.new_bool_var(f"l{p}_{e}") for p in CELLS for e in range(IDX[p] + 1)
-    }
-    for p in CELLS:
-        m.add(sum(lab[p, e] for e in range(IDX[p] + 1)) == 1 - choc[p])
-        for e in range(IDX[p] + 1):
-            owner = CELLS[e]
-            m.add_implication(lab[p, e], lab[owner, e])
-    for p, q in ADJACENT:
-        lo, hi = (p, q) if IDX[p] < IDX[q] else (q, p)
-        for e in range(IDX[lo] + 1):
-            m.add_bool_or([choc[p], choc[q], lab[lo, e].negated(), lab[hi, e]])
-        for e in range(IDX[lo] + 1, IDX[hi] + 1):
-            m.add_bool_or([choc[p], choc[q], lab[hi, e].negated()])
+    # Banana component labels. Pinned, but still not canonical on their own:
+    # see the rank chain below.
+    lab = rm.banana_labels(m, choc)
     count = [m.new_int_var(0, MAX_BANANA, f"n{e}") for e in range(len(CELLS))]
     for e in range(len(CELLS)):
         m.add(count[e] == sum(lab[p, e] for p in CELLS if IDX[p] >= e))
@@ -146,7 +82,7 @@ def build(circled, choc_cells=(), ban_cells=(), givens=()):
         own = lab[p, IDX[p]]
         m.add(brank[p] == 0).only_enforce_if(own)
         picks = []
-        for q in neighbours(*p):
+        for q in rv.neighbours(*p):
             b = m.new_bool_var("")
             m.add_implication(b, choc[q].negated())
             m.add(brank[q] + 1 == brank[p]).only_enforce_if(b)

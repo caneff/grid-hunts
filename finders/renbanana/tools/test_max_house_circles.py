@@ -32,8 +32,13 @@ def sizes(is_choc):
     return out
 
 
-def pin_shading(house_name, is_choc):
-    """Solve stage A with the shading pinned; return {cell: measured size}."""
+def pin_shading(house_name, is_choc, seconds=120):
+    """Solve stage A with the shading pinned; return (status name, sizes).
+
+    sizes is {cell: measured size} on OPTIMAL/FEASIBLE and None otherwise. The
+    status is returned so a caller can tell a proof (INFEASIBLE) from a
+    timeout (UNKNOWN).
+    """
     target = mhc.house(house_name)
     m, choc, size, _ = mhc.shading_model(target)
     for p in mhc.CELLS:
@@ -43,10 +48,17 @@ def pin_shading(house_name, is_choc):
     # (#469), and this box is shared with other agents -- AGENTS.md's
     # "--workers 1 unless told otherwise" applies here same as a hunt.
     sol.parameters.num_search_workers = 1
-    sol.parameters.max_time_in_seconds = 120
-    if sol.solve(m) not in (cp.OPTIMAL, cp.FEASIBLE):
-        return None
-    return {p: sol.value(size[p]) for p in target}
+    sol.parameters.max_time_in_seconds = seconds
+    status = sol.solve(m)
+    if status not in (cp.OPTIMAL, cp.FEASIBLE):
+        return sol.status_name(status), None
+    return sol.status_name(status), {p: sol.value(size[p]) for p in target}
+
+
+def assert_rejects(house_name, is_choc, seconds=120):
+    """Stage A refused this shading -- proved, not timed out."""
+    status, _ = pin_shading(house_name, is_choc, seconds)
+    assert status == "INFEASIBLE", f"{house_name}: expected a proof, got {status}"
 
 
 def test_stage_a_measures_groups():
@@ -55,8 +67,10 @@ def test_stage_a_measures_groups():
         assert not rv.check(grid, is_choc), path
         truth = sizes(is_choc)
         for name in HOUSES:
-            got = pin_shading(name, is_choc)
-            assert got is not None, f"{path} {name}: stage A rejected a legal shading"
+            status, got = pin_shading(name, is_choc)
+            assert got is not None, (
+                f"{path} {name}: stage A returned {status} on a legal shading"
+            )
             for p, n in got.items():
                 assert n == truth[p], f"{path} {name} {p}: {n} != {truth[p]}"
 
@@ -73,13 +87,23 @@ def test_stage_a_rejects_illegal_shadings():
             v.startswith(("rule 3", "rule 4"))
             for v in rv.check(dict.fromkeys(mhc.CELLS, 1), broken)
         ):
-            assert pin_shading("row5", broken) is None, (
-                f"accepted a broken shading at {p}"
-            )
+            assert_rejects("row5", broken)
             checked += 1
             if checked == 3:
                 return
     raise AssertionError("did not find three shape-breaking flips")
+
+
+def test_a_timeout_is_not_a_rejection():
+    """A solve cut off by the clock says nothing about the shading."""
+    _, is_choc, _ = rv.load(POOL[0])
+    status, got = pin_shading("row5", is_choc, seconds=0.001)
+    assert status == "UNKNOWN" and got is None, status
+    try:
+        assert_rejects("row5", is_choc, seconds=0.001)
+    except AssertionError:
+        return
+    raise AssertionError("a timeout passed as a rejection")
 
 
 def test_stage_b_reproduces_a_pool_circle():
@@ -106,5 +130,6 @@ def test_stage_b_reproduces_a_pool_circle():
 if __name__ == "__main__":
     test_stage_a_measures_groups()
     test_stage_a_rejects_illegal_shadings()
+    test_a_timeout_is_not_a_rejection()
     test_stage_b_reproduces_a_pool_circle()
     print("OK")

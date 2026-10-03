@@ -44,20 +44,17 @@ from ortools.sat.python import cp_model as cp
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import renbanana_cpsat as rc
+import renbanana_model as rm
 import renbanana_verify as rv
-
-N = 9
-CELLS = rc.CELLS
-IDX = rc.IDX
-ADJACENT = rc.ADJACENT
-MAX_BANANA = 9
-PLACEMENTS = [
-    (h, w, r0, c0)
-    for h in range(1, N + 1)
-    for w in range(1, N + 1)
-    for r0 in range(N - h + 1)
-    for c0 in range(N - w + 1)
-]
+from renbanana_model import (
+    ADJACENT,
+    CELLS,
+    IDX,
+    MAX_BANANA,
+    PLACEMENTS,
+    N,
+    inside_of,
+)
 
 
 def house(name):
@@ -73,15 +70,6 @@ def house(name):
     raise SystemExit(f"unknown house {name!r}")
 
 
-def inside_of(h, w, r0, c0):
-    return [(r0 + i, c0 + j) for i in range(h) for j in range(w)]
-
-
-def border_of(h, w, r0, c0):
-    inside = set(inside_of(h, w, r0, c0))
-    return sorted({q for p in inside for q in rv.neighbours(*p) if q not in inside})
-
-
 # ---------------------------------------------------------------- stage A
 
 
@@ -91,27 +79,17 @@ def shading_model(target):
     choc = {p: m.new_bool_var(f"c{p}") for p in CELLS}
 
     # Rule 3: every maximal chocolate group is a rectangle.
-    for r in range(N - 1):
-        for c in range(N - 1):
-            m.add(
-                choc[r, c] + choc[r, c + 1] + choc[r + 1, c] + choc[r + 1, c + 1] != 3
-            )
+    rm.rectangle_lemma(m, choc)
 
     # Rule 4: no maximal banana group is a rectangle.
-    for h, w, r0, c0 in PLACEMENTS:
-        m.add_bool_or(
-            [choc[p] for p in inside_of(h, w, r0, c0)]
-            + [choc[q].negated() for q in border_of(h, w, r0, c0)]
-        )
+    rm.forbid_banana_rectangles(m, choc)
 
     # `rect[P]` <=> P is exactly a maximal chocolate group. Used for the
     # catalogue's circle-cell veto, and to rule out placements no grid can fill.
     rect = {}
     for P in PLACEMENTS:
         h, w, r0, c0 = P
-        lits = [choc[p] for p in inside_of(h, w, r0, c0)] + [
-            choc[q].negated() for q in border_of(h, w, r0, c0)
-        ]
+        lits = rm.maximal_chocolate_lits(choc, h, w, r0, c0)
         v = m.new_bool_var(f"R{P}")
         for lit in lits:
             m.add_implication(v, lit)
@@ -223,21 +201,8 @@ def digits_on(is_choc, target, level, seconds, workers):
     """
     m = cp.CpModel()
     d = {p: m.new_int_var(1, N, f"d{p}") for p in CELLS}
-    for i in range(N):
-        m.add_all_different([d[i, c] for c in range(N)])
-        m.add_all_different([d[r, i] for r in range(N)])
-    for br in range(3):
-        for bc in range(3):
-            m.add_all_different(
-                [d[br * 3 + r, bc * 3 + c] for r in range(3) for c in range(3)]
-            )
-    for p, q in ADJACENT:
-        if is_choc[p] and is_choc[q]:
-            gap = m.new_int_var(-8, 8, f"g{p}{q}")
-            m.add(gap == d[p] - d[q])
-            a = m.new_int_var(0, 8, f"a{p}{q}")
-            m.add_abs_equality(a, gap)
-            m.add(a >= 5)
+    rm.sudoku(m, d)
+    rm.whisper_on_shading(m, d, is_choc)
     size_of = {}
     for group in rv.components(is_choc, True):
         rows, cols = rv.shape(group)

@@ -15,11 +15,11 @@ One worker by default and one process, ever: this box is shared (AGENTS.md).
 Why the model is sharper here than stage 1. With the digits known, the whisper
 stops being a digit-stage question and becomes a plain clause — an adjacent
 pair differing by less than 5 simply cannot both be chocolate. The renban rule
-stops being lazy too: component labels already exist in stage 1 for the size
-cap, and with fixed digits a label plus a digit is enough to state both halves
-of renban exactly (at most one cell of each digit per label; no gap between two
-digits present in a label). Only the banana-non-rectangle rule stays lazy, cut
-one pattern at a time exactly as stage 1 does.
+becomes a filter on the component labels: with fixed digits a label plus a
+digit states both halves of renban (at most one cell of each digit per label;
+no gap between two digits present in a label). It is not exact, because two
+components can share a label; `Shadings.offenders` catches those on the
+solution and cuts them, as it does a rectangular banana group (rule 4).
 
 So an INFEASIBLE from this model is a proof: that solved grid carries no legal
 Renbanana shading at all.
@@ -36,12 +36,9 @@ from ortools.sat.python import cp_model as cp
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import renbanana_cpsat as rc
+import renbanana_model as rm
 import renbanana_verify as rv
-
-N = 9
-CELLS = [(r, c) for r in range(N) for c in range(N)]
-IDX = {p: i for i, p in enumerate(CELLS)}
-ADJACENT = [(p, q) for p in CELLS for q in rv.neighbours(*p) if IDX[q] > IDX[p]]
+from renbanana_model import ADJACENT, CELLS, IDX, N
 
 
 def random_grid(seed, seconds, workers, steer=0):
@@ -61,14 +58,7 @@ def random_grid(seed, seconds, workers, steer=0):
     rng = random.Random(seed)
     m = cp.CpModel()
     d = {p: m.new_int_var(1, 9, f"d{p}") for p in CELLS}
-    for i in range(N):
-        m.add_all_different([d[i, c] for c in range(N)])
-        m.add_all_different([d[r, i] for r in range(N)])
-    for br in range(3):
-        for bc in range(3):
-            m.add_all_different(
-                [d[br * 3 + r, bc * 3 + c] for r in range(3) for c in range(3)]
-            )
+    rm.sudoku(m, d)
     if steer:
         far = []
         for p, q in ADJACENT:
@@ -93,7 +83,8 @@ def random_grid(seed, seconds, workers, steer=0):
 
 
 class Shadings:
-    """Legal shadings of one *fixed* solved grid. Exact but for rule 4."""
+    """Legal shadings of one *fixed* solved grid. Exact but for rules 4 and 6,
+    which `offenders` checks on each solution."""
 
     def __init__(self, grid, min_chocolate=0, drop="none", want_circled=0):
         m = cp.CpModel()
@@ -102,65 +93,25 @@ class Shadings:
         self.drop = drop
         self.choc = {p: m.new_bool_var(f"c{p}") for p in CELLS}
 
-        # Rule 3: no 2x2 window holds exactly three chocolate cells.
-        for r in range(N - 1):
-            for c in range(N - 1):
-                m.add(
-                    sum(self.choc[r + i, c + j] for i in range(2) for j in range(2))
-                    != 3
-                )
+        rm.rectangle_lemma(m, self.choc)
 
         # Rule 5, now a plain clause: this pair cannot both be chocolate.
-        for p, q in [] if drop == "whisper" else ADJACENT:
-            if abs(grid[p] - grid[q]) < 5:
-                m.add_bool_or([self.choc[p].negated(), self.choc[q].negated()])
+        if drop != "whisper":
+            rm.whisper_on_digits(m, self.choc, grid)
 
-        # Component labels for the banana groups, as in stage 1: every banana
-        # cell carries exactly one label, adjacent banana cells share it, and a
-        # label is the least cell index in its component.
-        lab = {
-            (p, ell): m.new_bool_var(f"l{p}_{ell}")
-            for p in CELLS
-            for ell in range(IDX[p] + 1)
-        }
-        for p in CELLS:
-            m.add(sum(lab[p, ell] for ell in range(IDX[p] + 1)) == 1 - self.choc[p])
-        for p, q in ADJACENT:
-            lo, hi = (p, q) if IDX[p] < IDX[q] else (q, p)
-            for ell in range(IDX[lo] + 1):
-                m.add_bool_or(
-                    [self.choc[p], self.choc[q], lab[lo, ell].negated(), lab[hi, ell]]
-                )
-            for ell in range(IDX[lo] + 1, IDX[hi] + 1):
-                m.add_bool_or([self.choc[p], self.choc[q], lab[hi, ell].negated()])
-
-        # Pin each label to be *exactly* its component's least cell index, not
-        # merely at most it. Without this a label is only bounded above, so two
-        # disjoint components can both claim a label below both their minimums
-        # and renban then lands on their union -- a gap in one component
-        # plugged by a digit from the other. Requiring that whoever uses label
-        # `ell` shares it with the cell whose index *is* `ell` closes that: the
-        # owner cell lies in exactly one component, so no second component can
-        # claim the label. It rules no legal grid out, since a component can
-        # always take its own least index.
-        for ell in range(len(CELLS)):
-            owner = CELLS[ell]
-            for p in CELLS:
-                if IDX[p] >= ell and p != owner:
-                    m.add_implication(lab[p, ell], lab[owner, ell])
+        lab = rm.banana_labels(m, self.choc)
 
         # Rule 6 as a strong filter, not as the last word. Per label: at most
         # one cell of each digit (distinct), and no digit missing between two
         # that are present (consecutive).
         #
-        # Not exact, because a label is only pinned to be *at most* the least
-        # cell index in its component, so two disjoint components may pick the
-        # same label. Renban then lands on their union, and a gap in one
-        # component can be plugged by a digit from the other -- which is how a
-        # banana group holding 1, 4 and 8 once came back as legal. It never
-        # rules a legal shading out (the solver can always give each component
-        # its own least index), so an INFEASIBLE is still a proof; it just lets
-        # some illegal ones through. `solve` catches those and cuts them.
+        # Not exact: two disjoint components may still share a label (see
+        # `rm.banana_labels`), so renban lands on their union and a gap in one
+        # can be plugged by a digit from the other -- which is how a banana
+        # group holding 1, 4 and 8 once came back as legal. It never rules a
+        # legal shading out (the solver can always give each component its own
+        # least index), so an INFEASIBLE is still a proof; it just lets some
+        # illegal ones through. `solve` catches those and cuts them.
         for ell in range(len(CELLS)):
             members = [p for p in CELLS if IDX[p] >= ell]
             here = {}
@@ -238,16 +189,11 @@ class Shadings:
             return
         sel = []
         for a, b, r0, c0 in places:
-            inside = [(r0 + i, c0 + j) for i in range(a) for j in range(b)]
-            border = {
-                q for p in inside for q in rv.neighbours(*p) if q not in set(inside)
-            }
-            v = self.m.new_bool_var(f"circ{a}x{b}@{r0},{c0}")
-            for p in inside:
-                self.m.add_implication(v, self.choc[p])
-            for q in border:
-                self.m.add_implication(v, self.choc[q].negated())
-            sel.append(v)
+            sel.append(
+                rm.chocolate_spot(
+                    self.m, self.choc, a, b, r0, c0, f"circ{a}x{b}@{r0},{c0}"
+                )
+            )
         self.m.add(sum(sel) >= want)
 
     def _forbid_dead_placements(self):
@@ -268,27 +214,7 @@ class Shadings:
         enumeration. A dead placement is forbidden as a *maximal* rectangle:
         every cell chocolate with a wholly banana border.
         """
-        self.dead = 0
-        for a in range(1, N + 1):
-            for b in range(1, N + 1):
-                sup = rc.support_at(a, b, 0, 0) if max(a, b) <= 8 else None
-                for r0 in range(N - a + 1):
-                    for c0 in range(N - b + 1):
-                        if not self._is_dead(a, b, r0, c0):
-                            continue
-                        inside = [(r0 + i, c0 + j) for i in range(a) for j in range(b)]
-                        border = {
-                            q
-                            for p in inside
-                            for q in rv.neighbours(*p)
-                            if q not in set(inside)
-                        }
-                        self.m.add_bool_or(
-                            [self.choc[p].negated() for p in inside]
-                            + [self.choc[q] for q in border]
-                        )
-                        self.dead += 1
-        del sup
+        self.dead = rm.forbid_dead_chocolate(self.m, self.choc, self._is_dead)
 
     def _is_dead(self, a, b, r0, c0):
         """True when the catalogue says this placement cannot be filled."""
@@ -306,10 +232,7 @@ class Shadings:
         )
 
     def forbid_component(self, group):
-        border = {q for p in group for q in rv.neighbours(*p) if q not in group}
-        self.m.add_bool_or(
-            [self.choc[p] for p in group] + [self.choc[q].negated() for q in border]
-        )
+        rm.forbid_banana_group(self.m, self.choc, group)
         self.cuts += 1
 
     def offenders(self, is_choc):
@@ -339,7 +262,8 @@ class Shadings:
         return bad
 
     def solve(self, seconds, workers, seed):
-        """Loop the lazy rule-4 cuts until the shading is clean or time runs out."""
+        """Loop the `offenders` cuts (rules 4 and 6) until the shading is clean or
+        time runs out."""
         if self.impossible:
             return cp.INFEASIBLE, None
         deadline = time.monotonic() + seconds
