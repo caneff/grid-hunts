@@ -11,14 +11,18 @@ import json
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dedupe import D4, canonical_key
-from subprocess_env import success_env
+from subprocess_env import pin_idle_load, success_env
+
+pin_idle_load()
 
 HERE = Path(__file__).resolve().parent
 TOY_FINDER = HERE / "toy_finder.py"
+SLOW_FINDER = HERE / "toy_slow_finder.py"
 
 ok = True
 
@@ -84,60 +88,67 @@ with tempfile.TemporaryDirectory() as tmp:
     keys = [canonical_key(tuple(ex["grid"]), D4) for ex in examples]
     check("no two examples are equal under D4", len(keys) == len(set(keys)))
 
-    # A completed hunt is a run.json-bearing --out, so rerunning it goes
-    # through the resume path (#487) -- and a differing --seeds is a
-    # differing argv, which that path refuses rather than silently mixing
-    # in output under a range the recorded run never agreed to. See
-    # test_hunt_resume.py for resuming with the *same* argv.
-    rerun = subprocess.run(
+with tempfile.TemporaryDirectory() as tmp:
+    # An --out that holds a hunt's output file but no run.json is not a
+    # hunt this driver can resume, and it is not empty: the hunt refuses
+    # (exit 2, naming the file) and leaves what is there untouched, instead
+    # of appending to someone's examples.jsonl (#669).
+    out = Path(tmp) / "hunt-out"
+    out.mkdir()
+    occupant = out / "examples.jsonl"
+    occupant.write_text('{"grid": [9]}\n')
+    result = subprocess.run(
         [sys.executable, str(TOY_FINDER), "--out", str(out), "--seeds", "0:5"],
         capture_output=True,
         text=True,
         env=success_env(),
     )
     check(
-        "rerunning with a differing --seeds refuses (nonzero exit)",
-        rerun.returncode != 0,
+        f"an --out holding examples.jsonl but no run.json is refused, naming "
+        f"the file (exit {result.returncode}, stderr: {result.stderr[-300:]})",
+        result.returncode == 2 and "examples.jsonl" in result.stderr,
     )
     check(
-        "a refused rerun leaves examples.jsonl untouched",
-        len(
-            [line for line in (out / "examples.jsonl").read_text().splitlines() if line]
-        )
-        == len(examples),
+        "the refused hunt left the occupant and added no hunt file",
+        occupant.read_text() == '{"grid": [9]}\n'
+        and sorted(p.name for p in out.iterdir()) == [".lock", "examples.jsonl"],
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # Two processes racing on the same fresh --out must not both start: the
-    # existence check alone has a TOCTOU window, so this launches both
-    # without waiting between them and lets the OS-level exclusive create
-    # decide the winner (#507 review).
+    # A second hunt started on an --out whose first hunt is still running
+    # must refuse and leave the first one's output alone. The first hunt is
+    # slow and the second starts only once the first's lock exists, so the
+    # overlap is certain.
     out = Path(tmp) / "hunt-out"
-    procs = [
-        subprocess.Popen(
-            [sys.executable, str(TOY_FINDER), "--out", str(out), "--seeds", "0:50"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            env=success_env(),
-        )
-        for _ in range(2)
-    ]
-    for p in procs:
-        p.communicate()
-    exit_codes = sorted(p.returncode for p in procs)
-    check(
-        f"racing on a fresh --out: exactly one wins (exit codes {exit_codes})",
-        exit_codes == [0, 2],
+    argv = [sys.executable, str(SLOW_FINDER), "--out", str(out), "--seeds", "0:400"]
+    first = subprocess.Popen(
+        argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=success_env()
     )
-    examples = [
-        json.loads(line)
-        for line in (out / "examples.jsonl").read_text().splitlines()
+    try:
+        deadline = time.time() + 10
+        while not (out / "progress.jsonl").exists() and time.time() < deadline:
+            time.sleep(0.01)
+        check("the first hunt is running", first.poll() is None)
+        second = subprocess.run(argv, capture_output=True, text=True, env=success_env())
+        check(
+            f"a second hunt on a running hunt's --out exits 2 "
+            f"(exit {second.returncode}, stderr: {second.stderr[-300:]})",
+            second.returncode == 2 and "an active hunt (locked)" in second.stderr,
+        )
+        check("the first hunt is still running", first.poll() is None)
+    finally:
+        first.kill()
+        first.communicate()
+    seeds_logged = [
+        json.loads(line)["seed"]
+        for line in (out / "progress.jsonl").read_text().splitlines()
         if line
     ]
-    summary = json.loads((out / "summary.json").read_text())
     check(
-        "the loser's seeds never reached the winner's output",
-        summary.get("seeds_done") == 50 and summary.get("examples") == len(examples),
+        "the refused hunt wrote nothing: each seed appears once, in order",
+        seeds_logged
+        and seeds_logged == sorted(set(seeds_logged))
+        and seeds_logged == list(range(len(seeds_logged))),
     )
 
 with tempfile.TemporaryDirectory() as tmp:

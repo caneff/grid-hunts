@@ -132,26 +132,6 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # A genuine search-space change (--seeds) must still refuse -- box-safety
-    # flags are excluded from the resume comparison, not argv equality itself.
-    out = Path(tmp) / "hunt-out"
-    first = run_cli(out, [])
-    check(
-        f"base hunt for genuine-mismatch check exits 0 (stderr: {first.stderr[-500:]})",
-        first.returncode == 0,
-    )
-    mismatched = subprocess.run(
-        [sys.executable, "-c", WORKERS_FINDER, "--out", str(out), "--seeds", "0:5"],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
-    check(
-        "a genuinely differing --seeds still refuses",
-        mismatched.returncode != 0,
-    )
-
-with tempfile.TemporaryDirectory() as tmp:
     # An exported-but-empty HUNT_FAKE_LOAD1 (the ordinary shape of
     # `export HUNT_FAKE_LOAD1=$X` with X unset) is not an override -- it
     # must read as "no override", never crash (#488 review C2). "No

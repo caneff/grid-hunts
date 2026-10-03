@@ -39,9 +39,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dedupe import D4, canonical_key
 from protocol import Verdict
 from render import GridCanvas
-from subprocess_env import success_env
+from subprocess_env import pin_idle_load, success_env
 from toy_stateful_finder import StatefulToyFinder
 from toy_tiny_key_finder import TinyKeyFinder
+
+pin_idle_load()
 
 HERE = Path(__file__).resolve().parent
 SLOW_FINDER = HERE / "toy_slow_finder.py"
@@ -289,6 +291,15 @@ with tempfile.TemporaryDirectory() as tmp:
     # Roll state.json back one seed, as if seed 9's save never landed.
     state_path.write_text(json.dumps({"seed": 8, "state": {"seeds_seen": 9}}))
 
+    # Mark seed 9's progress event so a rerun is visible: a rerun writes a
+    # fresh event without the mark, while a resume that skips seed 9 leaves
+    # the marked one in place (the seed numbers alone are the same either way).
+    marked = [
+        {**e, "stale_mark": True} if e.get("seed") == 9 else e
+        for e in read_jsonl(out / "progress.jsonl")
+    ]
+    (out / "progress.jsonl").write_text("".join(json.dumps(e) + "\n" for e in marked))
+
     rerun = run_cli(STATEFUL_FINDER, out, "0:10")
     check(
         f"resume after a state/progress gap exits 0 (stderr: {rerun.stderr[-300:]})",
@@ -298,7 +309,8 @@ with tempfile.TemporaryDirectory() as tmp:
     seeds_seen = [e["seed"] for e in final_progress if e.get("event") == "seed_done"]
     check(
         "the seed state.json hadn't caught up to reruns exactly once, not zero times",
-        sorted(seeds_seen) == list(range(10)),
+        sorted(seeds_seen) == list(range(10))
+        and not any(e.get("stale_mark") for e in final_progress),
     )
     final_state = json.loads(state_path.read_text())
     check(

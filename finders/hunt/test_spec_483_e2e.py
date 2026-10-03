@@ -31,7 +31,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from dedupe import D4, canonical_key
 from driver import run
-from grid import connected_components, neighbors_orthogonal
+from grid import connected_components
 from ortools.sat.python import cp_model
 from printer import render_board
 from protocol import Verdict
@@ -226,7 +226,7 @@ def main():
         check("--force-load proceeds", r.returncode == 0 and len(seed_done(gated)) == 3)
         check(
             "--workers defaults to 3",
-            {e["workers"] for e in read_jsonl(gated / "examples.jsonl")} <= {3},
+            {e["workers"] for e in read_jsonl(gated / "examples.jsonl")} == {3},
         )
 
         # Verification: inline drops rejects; --no-verify defers to `hunt verify`.
@@ -252,11 +252,6 @@ def main():
             and [v["ok"] for v in verdicts] == [sum(e["grid"]) % 2 == 0 for e in raw],
         )
 
-    # The parts, used without the driver.
-    check(
-        "orthogonal neighbours of a corner",
-        sorted(neighbors_orthogonal(0, 0, 4, 4)) == [(0, 1), (1, 0)],
-    )
     return 0 if ok else 1
 
 

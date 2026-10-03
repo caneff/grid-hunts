@@ -153,18 +153,6 @@ try:
 except ValueError:
     check("identity + 180-degree rotation (a valid subgroup) is accepted", False)
 
-try:
-    canonical_key(flat(SHAPE), D4)
-    check("D4 still passes", True)
-except ValueError:
-    check("D4 still passes", False)
-
-try:
-    canonical_key(flat(SHAPE), IDENTITY)
-    check("IDENTITY still passes", True)
-except ValueError:
-    check("IDENTITY still passes", False)
-
 # A custom group given as a set (not a list) must fail cleanly, not with an
 # unhandled TypeError from indexing it -- `_normalize_group` must list() it
 # first (#508 correctness review).

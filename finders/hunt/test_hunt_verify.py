@@ -16,7 +16,11 @@ import sys
 import tempfile
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from subprocess_env import pin_idle_load
 from verified_io import read_verified
+
+pin_idle_load()
 
 HERE = Path(__file__).resolve().parent
 TOY_FINDER = HERE / "toy_finder.py"
@@ -185,6 +189,19 @@ with tempfile.TemporaryDirectory() as tmp:
         verify_result.returncode == 0,
     )
     check("verified.jsonl was written", (out / "verified.jsonl").exists())
+    inherited_examples = [
+        json.loads(line)
+        for line in (out / "examples.jsonl").read_text().splitlines()
+        if line
+    ]
+    _, inherited_verdicts = read_verified(out / "verified.jsonl")
+    check(
+        "the inherited candidate_from_record rebuilds each candidate: every "
+        "verdict matches its grid's parity, and the run has odd ones",
+        [v["ok"] for v in inherited_verdicts]
+        == [sum(ex["grid"]) % 2 == 0 for ex in inherited_examples]
+        and any(sum(ex["grid"]) % 2 for ex in inherited_examples),
+    )
 
 with tempfile.TemporaryDirectory() as tmp:
     # A finder with no candidate_from_record whose record() isn't itself

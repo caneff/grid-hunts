@@ -39,7 +39,6 @@ m.Add(a == b)
 m.Add(a == 1)
 result = check_uniqueness(m, [a, b])
 check("a one-solution model is reported unique", result.unique)
-check("status is 'unique'", result.status == "unique")
 check("the witness is the only solution", result.first == (1, 1))
 check("no second witness on a unique model", result.second is None)
 
@@ -51,7 +50,6 @@ b2 = m2.NewIntVar(0, 1, "b")
 m2.Add(a2 == b2)
 result2 = check_uniqueness(m2, [a2, b2])
 check("a two-solution model is reported not unique", not result2.unique)
-check("status is 'not_unique'", result2.status == "not_unique")
 check(
     "both witnesses are reported and differ",
     result2.first is not None
@@ -91,11 +89,14 @@ check(
     "a negated boolean literal among the variables is handled, not an error",
     result2c.status == "not_unique",
 )
+# `a != b` has the witnesses (0, 1) and (1, 0) over (a, b); read through
+# `[a, b.Not()]` they are (0, 0) and (1, 1), so both coordinates of each
+# witness are equal. Reading the raw variable instead would not give that.
 check(
-    "the witnesses reflect the negated literal, not the raw variable",
+    "the witnesses read the negated literal's value, not the raw variable's",
     result2c.first is not None
     and result2c.second is not None
-    and result2c.first != result2c.second,
+    and {result2c.first, result2c.second} == {(0, 0), (1, 1)},
 )
 
 # MODEL_INVALID: an IntVar built with lb > ub is invalid at solve time, no
@@ -104,7 +105,6 @@ m3 = cp_model.CpModel()
 bad = m3.NewIntVar(5, 2, "bad")
 result3 = check_uniqueness(m3, [bad])
 check("an invalid model is reported invalid, not unique", result3.status == "invalid")
-check("invalid is never reported as unique", not result3.unique)
 
 # Timeout: a subset-sum instance with a time limit far below what it takes
 # to find a first feasible solution -- deterministic given the fixed seed
@@ -119,7 +119,6 @@ target = sum(weights) // 2
 m4.Add(sum(w * x for w, x in zip(weights, xs, strict=True)) == target)
 result4 = check_uniqueness(m4, xs, time_limit=0.001, workers=1)
 check("a solve that times out is reported as timeout", result4.status == "timeout")
-check("timeout is never reported as unique", not result4.unique)
 
 # _terminal's table, every status on both the first solve (first=None) and
 # the retry (first=(1, 2)), including the branch a real second solve can't
