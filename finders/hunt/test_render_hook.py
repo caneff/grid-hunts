@@ -30,7 +30,7 @@ def check(name, cond):
 
 
 def read_jsonl(path):
-    return [json.loads(line) for line in path.read_text().splitlines() if line]
+    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
 with tempfile.TemporaryDirectory() as tmp:
@@ -42,11 +42,7 @@ with tempfile.TemporaryDirectory() as tmp:
     )
     check(f"exit code 0 (stderr: {result.stderr[-500:]})", result.returncode == 0)
 
-    examples = [
-        json.loads(line)
-        for line in (out / "examples.jsonl").read_text().splitlines()
-        if line
-    ]
+    examples = read_jsonl(out / "examples.jsonl")
     check("at least one example was found over 200 seeds", len(examples) > 0)
 
     renders_dir = out / "renders"
@@ -134,11 +130,7 @@ sys.exit(run(RaisingRenderFinder(), sys.argv[1:]))
         f"a raising render() still exits 0 (stderr: {result.stderr[-500:]})",
         result.returncode == 0,
     )
-    examples = [
-        json.loads(line)
-        for line in (out / "examples.jsonl").read_text().splitlines()
-        if line
-    ]
+    examples = read_jsonl(out / "examples.jsonl")
     progress = read_jsonl(out / "progress.jsonl")
     example_events = [e for e in progress if e.get("outcome") == "example"]
     check(
@@ -170,11 +162,7 @@ with tempfile.TemporaryDirectory() as tmp:
         f"{result.stderr[-500:]})",
         result.returncode == 0,
     )
-    examples_before = [
-        json.loads(line)
-        for line in (out / "examples.jsonl").read_text().splitlines()
-        if line
-    ]
+    examples_before = read_jsonl(out / "examples.jsonl")
     check("at least one example was found (render-fail run)", len(examples_before) > 0)
     check(
         "no PNG exists yet -- every render failed",
@@ -193,11 +181,7 @@ with tempfile.TemporaryDirectory() as tmp:
         f"resume with rendering fixed exits 0 (stderr: {resume_result.stderr[-500:]})",
         resume_result.returncode == 0,
     )
-    examples_after = [
-        json.loads(line)
-        for line in (out / "examples.jsonl").read_text().splitlines()
-        if line
-    ]
+    examples_after = read_jsonl(out / "examples.jsonl")
     check(
         "resume didn't rerun the search -- same examples, no duplicates",
         examples_after == examples_before,
@@ -321,11 +305,7 @@ sys.exit(run(StatefulRenderFinder(), sys.argv[1:]))
         f"{resume_result.stderr[-500:]})",
         resume_result.returncode == 0,
     )
-    resumed_examples = [
-        json.loads(line)
-        for line in (out / "examples.jsonl").read_text().splitlines()
-        if line
-    ]
+    resumed_examples = read_jsonl(out / "examples.jsonl")
     check(
         "a stateful finder's failed renders are repaired from the recorded "
         "examples on resume",
@@ -433,16 +413,36 @@ sys.exit(run(StatefulRenderFinder(), sys.argv[1:]))
         "unrepaired" in nohook_result.stderr,
     )
 
+    # The warning fires only when a picture is actually missing: the same
+    # refused finder resuming with every render intact stays quiet.
+    quiet_out = Path(tmp) / "no-hook-intact"
+    quiet_argv = ["--out", str(quiet_out), "--seeds", "0:30"]
+    quiet_first = subprocess.run(run_argv + quiet_argv, capture_output=True, text=True)
+    quiet_result = subprocess.run(
+        run_argv + quiet_argv,
+        capture_output=True,
+        text=True,
+        env=dict(os.environ, TOY_NO_HOOK="1", TOY_NO_PROPOSE="1"),
+    )
+    check(
+        "a refused finder with every render intact resumes without the "
+        "unrepaired warning",
+        quiet_first.returncode == 0
+        and quiet_result.returncode == 0
+        and list((quiet_out / "renders").glob("*.png"))
+        and "unrepaired" not in quiet_result.stderr,
+    )
+
     # A stateful finder with `load_state` and a hook but no `save_state`
     # fails closed too: repair cannot snapshot its state, so the hook is
     # never called and the failed renders keep their original render_error
     # (#538, #627 controller-1). Only the resume drops `save_state`: the
     # first run must leave a state.json for the resume to load, or the
-    # resume reruns every seed and renders them afresh. TOY_HOOK_RAISES would overwrite that error
-    # with a KeyError if the hook were called.
+    # resume reruns every seed and renders them afresh. TOY_HOOK_RAISES would
+    # overwrite that error with a KeyError if the hook were called.
     nosave_out = Path(tmp) / "no-save"
     nosave_argv = ["--out", str(nosave_out), "--seeds", "0:30"]
-    subprocess.run(
+    nosave_first = subprocess.run(
         run_argv + nosave_argv,
         capture_output=True,
         text=True,
@@ -455,6 +455,11 @@ sys.exit(run(StatefulRenderFinder(), sys.argv[1:]))
         env=dict(os.environ, TOY_NO_SAVE="1", TOY_HOOK_RAISES="1"),
     )
     nosave_events = read_jsonl(nosave_out / "progress.jsonl")
+    check(
+        "the no-save first run exits 0 and found examples to repair",
+        nosave_first.returncode == 0
+        and any(e.get("outcome") == "example" for e in nosave_events),
+    )
     check(
         f"a stateful finder with no save_state resumes with exit 0 and no "
         f"picture (stderr: {nosave_result.stderr[-300:]})",

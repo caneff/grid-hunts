@@ -501,15 +501,37 @@ def _can_repair_renders(finder):
     restores it regardless). Without that hook, or without `save_state`
     to snapshot the state (fail closed), the finder's missing render
     stays unrepaired -- part of the finder contract (protocol.py,
-    `render`)."""
+    `render`). `_render_repair_gap` names the refusal."""
+    return _render_repair_gap(finder) is None
+
+
+def _render_repair_gap(finder):
+    """Why `_repair_renders` cannot regenerate this finder's missing picture,
+    or None when it can: the one place the refusal conditions live, so the
+    warning `_warn_unrepaired_renders` prints cannot drift from them. A
+    finder with no render has no pictures, so that warning stays silent
+    before it reads the gap."""
     if getattr(finder, "render", None) is None:
-        return False
-    if _is_stateful(finder):
-        return (
-            getattr(finder, "candidate_from_record", None) is not None
-            and getattr(finder, "save_state", None) is not None
-        )
-    return True
+        return "the finder has no render"
+    if _is_stateful(finder) and (
+        getattr(finder, "candidate_from_record", None) is None
+        or getattr(finder, "save_state", None) is None
+    ):
+        return "a stateful finder needs candidate_from_record and save_state"
+    return None
+
+
+def _missing_example_renders(out, progress_events):
+    """`(event index, k)` for every accepted example whose renders/<seed>.png
+    is missing or undecodable; k is the example's position among the
+    "example" events, which pairs it with the k-th examples.jsonl record."""
+    k = -1
+    for i, event in enumerate(progress_events):
+        if event.get("outcome") != "example":
+            continue
+        k += 1
+        if not _render_intact(out / "renders" / f"{event['seed']}.png"):
+            yield i, k
 
 
 def _warn_unrepaired_renders(finder, out, progress_events):
@@ -519,17 +541,13 @@ def _warn_unrepaired_renders(finder, out, progress_events):
     no pictures to miss."""
     if getattr(finder, "render", None) is None:
         return
-    missing = sum(
-        1
-        for e in progress_events
-        if e.get("outcome") == "example"
-        and not _render_intact(out / "renders" / f"{e['seed']}.png")
-    )
-    if missing:
+    gap = _render_repair_gap(finder)
+    missing = sum(1 for _ in _missing_example_renders(out, progress_events))
+    if gap and missing:
         print(
-            f"hunt: {missing} example render(s) left unrepaired -- a stateful "
-            "finder needs candidate_from_record and save_state for render "
-            "repair on resume (protocol.py, render)",
+            f"hunt: {missing} example render(s) left unrepaired -- "
+            f"{gap} for render repair on resume "
+            "(protocol.py, render)",
             file=sys.stderr,
         )
 
@@ -558,14 +576,10 @@ def _repair_renders(finder, out, progress_lines, progress_events, examples_recor
         _warn_unrepaired_renders(finder, out, progress_events)
         return progress_lines, progress_events
     stateful = _is_stateful(finder)
-    records = iter(examples_records)
-    for i, event in enumerate(progress_events):
-        if event.get("outcome") != "example":
-            continue
-        record = next(records)
+    for i, k in _missing_example_renders(out, progress_events):
+        event = progress_events[i]
+        record = examples_records[k]
         seed = event["seed"]
-        if _render_intact(out / "renders" / f"{seed}.png"):
-            continue
         new_event = dict(event)
         new_event.pop("render_error", None)
         if stateful:
@@ -678,7 +692,7 @@ def _propose_and_key(finder, seed, symmetry, no_verify=False):
     verify DIR` can check it later.
     """
     candidate = finder.propose(random.Random(seed))
-    if candidate is None or isinstance(candidate, Empty):
+    if _is_empty(candidate):
         return candidate, None, None
     verdict = Verdict(ok=True) if no_verify else finder.verify(candidate)
     if not verdict.ok:
@@ -698,6 +712,11 @@ def _propose_and_key(finder, seed, symmetry, no_verify=False):
     return candidate, verdict, key
 
 
+def _is_empty(candidate):
+    """A seed that proposed nothing: None, or an `Empty` that may say why."""
+    return candidate is None or isinstance(candidate, Empty)
+
+
 def _process_seed(
     finder, seed, seen, symmetry, examples_f, progress_f, counts, out, no_verify
 ):
@@ -706,7 +725,7 @@ def _process_seed(
     loops so the two can't drift apart on what a seed's outcome means."""
     candidate, verdict, key = _propose_and_key(finder, seed, symmetry, no_verify)
     event = {"event": "seed_done", "seed": seed}
-    if candidate is None or isinstance(candidate, Empty):
+    if _is_empty(candidate):
         counts["empty"] += 1
         event["outcome"] = "empty"
         if isinstance(candidate, Empty) and candidate.reason:

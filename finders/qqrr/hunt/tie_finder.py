@@ -52,8 +52,9 @@ class Candidate(NamedTuple):
     q34: bool
 
 
-def grid_text(grid):
-    return "/".join("".join(map(str, grid[r * N : (r + 1) * N])) for r in range(N))
+def grid_rows(grid):
+    """The flat row-major grid as nine lists."""
+    return [list(grid[r * N : (r + 1) * N]) for r in range(N)]
 
 
 def is_sudoku(rows):
@@ -108,7 +109,7 @@ class TieFinder:
         return Candidate(grid, c["hunt"], c["ten"], c["corner"], c["q34"])
 
     def verify(self, candidate):
-        rows = [list(candidate.grid[r * N : (r + 1) * N]) for r in range(N)]
+        rows = grid_rows(candidate.grid)
         if not is_sudoku(rows):
             return Verdict(False, "not a sudoku")
         cage, target, _ = hc.HUNTS[candidate.hunt]
@@ -131,10 +132,10 @@ class TieFinder:
         return Verdict(not why, "; ".join(why))
 
     def record(self, candidate):
-        rows = [list(candidate.grid[r * N : (r + 1) * N]) for r in range(N)]
+        rows = grid_rows(candidate.grid)
         ranks, _nums, cr = oracle.rank_grid(rows)
         rec = {
-            "grid": grid_text(candidate.grid),
+            "grid": hc.grid_text(rows),
             "hunt": candidate.hunt,
             "ten": candidate.ten,
             "corner": candidate.corner,

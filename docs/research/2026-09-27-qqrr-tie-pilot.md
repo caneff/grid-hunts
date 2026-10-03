@@ -123,6 +123,6 @@ for i, g in enumerate(GRIDS):
 status, secs, s, q = solve(model(hint=GRIDS[0]))
 got = ""
 if status in ("OPTIMAL", "FEASIBLE"):
-    got = tf.grid_text(tuple(s.Value(q.x[r][c]) for r in range(N) for c in range(N)))
+    got = tf.hc.grid_text(tf.grid_rows(tuple(s.Value(q.x[r][c]) for r in range(N) for c in range(N))))
 print(f"C hinted with grid 0 -> {status} in {secs} s {got}", flush=True)
 ```

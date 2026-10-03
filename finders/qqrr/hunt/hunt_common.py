@@ -65,8 +65,13 @@ def tie_line(ta, tb, num, la, lb, qqrr):
     )
 
 
+def grid_text(rows):
+    """Nine rows as the slash-joined text a HIT block and examples.jsonl carry."""
+    return "/".join("".join(map(str, r)) for r in rows)
+
+
 def grid_line(grid):
-    return "  grid " + "/".join("".join(map(str, r)) for r in grid)
+    return "  grid " + grid_text(grid)
 
 
 def qqrr_line(cage, corner, ten, ten_rank, bound):

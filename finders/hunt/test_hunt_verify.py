@@ -16,6 +16,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from verified_io import read_verified
+
 HERE = Path(__file__).resolve().parent
 TOY_FINDER = HERE / "toy_finder.py"
 TOY_STATEFUL_FINDER = HERE / "toy_stateful_finder.py"
@@ -29,13 +31,6 @@ def check(name, cond):
     if not cond:
         ok = False
     print(f"{status}: {name}")
-
-
-def read_verified(path):
-    """(stamp, verdicts): verified.jsonl's first line is the stamp
-    {"verified_examples": N} (#517), every later line one verdict."""
-    lines = [json.loads(line) for line in path.read_text().splitlines() if line]
-    return lines[0], lines[1:]
 
 
 with tempfile.TemporaryDirectory() as tmp:

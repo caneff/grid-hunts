@@ -18,6 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "finders" / "hunt"))
 from subprocess_env import success_env
+from verified_io import read_verified
 
 HERE = Path(__file__).resolve().parent
 FINDER = HERE / "tie_finder.py"
@@ -103,11 +104,8 @@ with tempfile.TemporaryDirectory() as d:
     )
     r = run_cli("verify", str(out))
     check("hunt verify exits 0", r.returncode == 0)
-    # Line 1 is the stamp {"verified_examples": N} (#517).
-    verdicts = [
-        json.loads(line)
-        for line in (out / "verified.jsonl").read_text().splitlines()[1:]
-    ]
+    stamp, verdicts = read_verified(out / "verified.jsonl")
+    check("verified.jsonl starts with the stamp", "verified_examples" in stamp)
     for (name, _, want, reason), v in zip(cases, verdicts, strict=True):
         check(f"verify: {name} -> {want}", v["ok"] is want)
         if reason:

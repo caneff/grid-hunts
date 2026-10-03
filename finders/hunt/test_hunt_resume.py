@@ -108,6 +108,15 @@ def read_jsonl(path):
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
+def run_verify(finder, out):
+    return subprocess.run(
+        [sys.executable, str(finder), "verify", str(out)],
+        capture_output=True,
+        text=True,
+        env=success_env(),
+    )
+
+
 class _StopBeforeRerun(Exception):
     pass
 
@@ -941,12 +950,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # reconciliation trims its example), with `hunt verify` run first.
     out = Path(tmp) / "verify-then-resume"
     run_cli(TINY_KEY_FINDER, out, "0:1")
-    verified = subprocess.run(
-        [sys.executable, str(TINY_KEY_FINDER), "verify", str(out)],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
+    verified = run_verify(TINY_KEY_FINDER, out)
     check(
         f"hunt verify before the resume exits 0 (stderr: {verified.stderr[-300:]})",
         verified.returncode == 0 and (out / "verified.jsonl").exists(),
@@ -967,11 +971,10 @@ with tempfile.TemporaryDirectory() as tmp:
     # so a current verified.jsonl survives it byte for byte.
     out = Path(tmp) / "verify-then-noop-resume"
     run_cli(TINY_KEY_FINDER, out, "0:5")
-    subprocess.run(
-        [sys.executable, str(TINY_KEY_FINDER), "verify", str(out)],
-        capture_output=True,
-        text=True,
-        env=success_env(),
+    verified = run_verify(TINY_KEY_FINDER, out)
+    check(
+        f"hunt verify of a finished hunt exits 0 (stderr: {verified.stderr[-300:]})",
+        verified.returncode == 0,
     )
     before = (out / "verified.jsonl").read_bytes()
     rerun = run_cli(TINY_KEY_FINDER, out, "0:5")
@@ -990,11 +993,10 @@ with tempfile.TemporaryDirectory() as tmp:
     # range finished) deletes verified.jsonl even with no reconciliation.
     out = Path(tmp) / "verify-then-append"
     kill_partway(SLOW_FINDER, out, "0:200")
-    subprocess.run(
-        [sys.executable, str(SLOW_FINDER), "verify", str(out)],
-        capture_output=True,
-        text=True,
-        env=success_env(),
+    verified = run_verify(SLOW_FINDER, out)
+    check(
+        f"hunt verify of a killed hunt exits 0 (stderr: {verified.stderr[-300:]})",
+        verified.returncode == 0,
     )
     check(
         "verify of a killed hunt wrote verified.jsonl",
