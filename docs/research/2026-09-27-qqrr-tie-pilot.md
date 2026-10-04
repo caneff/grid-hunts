@@ -9,6 +9,12 @@ under `job-run --name qqrr-tie-pilot-491`, 10:30–11:15 on 2026-09-27, at
 `29bcbc0`. The review fixes after that sha change no solve path (a `--ten`
 check, the infeasible reason's wording, a dropped class default).
 
+**No preflight was written.** `finders/AGENTS.md` asks for written preflight
+answers and a decision log before a hunt; this pilot ran without either. They
+are not reconstructed here, because a record written after the run would read
+as if it existed before it (Chris's ruling, 2026-10-04, closing sweep item S1
+from #647).
+
 **Output directory** (`2026-09-27-qqrr-tie-pilot/`, the driver's standard
 layout; `.lock` not committed):
 
