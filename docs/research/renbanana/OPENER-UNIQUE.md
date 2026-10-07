@@ -52,3 +52,16 @@ passes `renbanana_verify.check` with these 18 circles (no violations).
   all 16 share r1c3 = 6 on banana.
 - Chris's design added r2c2 r2c4 r3c3 r5c2 r7c2 r8c2 r9c9 and, briefly, a given
   2 at r8c1. The given turned out unnecessary and was dropped.
+
+## Drop-one sweep (2026-10-07)
+
+Each circle removed alone, the other 17 run through `--unique` (8 workers,
+900 s cap; no run hit the cap):
+
+- **Necessary** (drop it and a second solution exists): r2c2 r2c8 r3c7 r4c9
+  r5c2 r8c2. Dropping r8c2 leaves the same digits with a different shading.
+- **Redundant alone** (17 remaining still UNIQUE, proved): r1c6 r1c9 r2c4
+  r2c6 r2c7 r3c3 r4c6 r6c8 r7c2 r7c6 r9c8 r9c9.
+
+Redundant one at a time does not mean redundant together; a greedy removal
+pass over the twelve follows.
