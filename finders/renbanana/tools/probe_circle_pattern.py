@@ -364,6 +364,7 @@ def enumerate_all(m, choc, d, circled, a):
     s = cp.CpSolver()
     s.parameters.num_workers = a.workers
     sols, spent = [], 0.0
+    st = None
     # Stream, never buffer: a long enumeration must leave its results on disk
     # as it goes, so a kill or a timeout still hands back everything found.
     with (
@@ -398,7 +399,9 @@ def enumerate_all(m, choc, d, circled, a):
                 print(body, file=sink, flush=True)
             print(f"  solution {len(sols)} at {spent:.0f}s", flush=True)
             block(m, choc, d, grid, is_choc)
-        exhausted = len(sols) < a.enumerate and spent < a.seconds
+        # Only INFEASIBLE proves there is no further solution; an UNKNOWN that
+        # stops early (a stalled process, a solver bailout) proves nothing (#746).
+        exhausted = st == cp.INFEASIBLE
         print(
             f"distinct solutions: {len(sols)}"
             + (
@@ -407,6 +410,13 @@ def enumerate_all(m, choc, d, circled, a):
                 else "  (cap or time limit hit -- there may be more)"
             )
         )
+        stopped = (
+            f"last solve status: {s.status_name(st)}"
+            if st is not None and st not in (cp.OPTIMAL, cp.FEASIBLE, cp.INFEASIBLE)
+            else None
+        )
+        if stopped:
+            print(stopped)
         strict = [x for x in sols if not x[2]]
         print(
             f"of those, strict (no uncircled cell reads its group size): {len(strict)}"
@@ -414,7 +424,12 @@ def enumerate_all(m, choc, d, circled, a):
         if sink:
             print(
                 f"# {len(sols)} distinct solutions"
-                + (" -- exhaustive" if exhausted else " -- cap or time limit hit"),
+                + (
+                    " -- exhaustive"
+                    if exhausted
+                    else " -- cap or time limit hit, there may be more"
+                    + (f" ({stopped})" if stopped else "")
+                ),
                 file=sink,
                 flush=True,
             )
