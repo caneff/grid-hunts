@@ -1,0 +1,54 @@
+# Renbanana opener — the 18-circle puzzle, proved unique
+
+Map #373. Rules: 9x9 sudoku with a free chocolate/banana shading; every
+chocolate group is a rectangle; every banana group is not a rectangle and is a
+renban; orthogonally adjacent chocolate cells differ by at least 5 (German
+Chocolate); a circle's digit equals the size of its own group.
+
+**Verdict (2026-10-07): the 18 circles below, with no givens and no shading
+clues, have exactly one solution. Proved by CP-SAT (INFEASIBLE second solve,
+not a timeout).**
+
+## Circles
+
+```
+r1c6 r1c9 r2c2 r2c4 r2c6 r2c7 r2c8 r3c3 r3c7
+r4c6 r4c9 r5c2 r6c8 r7c2 r7c6 r8c2 r9c8 r9c9
+```
+
+## Solution (`opener/solution.json`)
+
+Digits, then shading (`C` chocolate, `b` banana):
+
+```
+936871452   CCbCbCbbC
+478256139   bbbCbbCbC
+521439786   bbCbbCbCb
+354982617   bCbCbCbCb
+187364295   CbbbCbbCb
+692715348   CbbCbbbCb
+715693824   bCbbCCCbb
+269148573   bbCCbbbCb
+843527961   CbbbCbbbC
+```
+
+## Proof
+
+```
+uv run finders/renbanana/tools/probe_circle_pattern.py \
+  --cells r1c6,r1c9,r2c2,r2c4,r2c6,r2c7,r2c8,r3c3,r3c7,r4c6,r4c9,r5c2,r6c8,r7c2,r7c6,r8c2,r9c8,r9c9 \
+  --unique --known-solution docs/research/renbanana/opener/solution.json \
+  --seconds 1800 --workers 8
+```
+
+printed `verdict: UNIQUE (proved -- no second solution exists)`. The grid also
+passes `renbanana_verify.check` with these 18 circles (no violations).
+
+## How it got here
+
+- The 11-circle setup (r1c6 r1c9 r2c6 r2c7 r2c8 r3c7 r4c6 r4c9 r6c8 r7c6 r9c8)
+  has exactly 34 solutions (exhaustive enumeration after the #746 fix). In all
+  34, r3c7 = 7 and r8c1 = 2. 16 of the 34 can be singled out by adding circles;
+  all 16 share r1c3 = 6 on banana.
+- Chris's design added r2c2 r2c4 r3c3 r5c2 r7c2 r8c2 r9c9 and, briefly, a given
+  2 at r8c1. The given turned out unnecessary and was dropped.
