@@ -85,3 +85,14 @@ Minimal because removing circles only adds solutions: a circle that failed
 to drop from a larger set also fails from this subset, and the six from the
 drop-one sweep fail from the full set. Not shown to be the minimum count;
 another removal order could reach a smaller set.
+
+## Final puzzle (Chris, 2026-10-08)
+
+The 12-circle minimal set plus r3c3, 13 circles, no givens:
+
+```
+r1c6 r1c9 r2c2 r2c6 r2c7 r2c8 r3c3 r3c7 r4c6 r4c9 r5c2 r7c6 r8c2
+```
+
+Unique: it is a superset of the proved-unique 12, and adding a circle cannot
+add a solution. The solution is `opener/solution.json`.
