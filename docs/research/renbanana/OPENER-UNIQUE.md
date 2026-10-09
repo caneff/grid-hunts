@@ -96,3 +96,38 @@ r1c6 r1c9 r2c2 r2c6 r2c7 r2c8 r3c3 r3c7 r4c6 r4c9 r5c2 r7c6 r8c2
 
 Unique: it is a superset of the proved-unique 12, and adding a circle cannot
 add a solution. The solution is `opener/solution.json`.
+
+## Published version (Chris, 2026-10-09)
+
+Chris named this the final published version; it supersedes the 13-circle
+set above:
+
+- SudokuPad: https://sudokupad.app/xqht3lk9ua?setting-nogrid=1
+- SudokuMaker source (from its metadata): https://sudokumaker.app/p/KkFHGqdkjd
+- Title "German Chocolate Renbanana", author ChinStrap, no givens.
+
+Circles, read from the puzzle's underlays (18):
+
+```
+r1c6 r1c9 r2c3 r2c4 r2c6 r2c7 r2c8 r3c1 r3c7
+r4c1 r4c6 r4c9 r6c8 r7c6 r8c3 r8c4 r9c8 r9c9
+```
+
+That is the 11-circle setup plus r9c9 and six circles of its own (r2c3 r2c4
+r3c1 r4c1 r8c3 r8c4). Its solution, from the puzzle's metadata, is a
+different grid from `opener/solution.json`:
+
+```
+796831452
+845276139
+123459786
+954382617
+381764295
+672915348
+517693824
+269148573
+438527961
+```
+
+Not checked here: this file holds no CP-SAT uniqueness proof for this circle
+set, and the solution's shading is not recorded.
