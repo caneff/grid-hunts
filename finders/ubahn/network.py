@@ -5,7 +5,7 @@ orthogonally adjacent cells and is written `((r, c), (r2, c2))`, the earlier
 cell first. A cell's arms are the edges at it that are in the network; the
 arms give its kind: one of the four pieces, or blank for no arm.
 `why_not_network` is the rule check `verify` and the brute-force test run.
-`model.py` takes the board's geometry (`all_edges`, `arm_edges`) and the
+`model.py` takes the board's geometry (`all_edges`, `arms_on_board`) and the
 kinds' numbering from here and states the rules itself.
 
 The rules and their sources: docs/research/2026-10-10-u-bahn-cpsat-finder.md.
@@ -54,6 +54,12 @@ def arm_edges(cell):
         ((r, c), (r + 1, c)),
         ((r, c - 1), (r, c)),
     )
+
+
+def arms_on_board(cell, edge):
+    """The cell's arms that are edges of the board, as {0 to 3, north first:
+    `edge`'s entry for that arm}. `edge` is keyed by the board's edges."""
+    return {i: edge[e] for i, e in enumerate(arm_edges(cell)) if e in edge}
 
 
 def arms(network, cell):
@@ -121,6 +127,17 @@ def outside_numbers(network, rows, cols):
         tuple(count([(r, c) for c in range(cols)]) for r in range(rows)),
         tuple(count([(r, c) for r in range(rows)]) for c in range(cols)),
     )
+
+
+def rows_and_columns(rows, cols, numbers):
+    """Each row, then each column, as (its cells, its outside numbers).
+    `numbers` is as `outside_numbers` returns it."""
+    row_numbers, col_numbers = numbers
+    return [
+        ([(r, c) for c in range(cols)], counts) for r, counts in enumerate(row_numbers)
+    ] + [
+        ([(r, c) for r in range(rows)], counts) for c, counts in enumerate(col_numbers)
+    ]
 
 
 def drawing(network, rows, cols):

@@ -1,5 +1,5 @@
 {
- "about": "15 U-Bahn puzzles with every outside number shown, used for the 2026-10-10 timing comparison. See 2026-10-10-u-bahn-optimization-queue.md, 'First measurements'. Each line's four numbers are in the order cross, branch, straight, turn. Timings are milliseconds on one core, measured once, and are a record of that run, not a target.",
+ "about": "15 U-Bahn puzzles with every outside number shown, used for the 2026-10-10 timing comparison. See docs/research/2026-10-10-u-bahn-optimization-queue.md, 'First measurements'. Each line's four numbers are in the order cross, branch, straight, turn. Timings are milliseconds on one core, measured once, and are a record of that run, not a target.",
  "puzzles": [
   {
    "name": "6x6 seed 0",

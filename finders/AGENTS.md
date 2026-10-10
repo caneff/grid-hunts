@@ -33,7 +33,9 @@ because the checker reads them and nothing under `docs/research/` does
   are not ported onto it.
 - `finders/ubahn/` is the U-Bahn finder (a pencil puzzle, no sudoku), on the
   hunt protocol: `ubahn_finder.py` its docstring and flags, `model.py` the
-  CP-SAT model, `network.py` the solver-free rules `verify` reads. Conditions
+  CP-SAT model, `network.py` the solver-free rules `verify` reads;
+  `sat_model.py` is a prototype second uniqueness check on PySAT (#776), which
+  the finder does not call. Conditions
   arrive one at a time as finder rules. Preflight answers and measurements:
   `docs/research/2026-10-10-u-bahn-finder-decision-log.md`.
   `ubahn_finder.py links DIR [--blank-number]` writes a Penpa+ link per example

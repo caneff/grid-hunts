@@ -33,7 +33,8 @@ from network import (
     STRAIGHT,
     TURN,
     all_edges,
-    arm_edges,
+    arms_on_board,
+    rows_and_columns,
 )
 from uniqueness import check_uniqueness
 
@@ -68,13 +69,12 @@ def _add_pieces(m, edge, cells):
     patterns without it are listed."""
     kind, used = {}, {}
     for cell in cells:
-        arm_vars = [edge.get(e) for e in arm_edges(cell)]
-        on_board = [i for i, var in enumerate(arm_vars) if var is not None]
+        on_board = arms_on_board(cell, edge)
         for k in KINDS:
             kind[cell, k] = m.new_bool_var(f"k{cell}_{k}")
         used[cell] = kind[cell, BLANK].Not()
         m.add_allowed_assignments(
-            [arm_vars[i] for i in on_board] + [kind[cell, k] for k in KINDS],
+            [*on_board.values()] + [kind[cell, k] for k in KINDS],
             [
                 tuple(pattern[i] for i in on_board)
                 + tuple(int(k == made) for k in KINDS)
@@ -151,15 +151,11 @@ def build(rows, cols, connectivity, *, exactly=None, numbers=None):
             == exactly.count
         )
     if numbers is not None:
-        row_numbers, col_numbers = numbers
-        for r, counts in enumerate(row_numbers):
+        for held, counts in rows_and_columns(rows, cols, numbers):
             for k, count in zip(KINDS, counts, strict=True):
-                m.add(sum(kind[(r, c), k] for c in range(cols)) == count)
-        for c, counts in enumerate(col_numbers):
-            for k, count in zip(KINDS, counts, strict=True):
-                m.add(sum(kind[(r, c), k] for r in range(rows)) == count)
+                m.add(sum(kind[cell, k] for cell in held) == count)
         # The numbers fix how many cells are used: size the flow to that.
-        cap = rows * cols - sum(counts[BLANK] for counts in row_numbers)
+        cap = rows * cols - sum(counts[BLANK] for counts in numbers[0])
 
     root = _add_root(m, cells, used)
     add_connectivity = {"flow": _add_flow, "tree": _add_tree}[connectivity]
