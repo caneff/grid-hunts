@@ -22,11 +22,19 @@ PIECE is turn, straight, branch, cross, or blank for the cells with no arm.
         --rows 6 --cols 6 --exactly 2:cross:r2 --timeout 60
     uv run finders/ubahn/ubahn_finder.py verify DIR
 
+`links DIR [--blank-number]` writes a Penpa+ link per example to
+`DIR/links/<seed>.txt` (#774, `penpa.py`), the outside numbers cross, branch,
+straight, turn from the outside in; `--blank-number` adds a fifth, outside the
+cross, for the blank cells. A rerun replaces every link file there.
+
+    uv run finders/ubahn/ubahn_finder.py links DIR [--blank-number]
+
 The driver's flags (`--out`, `--seeds`, `--workers`, ...) are its own
 (finders/hunt/driver.py).
 """
 
 import argparse
+import json
 import sys
 from pathlib import Path
 from typing import NamedTuple
@@ -39,6 +47,7 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 # isort: split
 import model
 import network
+import penpa
 from dedupe import D4
 from driver import run
 from protocol import Empty, Verdict
@@ -217,7 +226,62 @@ class UbahnFinder:
         )
 
 
+def write_links(out, blank_number=False):
+    """Write `out/links/<seed>.txt`, one Penpa+ link per example of the hunt
+    in `out`, paired with its seed the way the driver pairs renders: the
+    k-th "example" event of progress.jsonl is the k-th examples.jsonl
+    record. Returns how many; raises ValueError, naming it, on a missing or
+    unpaired log or a record `candidate_from_record` refuses."""
+    out = Path(out)
+
+    def lines(name):
+        path = out / name
+        if not path.is_file():
+            raise ValueError(f"{out} has no {name}: not a hunt directory")
+        return [json.loads(line) for line in path.read_text().splitlines() if line]
+
+    records = lines("examples.jsonl")
+    seeds = [
+        e["seed"] for e in lines("progress.jsonl") if e.get("outcome") == "example"
+    ]
+    if len(seeds) != len(records):
+        raise ValueError(
+            f"{len(records)} examples but {len(seeds)} example events in progress.jsonl"
+        )
+    finder = UbahnFinder()
+    # Every link is built before any file is touched: a record the finder
+    # refuses leaves links/ as it was, and a rerun replaces the whole set,
+    # so a file left by an earlier example list or variant never stays.
+    built = {}
+    for seed, record in zip(seeds, records, strict=True):
+        rows, cols, found, _ = finder.candidate_from_record(record)
+        built[seed] = penpa.link(rows, cols, found, blank_number) + "\n"
+    links = out / "links"
+    links.mkdir(exist_ok=True)
+    for stale in links.glob("*.txt"):
+        stale.unlink()
+    for seed, text in built.items():
+        (links / f"{seed}.txt").write_text(text)
+    return len(records)
+
+
 def main(argv):
+    if argv[:1] == ["links"]:
+        parser = argparse.ArgumentParser(prog="ubahn_finder links")
+        parser.add_argument("dir")
+        parser.add_argument("--blank-number", action="store_true")
+        args = parser.parse_args(argv[1:])
+        try:
+            count = write_links(args.dir, args.blank_number)
+        except ValueError as e:
+            print(f"ubahn_finder links: {e}", file=sys.stderr)
+            return 2
+        variant = "with" if args.blank_number else "without"
+        print(
+            f"wrote {count} links to {Path(args.dir) / 'links'}, "
+            f"{variant} the blank number"
+        )
+        return 0
     parser = argparse.ArgumentParser(prog="ubahn_finder", add_help=False)
     parser.add_argument("--rows", type=int, default=DEFAULT_SIDE)
     parser.add_argument("--cols", type=int, default=DEFAULT_SIDE)

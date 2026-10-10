@@ -36,6 +36,14 @@ because the checker reads them and nothing under `docs/research/` does
   CP-SAT model, `network.py` the solver-free rules `verify` reads. Conditions
   arrive one at a time as finder rules. Preflight answers and measurements:
   `docs/research/2026-10-10-u-bahn-finder-decision-log.md`.
+  `ubahn_finder.py links DIR [--blank-number]` writes a Penpa+ link per example
+  to `DIR/links/<seed>.txt` (`penpa.py`, #774; wire format
+  `docs/research/2026-10-10-u-bahn-penpa-link.md`). The three published links
+  it is tested against are `finders/ubahn/fixtures/`.
+  `finders/ubahn/penpa-browser-check.mjs LINKFILE` is the real-browser check
+  (the success dialog, the Line tool, the icons'
+  order, the centre point); it needs Chromium and the live page, so
+  it stays out of both gates.
 - `finders/galaxy-copycat/`'s write-ups live in `docs/research/2026-09-14-copycat-scan.md`
   and `docs/research/2026-09-14-galaxy-copycat-design.md`; its boards are
   `docs/research/2026-09-14-galaxy-copycat/boards/`.
