@@ -9,11 +9,14 @@ any solve, and steps a person solving the puzzle can use.
 ## Status of each claim
 
 - **Proved** below by a counting argument that does not depend on board size.
-- **Checked** by `2026-10-10-u-bahn-forced-facts/check_lemmas.py` and
-  `check_lemmas_border.py` (throwaway scripts, nothing runs them): every
-  connected valid network on 3x4 (446), 4x4 (15,593), 4x5 (546,756), 5x4
-  (546,756) and 3x6 (53,542) was enumerated and every fact below held with
-  zero failures. Larger boards rest on the proofs alone.
+- **Checked** by two throwaway scripts that enumerated every connected valid
+  network on 3x4 (446), 4x4 (15,593), 4x5 (546,756), 5x4 (546,756) and 3x6
+  (53,542): every fact below held with zero failures. Larger boards rest on
+  the proofs alone. The scripts are not in the tree, because this repo keeps
+  no new Python under `docs/research/`; they are readable in history with
+  `git show b83ab03:docs/research/2026-10-10-u-bahn-forced-facts/check_lemmas.py`
+  (and `check_lemmas_border.py`). Their home, if kept, is a test under
+  `finders/ubahn/`.
 - **Not measured**: whether adding any of these to the CP-SAT model makes a
   solve faster.
 
