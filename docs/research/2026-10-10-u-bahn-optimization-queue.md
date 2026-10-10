@@ -151,3 +151,54 @@ network, connected or not, by full enumeration:
 - What this means for solve time is unmeasured: the cuts are a relaxation of
   connectivity that needs no flow variables, and the survivors would still
   need a lazy check.
+
+## Is there a custom propagator hook? (checked 2026-10-10)
+
+**Not in CP-SAT, in our version or upstream.**
+
+- **Our version is the latest.** `uv.lock` pins `ortools 9.15.6755`. PyPI's
+  JSON API lists that as the newest release (uploaded 2026-01-14), and
+  GitHub's latest release is `v9.15` (published 2026-01-12).
+- **Installed package, inspected `[ran]`.** `ortools.sat.python` holds two
+  modules, `cp_model` and `cp_model_helper`. The only callback class is
+  `CpSolverSolutionCallback`, which fires on a full solution and can read
+  values and stop the search. `CpSolver` has two more callback attributes,
+  `log_callback` and `best_bound_callback`. `CpModel` has hints and
+  assumptions. Nothing takes a propagator, a lazy constraint or a cut from
+  user code. The "lazy" and "cut" words in `sat_parameters` describe the
+  solver's own LP handling.
+- **Upstream main `[ran]`.** `ortools/sat/python/cp_model.py` on the default
+  branch has the same callback classes and no propagator or lazy hook.
+- **Upstream statements `[read]`.** "You cannot embed any arbitrary code
+  inside a CP solver (original or CP-SAT)", answer to "my own constraints
+  Google or-tools", Stack Overflow, question dated 2017-11-06,
+  https://stackoverflow.com/questions/47145729/my-own-constraints-google-or-tools .
+  A user states the same gap in "custom propagator needed ?", gregy4,
+  2022-05-19, https://github.com/google/or-tools/discussions/3303 ; the
+  maintainer's replies there offer modelling advice and no hook. A search of
+  the repo's discussions for "user propagator", "lazy constraints callback"
+  and "custom constraint python propagate" returned nothing newer on the
+  subject.
+- **Inside the C++ `[inferred]`.** CP-SAT's own propagators implement an
+  internal `PropagatorInterface` (`integer.h`), so a propagator is possible
+  only by writing C++ against the solver's internals and building OR-Tools
+  ourselves. Not a supported API. Not verified beyond the description in
+  d-krupke's CP-SAT primer manuscript.
+
+**Hooks that do exist elsewhere.**
+
+- **The legacy CP solver in the same package.**
+  `ortools.constraint_solver.pywrapcp` has `PyConstraint` (`Post`,
+  `InitialPropagateWrapper`, demons) and `PyDecisionBuilder` in our install
+  `[ran: attribute check only, nothing solved]`. It has no clause learning,
+  and the 2017 answer above calls it deprecated in favour of CP-SAT.
+- **PySAT with CaDiCaL (not a dependency here).** `pysat.engines.Propagator`
+  attaches user code to the SAT solver through the IPASIR-UP interface:
+  `on_assignment`, `propagate`, `provide_reason`, `check_model`,
+  `add_clause`. "External engines (pysat.engines)", PySAT documentation,
+  https://pysathq.github.io/docs/html/api/engines.html . `check_model` plus
+  `add_clause` is exactly a lazy connectivity cut that the solver learns from
+  and keeps across the solve, forbid, re-solve loop. Costs: a new dependency
+  (`python-sat`), the piece counts must be encoded as cardinality clauses,
+  and a Python callback on every assignment is slow, so only the
+  full-model check is likely to pay. Unmeasured.
