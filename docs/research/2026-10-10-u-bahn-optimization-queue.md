@@ -99,3 +99,55 @@ Section 0, then "relax, then verify" and the small-component bans, since they
 attack connectivity, the one costly part of the base model. The frontier DP
 next if 6x6 to 8x8 is where the hunts live. Section 3 waits for the first
 stripping request.
+
+## First measurements (2026-10-10, evening)
+
+Run by the controller session with throwaway scripts, one core, box load
+about 2.5. Small samples: read them as a direction, not a rate.
+
+### Our CP-SAT uniqueness check against JWKNT/logical-solver
+
+Ours is `model.uniqueness` from the #773 branch at `eb56995` (flow, and tree
+beside it), one run each, model build included. Theirs is `runSolve` from
+`tests/engine-node.js` at `0603a978`, cloned outside this repo (it has no
+licence, so none of it is committed here), best of 3, 60 s limit. Puzzles: 5
+random networks per size with every outside number shown, sampled from our
+model with a random edge objective, which makes them dense (31 to 36 of 36
+cells used at 6x6, 92 to 99 of 100 at 10x10).
+
+| Size | Ours, flow | Theirs | Verdicts |
+| --- | --- | --- | --- |
+| 6x6 | 9 to 15 ms | 0.06 to 0.6 ms | agree 5 of 5; 3 unique |
+| 8x8 | 31 to 81 ms | 0.3 to 40 ms | agree 5 of 5; 2 unique |
+| 10x10 | 176 to 419 ms | 338 ms, 373 ms, 7.1 s, and 2 timeouts at 60 s | agree on the 3 theirs finished; 0 unique |
+
+- Their search is 20 to 200 times faster at 6x6, about level at 8x8, and
+  loses at 10x10, where it timed out twice on puzzles ours settled in under
+  0.35 s. Tree and flow were within a factor of two of each other everywhere.
+- On their own sparse fixture `tests/hard8x8.json` their search took 5.8 s
+  and 45 million nodes to find two solutions. Ours cannot take a sparse set
+  of numbers yet, so there is no comparison there.
+- **The 4x4 unique rate does not carry up.** 551 of 557 at 4x4, but 3 of 5
+  at 6x6, 2 of 5 at 8x8 and 0 of 5 at 10x10 on these dense samples. The
+  sampler's bias toward full boards is uncontrolled, so this says only that
+  non-unique is common, not how common.
+
+### Static rectangle cuts for connectivity
+
+For each rectangle of cells: if a used cell lies inside and another outside,
+at least one edge crosses its border. Counted over every degree-valid
+network, connected or not, by full enumeration:
+
+| Board | Connected | Disconnected | Left after row and column boundary cuts | Left after all rectangle cuts |
+| --- | --- | --- | --- | --- |
+| 4x4 (99 rectangles) | 15,593 | 778 | 393 (50.5%) | 0 |
+| 5x4 (149 rectangles) | 546,756 | 36,442 | 21,422 (58.8%) | 968 (2.7%) |
+
+- No connected network was removed on either board, as the argument
+  requires.
+- The parity strengthening (two edges when the rectangle holds an even
+  number of branches) removed nothing further on these boards.
+- A 4x6 run was stopped by its 900 s cap with no result.
+- What this means for solve time is unmeasured: the cuts are a relaxation of
+  connectivity that needs no flow variables, and the survivors would still
+  need a lazy check.
