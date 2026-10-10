@@ -405,6 +405,8 @@ to me; nothing I read says, and it is a one-solve-per-sample measurement.
    and I did not establish that the app can hold a drawn network. Options are
    a `examples.jsonl` record only, a pzprjs/Penpa+ link, or a new example
    (a spec of its own).
+   Ruled since: a Penpa+ link with the full clue set — the link format is
+   in `docs/research/2026-10-10-u-bahn-penpa-link.md`.
 3. **Clue policy.** Always all `4*(R+C)` numbers (the competition form, as far
    as the sources show), or strip to a minimal set (pzprjs permits blanks)?
 4. **Board.** Sizes to hunt (6x6 is the only size I confirmed in the wild),
