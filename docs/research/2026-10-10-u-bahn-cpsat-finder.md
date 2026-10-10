@@ -391,6 +391,8 @@ to me; nothing I read says, and it is a one-solve-per-sample measurement.
   global GitHub code search (rate-limited before it ran), Penpa+'s source,
   private or unindexed code. So this is "none found in those places", not
   "none exists".
+  Superseded: a deeper pass found one, `JWKNT/logical-solver` — see
+  `docs/research/2026-10-10-u-bahn-existing-solvers.md`.
 - **Human technique** is documented: the LMD beginner guide (start from full
   border lines, treat the empty count as a fifth clue, place the rare piece
   first) `[source: S2]`. Useful later if a human-solvability filter is wanted.
