@@ -90,8 +90,15 @@ class UbahnFinder:
         cols=DEFAULT_SIDE,
         exactly=None,
         timeout=DEFAULT_TIMEOUT,
+        connectivity="flow",
     ):
         self.rows, self.cols, self.exactly, self.timeout = rows, cols, exactly, timeout
+        # Which connectivity encoding the uniqueness proof uses; sampling
+        # always runs on flow, so a proof on tree is timed on the same
+        # networks. A constructor argument for the baseline measurement
+        # (#777), not a flag: a hunt always runs on flow, so it is not part
+        # of `config`.
+        self.connectivity = connectivity
         self.symmetry = board_symmetry(rows, cols)
         self.config = {
             "rows": rows,
@@ -100,7 +107,9 @@ class UbahnFinder:
             "timeout": timeout,
         }
 
-    def propose(self, rng):
+    def sample(self, rng):
+        """One network from the model, steered by `rng`; an `Empty` when
+        the solve timed out or the condition has no network."""
         built = model.build(self.rows, self.cols, "flow", exactly=self.exactly)
         # The seed picks which edges the search decides first and which way:
         # left to itself the solver returns the same dull network every time.
@@ -122,16 +131,26 @@ class UbahnFinder:
             return Empty("infeasible: no network meets the condition")
         if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
             raise RuntimeError(solver.StatusName(status))
-        found = frozenset(e for e, var in built.edge.items() if solver.Value(var))
+        return frozenset(e for e, var in built.edge.items() if solver.Value(var))
 
+    def prove(self, found):
+        """Whether the network's full set of outside numbers has no other
+        network: `model.uniqueness`'s "unique", "not_unique" or "timeout"."""
         status, _ = model.uniqueness(
             self.rows,
             self.cols,
             network.outside_numbers(found, self.rows, self.cols),
-            "flow",
+            self.connectivity,
             time_limit=self.timeout,
             workers=self.workers,
         )
+        return status
+
+    def propose(self, rng):
+        found = self.sample(rng)
+        if isinstance(found, Empty):
+            return found
+        status = self.prove(found)
         if status == "timeout":
             return Empty("timeout proving uniqueness")
         if status == "not_unique":

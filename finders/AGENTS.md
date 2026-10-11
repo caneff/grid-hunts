@@ -35,7 +35,8 @@ because the checker reads them and nothing under `docs/research/` does
   hunt protocol: `ubahn_finder.py` its docstring and flags, `model.py` the
   CP-SAT model, `network.py` the solver-free rules `verify` reads;
   `sat_model.py` is a prototype second uniqueness check on PySAT (#776), which
-  the finder does not call. Conditions
+  the finder does not call. `measure_baseline.py` times a hunt's proposal
+  step per seed and cause (#777; by hand, outside both gates). Conditions
   arrive one at a time as finder rules. Preflight answers and measurements:
   `docs/research/2026-10-10-u-bahn-finder-decision-log.md`.
   `ubahn_finder.py links DIR [--blank-number]` writes a Penpa+ link per example
