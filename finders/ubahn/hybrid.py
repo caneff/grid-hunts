@@ -40,14 +40,16 @@ def strips(blank_strip=False):
 
 class Conditions(NamedTuple):
     """What a hybrid grid is asked to meet: the board, the circled cells,
-    the piece-count condition (a `network.Exactly`, or None) and whether the
-    blank strip is on."""
+    the piece-count condition (a `network.Exactly`, or None), whether the
+    blank strip is on, and the fewest banana regions it may have (0 asks for
+    none)."""
 
     rows: int
     cols: int
     circles: frozenset = frozenset()
     exactly: network.Exactly | None = None
     blank_strip: bool = False
+    min_bananas: int = 0
 
 
 class Sampled(NamedTuple):
@@ -153,6 +155,12 @@ def regions(board):
     return found
 
 
+def bananas(board):
+    """The board's banana regions: its regions of odd values, in `regions`'
+    order."""
+    return [region for region in regions(board) if board[min(region)] % 2]
+
+
 def valid_circles(board):
     """The cells a circle could sit on, sorted: every cell, grid cell or
     number cell, whose value is the number of cells of its region."""
@@ -171,12 +179,13 @@ def _box(region):
     return top, left, bottom - top + 1, right - left + 1
 
 
-def failures(net, rows, cols, circles=(), blank_strip=False):
+def failures(net, rows, cols, circles=(), blank_strip=False, *, min_bananas=0):
     """Every reason these edges and circles are not a hybrid grid, [] when
     they are one. `circles` are cells of the board. A set of edges that is no
     U-Bahn network fails on that alone; a network then answers for each
     region and each circle: an even region is a rectangle, an odd region is
-    not, and a circled cell's value is its region's size."""
+    not, and a circled cell's value is its region's size. Last, a grid with
+    fewer than `min_bananas` banana regions fails on their number."""
     broken = network.why_not_network(net, rows, cols)
     if broken:
         return [broken]
@@ -208,13 +217,20 @@ def failures(net, rows, cols, circles=(), blank_strip=False):
                 f"circle at {cell_name(cell)}: value {board[cell]}, "
                 f"region of {size[cell]} cells"
             )
+    count = len(bananas(board))
+    if count < min_bananas:
+        reasons.append(
+            f"{count} banana region{'' if count == 1 else 's'}, "
+            f"fewer than the {min_bananas} asked for"
+        )
     return reasons
 
 
-def why_not_hybrid(net, rows, cols, circles=(), blank_strip=False):
+def why_not_hybrid(net, rows, cols, circles=(), blank_strip=False, *, min_bananas=0):
     """Why these edges and circles are not a hybrid grid, or "" when they
     are one: the first of `failures`."""
-    return next(iter(failures(net, rows, cols, circles, blank_strip)), "")
+    reasons = failures(net, rows, cols, circles, blank_strip, min_bananas=min_bananas)
+    return next(iter(reasons), "")
 
 
 def icon_arms(cell):

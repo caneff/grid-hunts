@@ -19,6 +19,9 @@ makes it.
   by a flow from the circled cell, and as many as the cell's value. The
   same statement serves a circle in a chocolate and in a banana; the two
   rules above shape the region.
+- **At least N banana regions** (#792). Every odd cell takes one of N
+  labels, two odd cells side by side take the same one, and every label is
+  taken: a label is the same all over a region, so N labels are N regions.
 
 This is the `cpsat` engine of `hybrid_finder.py`. An engine offers two calls
 over a `hybrid.Conditions`: `grid` (a grid for a seed, a `hybrid.Sampled`)
@@ -148,18 +151,39 @@ def _add_circle(m, value, odd, circle, largest):
         )
 
 
+def _add_bananas(m, odd, wanted):
+    """At least `wanted` regions of odd cells. A grid with that many has the
+    labelling asked for, a region past the `wanted`-th taking any label."""
+    label = {
+        (cell, k): m.new_bool_var(f"label{cell}_{k}")
+        for cell in odd
+        for k in range(wanted)
+    }
+    for cell in odd:
+        # An odd cell has one label, an even cell none.
+        m.add(sum(label[cell, k] for k in range(wanted)) == odd[cell])
+        for near in _neighbours(cell):
+            if near in odd:
+                for k in range(wanted):
+                    m.add_bool_or(
+                        [label[cell, k].Not(), odd[near].Not(), label[near, k]]
+                    )
+    for k in range(wanted):
+        m.add_bool_or([label[cell, k] for cell in odd])
+
+
 def build(conditions):
     """The model of every hybrid grid that meets the conditions, as a
     `model.Built`. Raises ValueError on a circle that is off the board."""
-    rows, cols, circles, exactly, blank_strip = conditions
-    built = model.build(rows, cols, "flow", exactly=exactly)
+    rows, cols, circles = conditions.rows, conditions.cols, conditions.circles
+    built = model.build(rows, cols, "flow", exactly=conditions.exactly)
     value, odd = _add_parity(built.m, built.kind, conditions)
     for circle in sorted(circles):
         if circle not in odd:
             raise ValueError(f"circle off the board: {circle}")
     _add_chocolate(built.m, odd)
     _add_banana(built.m, odd)
-    lines = hybrid.number_cells(rows, cols, blank_strip)
+    lines = hybrid.number_cells(rows, cols, conditions.blank_strip)
     for circle in sorted(circles):
         # A piece is worth 4 at most; a number cell counts a row or column.
         largest = (
@@ -168,6 +192,8 @@ def build(conditions):
             else max(hybrid.PIECE_VALUE.values())
         )
         _add_circle(built.m, value, odd, circle, largest)
+    if conditions.min_bananas:
+        _add_bananas(built.m, odd, conditions.min_bananas)
     return built
 
 

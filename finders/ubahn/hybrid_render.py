@@ -98,11 +98,7 @@ class Picture(GridCanvas):
 
     def _cells(self):
         """Every cell's fill and thin outline, and a number cell's number."""
-        bananas = sorted(
-            (g for g in hybrid.regions(self.board) if self.board[min(g)] % 2),
-            key=len,
-            reverse=True,
-        )
+        bananas = sorted(hybrid.bananas(self.board), key=len, reverse=True)
         tint = {cell: _tint(i) for i, g in enumerate(bananas) for cell in g}
         for cell, value in self.board.items():
             r, c = cell

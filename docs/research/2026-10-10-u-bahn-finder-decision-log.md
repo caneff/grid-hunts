@@ -349,6 +349,104 @@ Worker's choices, none a ruling:
 - **A track bar is 8 px and runs 4 px past each cell centre**, as in the
   picture Chris was shown. A ring on a grid cell is drawn under the track.
 
+## Hybrid: at least N banana regions (#792)
+
+`--min-bananas N` asks for N or more separate banana regions, counted over
+grid cells and number cells together as `hybrid.regions` finds them. One
+thread, this box, 2026-10-11.
+
+- **The 4x4 answers**, an exhaustive pass over the 18 valid grids: 16 have
+  one banana region and 2 have two, the two being each other's image in the
+  main diagonal. With the blank strip all 8 have one.
+
+  | Asked for | Grids | Class |
+  | --- | --- | --- |
+  | at least 1 | 18 | `not_unique` |
+  | at least 2 | 2 | `not_unique` |
+  | at least 2, `r2c4` circled | 1 | `unique` |
+  | at least 3 | 0 | `infeasible` |
+  | at least 2, blank strip | 0 | `infeasible` |
+
+  ```
+  uv run finders/ubahn/brute.py 4 4 --min-bananas 2 --circles "r2c4"
+  uv run finders/ubahn/brute.py 4 4 --min-bananas 3
+  uv run finders/ubahn/brute.py 4 4 --blank-strip --min-bananas 2
+  ```
+
+  `test_ubahn_hybrid_bananas.py` pins the table on the brute force, on each
+  of the three engines and on the CLI. `brute.py` refuses an N under 1, as
+  the finder does. A hunt on 4x4 asked for 2 writes one
+  example, since it dedupes under that reflection.
+- **5x5**, listed in full by `pysat-lazy` (31 grids) and counted by the rule
+  reader: every one has 2 banana regions or more, 6 have 3 or more, 4 have 4
+  or more, 4 have 5 or more, 2 have 6, none has 7. Each PySAT engine lists
+  exactly those grids for every N from 1 to 7, and `cpsat` gives the same
+  class.
+- **With a piece count**, 5x5 again: `2:branch:r1` leaves 8 grids, 7 with
+  two banana regions and one with six, so asking for 3 as well leaves
+  exactly one, and every engine says `unique` with that grid.
+- **With the blank strip** no 5x5 grid exists, so the test goes to 6x6 by
+  seed (four seeds an engine, a sample): each grid asked for 3 passes the
+  rule reader on the board with the strip.
+- **The encoding: labels, not a count and not a cut.** An odd cell takes
+  one label or more out of N, an even cell none; two odd cells side by side
+  take the same labels, so a region's cells all take the same ones; every
+  label is taken by some cell. On the PySAT engines a cell takes label k
+  only when a cell before it in reading order takes label k - 1: numbering
+  the regions by their first cells, region i then takes no label past i, so
+  the last label being taken needs N regions. The CP-SAT model states it
+  another way, each odd cell taking exactly one label with no order. Either
+  way a grid with N regions or more has such a labelling and one with fewer
+  has none, so it is exact; every clause is local, so the solver builds the
+  condition into the search and no finished grid is refused for it, on any
+  engine. Worker's choice, not a ruling; the filer's other route, refusing a
+  full grid with too few regions by a clause over the cells that would have
+  to change, was not built or timed.
+- **What the review changed.** The first PySAT version also kept each cell
+  to one label by a clause per pair of labels. The correctness review
+  deleted those clauses and every test stayed green: the order already
+  implies them. They are gone, and the order is the clause the tests hold.
+- **All three engines carry it**, so no engine refuses the flag.
+- **Time per grid at 7x7**, `pysat-lazy`, no other condition, one grid per
+  seed from seed 0, a 60 s limit on each solve, timed around the engine's
+  `grid` call (model build included), one thread. Load on the box was about
+  4 while it ran, so the seconds are for comparing rows, not a benchmark.
+
+  | N | Seeds | Found | Timeouts | Reader passes | Median s | Mean s | Slowest s |
+  | --- | --- | --- | --- | --- | --- | --- | --- |
+  | none | 50 | 50 | 0 | 50 | 0.054 | 0.067 | 0.190 |
+  | 2 | 50 | 50 | 0 | 50 | 0.074 | 0.088 | 0.212 |
+  | 5 | 50 | 50 | 0 | 50 | 0.282 | 0.313 | 0.871 |
+  | 8 | 50 | 50 | 0 | 50 | 0.919 | 1.012 | 3.706 |
+  | 12 | 10 | 8 | 2 | 8 | 24.116 | 29.303 | 59.545 |
+
+  The N = 12 row was asked for 10 seeds only. Its median, mean and slowest
+  are over the 8 grids found, and its 2 timeouts are timeouts, not grids
+  that do not exist. Nothing here says what the most banana regions a 7x7
+  grid can have is.
+
+  ```
+  uv run finders/ubahn/time_bananas.py run --min-bananas 0,2,5,8 --seeds 50 \
+      --progress docs/research/2026-10-11-u-bahn-min-bananas-timing/pysat-lazy-7x7.jsonl
+  uv run finders/ubahn/time_bananas.py run --min-bananas 12 --seeds 10 \
+      --progress docs/research/2026-10-11-u-bahn-min-bananas-timing/pysat-lazy-7x7.jsonl
+  uv run finders/ubahn/time_bananas.py report \
+      docs/research/2026-10-11-u-bahn-min-bananas-timing/pysat-lazy-7x7.jsonl
+  ```
+
+  The rows are in that file. An earlier run on the first encoding, with the
+  one-label clauses, is not kept; its N = 2 and N = 5 medians were 0.083 s
+  and 0.311 s.
+- **What the seeds gave without the condition** (a sample of 50, not the
+  board): 14 grids with one banana region, 14 with two, 10 with three, 10
+  with four, 2 with five. Asked for 5, the 50 grids had 5 (43), 6 (4) and
+  7 (3).
+- **A hunt's `run.json` names the condition only when it is asked for.**
+  The driver refuses to resume a hunt whose config differs, and a hunt from
+  before the condition has no such key. Every record carries `min_bananas`;
+  a record without it is read as asking for none, and one whose
+  `min_bananas` is not a whole number of 0 or more is refused.
+
 ## Hybrid: what the spec's review changed (#781)
 
 One review of the whole spec on `spec-781`, 2026-10-11. Its findings that
