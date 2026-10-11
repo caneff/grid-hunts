@@ -23,6 +23,10 @@ Conditions are flags:
                                cells and number cells together. Every engine
                                builds it into the search; no finished grid
                                is thrown away for it.
+    --number-circles K         at least K valid circles on number cells: K
+                               or more number cells whose value is the size
+                               of their region. A grid cell that is a valid
+                               circle counts for nothing (#794).
     --engine pysat-lazy        the solver the rules are written on: cpsat
                                (`hybrid_model.py`, connectivity as a flow),
                                pysat-lazy (`hybrid_sat.py`, a grid whose
@@ -56,6 +60,32 @@ first grid found drawn under the answer:
     timeout: time limit reached
 
 A time limit reached is always `timeout`, never one of the other three.
+
+`climb` raises K in `--number-circles K` until no grid reaches it (#794). It
+starts at `--from K` (0 unless given; `--number-circles` itself is refused),
+hunts seed 0 for a grid with at least K, counts the grid's valid circles on
+number cells with the rule reader, and asks next for one more than that
+count. Each step is a hunt directory of its own, `DIR/at-least-K`, which
+`verify` and `render` read, and a line of `DIR/climb.jsonl`, written as the
+step ends. It stops at the first K with no grid, or at the first step that
+reaches `--timeout`. Only the first is a proof: the maximum is called proven
+when "at least one more" came back as no grid, and a time limit reached is a
+best found with no proof.
+
+A rerun into the same DIR, under the same conditions, engine, limit and
+`--from`, goes on from the last step written; under any other it is refused,
+and so is a second climb while one is running there. A climb that has ended
+stays ended: one a time limit stopped is taken up again in a new DIR, with
+`--from K` and a larger `--timeout`.
+
+    uv run finders/ubahn/hybrid_finder.py climb --rows 7 --cols 7 \
+        --timeout 3600 --out DIR
+
+    at least 0: found, 3 valid circles on number cells, 0.1 s
+    at least 4: found, 4 valid circles on number cells, 0.2 s
+    at least 5: infeasible, no grid, 1.5 s
+    maximum 4: proven on pysat-lazy, at least 5 has no grid
+    best grid: DIR/at-least-4 (seed 0)
 
 `render DIR` draws every example of the hunt in DIR as a picture,
 `DIR/renders/<seed>.png` (`hybrid_render.py`, #791): the board with every
@@ -104,7 +134,10 @@ The driver's flags (`--out`, `--seeds`, `--workers`, ...) are its own
 """
 
 import argparse
+import fcntl
+import json
 import sys
+import time
 from pathlib import Path
 from typing import NamedTuple
 
@@ -151,6 +184,13 @@ SAID = {
 }
 
 
+# Why a seed gave no grid, as `propose` says it and `climb` reads it back.
+EMPTY_TIMEOUT = "timeout sampling a grid"
+EMPTY_INFEASIBLE = "infeasible: no grid meets the conditions"
+# The one seed every step of a climb hunts.
+CLIMB_SEED = 0
+
+
 class Candidate(NamedTuple):
     """A found grid with the conditions it answers."""
 
@@ -190,6 +230,7 @@ class HybridFinder:
             "circles": sorted(map(hybrid.cell_name, conditions.circles)),
             "exactly": conditions.exactly.text() if conditions.exactly else None,
             "blank_strip": conditions.blank_strip,
+            "number_circles": conditions.number_circles,
             "engine": engine,
             "timeout": timeout,
         }
@@ -203,9 +244,9 @@ class HybridFinder:
             self.conditions, rng, time_limit=self.timeout
         )
         if status == "timeout":
-            return Empty("timeout sampling a grid")
+            return Empty(EMPTY_TIMEOUT)
         if status == "infeasible":
-            return Empty("infeasible: no grid meets the conditions")
+            return Empty(EMPTY_INFEASIBLE)
         if found is None:
             raise RuntimeError(f"{self.engine} answered {status!r} with no grid")
         return Candidate(self.conditions, found)
@@ -220,6 +261,7 @@ class HybridFinder:
             asked.circles,
             asked.blank_strip,
             min_bananas=asked.min_bananas,
+            number_circles=asked.number_circles,
         )
         if why:
             return Verdict(False, why)
@@ -234,6 +276,7 @@ class HybridFinder:
     def record(self, candidate):
         asked, found = candidate
         rows, cols, circles = asked.rows, asked.cols, asked.circles
+        board = hybrid.values(found, rows, cols, asked.blank_strip)
         return {
             # The plain finder's record of the network: the board, the
             # piece-count condition, the edge rows and the outside numbers.
@@ -241,6 +284,11 @@ class HybridFinder:
             "circles": sorted(map(hybrid.cell_name, circles)),
             "blank_strip": asked.blank_strip,
             "min_bananas": asked.min_bananas,
+            "number_circles": asked.number_circles,
+            # The reader's own count, whatever the condition asked for.
+            "number_cell_circles": [
+                hybrid.cell_name(cell) for cell in hybrid.number_cell_circles(board)
+            ],
             "engine": self.engine,
             "drawing": hybrid.drawing(found, rows, cols, circles, asked.blank_strip),
         }
@@ -281,6 +329,8 @@ class HybridFinder:
                 exactly,
                 record["blank_strip"],
                 min_bananas,
+                # A record older than the condition (#794) asked for none.
+                record.get("number_circles", 0),
             )
         except KeyError as e:
             raise ValueError(
@@ -292,7 +342,8 @@ class HybridFinder:
 def parse_conditions(args):
     """The `hybrid.Conditions` the flags name. Raises ValueError, naming the
     flag, on a board with no network, a cell or condition that does not
-    parse, one that is off the board, or a number of banana regions under 1."""
+    parse, one that is off the board, a number of banana regions under 1, or
+    a count of number-cell circles below 0."""
     rows, cols = args.rows, args.cols
     if rows < 2 or cols < 2:
         raise ValueError("the smallest board with a network is 2x2")
@@ -323,6 +374,8 @@ def parse_conditions(args):
             )
     if args.min_bananas is not None and args.min_bananas < 1:
         raise ValueError(f"--min-bananas takes 1 or more, got {args.min_bananas}")
+    if args.number_circles < 0:
+        raise ValueError(f"--number-circles is 0 or more, got {args.number_circles}")
     return hybrid.Conditions(
         rows,
         cols,
@@ -330,6 +383,7 @@ def parse_conditions(args):
         exactly,
         args.blank_strip,
         args.min_bananas or 0,
+        args.number_circles,
     )
 
 
@@ -348,6 +402,133 @@ def classify(conditions, engine, timeout, workers):
             conditions.blank_strip,
         )
     return lines
+
+
+def _step(finder, seed, out):
+    """Hunt one seed into `out`, a hunt directory of its own. Returns
+    `(status, count)`: "found" with the rule reader's count of the grid's
+    valid circles on number cells, or "infeasible" or "timeout" with None.
+    Raises ValueError when the driver refuses the hunt or the seed ends any
+    other way, a grid `verify` rejected among them."""
+    argv = ["--out", str(out), f"--seeds={seed}:{seed + 1}", "--workers", "1"]
+    if run(finder, argv):
+        raise ValueError(f"the hunt in {out} was refused")
+    event = json.loads((out / "progress.jsonl").read_text().splitlines()[-1])
+    if event["outcome"] == "example":
+        ((_, record),) = seeded_examples(out)
+        return "found", len(record["number_cell_circles"])
+    status = {EMPTY_INFEASIBLE: "infeasible", EMPTY_TIMEOUT: "timeout"}.get(
+        event.get("empty_reason")
+    )
+    if event["outcome"] != "empty" or status is None:
+        raise ValueError(f"the hunt in {out} ended on {event}")
+    return status, None
+
+
+def _steps_on_file(out, lines, asked, start):
+    """The steps a climb wrote to `out/climb.jsonl`, checked as a chain: each
+    is this climb's (`asked`), the first is at `start` when one is given, each
+    later one is at one more than the count before it, and only the last may
+    be other than "found". Raises ValueError, naming the step, on a log that
+    is not one: two climbs wrote into it, or it was edited."""
+    steps = [json.loads(line) for line in lines if line]
+    for i, step in enumerate(steps):
+        k = step["at_least"]
+        if step["config"] != asked:
+            raise ValueError(f"{out} holds a climb under {step['config']}")
+        if i == 0 and start not in (None, k):
+            raise ValueError(f"{out} holds a climb from {k}: --from {start} is another")
+        if i and (steps[i - 1]["status"] != "found" or k != steps[i - 1]["count"] + 1):
+            raise ValueError(
+                f"{out}/climb.jsonl: the step at least {k} does not follow "
+                f"the step before it"
+            )
+    return steps
+
+
+def climb(conditions, engine, timeout, out, start=None):
+    """Raise K in "at least K valid circles on number cells" from `start`
+    (0 when None) until no grid reaches it or a step reaches the time limit,
+    printing each step as it ends and then the answer. Each step is a hunt of
+    seed `CLIMB_SEED` in `out/at-least-K` and a line of `out/climb.jsonl`; a
+    rerun goes on from the last line written. One climb at a time holds
+    `out`. Raises ValueError on a step `_step` refuses, when another climb
+    holds `out`, or when its log is not this climb's (`_steps_on_file`)."""
+    out = Path(out)
+    out.mkdir(parents=True, exist_ok=True)
+    asked = {
+        **HybridFinder(conditions, engine, timeout).config,
+        "number_circles": None,
+        "seed": CLIMB_SEED,
+    }
+
+    def say(step):
+        k, status = step["at_least"], step["status"]
+        what = (
+            f"{step['count']} valid circles on number cells"
+            if status == "found"
+            else SAID[status]
+        )
+        took = (
+            "time not on record" if step["seconds"] is None else f"{step['seconds']} s"
+        )
+        print(f"at least {k}: {status}, {what}, {took}", flush=True)
+
+    with (out / "climb.jsonl").open("a+") as log:
+        # The lock is on the log itself, held until the answer is printed:
+        # two climbs in one directory would each write steps the other
+        # then reads as its own.
+        try:
+            fcntl.flock(log, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise ValueError(f"another climb is running in {out}") from None
+        log.seek(0)
+        steps = _steps_on_file(out, log.read().splitlines(), asked, start)
+        for step in steps:
+            say(step)
+        while not steps or steps[-1]["status"] == "found":
+            k = steps[-1]["count"] + 1 if steps else start or 0
+            step_dir = out / f"at-least-{k}"
+            # A hunt directory that already holds its seed's answer is read
+            # back, not solved again, so its time is not this run's to state.
+            read_back = (step_dir / "summary.json").is_file() and json.loads(
+                (step_dir / "summary.json").read_text()
+            ).get("seeds_done")
+            began = time.monotonic()
+            finder = HybridFinder(
+                conditions._replace(number_circles=k), engine, timeout
+            )
+            status, count = _step(finder, CLIMB_SEED, step_dir)
+            steps.append(
+                {
+                    "at_least": k,
+                    "status": status,
+                    "count": count,
+                    "seconds": (
+                        None if read_back else round(time.monotonic() - began, 1)
+                    ),
+                    "dir": step_dir.name,
+                    "config": asked,
+                }
+            )
+            log.write(json.dumps(steps[-1]) + "\n")
+            log.flush()
+            say(steps[-1])
+    *found, last = steps
+    proven = last["status"] == "infeasible"
+    stopped = (
+        f"at least {last['at_least']} "
+        f"{'has no grid' if proven else 'reached the time limit'}"
+    )
+    if not found:
+        print(f"no grid found: {stopped} on {engine}")
+        return
+    best = found[-1]
+    if proven:
+        print(f"maximum {best['count']}: proven on {engine}, {stopped}")
+    else:
+        print(f"best found {best['count']}: not proven, {stopped} on {engine}")
+    print(f"best grid: {out / best['dir']} (seed {CLIMB_SEED})")
 
 
 def write_pictures(out, blank_strip=False, seed=None, png=None):
@@ -465,6 +646,7 @@ def main(argv):
     parser.add_argument("--exactly", metavar="N:PIECE:rK")
     parser.add_argument("--blank-strip", action="store_true")
     parser.add_argument("--min-bananas", type=int, metavar="N")
+    parser.add_argument("--number-circles", type=int, default=0, metavar="K")
     parser.add_argument("--engine", default=DEFAULT_ENGINE, choices=ENGINES)
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT)
     own, rest = parser.parse_known_args(argv)
@@ -527,6 +709,24 @@ def main(argv):
         mine.add_argument("--workers", type=int, default=1)
         workers = mine.parse_args(rest[1:]).workers
         print("\n".join(classify(conditions, own.engine, own.timeout, workers)))
+        return 0
+    if rest[:1] == ["climb"]:
+        mine = argparse.ArgumentParser(prog="hybrid_finder climb")
+        mine.add_argument("--out", required=True, metavar="DIR")
+        mine.add_argument("--from", type=int, dest="start", metavar="K")
+        args = mine.parse_args(rest[1:])
+        try:
+            if conditions.number_circles:
+                raise ValueError(
+                    "climb raises K itself: start it at K with --from K, "
+                    "not --number-circles"
+                )
+            if args.start is not None and args.start < 0:
+                raise ValueError(f"--from is 0 or more, got {args.start}")
+            climb(conditions, own.engine, own.timeout, args.out, args.start)
+        except ValueError as e:
+            print(f"hybrid_finder climb: {e}", file=sys.stderr)
+            return 2
         return 0
     return run(HybridFinder(conditions, own.engine, own.timeout), rest)
 

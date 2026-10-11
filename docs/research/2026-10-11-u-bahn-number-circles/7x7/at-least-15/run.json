@@ -1,0 +1,1 @@
+{"argv": ["--out", "docs/research/2026-10-11-u-bahn-number-circles/7x7/at-least-15", "--seeds=0:1", "--workers", "1"], "config": {"rows": 7, "cols": 7, "circles": [], "exactly": null, "blank_strip": false, "number_circles": 15, "engine": "pysat-lazy", "timeout": 3600.0}, "git_sha": "142a15eac0f74f511a2bd8710dcede4b885383bf", "start_time": "2026-10-11T18:27:04.259940+00:00"}

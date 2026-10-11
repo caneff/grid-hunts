@@ -58,6 +58,14 @@ because the checker reads them and nothing under `docs/research/` does
   full grids or by a propagator during the search).
   `hybrid_sat.listing` returns up to a cap of grids with its cut and conflict
   counts.
+  `--number-circles K` is the condition "at least K valid circles on number
+  cells" (#794), on all three engines; a grid cell that is a valid circle
+  counts for nothing. `hybrid_finder.py climb --out DIR` is its hunt: it
+  raises K until no grid reaches it, each step a hunt directory
+  `DIR/at-least-K` and a line of `DIR/climb.jsonl`, and calls the maximum
+  proven only when one more came back as no grid, never on a time limit
+  reached. The 7x7 run of record: the decision log, § Hybrid: the most valid
+  circles on number cells.
   `hybrid_finder.py render DIR` draws each example of a hunt as a picture,
   `DIR/renders/<seed>.png` (`hybrid_render.py`, #791): the board with its
   outside numbers and network, chocolate in one colour and a tint per banana,

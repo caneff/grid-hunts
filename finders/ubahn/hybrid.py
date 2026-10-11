@@ -41,8 +41,9 @@ def strips(blank_strip=False):
 class Conditions(NamedTuple):
     """What a hybrid grid is asked to meet: the board, the circled cells,
     the piece-count condition (a `network.Exactly`, or None), whether the
-    blank strip is on, and the fewest banana regions it may have (0 asks for
-    none)."""
+    blank strip is on, the fewest banana regions it may have (0 asks for
+    none), and how many valid circles on number cells it holds at least
+    (#794)."""
 
     rows: int
     cols: int
@@ -50,6 +51,7 @@ class Conditions(NamedTuple):
     exactly: network.Exactly | None = None
     blank_strip: bool = False
     min_bananas: int = 0
+    number_circles: int = 0
 
 
 class Sampled(NamedTuple):
@@ -172,6 +174,12 @@ def valid_circles(board):
     )
 
 
+def number_cell_circles(board):
+    """The number cells among `valid_circles`: a grid cell that is a valid
+    circle is not one of them."""
+    return [cell for cell in valid_circles(board) if min(cell) < 0]
+
+
 def _box(region):
     """(top, left, height, width) of the smallest box that holds the region."""
     top, left = (min(cell[i] for cell in region) for i in (0, 1))
@@ -179,13 +187,16 @@ def _box(region):
     return top, left, bottom - top + 1, right - left + 1
 
 
-def failures(net, rows, cols, circles=(), blank_strip=False, *, min_bananas=0):
+def failures(
+    net, rows, cols, circles=(), blank_strip=False, *, min_bananas=0, number_circles=0
+):
     """Every reason these edges and circles are not a hybrid grid, [] when
     they are one. `circles` are cells of the board. A set of edges that is no
     U-Bahn network fails on that alone; a network then answers for each
     region and each circle: an even region is a rectangle, an odd region is
     not, and a circled cell's value is its region's size. Last, a grid with
-    fewer than `min_bananas` banana regions fails on their number."""
+    fewer than `min_bananas` banana regions fails on their number, and so
+    does one with fewer than `number_circles` valid circles on number cells."""
     broken = network.why_not_network(net, rows, cols)
     if broken:
         return [broken]
@@ -223,13 +234,28 @@ def failures(net, rows, cols, circles=(), blank_strip=False, *, min_bananas=0):
             f"{count} banana region{'' if count == 1 else 's'}, "
             f"fewer than the {min_bananas} asked for"
         )
+    held = len(number_cell_circles(board))
+    if held < number_circles:
+        reasons.append(
+            f"{held} valid circles on number cells, fewer than {number_circles}"
+        )
     return reasons
 
 
-def why_not_hybrid(net, rows, cols, circles=(), blank_strip=False, *, min_bananas=0):
+def why_not_hybrid(
+    net, rows, cols, circles=(), blank_strip=False, *, min_bananas=0, number_circles=0
+):
     """Why these edges and circles are not a hybrid grid, or "" when they
     are one: the first of `failures`."""
-    reasons = failures(net, rows, cols, circles, blank_strip, min_bananas=min_bananas)
+    reasons = failures(
+        net,
+        rows,
+        cols,
+        circles,
+        blank_strip,
+        min_bananas=min_bananas,
+        number_circles=number_circles,
+    )
     return next(iter(reasons), "")
 
 

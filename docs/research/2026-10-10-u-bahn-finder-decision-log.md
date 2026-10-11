@@ -471,6 +471,166 @@ changed what a command does:
 - **`render` refuses a record with no `circles`**, a plain hunt's, by name
   and with exit 2.
 
+## Hybrid: the most valid circles on number cells (#794)
+
+Chris, 2026-10-11: "Lets say most circles in clue cells only (no grid)". A
+valid circle is a cell whose value is the size of its region; this target
+counts the ones on number cells, and a grid cell that is one counts for
+nothing. Four strips a side, no other condition. One worker, this box,
+2026-10-11.
+
+- **7x7: the maximum is 18, proven on `pysat-lazy` alone.** A grid with 18
+  was found, and "at least 19" came back as no grid in 792.3 s, not as a
+  time limit reached. No step reached its 3,600 s limit. The climb took
+  2,434 s of solving, 40.6 minutes on the wall clock, one CaDiCaL thread.
+
+  ```
+  uv run finders/ubahn/hybrid_finder.py climb --rows 7 --cols 7 \
+      --timeout 3600 --out docs/research/2026-10-11-u-bahn-number-circles/7x7
+  ```
+
+  | At least | Answer | Count in the grid found | Seconds |
+  | --- | --- | --- | --- |
+  | 0 | found | 4 | 0.1 |
+  | 5 | found | 6 | 2.3 |
+  | 7 | found | 7 | 1.7 |
+  | 8 | found | 9 | 1.8 |
+  | 10 | found | 10 | 21.8 |
+  | 11 | found | 11 | 13.6 |
+  | 12 | found | 12 | 35.4 |
+  | 13 | found | 13 | 133.2 |
+  | 14 | found | 14 | 156.0 |
+  | 15 | found | 15 | 108.2 |
+  | 16 | found | 16 | 386.3 |
+  | 17 | found | 17 | 197.3 |
+  | 18 | found | 18 | 584.3 |
+  | 19 | no grid, proven | | 792.3 |
+
+  Found: every K from 0 to 18. Proven impossible: 19, and so every K above
+  it. Timed out: none.
+- **The grid with 18**, as `hybrid.drawing` prints it; its record is
+  `docs/research/2026-10-11-u-bahn-number-circles/7x7/at-least-18/examples.jsonl`
+  and its picture `.../at-least-18/renders/0.png` (`hybrid_finder.py render`).
+
+  ```
+            ┼  0  1  2  0  1  2  0
+            ┬  2  3  3  1  3  1  3
+            ─  3  1  1  2  2  1  2
+   ┼  ├  │  ┌  2  2  1  3  1  3  2
+   0  2  3  2  ┌──┬────────┬─────┐
+   1  3  1  2  ├──┼──┬──┐  │  ┌──┤
+   2  3  1  1  │  ├──┼──┘  ├──┼──┤
+   0  1  2  3  │  └──┘     ├──┘  │
+   1  3  2  1  ├─────┬──┬──┼──┐  │
+   2  1  1  3  │  ┌──┼──┘  └──┼──┤
+   0  3  2  2  └──┴──┴────────┴──┘
+  ```
+
+  `hybrid_finder.py verify` takes it: the rule reader counts 18 valid
+  circles on number cells, with no solver. All 18 are a 2 in a chocolate of
+  two cells; the grid also holds 12 valid circles on grid cells, which the
+  count ignores. That 18 can be reached with 2s alone is a fact about this
+  one grid, not about every grid with 18.
+- **Smaller boards, the same command with `--timeout 600`**, each maximum
+  proven on `pysat-lazy` by "one more" coming back as no grid (the 4x4 row
+  is the tests', on all three engines):
+
+  | Board | Maximum | "One more" has no grid, seconds | Checked against |
+  | --- | --- | --- | --- |
+  | 4x4 | 2 | not timed, in the tests | the brute force's 18 grids: 6 hold 2, 12 hold none |
+  | 5x5 | 6 | 2.1 | nothing enumerates a 5x5 |
+  | 6x6 | 14 | 30.8 | nothing enumerates a 6x6 |
+
+  Their outputs are `docs/research/2026-10-11-u-bahn-number-circles/5x5` and
+  `.../6x6`.
+- **What the proof rests on: one engine.** "No grid" is the solver's answer
+  on the clauses, so a rule stated too tightly would give a false maximum,
+  and `verify` cannot see that: it only reads grids that were found. Nothing
+  enumerates a 7x7. The controls, in `test_ubahn_number_circles.py`:
+  - At 4x4 each of the three engines lists exactly the brute force's grids
+    at every K from 0 to 3, edge for edge. 4x4 only ever circles a 2 or a 4
+    on a number cell.
+  - Five grids are pinned edge by edge, and both rule sets, PySAT's and
+    CP-SAT's, take each at the rule reader's count and refuse it one above.
+    Three are grids of the climbs here: the 6x6 grid with 14 (six 2s, five
+    3s, three 4s), a 7x7 grid with 14 (thirteen 2s and a 5) and the 7x7 grid
+    with 18. So a circle in an odd region, a 3 or a 5, is taken, and the two
+    largest counts are not refused. The other two are grids found with no
+    condition, 6x6 and 7x7, that hold no such cell: for them only the
+    refusal at 1 says anything.
+  - A pinned grid shows a rule set does not refuse that grid. It does not
+    show the rule set refuses nothing else, so the controls bound the risk
+    and do not remove it.
+- **A second engine did not confirm the 7x7 proof.** `classify --engine
+  cpsat --number-circles 19` on 7x7, one worker, reached its 1,800 s limit:
+  `timeout: time limit reached`. That is no answer either way. The 7x7
+  maximum is proven on `pysat-lazy` alone; `pysat-propagator` shares its
+  clauses and would not be a second opinion.
+
+  ```
+  uv run finders/ubahn/hybrid_finder.py classify --rows 7 --cols 7 \
+      --engine cpsat --timeout 1800 --number-circles 19 --workers 1
+  ```
+- **Where the second engine could finish, it agrees.** The same call on the
+  smaller maxima, 600 s limit, one worker:
+
+  | Board | At least | `cpsat` | Seconds | `pysat-lazy` |
+  | --- | --- | --- | --- | --- |
+  | 5x5 | 6 | a grid (`not_unique`) | 3 | found |
+  | 5x5 | 7 | `infeasible` | 6 | no grid |
+  | 6x6 | 14 | a grid (`not_unique`) | 392 | found |
+  | 6x6 | 15 | `timeout` | 600 | no grid |
+
+  So two engines with separate rule code prove the 5x5 maximum of 6. The
+  6x6 maximum of 14 and the 7x7 maximum of 18 are each one engine's proof,
+  with a second engine finding a grid at 14 on 6x6 and timing out above it.
+- **The filer's sample was no bound.** Its 550 grids from hunts with no such
+  objective topped out at 10. The solver was asked instead (preflight 6).
+
+Preflight for this hunt (`docs/agents/grid-finder-lessons.md`):
+
+1. **Known bounds.** None but the 56 number cells of a 7x7. None borrowed.
+2. **Corpus.** The filer's 550 grids, read as a starting point only.
+3. **Sampler coverage.** Not in question: each step is one solve for one
+   seed, and the answer that matters is a proof, not a sample.
+4. **Lesson contradicted.** None.
+5. **What would make the result an artefact.** A rule stated too tightly;
+   the controls above, and one engine only behind the 7x7 proof.
+6. **Can the solver answer it directly?** Yes, and it does.
+7. **Cheap necessary conditions.** None added.
+
+Speedups, named before the 7x7 run as the repo's rule asks. Applied: the
+default engine, by Chris's ruling of 2026-10-11; each step asks for
+one more than the last grid's own count, not for K + 1, which skipped six
+steps here; one direction only, a chosen number cell implies the circle rule
+and an unchosen one says nothing. Not applied, since no step timed out: a
+break of the board's one symmetry, the reflection in the main diagonal, which
+would at most halve the proof; one solver kept across K, so that what it
+learned carries over; a warm start from the last grid. The controller ruled
+the first two be added and K retried once if a step timed out; none did.
+
+Worker's choices, none a ruling:
+
+- **The condition is `--number-circles K`, and the hunt is `climb`.**
+- **It is on all three engines**, not the default alone: a flag one engine
+  ignored would return grids `verify` then rejects.
+- **Each step is a hunt directory of its own**, `DIR/at-least-K`, one seed,
+  so `verify` and `render` read the best grid with no new reader. The steps
+  are also lines of `DIR/climb.jsonl`, written as each ends; a rerun into
+  the same DIR goes on from the last line. One climb at a time holds a DIR,
+  by a lock on that file, and a rerun checks every step on file: the Codex
+  review reproduced two climbs writing into one DIR and a rerun printing a
+  maximum from the mixed log.
+- **Every step hunts seed 0.** A `--seed` flag was cut in review: nothing
+  used it.
+- **A chosen circle reuses the circle rule**, the region counted in rounds,
+  for chocolate and banana alike. The filer's note suggested a rectangle of
+  that area for a chocolate; the 2x2 rule already makes the region a
+  rectangle, and the run did not need the cheaper statement.
+- **A record names its number cells that are valid circles**
+  (`number_cell_circles`), the rule reader's list, beside the K it was asked
+  for. A record older than the condition reads as K = 0.
+
 ## Decisions
 
 - **Root.** The first used cell in reading order, stated as n² / 2

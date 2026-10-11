@@ -22,6 +22,9 @@ makes it.
 - **At least N banana regions** (#792). Every odd cell takes one of N
   labels, two odd cells side by side take the same one, and every label is
   taken: a label is the same all over a region, so N labels are N regions.
+- **At least K valid circles on number cells** (#794). Every number cell has
+  a boolean that, when true, makes the circle statement hold there, and at
+  least K of them are true. A grid cell has none. A false one says nothing.
 
 This is the `cpsat` engine of `hybrid_finder.py`. An engine offers two calls
 over a `hybrid.Conditions`: `grid` (a grid for a seed, a `hybrid.Sampled`)
@@ -103,9 +106,11 @@ def _add_banana(m, odd):
             )
 
 
-def _add_circle(m, value, odd, circle, largest):
+def _add_circle(m, value, odd, circle, largest, chosen=None):
     """The circled cell's value is the size of its region. `largest` bounds
-    the value, so only cells within `largest - 1` steps can be in the region."""
+    the value, so only cells within `largest - 1` steps can be in the region.
+    With `chosen`, a boolean, that holds only when `chosen` is true: when it
+    is false the members need not be the region."""
     steps = {circle: 0}
     queue = [circle]
     for cell in queue:
@@ -117,7 +122,11 @@ def _add_circle(m, value, odd, circle, largest):
                 queue.append(near)
     inside = {cell: m.new_bool_var(f"in{circle}_{cell}") for cell in steps}
     m.add(inside[circle] == 1)
-    m.add(sum(inside.values()) == value[circle])
+    counted = m.add(sum(inside.values()) == value[circle])
+    unless = []
+    if chosen is not None:
+        counted.only_enforce_if(chosen)
+        unless = [chosen.Not()]
     mine = odd[circle]
     for cell, member in inside.items():
         # A member shares the circled cell's parity.
@@ -128,8 +137,10 @@ def _add_circle(m, value, odd, circle, largest):
         for near in _neighbours(cell):
             if near in odd:
                 joins = [inside[near]] if near in inside else []
-                m.add_bool_or([member.Not(), mine.Not(), odd[near].Not(), *joins])
-                m.add_bool_or([member.Not(), mine, odd[near], *joins])
+                m.add_bool_or(
+                    [*unless, member.Not(), mine.Not(), odd[near].Not(), *joins]
+                )
+                m.add_bool_or([*unless, member.Not(), mine, odd[near], *joins])
     # Connected: the circled cell supplies one unit of flow per member, each
     # member absorbs one, and flow passes only between members.
     cap = largest
@@ -194,6 +205,11 @@ def build(conditions):
         _add_circle(built.m, value, odd, circle, largest)
     if conditions.min_bananas:
         _add_bananas(built.m, odd, conditions.min_bananas)
+    if conditions.number_circles:
+        chosen = {cell: built.m.new_bool_var(f"chosen{cell}") for cell in lines}
+        for cell, var in chosen.items():
+            _add_circle(built.m, value, odd, cell, len(lines[cell][1]), var)
+        built.m.add(sum(chosen.values()) >= conditions.number_circles)
     return built
 
 

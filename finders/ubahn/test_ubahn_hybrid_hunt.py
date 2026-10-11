@@ -245,6 +245,7 @@ with tempfile.TemporaryDirectory() as d:
             "circles": [],
             "exactly": None,
             "blank_strip": False,
+            "number_circles": 0,
             "engine": "cpsat",
             "timeout": 10.0,
         },
