@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# local session state and worktrees
+.claude/
+
+# code-review sub-agent report fallback; must never block git worktree remove
+.scratch/
+
+# background job progress logs: working artifacts, never committed
+PROGRESS_*.log
+PROGRESS_*.md

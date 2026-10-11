@@ -1,0 +1,20 @@
+# Gate for the finders. They are scripts, not a typed package. This select is
+# the bug-and-clarity core -- pyflakes, imports, bugbear, pyupgrade, simplify,
+# comprehensions, perf, returns, pathlib, ruff-native -- plus the formatter.
+#
+# Deliberately OUT: the rules that would rewrite the scripts' hand-chosen style
+# rather than catch a bug -- ANN (annotate every function), E501 (line length),
+# E701/E702 (the compact one-liner style), S101 (asserts are fine in a script).
+#
+# No `ty`: the scripts load their neighbours through a runtime sys.path.insert
+# ty cannot follow.
+line-length = 88
+
+[lint]
+select = ["F", "I", "B", "UP", "SIM", "C4", "PIE", "PERF", "RET", "PTH", "RUF"]
+
+# finders/qqrr/hunt: the hunt drivers keep their run-time shape, so results
+# stay reproducible; only style rules that would rewrite their file and glob
+# handling are waived, not the pyflakes, import, B905 or RUF059 checks.
+[lint.per-file-ignores]
+"finders/qqrr/hunt/*.py" = ["SIM115", "PTH", "PERF401", "RUF001", "RUF005"]
