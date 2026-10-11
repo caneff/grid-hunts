@@ -4,6 +4,13 @@
 // session: it needs Chromium and the live Penpa+ page.
 //
 //   node finders/ubahn/penpa-browser-check.mjs LINKFILE [--shots DIR]
+//       [--circles "CELLS"] [--numbers "CELLS"]
+//
+// A hybrid link (hybrid_finder.py links, #795) is checked with the cells it
+// was asked to show, in the finder's names (rKcK, rK:PIECE, cK:PIECE): either
+// flag, even empty, adds three checks on the opened page: the circles are
+// exactly the cells named, the printed numbers are exactly the number cells
+// named, and the grid is dotted.
 //
 // On the opened page it also reads the page's own state: the number strips'
 // icons run cross, branch, straight, turn from the outside in (a hollow square
@@ -35,6 +42,32 @@ const shotsAt = args.indexOf('--shots')
 if (shotsAt !== -1 && (!args[shotsAt + 1] || args[shotsAt + 1].startsWith('--'))) refuse('--shots needs a directory')
 const shots = shotsAt === -1 ? null : args[shotsAt + 1]
 const link = fs.readFileSync(linkFile, 'utf8').trim()
+function flagValue (name) {
+  const at = args.indexOf(name)
+  if (at === -1) return null
+  if (at + 1 >= args.length) refuse(`${name} needs a list of cells (quoted, may be empty)`)
+  return args[at + 1]
+}
+const askedCircles = flagValue('--circles')
+const askedNumbers = flagValue('--numbers')
+const hybrid = askedCircles !== null || askedNumbers !== null
+
+// The table index of a cell in the finder's names, given the number of
+// strips and the table's width: a grid cell sits `strips` in from the
+// corner, a number cell of strip k is k cells in from the grid's edge,
+// the order turn, straight, branch, cross, blank from the inside out.
+const PIECES = ['turn', 'straight', 'branch', 'cross', 'blank']
+function cellIndex (name, strips, nx0) {
+  const g = 2 + strips
+  let m = /^r([1-9][0-9]*)c([1-9][0-9]*)$/.exec(name)
+  if (m) return (g + Number(m[2]) - 1) + (g + Number(m[1]) - 1) * nx0
+  m = /^([rc])([1-9][0-9]*):([a-z]+)$/.exec(name)
+  if (!m || !PIECES.includes(m[3])) refuse(`not a cell name: ${name}`)
+  const k = PIECES.indexOf(m[3]) + 1
+  const n = Number(m[2]) - 1
+  return m[1] === 'r' ? (g - k) + (g + n) * nx0 : (g + n) + (g - k) * nx0
+}
+const names = text => text.split(/\s+/).filter(Boolean)
 
 const redact = text => String(text).split(link).join('<link>').slice(0, 300)
 
@@ -152,6 +185,27 @@ try {
   report('the icons run in the ruled order from the outside in, rows and columns',
     JSON.stringify(strips.rows) === JSON.stringify(wanted) && JSON.stringify(strips.cols) === JSON.stringify(wanted),
     `${strips.t} strips: rows ${strips.rows.join(',')}; columns ${strips.cols.join(',')}`)
+  if (hybrid) {
+    const wantCircles = names(askedCircles || '')
+    const wantNumbers = names(askedNumbers || '')
+    const page = await opened.page.evaluate(() => {
+      const nx0 = pu.nx + 4
+      const strips = pu.centerlist[0] % nx0 - 1
+      const circles = Object.keys(pu.pu_q.symbol).filter(i => pu.pu_q.symbol[i][1] === 'circle_L').map(Number)
+      // A printed number is a digit; the blank strip's icon is a hollow square.
+      const numbers = Object.keys(pu.pu_q.number).filter(i => /^[0-9]+$/.test(pu.pu_q.number[i][0])).map(Number)
+      return { nx0, strips, circles, numbers, grid: pu.mode.grid[0] }
+    })
+    const index = list => list.map(n => cellIndex(n, page.strips, page.nx0)).sort((a, b) => a - b)
+    const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
+    report('the circles are on exactly the cells asked for',
+      same([...page.circles].sort((a, b) => a - b), index(wantCircles)),
+      `asked ${wantCircles.length}, page has ${page.circles.length}`)
+    report('the printed numbers are in exactly the cells asked for',
+      same([...page.numbers].sort((a, b) => a - b), index(wantNumbers)),
+      `asked ${wantNumbers.length}, page has ${page.numbers.length}`)
+    report('the grid is dotted', page.grid === '2', `grid style ${page.grid}`)
+  }
   const centre = await opened.page.evaluate(() => {
     const header = pu.center_n
     pu.center_n = 0

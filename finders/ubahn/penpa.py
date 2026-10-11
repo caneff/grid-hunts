@@ -10,6 +10,12 @@ straight, turn (Chris's ruling on #774); the blank number is the option's
 fifth. The link opens in the Line tool and carries a lines-only answer check
 (`sol_loopline`, § 3).
 
+The hybrid link (#795) is the same board with chosen circles and chosen
+numbers: `Hybrid(circles, numbers)` names them in `hybrid.py`'s cells, `(r, c)`
+for a grid cell, `(r, -k)` and `(-k, c)` for a number cell in strip k (1 the
+innermost). Every number cell not named is drawn empty, the grid is dotted and
+the rules text is the combined puzzle's; the answer check is the plain link's.
+
 `link` returns the URL as one string. A link is a 10 KB blob: write it to a
 file, never to chat.
 """
@@ -195,6 +201,7 @@ ICONS = {
     "turn": ([1, 1, 0, 0], [1, 1, 0, 0]),
 }
 BLANK_ICON = "□"  # a number's text: a blank cell has no arm to draw
+CIRCLE = [1, "circle_L", 1]  # a symbol: the plain white ring, under the lines
 
 TITLE = "U-Bahn"
 RULES = (
@@ -205,9 +212,39 @@ RULES = (
     "A number outside the grid says how many cells of the kind beside it "
     "(from the outside in: {kinds}) the row or column holds."
 )
+HYBRID_TITLE = "U-Bahn Choco-Banana"
+# The combined puzzle's rules as Chris pasted them (#795).
+HYBRID_RULES = (
+    "U-Bahn:\n"
+    "Draw in the dotted grid a single connected network of lines going "
+    "through the centers of some orthogonally adjacent cells, which may "
+    "branch or turn, but may not have any dead ends.\n"
+    "Cells above and to the left of the grid have a value that indicates "
+    "how many times a given tile (i.e. a blank, cross, branch, straight "
+    "line, or turn), including its rotations, will appear in that row or "
+    "column.\n"
+    "Choco-Banana:\n"
+    "Assign each grid cell a digit from 0 to 4 as follows: empty cell = 0, "
+    "corner = 1, straight line = 2, branch = 3, cross = 4.\n"
+    "Among both grid cells and clue cells, every group of orthogonally "
+    "connected cells with even values is a rectangle (chocolate), and every "
+    "group of orthogonally connected cells with odd values is not a "
+    "rectangle (banana). Note: squares are rectangles.\n"
+    "A digit in a circle counts the number of cells of the chocolate or "
+    "banana region that circle lies in."
+)
+DOTTED_GRID = ["2", "2", "1"]  # dotted gridlines, no lattice points, a frame
 _ESCAPES = ((",", "%2C"), ("\n", "%2D"), ("&", "%2E"), ("=", "%2F"))
 # What the rules text calls a kind, where it is not the kind's own name.
 _KIND_WORDS = {"blank": "no arm at all"}
+
+
+class Hybrid(NamedTuple):
+    """What the hybrid link shows: the cells that carry a circle and the
+    number cells whose outside number is printed, in `hybrid.py`'s cells."""
+
+    circles: frozenset
+    numbers: frozenset
 
 
 def _json(value):
@@ -292,6 +329,27 @@ class _Table(NamedTuple):
         """Index of the vertex at the bottom-right corner of padded (x, y)."""
         return self.size + self.cell(x, y)
 
+    def board_cell(self, cell):
+        """Cell-centre index of a cell in `hybrid.py`'s scheme: a grid cell
+        `(r, c)`, or a number cell `(r, -k)` or `(-k, c)`. Raises ValueError
+        on a cell this table does not hold."""
+        r, c = cell
+        rows, cols = self.ny - self.strips, self.nx - self.strips
+        in_grid = 0 <= r < rows and 0 <= c < cols
+        in_row_strip = 0 <= r < rows and -self.strips <= c < 0
+        in_col_strip = 0 <= c < cols and -self.strips <= r < 0
+        if not (in_grid or in_row_strip or in_col_strip):
+            raise ValueError(f"cell {cell} is off the board")
+        g = self.grid_origin
+        return self.cell(g + c, g + r)
+
+    def number_cell(self, cell):
+        """Cell-centre index of a number cell `(r, -k)` or `(-k, c)`. Raises
+        ValueError on a grid cell or a cell this table does not hold."""
+        if min(cell) >= 0:
+            raise ValueError(f"cell {cell} is a grid cell, not a number cell")
+        return self.board_cell(cell)
+
     def cell_list(self):
         """Cell-centre indices of the table, row by row, without the notch."""
         k = self.strips
@@ -318,20 +376,28 @@ def _rules_text(kinds):
     return RULES.format(kinds=", ".join(_KIND_WORDS.get(k, k) for k in kinds))
 
 
-def payload(rows, cols, found, blank_number=False):
-    """The inflated, unabbreviated text of the `p` parameter: 19 lines."""
+def payload(rows, cols, found, blank_number=False, hybrid=None):
+    """The inflated, unabbreviated text of the `p` parameter: 19 lines. A
+    `hybrid` draws only its numbers and circles, dotted, under the combined
+    rules; none draws every number, solid, under the U-Bahn rules."""
     kinds = KINDS_WITH_BLANK if blank_number else PIECE_ORDER
     t = _table(rows, cols, blank_number)
     g = t.grid_origin
 
     row_numbers, col_numbers = network.outside_numbers(found, rows, cols)
+    # The table cells whose number is printed; None prints every one.
+    shown = None if hybrid is None else {t.number_cell(c) for c in hybrid.numbers}
     number = {}
     for j, name in enumerate(kinds):
         kind = network.KIND_NAMES.index(name)
         for c in range(cols):
-            number[t.cell(g + c, MARGIN + j)] = [str(col_numbers[c][kind]), 1, "1"]
+            at = t.cell(g + c, MARGIN + j)
+            if shown is None or at in shown:
+                number[at] = [str(col_numbers[c][kind]), 1, "1"]
         for r in range(rows):
-            number[t.cell(MARGIN + j, g + r)] = [str(row_numbers[r][kind]), 1, "1"]
+            at = t.cell(MARGIN + j, g + r)
+            if shown is None or at in shown:
+                number[at] = [str(row_numbers[r][kind]), 1, "1"]
 
     symbol = {}
     for j, name in enumerate(kinds):
@@ -354,6 +420,12 @@ def payload(rows, cols, found, blank_number=False):
     for x in range(MARGIN, t.nx + MARGIN):
         divider[f"{t.vertex(x - 1, g - 1)},{t.vertex(x, g - 1)}"] = 21
 
+    mode = _MODE
+    if hybrid is not None:
+        mode = {**_MODE, "grid": DOTTED_GRID}
+        for cell in hybrid.circles:
+            symbol[t.board_cell(cell)] = copy.copy(CIRCLE)
+
     question = _layer(number=number, symbol=symbol, lineE=divider)
     center = center_point(t.nx, t.ny)
     header = [
@@ -372,17 +444,17 @@ def payload(rows, cols, found, blank_number=False):
         "0",
         "0",
         "0",
-        "Title: " + _escape(TITLE),
+        "Title: " + _escape(TITLE if hybrid is None else HYBRID_TITLE),
         "Author: ",
         "",
-        _escape(_rules_text(kinds)),
+        _escape(_rules_text(kinds) if hybrid is None else HYBRID_RULES),
         "OFF",
         "false",
     ]
     lines = [
         ",".join(header),
         _json([0, 0, 0, 0]),
-        '["1","2","1"]~"line"~["1",3]',
+        f'{_json(mode["grid"])}~"line"~["1",3]',
         _json(question),
         "",
         _json(_deltas(t.cell_list())),
@@ -391,7 +463,7 @@ def payload(rows, cols, found, blank_number=False):
         '"x"',
         '"x"',
         "[3,1,3]",
-        _json(_MODE),
+        _json(mode),
         '"x"',
         "0",
         _json(_layer()),
@@ -421,11 +493,13 @@ def abbreviate(text):
     return text
 
 
-def link(rows, cols, found, blank_number=False):
+def link(rows, cols, found, blank_number=False, hybrid=None):
     """The Penpa+ solve link for a network on a `rows` by `cols` board: its
     outside numbers as the numbers round the grid, its edges as the embedded
-    answer."""
-    text = abbreviate(payload(rows, cols, found, blank_number))
+    answer. With a `Hybrid`, only its numbers and circles are shown; the
+    answer is the same. Raises ValueError, naming the cell, on a circle or a
+    number that is not on the board."""
+    text = abbreviate(payload(rows, cols, found, blank_number, hybrid))
     return (
         f"{PAGE}#m=solve&p={deflate_base64(text)}"
         f"&a={deflate_base64(answer(rows, cols, found, blank_number))}"

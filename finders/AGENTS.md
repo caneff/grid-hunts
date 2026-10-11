@@ -72,6 +72,13 @@ because the checker reads them and nothing under `docs/research/` does
   to `DIR/links/<seed>.txt` (`penpa.py`, #774; wire format
   `docs/research/2026-10-10-u-bahn-penpa-link.md`). The three published links
   it is tested against are `finders/ubahn/fixtures/`.
+  `hybrid_finder.py links DIR --circles "CELLS" --numbers "CELLS"
+  [--blank-strip]` writes the hybrid's Penpa+ link per example (#795): only
+  the circles and the number cells you name are shown, the grid dotted, the
+  combined rules text, the plain link's lines-only answer check; an invalid
+  circle is refused by name. `penpa_decode.py` is the test decoder, shared
+  by `test_penpa.py` and `test_ubahn_hybrid_links.py`. The browser check takes
+  the same `--circles` and `--numbers` to confirm where they sit on the page.
   `finders/ubahn/penpa-browser-check.mjs LINKFILE` is the real-browser check
   (the success dialog, the Line tool, the icons'
   order, the centre point); it needs Chromium and the live page, so

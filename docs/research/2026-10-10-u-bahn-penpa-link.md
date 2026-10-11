@@ -529,6 +529,33 @@ real hunt. All four passed every check. Results, each settling a § 7 item:
   (9x7), 383 (9x8) and 545 (8x9) all agree with § 1.4's rules, which covers
   the mixed-parity edge-midpoint cases the five published headers could not.
 
+## 9. The hybrid link: circles, given numbers, dotted grid (#795)
+
+Read from Penpa+ `master` of 2026-10-11 (`docs/js/style.js`,
+`class_square.js`, `class_p.js`; the commit is not pinned, so line numbers are
+not given) and confirmed in a real browser the same day.
+
+- **A circle** is a `symbol` entry `[1, "circle_L", 1]` on the cell's index:
+  style 1 is a white fill with a black outline (`set_circle_style`), `circle_L`
+  the large ring (radius 0.43 of a cell). Layer 1 is drawn before the lines and
+  numbers, so a number on a circled cell reads on top of the ring `[read]`.
+  Any cell of the table can carry one, number cells included `[ran]`.
+- **A number cell left empty** is a table cell with no `number` entry; it is
+  still in the centerlist `[ran]`.
+- **A dotted grid** is `grid[0] = "2"` (the "Dotted line" radio, `nb_grid2`);
+  `make_frameline` then draws every inner edge as style 11 and keeps the outer
+  frame thick. The value is read from line 2 of the payload (before the first
+  `~`) and from the `mode` object's `grid` `[read]`; the encoder writes both.
+- **The answer check is unchanged**: `sol_loopline` alone; circles and numbers
+  are not part of the check.
+- **Browser check** (`finders/ubahn/penpa-browser-check.mjs LINKFILE --circles
+  CELLS --numbers CELLS`): on a 5x5 hybrid link with four circles (two on grid
+  cells, two on number cells, one of those also a given number) and four given
+  numbers, the page loaded with no error, the circles and printed numbers were
+  on exactly the cells asked for, the grid style read `2`, drawing the
+  solution raised the success dialog, and the solution with an edge missing or
+  moved did not `[ran]`.
+
 ## Sources
 
 Repo files are cited inline as `path:line`. Outside sources:

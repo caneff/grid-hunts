@@ -252,6 +252,18 @@ def seeded_examples(out):
     return list(zip(seeds, records, strict=True))
 
 
+def replace_links(out, built):
+    """Replace `out/links/` with `{seed: link text}`: a file left by an
+    earlier example list or variant never stays. Returns the directory."""
+    links = Path(out) / "links"
+    links.mkdir(exist_ok=True)
+    for stale in links.glob("*.txt"):
+        stale.unlink()
+    for seed, text in built.items():
+        (links / f"{seed}.txt").write_text(text)
+    return links
+
+
 def write_links(out, blank_number=False):
     """Write `out/links/<seed>.txt`, one Penpa+ link per example of the hunt
     in `out`, each under its seed (`seeded_examples`). Returns how many;
@@ -267,12 +279,7 @@ def write_links(out, blank_number=False):
     for seed, record in examples:
         rows, cols, found, _ = finder.candidate_from_record(record)
         built[seed] = penpa.link(rows, cols, found, blank_number) + "\n"
-    links = out / "links"
-    links.mkdir(exist_ok=True)
-    for stale in links.glob("*.txt"):
-        stale.unlink()
-    for seed, text in built.items():
-        (links / f"{seed}.txt").write_text(text)
+    replace_links(out, built)
     return len(examples)
 
 
