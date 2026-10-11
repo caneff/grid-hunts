@@ -11,7 +11,7 @@ from ortools.sat.python import cp_model
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from minimizer import strip
-from uniqueness import check_uniqueness
+from sudoku_kit.uniqueness import check_uniqueness
 
 ok = True
 

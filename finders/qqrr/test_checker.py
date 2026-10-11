@@ -16,14 +16,12 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import checker
 import model
 import oracle
 from grids import TIE_WITNESS, random_sudoku
-
-from examples._shared import cpsat
+from sudoku_kit import cpsat
 
 HERE = Path(__file__).resolve().parent
 op = checker.load_opener(HERE / "opener.json")

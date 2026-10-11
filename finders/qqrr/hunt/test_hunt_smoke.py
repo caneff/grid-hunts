@@ -8,12 +8,10 @@ import tempfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-ROOT = HERE.parents[2]
 scripts = sorted(p for p in HERE.glob("*.py") if p.name != Path(__file__).name)
 assert scripts, "no hunt scripts found"
 # The two directories the scripts reach with parents[1] (finders/qqrr) and parents[3] (repo root).
 assert (HERE.parent / "model.py").exists() and (HERE.parent / "oracle.py").exists()
-assert (ROOT / "examples" / "_shared" / "cpsat.py").exists()
 with tempfile.TemporaryDirectory() as d:
     for p in [*scripts, HERE / "scheduler4.sh"]:
         text = p.read_text()

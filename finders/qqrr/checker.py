@@ -18,12 +18,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import model
 import oracle
 from ortools.sat.python import cp_model
-
-from examples._shared import cpsat
+from sudoku_kit import cpsat
 
 CORNERS = {"tl": (0, 0), "tr": (0, 8), "bl": (8, 0), "br": (8, 8)}
 CORNER_RANK = 5  # Chris: a QQRR clue of 5 sits in one corner, corner undecided.

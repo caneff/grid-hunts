@@ -36,7 +36,7 @@ from network import (
     arms_on_board,
     rows_and_columns,
 )
-from uniqueness import check_uniqueness
+from sudoku_kit.uniqueness import check_uniqueness
 
 # The 12 legal (north, east, south, west) arm patterns of a cell and the kind
 # each makes. The 4 patterns with one arm, the dead ends, are left out.

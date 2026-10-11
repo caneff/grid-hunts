@@ -26,7 +26,7 @@ A SudokuMaker link (or a file holding one) works in place of the JSON:
 its region sum lines (type 404) become lines L1, L2, ... in board order and
 its givens become digits. Pairs then come from --pair L1,L2 (repeatable) or
 --all-share (every line holds the same multiset); --sum L1=8 fixes a sum.
-Decoding goes through gridfind's link_file.py, never a local decoder.
+Decoding goes through sudoku-kit's link codec, never a local decoder.
 
 Usage: uv run copycat_rsl_solver.py setup.json|link|link.txt [--pair A,B]...
        [--all-share] [--sum L=n]... [--limit K] [--workers N]
@@ -40,13 +40,13 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import subprocess
 import sys
 from collections import defaultdict
 from itertools import pairwise
 from pathlib import Path
 
 from ortools.sat.python import cp_model
+from sudoku_kit.link_codec import decode_puzzle
 
 CELL_RE = re.compile(r"^r([1-9])c([1-9])$")
 
@@ -194,28 +194,9 @@ def build(setup: dict, relax: set[str] | None = None):
     return m, digit, cc, lines
 
 
-GRIDFIND = Path.home() / "src" / "gridfind"
-
-
 def setup_from_link(link: str) -> dict:
-    """Decode a SudokuMaker link with gridfind and lift lines and givens."""
-    out = subprocess.run(
-        [
-            "uv",
-            "run",
-            "--directory",
-            str(GRIDFIND),
-            "python",
-            "scripts/link_file.py",
-            "decode",
-            link,
-            "-",
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout
-    doc = json.loads(out)
+    """Decode a SudokuMaker link and lift lines and givens."""
+    doc = decode_puzzle(link)
     puzzle = doc["puzzle"]
     cells = puzzle["cells"]
     if len(cells) != 81:

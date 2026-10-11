@@ -20,8 +20,7 @@ import checker
 import model
 import oracle
 from ortools.sat.python import cp_model
-
-from examples._shared import cpsat
+from sudoku_kit import cpsat
 
 n = 9
 

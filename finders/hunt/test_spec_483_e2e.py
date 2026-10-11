@@ -37,7 +37,7 @@ from printer import render_board
 from protocol import Verdict
 from render import GridCanvas
 from subprocess_env import success_env
-from uniqueness import check_uniqueness
+from sudoku_kit.uniqueness import check_uniqueness
 
 SIDE = 4
 SEEDS = 40

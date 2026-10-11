@@ -18,8 +18,7 @@ import checker
 import model
 import oracle
 from ortools.sat.python import cp_model
-
-from examples._shared import cpsat
+from sudoku_kit import cpsat
 
 corner, procs, timeout, logp = (
     sys.argv[1],

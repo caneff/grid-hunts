@@ -40,8 +40,7 @@ import chan_big
 import checker
 import oracle
 from ortools.sat.python import cp_model
-
-from examples._shared import cpsat
+from sudoku_kit import cpsat
 
 sys.path.insert(0, str(hc.ROOT / "finders" / "hunt"))
 # isort: split

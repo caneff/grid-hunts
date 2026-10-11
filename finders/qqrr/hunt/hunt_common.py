@@ -1,6 +1,6 @@
 """What the hunt scripts share (#605): the hunt table, the log directory, the q34 criterion, the
-HIT-block log lines and their parser. Importing it puts finders/qqrr and the repo root on
-sys.path, so a script imports it before `checker`, `model`, `oracle` and `examples`."""
+HIT-block log lines and their parser. Importing it puts finders/qqrr on sys.path, so a
+script imports it before `checker`, `model` and `oracle`."""
 
 import os
 import re
@@ -10,7 +10,6 @@ from typing import NamedTuple
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "finders" / "qqrr"))
-sys.path.insert(0, str(ROOT))
 
 # cage cell, bounded cell, seed grid (a found grid satisfying all but the tie)
 HUNTS = {

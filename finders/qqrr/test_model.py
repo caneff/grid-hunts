@@ -18,12 +18,10 @@ from pathlib import Path
 from ortools.sat.python import cp_model
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import model
 import oracle
 from grids import TIE_WITNESS, random_sudoku
-
-from examples._shared import cpsat
+from sudoku_kit import cpsat
 
 
 def solve(m):
