@@ -13,6 +13,11 @@ A second space, 3x4 with no blank in r2, covers what the first cannot: a
 condition on blank cells, and edge sets with no dead end that are not
 connected.
 
+The hybrid's answers (#782) are pinned at the end: the valid hybrid grids of
+the whole 4x4 board with no condition, and the class of seven circle
+conditions. They are what each engine must match; `test_ubahn_hybrid_model.py`
+holds the CP-SAT engine to them (#783).
+
     uv run finders/ubahn/test_ubahn_brute.py
 """
 
@@ -21,6 +26,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import brute
+import hybrid
 import model
 import network
 from ortools.sat.python import cp_model
@@ -105,9 +111,10 @@ for connectivity in ("flow", "tree"):
 # leave no free 2x2 block. A 3x4 board can, and "no blank in r2" keeps them:
 # every edge assignment of the board, 131,072 again, with no edge forced.
 NO_BLANK_R2 = network.Exactly(0, network.BLANK, "r", 1)
+every_3x4 = brute.assignments(3, 4, set())
 filled = [
     net
-    for net in brute.assignments(3, 4, set())
+    for net in every_3x4
     if net
     and None not in network.kind_grid(net, 3, 4)
     and network.outside_numbers(net, 3, 4)[0][1][network.BLANK] == 0
@@ -127,6 +134,15 @@ for connectivity in ("flow", "tree"):
         got == connected,
     )
 
+# The hybrid's enumeration (#782) never lists an edge set with a dead end: it
+# decides each cell's last two edges together and drops a cell left with one
+# arm. Against the full 3x4 list it must lose nothing else.
+check(
+    "3x4: the dead-end pruning keeps exactly the edge sets with no dead end",
+    set(brute.no_dead_end(3, 4))
+    == {net for net in every_3x4 if None not in network.kind_grid(net, 3, 4)},
+)
+
 # Both spaces above shut the board with no edge out by their own condition.
 # A 2x2 board with no condition does not: of its 16 edge assignments only
 # the loop of all four is a network.
@@ -143,5 +159,41 @@ for connectivity in ("flow", "tree"):
         f"{connectivity} model, 2x2: the one loop and nothing else (got {len(got)})",
         got == {loop},
     )
+
+# The hybrid's answers on the whole 4x4 board (#782): all 2^24 = 16,777,216
+# edge sets, no condition. The enumeration drops dead ends as it goes and the
+# solver-free rule reader judges every edge set left. The counts are the ones
+# a separate throwaway script gave (numpy over all 2^24 edge sets, its own
+# rule code): decision log, § Hybrid.
+check(
+    "4x4: 16,372 edge sets have no dead end",
+    sum(1 for _ in brute.no_dead_end(4, 4)) == 16372,
+)
+grids = brute.hybrid_grids(4, 4)
+check(f"4x4: 18 valid hybrid grids (got {len(grids)})", len(grids) == 18)
+in_space = grids & valid
+check(
+    f"4x4 with exactly 2 crosses in r2: 8 valid hybrid grids (got {len(in_space)})",
+    len(in_space) == 8
+    and in_space == {net for net in grids if EXACTLY.holds(net, ROWS, COLS)},
+)
+with_blank = brute.hybrid_grids(4, 4, blank_strip=True)
+check(
+    f"4x4 with the blank strip: 8 valid hybrid grids (got {len(with_blank)})",
+    len(with_blank) == 8 and with_blank < grids,
+)
+# Circle conditions, each classified in the words of the uniqueness check.
+for names, want in (
+    ((), ("not_unique", 18)),
+    (("r2c2",), ("not_unique", 4)),
+    (("c1:turn", "r2c4"), ("unique", 1)),
+    (("r1:turn", "r4c2"), ("unique", 1)),
+    (("r2c2", "r2c4"), ("infeasible", 0)),
+    (("c4:turn", "r4:turn"), ("infeasible", 0)),
+    (("r1c1",), ("infeasible", 0)),
+):
+    circles = frozenset(hybrid.parse_cell(name) for name in names)
+    got = brute.classify(4, 4, circles)
+    check(f"4x4 circles {' '.join(names) or 'none'}: {want} (got {got})", got == want)
 
 sys.exit(0 if ok else 1)

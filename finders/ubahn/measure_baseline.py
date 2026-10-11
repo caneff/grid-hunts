@@ -94,7 +94,7 @@ def measure(rows, cols, connectivity, seeds, *, timeout, progress=None):
     return outcomes
 
 
-def _times(seconds):
+def times(seconds):
     """n, median, mean, 90th percentile and max of `seconds`, in
     milliseconds; dashes for none."""
     if not seconds:
@@ -151,12 +151,24 @@ def report(size, connectivity, outcomes, *, timeout):
         "| Step | Solves timed | Median ms | Mean ms | 90th ms | Max ms |",
         "| --- | --- | --- | --- | --- | --- |",
         f"| Sampling a network | "
-        f"{_times([o.sample_s for o in outcomes if o.cause != 'timeout sampling'])} |",
-        f"| Uniqueness proof | {_times([o.prove_s for o in decided])} |",
-        f"| Whole proposal | {_times([o.sample_s + o.prove_s for o in decided])} |",
+        f"{times([o.sample_s for o in outcomes if o.cause != 'timeout sampling'])} |",
+        f"| Uniqueness proof | {times([o.prove_s for o in decided])} |",
+        f"| Whole proposal | {times([o.sample_s + o.prove_s for o in decided])} |",
         "",
     ]
     return "\n".join(lines)
+
+
+def seed_range(text):
+    """The seeds `A:B` names, A up to B - 1. Raises ValueError, naming
+    `--seeds`, when it names none."""
+    try:
+        first, last = (int(x) for x in text.split(":"))
+    except ValueError:
+        raise ValueError(f"--seeds {text!r} is not A:B with whole numbers") from None
+    if last <= first:
+        raise ValueError(f"--seeds {text} names no seed: B must exceed A")
+    return range(first, last)
 
 
 def main(argv):
@@ -168,11 +180,9 @@ def main(argv):
     parser.add_argument("--timeout", type=float, default=60.0)
     args = parser.parse_args(argv)
     try:
-        first, last = (int(x) for x in args.seeds.split(":"))
-    except ValueError:
-        parser.error(f"--seeds {args.seeds!r} is not A:B with whole numbers")
-    if last <= first:
-        parser.error(f"--seeds {args.seeds} names no seed: B must exceed A")
+        seeds = seed_range(args.seeds)
+    except ValueError as e:
+        parser.error(str(e))
 
     def progress(o):
         proof = "-" if o.prove_s is None else f"{o.prove_s * 1000:.1f} ms"
@@ -187,7 +197,7 @@ def main(argv):
         args.rows,
         args.cols,
         args.connectivity,
-        range(first, last),
+        seeds,
         timeout=args.timeout,
         progress=progress,
     )

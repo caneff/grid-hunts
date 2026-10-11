@@ -300,7 +300,8 @@ reached the 60 s limit, so no row is capped.
   each of the 15 puzzles. What those calls cost in time is not measured in
   this repo. A plain loop (solve, flood fill in Python, add the clause, solve
   again on the same solver) would make none of them and keep the learned
-  clauses. Not built.
+  clauses. Not built here; the hybrid's `pysat-lazy` engine is that loop
+  (`hybrid_sat.py`, #784).
 - **Time limit.** CaDiCaL takes no wall-clock limit through PySAT and
   `interrupt` raises `NotImplementedError`, so the check solves in slices of
   2,000 conflicts and reads the clock between slices. A limit can be overrun
@@ -401,3 +402,142 @@ How to read the tables:
 - **Not measured:** 10x10; any condition; more than one worker; where the
   proof time goes (connectivity against the counts); the time a sample
   spends in `model.build` against its solve.
+
+## The three hybrid engines, timed (2026-10-11, #786)
+
+**On Chris's six cases, one core, 100 seeds each: both PySAT engines are more
+than 2 times faster than CP-SAT at 8x8 and at 10x10. `pysat-lazy` is 8.4 and
+11.2 times faster at the median, `pysat-propagator` 3.9 and 5.7 times.** No
+solve of the 1,800 reached the 60 s limit, so no count below is capped and the
+cap rule never fired. Chris ruled on the verdict at the end on 2026-10-11:
+the hybrid finder's default engine is now `pysat-lazy`.
+
+What ran: `time_engines.py` at `b3f460b`, the hybrid of spec #781 (U-Bahn
+with Choco-Banana over grid cells and number cells), one engine at a time,
+each engine's six cases in one process. One core, box load about 1, nothing
+else of ours running:
+
+    job-run --name ubahn-786-engines -- bash -c '
+      for engine in cpsat pysat-lazy pysat-propagator; do
+        uv run finders/ubahn/time_engines.py run --engine $engine \
+          --progress docs/research/2026-10-11-u-bahn-hybrid-engine-timing/$engine.jsonl \
+          --seeds 0:100 --timeout 60
+      done'
+    uv run finders/ubahn/time_engines.py report \
+      docs/research/2026-10-11-u-bahn-hybrid-engine-timing/cpsat.jsonl \
+      docs/research/2026-10-11-u-bahn-hybrid-engine-timing/pysat-lazy.jsonl \
+      docs/research/2026-10-11-u-bahn-hybrid-engine-timing/pysat-propagator.jsonl
+
+Wall clock 9 min 18 s, about 7.5 min of it CP-SAT. The progress files are in
+the repo, one line per solve, and the second command prints both tables below
+from them. One cell reruns alone with `--case 8x8` and a fresh `--progress`
+file.
+
+How to read the table:
+
+- **A time** is the engine's own call, `grid` or `classify`, from the
+  conditions to the answer: building the model or the clauses is inside it.
+  Process start and the imports are outside it, because each engine ran its
+  600 solves in one process. The split between build and solve was not
+  measured.
+- **Found** is a grid returned, and every one of the 1,200 found grids was
+  re-read by the solver-free rule reader (`hybrid.py`), outside the timed
+  call; a refused grid would have stopped the run. **Proven impossible** is
+  the engine's proof that no grid meets the conditions. **Timed out** is a
+  solve the 60 s limit stopped; it would be labelled capped and left out of
+  the time columns. There was none.
+- **A seed does not name the same grid on every engine.** CP-SAT takes the
+  seed as an order over the edges and the PySAT engines as a phase per edge.
+  Each engine is timed on "a valid grid for this seed", not on reaching one
+  given grid.
+- **Cuts and conflicts** are totals over the case's 100 solves. A cut is a
+  clause added for a full grid whose network is in several parts. A conflict
+  is one the propagator raised while some edge was still undecided.
+- **The 7x7 example timed a proof of no grid, not a search.** The four
+  circles on `r6:straight r6:turn r7:straight r7:turn` have no grid on any
+  engine, as the decision log already had it, so both example cases land in
+  the proven-impossible column. Three engines agree; two of them share every
+  clause but connectivity, and nothing enumerates a 7x7. Chris confirmed on
+  2026-10-11 that the circles were read correctly from his picture, so no
+  grid stands as that layout's result.
+- **`classify` takes no seed**, so its 100 seeds are 100 repeats of one call.
+  The 60 s limit is per solve inside the CP-SAT engine's `classify`, which
+  makes up to two, and over the whole call in the PySAT engines'. Here every
+  `classify` proved there is no grid in its first solve, so the limit meant
+  the same thing on all three; on a condition that has a grid it would not.
+
+| Case | Engine | Seeds | Found | Proven impossible | Timed out | Solves timed | Median ms | Mean ms | 90th ms | Max ms | Cuts | Conflicts |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 6x6 | cpsat | 100 | 100 | 0 | 0 | 100 | 149.4 | 151.9 | 163.2 | 200.1 | - | - |
+| 7x7 | cpsat | 100 | 100 | 0 | 0 | 100 | 277.6 | 290.6 | 335.5 | 455.0 | - | - |
+| 8x8 | cpsat | 100 | 100 | 0 | 0 | 100 | 461.2 | 470.4 | 514.9 | 589.8 | - | - |
+| 10x10 | cpsat | 100 | 100 | 0 | 0 | 100 | 1298.1 | 1324.7 | 1486.2 | 1745.9 | - | - |
+| 7x7 example, grid | cpsat | 100 | 0 | 100 | 0 | 100 | 1224.2 | 1822.3 | 3473.6 | 10097.8 | - | - |
+| 7x7 example, classify | cpsat | 100 | 0 | 100 | 0 | 100 | 408.8 | 409.7 | 418.1 | 432.7 | - | - |
+| 6x6 | pysat-lazy | 100 | 100 | 0 | 0 | 100 | 23.9 | 25.3 | 37.2 | 52.2 | 43 | 0 |
+| 7x7 | pysat-lazy | 100 | 100 | 0 | 0 | 100 | 48.5 | 60.0 | 110.4 | 162.3 | 39 | 0 |
+| 8x8 | pysat-lazy | 100 | 100 | 0 | 0 | 100 | 55.2 | 63.4 | 85.9 | 137.3 | 86 | 0 |
+| 10x10 | pysat-lazy | 100 | 100 | 0 | 0 | 100 | 116.4 | 134.2 | 186.0 | 311.2 | 86 | 0 |
+| 7x7 example, grid | pysat-lazy | 100 | 0 | 100 | 0 | 100 | 38.9 | 40.8 | 52.7 | 61.9 | 0 | 0 |
+| 7x7 example, classify | pysat-lazy | 100 | 0 | 100 | 0 | 100 | 42.3 | 44.2 | 56.3 | 63.6 | 0 | 0 |
+| 6x6 | pysat-propagator | 100 | 100 | 0 | 0 | 100 | 45.9 | 46.2 | 66.9 | 122.9 | 3 | 678 |
+| 7x7 | pysat-propagator | 100 | 100 | 0 | 0 | 100 | 123.4 | 157.2 | 249.2 | 408.0 | 0 | 1603 |
+| 8x8 | pysat-propagator | 100 | 100 | 0 | 0 | 100 | 119.4 | 127.9 | 158.0 | 310.2 | 0 | 627 |
+| 10x10 | pysat-propagator | 100 | 100 | 0 | 0 | 100 | 229.7 | 270.4 | 441.1 | 728.0 | 1 | 616 |
+| 7x7 example, grid | pysat-propagator | 100 | 0 | 100 | 0 | 100 | 49.8 | 52.0 | 63.3 | 76.6 | 0 | 0 |
+| 7x7 example, classify | pysat-propagator | 100 | 0 | 100 | 0 | 100 | 52.8 | 54.7 | 67.5 | 77.6 | 0 | 0 |
+
+- **CP-SAT's proof of no grid depends on the seed and has a long tail:**
+  median 1.2 s, 90th percentile 3.5 s, worst 10.1 s for the grid call on the
+  example, where `classify` on the same conditions, which takes no seed,
+  stays at 0.41 s. The PySAT engines prove it in about 40 to 50 ms either
+  way.
+- **The lazy engine's cuts are rare:** 39 to 86 over 100 solves with no
+  condition, under one a solve. The propagator raises 6 to 16 conflicts a
+  solve and leaves almost no cut to add, and it is about half as fast as the
+  lazy engine: it is Python called on every edge the solver assigns.
+- **The lazy engine's lead is largest on the largest board:** 6.3 times at
+  6x6, 5.7 at 7x7, 8.4 at 8x8 and 11.2 at 10x10.
+
+The reading against the bar (spec #781: PySAT wins only if it is at least 2
+times faster than CP-SAT at 8x8 and 10x10). "Times faster" is CP-SAT's
+median over the engine's median, which is the worker's choice of statistic,
+not a ruling; the 90th percentiles give 6.0 and 8.0 times for the lazy engine
+and 3.3 and 3.4 for the propagator, so the choice does not change the
+reading.
+
+| Case | Engine | `cpsat` median ms | Engine median ms | Times faster than `cpsat` |
+| --- | --- | --- | --- | --- |
+| 6x6 | pysat-lazy | 149.4 | 23.9 | 6.26 |
+| 7x7 | pysat-lazy | 277.6 | 48.5 | 5.72 |
+| 8x8 | pysat-lazy | 461.2 | 55.2 | 8.35 |
+| 10x10 | pysat-lazy | 1298.1 | 116.4 | 11.15 |
+| 7x7 example, grid | pysat-lazy | 1224.2 | 38.9 | 31.46 |
+| 7x7 example, classify | pysat-lazy | 408.8 | 42.3 | 9.65 |
+| 6x6 | pysat-propagator | 149.4 | 45.9 | 3.26 |
+| 7x7 | pysat-propagator | 277.6 | 123.4 | 2.25 |
+| 8x8 | pysat-propagator | 461.2 | 119.4 | 3.86 |
+| 10x10 | pysat-propagator | 1298.1 | 229.7 | 5.65 |
+| 7x7 example, grid | pysat-propagator | 1224.2 | 49.8 | 24.57 |
+| 7x7 example, classify | pysat-propagator | 408.8 | 52.8 | 7.75 |
+
+**Verdict, for Chris to rule on:**
+
+- `pysat-lazy` is at least 2 times faster than `cpsat` at 8x8 and 10x10: yes
+- `pysat-propagator` is at least 2 times faster than `cpsat` at 8x8 and 10x10: yes
+
+By the bar, PySAT wins, and of the two the lazy engine is the faster at every
+case.
+
+**Ruled by Chris, 2026-10-11:** `pysat-lazy` is the default `--engine` of the
+hybrid finder and of its `classify` command. `cpsat` and `pysat-propagator`
+stay selectable, and the plain U-Bahn finder stays on CP-SAT. The timing
+above ran while `--engine` still defaulted to `cpsat`; every command line
+in this section names its engine, so none of them reads differently now.
+
+**Not measured:** a condition that has grids (every circle case timed here is
+the one infeasible example); `classify` on a condition with one grid or
+several, where the two limits differ; a piece-count condition; the blank
+strip; boards past 10x10; CP-SAT on more than one worker; a second run of
+the same seeds, so run-to-run spread is unknown; where each engine's time
+goes between build and solve.

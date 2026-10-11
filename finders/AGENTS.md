@@ -35,10 +35,39 @@ because the checker reads them and nothing under `docs/research/` does
   hunt protocol: `ubahn_finder.py` its docstring and flags, `model.py` the
   CP-SAT model, `network.py` the solver-free rules `verify` reads;
   `sat_model.py` is a prototype second uniqueness check on PySAT (#776), which
-  the finder does not call. `measure_baseline.py` times a hunt's proposal
+  the plain finder does not call. `measure_baseline.py` times a hunt's proposal
   step per seed and cause (#777; by hand, outside both gates). Conditions
   arrive one at a time as finder rules. Preflight answers and measurements:
   `docs/research/2026-10-10-u-bahn-finder-decision-log.md`.
+  `hybrid.py` is the solver-free rule reader of the hybrid with Choco-Banana
+  (spec #781): values, regions, circles, a terminal drawing. `brute.py R C`
+  counts a tiny board's valid hybrid grids and classifies circle conditions;
+  the 4x4 answers every engine must match are in the decision log, § Hybrid.
+  `hybrid_finder.py` is the hybrid finder on the hunt protocol (#783): the
+  conditions `--circles "r6:turn r2c3"`, `--exactly N:PIECE:rK` and
+  `--blank-strip` in, valid grids out, one per seed, each re-read by
+  `hybrid.py` in `verify`; `hybrid_finder.py classify` takes the same
+  conditions and answers `infeasible`, `unique`, `not_unique` or `timeout`;
+  `--help` prints the usage text. `--engine` picks the solver: `cpsat`
+  (`hybrid_model.py`, the plain model plus the hybrid's rules), or
+  `pysat-lazy`, the default by Chris's ruling of 2026-10-11, and
+  `pysat-propagator` (`hybrid_sat.py`, #784 and #785: the
+  rules as clauses over `sat_model.py`'s, with connectivity kept by cuts on
+  full grids or by a propagator during the search).
+  `hybrid_sat.listing` returns up to a cap of grids with its cut and conflict
+  counts.
+  `hybrid_finder.py render DIR` draws each example of a hunt as a picture,
+  `DIR/renders/<seed>.png` (`hybrid_render.py`, #791): the board with its
+  outside numbers and network, chocolate in one colour and a tint per banana,
+  a ring on every valid circle and a heavier one in a second colour on a
+  circle that is a condition; `--seed N --png FILE` draws one example and
+  `--blank-strip` the fifth strip.
+  `time_engines.py run --engine E --progress FILE` times one engine on
+  Chris's six cases and `time_engines.py report FILE...` prints the table and
+  the reading against the 2-times bar (#786; by hand, outside both gates). The
+  run of record and its progress files:
+  `docs/research/2026-10-10-u-bahn-optimization-queue.md`, § The three hybrid
+  engines, timed.
   `ubahn_finder.py links DIR [--blank-number]` writes a Penpa+ link per example
   to `DIR/links/<seed>.txt` (`penpa.py`, #774; wire format
   `docs/research/2026-10-10-u-bahn-penpa-link.md`). The three published links

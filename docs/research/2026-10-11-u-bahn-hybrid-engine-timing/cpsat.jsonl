@@ -1,0 +1,606 @@
+{"asked": {"engine": "cpsat", "case": "6x6", "call": "grid", "asked": 100, "timeout": 60.0}}
+{"asked": {"engine": "cpsat", "case": "7x7", "call": "grid", "asked": 100, "timeout": 60.0}}
+{"asked": {"engine": "cpsat", "case": "8x8", "call": "grid", "asked": 100, "timeout": 60.0}}
+{"asked": {"engine": "cpsat", "case": "10x10", "call": "grid", "asked": 100, "timeout": 60.0}}
+{"asked": {"engine": "cpsat", "case": "7x7 example, grid", "call": "grid", "asked": 100, "timeout": 60.0}}
+{"asked": {"engine": "cpsat", "case": "7x7 example, classify", "call": "classify", "asked": 100, "timeout": 60.0}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 0, "status": "found", "seconds": 0.15210736100561917, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 1, "status": "found", "seconds": 0.14796170000045095, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 2, "status": "found", "seconds": 0.15336704401124734, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 3, "status": "found", "seconds": 0.14615829799731728, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 4, "status": "found", "seconds": 0.14777283200237434, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 5, "status": "found", "seconds": 0.14747816399903968, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 6, "status": "found", "seconds": 0.14094208100868855, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 7, "status": "found", "seconds": 0.15341743899625726, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 8, "status": "found", "seconds": 0.14792140299687162, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 9, "status": "found", "seconds": 0.14760910198674537, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 10, "status": "found", "seconds": 0.14555082899460103, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 11, "status": "found", "seconds": 0.14165835600579157, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 12, "status": "found", "seconds": 0.14451609199750237, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 13, "status": "found", "seconds": 0.14503443200374022, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 14, "status": "found", "seconds": 0.15105147400754504, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 15, "status": "found", "seconds": 0.14143669699842576, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 16, "status": "found", "seconds": 0.1404689469927689, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 17, "status": "found", "seconds": 0.15746518500964157, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 18, "status": "found", "seconds": 0.16317165100190323, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 19, "status": "found", "seconds": 0.14200716599589214, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 20, "status": "found", "seconds": 0.157226865994744, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 21, "status": "found", "seconds": 0.14655001899518538, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 22, "status": "found", "seconds": 0.15602798799227457, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 23, "status": "found", "seconds": 0.1469265310006449, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 24, "status": "found", "seconds": 0.15165884299494792, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 25, "status": "found", "seconds": 0.1419091300049331, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 26, "status": "found", "seconds": 0.1413525769894477, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 27, "status": "found", "seconds": 0.14733800999238156, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 28, "status": "found", "seconds": 0.1456540240033064, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 29, "status": "found", "seconds": 0.14571496000280604, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 30, "status": "found", "seconds": 0.1488200930034509, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 31, "status": "found", "seconds": 0.14661630400223657, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 32, "status": "found", "seconds": 0.14598669299448375, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 33, "status": "found", "seconds": 0.14631324099900667, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 34, "status": "found", "seconds": 0.18413750900072046, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 35, "status": "found", "seconds": 0.14504836799460463, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 36, "status": "found", "seconds": 0.15612674300791696, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 37, "status": "found", "seconds": 0.14858458800881635, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 38, "status": "found", "seconds": 0.14597956999205053, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 39, "status": "found", "seconds": 0.14353272200969514, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 40, "status": "found", "seconds": 0.1513749059959082, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 41, "status": "found", "seconds": 0.14873191599326674, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 42, "status": "found", "seconds": 0.14726050299941562, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 43, "status": "found", "seconds": 0.15037781999853905, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 44, "status": "found", "seconds": 0.18628821600577794, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 45, "status": "found", "seconds": 0.14092258400341962, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 46, "status": "found", "seconds": 0.1753455580037553, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 47, "status": "found", "seconds": 0.14829333699890412, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 48, "status": "found", "seconds": 0.14034678500320297, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 49, "status": "found", "seconds": 0.2000924479943933, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 50, "status": "found", "seconds": 0.15320717199938372, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 51, "status": "found", "seconds": 0.19154174299910665, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 52, "status": "found", "seconds": 0.14369195299514104, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 53, "status": "found", "seconds": 0.15601217799121514, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 54, "status": "found", "seconds": 0.1561108640016755, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 55, "status": "found", "seconds": 0.15668479999294505, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 56, "status": "found", "seconds": 0.14548930300225038, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 57, "status": "found", "seconds": 0.14331482999841683, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 58, "status": "found", "seconds": 0.14923411600466352, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 59, "status": "found", "seconds": 0.16092693200334907, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 60, "status": "found", "seconds": 0.14329055401321966, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 61, "status": "found", "seconds": 0.15439163100381847, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 62, "status": "found", "seconds": 0.15273036999860778, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 63, "status": "found", "seconds": 0.14877356500073802, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 64, "status": "found", "seconds": 0.15072272199904546, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 65, "status": "found", "seconds": 0.15092182799708098, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 66, "status": "found", "seconds": 0.15294691899907775, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 67, "status": "found", "seconds": 0.14926782899419777, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 68, "status": "found", "seconds": 0.1559244009986287, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 69, "status": "found", "seconds": 0.15235101200232748, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 70, "status": "found", "seconds": 0.14594363200012594, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 71, "status": "found", "seconds": 0.15175712799828034, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 72, "status": "found", "seconds": 0.15084333998674992, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 73, "status": "found", "seconds": 0.16682177399343345, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 74, "status": "found", "seconds": 0.14250900498882402, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 75, "status": "found", "seconds": 0.16510522700264119, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 76, "status": "found", "seconds": 0.1518424399982905, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 77, "status": "found", "seconds": 0.1506833769963123, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 78, "status": "found", "seconds": 0.15592114398896229, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 79, "status": "found", "seconds": 0.14915475599991623, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 80, "status": "found", "seconds": 0.14465995400678366, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 81, "status": "found", "seconds": 0.15389999200124294, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 82, "status": "found", "seconds": 0.14348793700628448, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 83, "status": "found", "seconds": 0.1630242709943559, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 84, "status": "found", "seconds": 0.15923752800154034, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 85, "status": "found", "seconds": 0.14592049800558016, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 86, "status": "found", "seconds": 0.15118436599732377, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 87, "status": "found", "seconds": 0.14555640899925493, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 88, "status": "found", "seconds": 0.15123577299527824, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 89, "status": "found", "seconds": 0.15238972500083037, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 90, "status": "found", "seconds": 0.14701236398832407, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 91, "status": "found", "seconds": 0.15780577900295611, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 92, "status": "found", "seconds": 0.1636347250023391, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 93, "status": "found", "seconds": 0.1434624889952829, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 94, "status": "found", "seconds": 0.15949763999378774, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 95, "status": "found", "seconds": 0.153783221001504, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 96, "status": "found", "seconds": 0.15040899800078478, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 97, "status": "found", "seconds": 0.1495948480005609, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 98, "status": "found", "seconds": 0.16860589999123476, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "6x6", "seed": 99, "status": "found", "seconds": 0.1524512009928003, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 0, "status": "found", "seconds": 0.29504692000045907, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 1, "status": "found", "seconds": 0.26940844299679156, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 2, "status": "found", "seconds": 0.27108991298882756, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 3, "status": "found", "seconds": 0.2797618379991036, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 4, "status": "found", "seconds": 0.2810441939946031, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 5, "status": "found", "seconds": 0.2980078010004945, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 6, "status": "found", "seconds": 0.29223328799707815, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 7, "status": "found", "seconds": 0.35330792600871064, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 8, "status": "found", "seconds": 0.26688491099048406, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 9, "status": "found", "seconds": 0.29175980400759727, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 10, "status": "found", "seconds": 0.2714430630003335, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 11, "status": "found", "seconds": 0.2731649500055937, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 12, "status": "found", "seconds": 0.29174206900643185, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 13, "status": "found", "seconds": 0.3080974459880963, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 14, "status": "found", "seconds": 0.26484345899370965, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 15, "status": "found", "seconds": 0.3246750849939417, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 16, "status": "found", "seconds": 0.27318866399582475, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 17, "status": "found", "seconds": 0.2725040389923379, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 18, "status": "found", "seconds": 0.32937751999998, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 19, "status": "found", "seconds": 0.2773280740075279, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 20, "status": "found", "seconds": 0.258784588004346, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 21, "status": "found", "seconds": 0.2924166949960636, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 22, "status": "found", "seconds": 0.2980326989927562, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 23, "status": "found", "seconds": 0.38774504499451723, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 24, "status": "found", "seconds": 0.2887429569964297, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 25, "status": "found", "seconds": 0.276057862007292, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 26, "status": "found", "seconds": 0.27026227899477817, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 27, "status": "found", "seconds": 0.30204271399998106, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 28, "status": "found", "seconds": 0.28034072199079674, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 29, "status": "found", "seconds": 0.26185467599134427, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 30, "status": "found", "seconds": 0.29992138099623844, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 31, "status": "found", "seconds": 0.2939651140040951, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 32, "status": "found", "seconds": 0.27700072499283124, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 33, "status": "found", "seconds": 0.28479221399175003, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 34, "status": "found", "seconds": 0.279068827003357, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 35, "status": "found", "seconds": 0.3407855890109204, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 36, "status": "found", "seconds": 0.3228820530057419, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 37, "status": "found", "seconds": 0.27791419401182793, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 38, "status": "found", "seconds": 0.2691462479997426, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 39, "status": "found", "seconds": 0.25900400400860235, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 40, "status": "found", "seconds": 0.26294210299965926, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 41, "status": "found", "seconds": 0.2744217769941315, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 42, "status": "found", "seconds": 0.2758717499964405, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 43, "status": "found", "seconds": 0.29544473299756646, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 44, "status": "found", "seconds": 0.27730327800964005, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 45, "status": "found", "seconds": 0.26700663099472877, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 46, "status": "found", "seconds": 0.37547039598575793, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 47, "status": "found", "seconds": 0.2892485539923655, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 48, "status": "found", "seconds": 0.3220541670016246, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 49, "status": "found", "seconds": 0.2762325619987678, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 50, "status": "found", "seconds": 0.45009181900240947, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 51, "status": "found", "seconds": 0.2725805340014631, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 52, "status": "found", "seconds": 0.40574477400514297, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 53, "status": "found", "seconds": 0.29324559299857356, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 54, "status": "found", "seconds": 0.2688733419927303, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 55, "status": "found", "seconds": 0.27218119900499005, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 56, "status": "found", "seconds": 0.3354903230065247, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 57, "status": "found", "seconds": 0.302666824994958, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 58, "status": "found", "seconds": 0.2738062029966386, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 59, "status": "found", "seconds": 0.27683607500512153, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 60, "status": "found", "seconds": 0.2641117460007081, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 61, "status": "found", "seconds": 0.2532131399930222, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 62, "status": "found", "seconds": 0.26113750800141133, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 63, "status": "found", "seconds": 0.28352279200043995, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 64, "status": "found", "seconds": 0.2692071030032821, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 65, "status": "found", "seconds": 0.3347628970077494, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 66, "status": "found", "seconds": 0.25723989598918706, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 67, "status": "found", "seconds": 0.3226226230035536, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 68, "status": "found", "seconds": 0.27129213699663524, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 69, "status": "found", "seconds": 0.2811483310069889, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 70, "status": "found", "seconds": 0.28579333699599374, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 71, "status": "found", "seconds": 0.2629384470055811, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 72, "status": "found", "seconds": 0.272207547997823, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 73, "status": "found", "seconds": 0.3397593080007937, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 74, "status": "found", "seconds": 0.2492599630058976, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 75, "status": "found", "seconds": 0.271941176004475, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 76, "status": "found", "seconds": 0.30145341000752524, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 77, "status": "found", "seconds": 0.2531534370064037, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 78, "status": "found", "seconds": 0.2601702899992233, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 79, "status": "found", "seconds": 0.34016098400752526, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 80, "status": "found", "seconds": 0.2808899020019453, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 81, "status": "found", "seconds": 0.26805562600202393, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 82, "status": "found", "seconds": 0.2620705149893183, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 83, "status": "found", "seconds": 0.28865875701012556, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 84, "status": "found", "seconds": 0.2658413470053347, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 85, "status": "found", "seconds": 0.29477186099393293, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 86, "status": "found", "seconds": 0.26659465199918486, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 87, "status": "found", "seconds": 0.2563378000049852, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 88, "status": "found", "seconds": 0.2765166600001976, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 89, "status": "found", "seconds": 0.2627362929924857, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 90, "status": "found", "seconds": 0.3035638419969473, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 91, "status": "found", "seconds": 0.2633831170096528, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 92, "status": "found", "seconds": 0.3261372570123058, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 93, "status": "found", "seconds": 0.27452089500729926, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 94, "status": "found", "seconds": 0.3032274159922963, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 95, "status": "found", "seconds": 0.455040659988299, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 96, "status": "found", "seconds": 0.29171575099462643, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 97, "status": "found", "seconds": 0.26855983899440616, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 98, "status": "found", "seconds": 0.28146438900148496, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7", "seed": 99, "status": "found", "seconds": 0.26046358500025235, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 0, "status": "found", "seconds": 0.4715951539983507, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 1, "status": "found", "seconds": 0.45983130199601874, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 2, "status": "found", "seconds": 0.46938255900749937, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 3, "status": "found", "seconds": 0.5008761509961914, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 4, "status": "found", "seconds": 0.48015896399738267, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 5, "status": "found", "seconds": 0.46462556000915356, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 6, "status": "found", "seconds": 0.4466104640014237, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 7, "status": "found", "seconds": 0.47272503199928906, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 8, "status": "found", "seconds": 0.48145065500284545, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 9, "status": "found", "seconds": 0.4448964710027212, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 10, "status": "found", "seconds": 0.44747261398879346, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 11, "status": "found", "seconds": 0.4580534199922113, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 12, "status": "found", "seconds": 0.45020237799326424, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 13, "status": "found", "seconds": 0.5897833250055555, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 14, "status": "found", "seconds": 0.4856490579986712, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 15, "status": "found", "seconds": 0.45745511700806674, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 16, "status": "found", "seconds": 0.4492747829935979, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 17, "status": "found", "seconds": 0.45496215199818835, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 18, "status": "found", "seconds": 0.49380331199790817, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 19, "status": "found", "seconds": 0.45681761199375615, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 20, "status": "found", "seconds": 0.4534056279953802, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 21, "status": "found", "seconds": 0.44783874800486956, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 22, "status": "found", "seconds": 0.47180567200121004, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 23, "status": "found", "seconds": 0.4429949659970589, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 24, "status": "found", "seconds": 0.4438670139934402, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 25, "status": "found", "seconds": 0.5655289870046545, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 26, "status": "found", "seconds": 0.47180788600235246, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 27, "status": "found", "seconds": 0.45054923598945606, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 28, "status": "found", "seconds": 0.45815472200047225, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 29, "status": "found", "seconds": 0.4789405999908922, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 30, "status": "found", "seconds": 0.45987612899625674, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 31, "status": "found", "seconds": 0.47080199599440675, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 32, "status": "found", "seconds": 0.45228963800764177, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 33, "status": "found", "seconds": 0.4652740590099711, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 34, "status": "found", "seconds": 0.463851638007327, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 35, "status": "found", "seconds": 0.5149486719892593, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 36, "status": "found", "seconds": 0.4633742050064029, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 37, "status": "found", "seconds": 0.4727375359943835, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 38, "status": "found", "seconds": 0.5376570469961734, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 39, "status": "found", "seconds": 0.5110073260002537, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 40, "status": "found", "seconds": 0.4430661910009803, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 41, "status": "found", "seconds": 0.47194116198807023, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 42, "status": "found", "seconds": 0.44743882201146334, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 43, "status": "found", "seconds": 0.5085619120072806, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 44, "status": "found", "seconds": 0.44418535800650716, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 45, "status": "found", "seconds": 0.4664386210060911, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 46, "status": "found", "seconds": 0.4601988189970143, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 47, "status": "found", "seconds": 0.44785219499317463, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 48, "status": "found", "seconds": 0.43704578299366403, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 49, "status": "found", "seconds": 0.4582618449931033, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 50, "status": "found", "seconds": 0.456357091999962, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 51, "status": "found", "seconds": 0.47925788900465705, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 52, "status": "found", "seconds": 0.4900913930032402, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 53, "status": "found", "seconds": 0.48012882699549664, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 54, "status": "found", "seconds": 0.4472782980010379, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 55, "status": "found", "seconds": 0.5407329550071154, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 56, "status": "found", "seconds": 0.45750682600191794, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 57, "status": "found", "seconds": 0.5097206419886788, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 58, "status": "found", "seconds": 0.4743997309997212, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 59, "status": "found", "seconds": 0.45508488499035593, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 60, "status": "found", "seconds": 0.4627526289987145, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 61, "status": "found", "seconds": 0.446047642006306, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 62, "status": "found", "seconds": 0.4538241400005063, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 63, "status": "found", "seconds": 0.49380564900639, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 64, "status": "found", "seconds": 0.4521069129987154, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 65, "status": "found", "seconds": 0.4486947380064521, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 66, "status": "found", "seconds": 0.4469706770032644, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 67, "status": "found", "seconds": 0.4414664759970037, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 68, "status": "found", "seconds": 0.45888154799467884, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 69, "status": "found", "seconds": 0.4405682469950989, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 70, "status": "found", "seconds": 0.46801388201129157, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 71, "status": "found", "seconds": 0.5441733030020259, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 72, "status": "found", "seconds": 0.4569184749998385, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 73, "status": "found", "seconds": 0.544760884004063, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 74, "status": "found", "seconds": 0.4670734629908111, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 75, "status": "found", "seconds": 0.4537967979995301, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 76, "status": "found", "seconds": 0.4829202679975424, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 77, "status": "found", "seconds": 0.4705622619949281, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 78, "status": "found", "seconds": 0.5408843100012746, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 79, "status": "found", "seconds": 0.4684299789951183, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 80, "status": "found", "seconds": 0.46659747199737467, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 81, "status": "found", "seconds": 0.4784677949937759, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 82, "status": "found", "seconds": 0.4626882370066596, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 83, "status": "found", "seconds": 0.5158070449979277, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 84, "status": "found", "seconds": 0.4523280400026124, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 85, "status": "found", "seconds": 0.4528223649977008, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 86, "status": "found", "seconds": 0.45749419200001284, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 87, "status": "found", "seconds": 0.43301389599218965, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 88, "status": "found", "seconds": 0.44224129999929573, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 89, "status": "found", "seconds": 0.4602855429984629, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 90, "status": "found", "seconds": 0.46802406100323424, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 91, "status": "found", "seconds": 0.47292076199664734, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 92, "status": "found", "seconds": 0.44466932299837936, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 93, "status": "found", "seconds": 0.4510997470060829, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 94, "status": "found", "seconds": 0.5159904820029624, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 95, "status": "found", "seconds": 0.4487710550019983, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 96, "status": "found", "seconds": 0.4620592200080864, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 97, "status": "found", "seconds": 0.4544805649929913, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 98, "status": "found", "seconds": 0.4952251570066437, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "8x8", "seed": 99, "status": "found", "seconds": 0.45297048801148776, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 0, "status": "found", "seconds": 1.3202182749955682, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 1, "status": "found", "seconds": 1.266445389992441, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 2, "status": "found", "seconds": 1.2879715480084997, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 3, "status": "found", "seconds": 1.3152526120102266, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 4, "status": "found", "seconds": 1.252943735991721, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 5, "status": "found", "seconds": 1.3120269149949308, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 6, "status": "found", "seconds": 1.2642524779948872, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 7, "status": "found", "seconds": 1.2069666760071414, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 8, "status": "found", "seconds": 1.2235240350128151, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 9, "status": "found", "seconds": 1.3016621800052235, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 10, "status": "found", "seconds": 1.2954095589957433, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 11, "status": "found", "seconds": 1.2517500219983049, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 12, "status": "found", "seconds": 1.2084856550063705, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 13, "status": "found", "seconds": 1.2212165660021128, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 14, "status": "found", "seconds": 1.2149266079941299, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 15, "status": "found", "seconds": 1.2899507910042303, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 16, "status": "found", "seconds": 1.4861662470066221, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 17, "status": "found", "seconds": 1.2140786439995281, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 18, "status": "found", "seconds": 1.2397693290113239, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 19, "status": "found", "seconds": 1.262202152996906, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 20, "status": "found", "seconds": 1.234173753997311, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 21, "status": "found", "seconds": 1.2642802040063543, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 22, "status": "found", "seconds": 1.223217239996302, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 23, "status": "found", "seconds": 1.3420270359929418, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 24, "status": "found", "seconds": 1.3153430620004656, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 25, "status": "found", "seconds": 1.424431541992817, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 26, "status": "found", "seconds": 1.4880293710011756, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 27, "status": "found", "seconds": 1.3181059680064209, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 28, "status": "found", "seconds": 1.2957865509961266, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 29, "status": "found", "seconds": 1.2342887760023586, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 30, "status": "found", "seconds": 1.2819746669993037, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 31, "status": "found", "seconds": 1.314355949012679, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 32, "status": "found", "seconds": 1.3886019010096788, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 33, "status": "found", "seconds": 1.2619754760089563, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 34, "status": "found", "seconds": 1.3163426670071203, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 35, "status": "found", "seconds": 1.2933772559917998, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 36, "status": "found", "seconds": 1.3157209320052061, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 37, "status": "found", "seconds": 1.2723571960086701, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 38, "status": "found", "seconds": 1.358787695004139, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 39, "status": "found", "seconds": 1.3037591339962091, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 40, "status": "found", "seconds": 1.265371100991615, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 41, "status": "found", "seconds": 1.6505514519958524, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 42, "status": "found", "seconds": 1.2705852009967202, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 43, "status": "found", "seconds": 1.284039339996525, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 44, "status": "found", "seconds": 1.2720457030081889, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 45, "status": "found", "seconds": 1.304630601007375, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 46, "status": "found", "seconds": 1.3243800769996597, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 47, "status": "found", "seconds": 1.479551996992086, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 48, "status": "found", "seconds": 1.5767727829952491, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 49, "status": "found", "seconds": 1.2813304290029919, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 50, "status": "found", "seconds": 1.266223942002398, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 51, "status": "found", "seconds": 1.498672148998594, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 52, "status": "found", "seconds": 1.3982813010079553, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 53, "status": "found", "seconds": 1.321660878995317, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 54, "status": "found", "seconds": 1.3297541369975079, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 55, "status": "found", "seconds": 1.3110771180072334, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 56, "status": "found", "seconds": 1.2839449449966196, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 57, "status": "found", "seconds": 1.3353052480088081, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 58, "status": "found", "seconds": 1.7458592210023198, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 59, "status": "found", "seconds": 1.3291815670090728, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 60, "status": "found", "seconds": 1.3308817130018724, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 61, "status": "found", "seconds": 1.694742142004543, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 62, "status": "found", "seconds": 1.3670344590063905, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 63, "status": "found", "seconds": 1.3380549919966143, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 64, "status": "found", "seconds": 1.2884556670032907, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 65, "status": "found", "seconds": 1.3372261059994344, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 66, "status": "found", "seconds": 1.2825188230053755, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 67, "status": "found", "seconds": 1.2337346239946783, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 68, "status": "found", "seconds": 1.2378079799964326, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 69, "status": "found", "seconds": 1.2909828029951314, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 70, "status": "found", "seconds": 1.285894525994081, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 71, "status": "found", "seconds": 1.2786709630017867, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 72, "status": "found", "seconds": 1.6163948780013015, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 73, "status": "found", "seconds": 1.5846529459959129, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 74, "status": "found", "seconds": 1.3004219350114, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 75, "status": "found", "seconds": 1.291986590003944, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 76, "status": "found", "seconds": 1.2839406170096481, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 77, "status": "found", "seconds": 1.244423893003841, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 78, "status": "found", "seconds": 1.2885641479952028, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 79, "status": "found", "seconds": 1.226283861004049, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 80, "status": "found", "seconds": 1.2831143889925443, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 81, "status": "found", "seconds": 1.2976542230026098, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 82, "status": "found", "seconds": 1.2890050309943035, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 83, "status": "found", "seconds": 1.2499490449990844, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 84, "status": "found", "seconds": 1.2974694029981038, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 85, "status": "found", "seconds": 1.2818323130049976, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 86, "status": "found", "seconds": 1.3043941009964328, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 87, "status": "found", "seconds": 1.341046521003591, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 88, "status": "found", "seconds": 1.3087162470037583, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 89, "status": "found", "seconds": 1.3006727329920977, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 90, "status": "found", "seconds": 1.33172523000394, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 91, "status": "found", "seconds": 1.3399557379889302, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 92, "status": "found", "seconds": 1.281108442999539, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 93, "status": "found", "seconds": 1.3361823500017636, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 94, "status": "found", "seconds": 1.3249757629964733, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 95, "status": "found", "seconds": 1.615046071994584, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 96, "status": "found", "seconds": 1.298448425004608, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 97, "status": "found", "seconds": 1.303255407998222, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 98, "status": "found", "seconds": 1.372407814997132, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "10x10", "seed": 99, "status": "found", "seconds": 1.2996212839934742, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 0, "status": "infeasible", "seconds": 5.296341250999831, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 1, "status": "infeasible", "seconds": 0.6067523439996876, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 2, "status": "infeasible", "seconds": 1.0933431949961232, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 3, "status": "infeasible", "seconds": 7.682998010001029, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 4, "status": "infeasible", "seconds": 1.2617195990023902, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 5, "status": "infeasible", "seconds": 1.043538443002035, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 6, "status": "infeasible", "seconds": 1.382783698005369, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 7, "status": "infeasible", "seconds": 0.9667627859889762, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 8, "status": "infeasible", "seconds": 0.9589881489955587, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 9, "status": "infeasible", "seconds": 1.635248129008687, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 10, "status": "infeasible", "seconds": 2.611792035997496, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 11, "status": "infeasible", "seconds": 0.8278208279953105, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 12, "status": "infeasible", "seconds": 0.6983360989979701, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 13, "status": "infeasible", "seconds": 1.8998883470048895, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 14, "status": "infeasible", "seconds": 1.6828377799974987, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 15, "status": "infeasible", "seconds": 1.532073129012133, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 16, "status": "infeasible", "seconds": 1.5157196260115597, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 17, "status": "infeasible", "seconds": 0.8156799040007172, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 18, "status": "infeasible", "seconds": 6.233880314990529, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 19, "status": "infeasible", "seconds": 0.6816253889992367, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 20, "status": "infeasible", "seconds": 1.6467207819951, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 21, "status": "infeasible", "seconds": 1.358629597001709, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 22, "status": "infeasible", "seconds": 1.6871206899959361, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 23, "status": "infeasible", "seconds": 10.097781768010464, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 24, "status": "infeasible", "seconds": 0.7294824149867054, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 25, "status": "infeasible", "seconds": 1.4957809970073868, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 26, "status": "infeasible", "seconds": 0.940852158004418, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 27, "status": "infeasible", "seconds": 1.200051538005937, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 28, "status": "infeasible", "seconds": 0.6557917699974496, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 29, "status": "infeasible", "seconds": 1.0984609939914662, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 30, "status": "infeasible", "seconds": 3.868366883994895, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 31, "status": "infeasible", "seconds": 0.97122176400444, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 32, "status": "infeasible", "seconds": 1.0563001849950524, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 33, "status": "infeasible", "seconds": 1.151454766993993, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 34, "status": "infeasible", "seconds": 1.0933619300049031, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 35, "status": "infeasible", "seconds": 1.1545573539915495, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 36, "status": "infeasible", "seconds": 1.1128395940031623, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 37, "status": "infeasible", "seconds": 2.7317696069949307, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 38, "status": "infeasible", "seconds": 2.1629315199970733, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 39, "status": "infeasible", "seconds": 0.7593405399966286, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 40, "status": "infeasible", "seconds": 1.1353448249865323, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 41, "status": "infeasible", "seconds": 5.1589026669971645, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 42, "status": "infeasible", "seconds": 1.0580283720046282, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 43, "status": "infeasible", "seconds": 1.5275928049959475, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 44, "status": "infeasible", "seconds": 8.249139327002922, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 45, "status": "infeasible", "seconds": 0.5647743989975424, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 46, "status": "infeasible", "seconds": 1.2453750609856797, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 47, "status": "infeasible", "seconds": 3.0753024620062206, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 48, "status": "infeasible", "seconds": 1.065301909999107, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 49, "status": "infeasible", "seconds": 1.2370426089910325, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 50, "status": "infeasible", "seconds": 0.7111801959981676, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 51, "status": "infeasible", "seconds": 1.0900932540098438, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 52, "status": "infeasible", "seconds": 6.963474067000789, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 53, "status": "infeasible", "seconds": 1.0552612169994973, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 54, "status": "infeasible", "seconds": 1.344963227995322, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 55, "status": "infeasible", "seconds": 0.8086899560003076, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 56, "status": "infeasible", "seconds": 0.6477880800084677, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 57, "status": "infeasible", "seconds": 0.6968284409958869, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 58, "status": "infeasible", "seconds": 1.1480566520040156, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 59, "status": "infeasible", "seconds": 0.8333833319920814, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 60, "status": "infeasible", "seconds": 2.025600434993976, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 61, "status": "infeasible", "seconds": 1.0817598160065245, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 62, "status": "infeasible", "seconds": 1.2513360159937292, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 63, "status": "infeasible", "seconds": 1.620763971004635, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 64, "status": "infeasible", "seconds": 0.9768946609983686, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 65, "status": "infeasible", "seconds": 3.100402133000898, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 66, "status": "infeasible", "seconds": 0.6814053830021294, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 67, "status": "infeasible", "seconds": 0.6631999259989243, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 68, "status": "infeasible", "seconds": 0.6284903500054497, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 69, "status": "infeasible", "seconds": 1.6798058389977086, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 70, "status": "infeasible", "seconds": 1.1359192910022102, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 71, "status": "infeasible", "seconds": 1.4026768629992148, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 72, "status": "infeasible", "seconds": 0.8533248730091145, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 73, "status": "infeasible", "seconds": 0.9264718670019647, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 74, "status": "infeasible", "seconds": 1.3081329260021448, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 75, "status": "infeasible", "seconds": 1.2114044449990615, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 76, "status": "infeasible", "seconds": 3.473619555006735, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 77, "status": "infeasible", "seconds": 0.896107309992658, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 78, "status": "infeasible", "seconds": 1.7382667839992791, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 79, "status": "infeasible", "seconds": 0.6382704049901804, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 80, "status": "infeasible", "seconds": 1.1708589180052513, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 81, "status": "infeasible", "seconds": 1.8636965370096732, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 82, "status": "infeasible", "seconds": 0.9449429530068301, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 83, "status": "infeasible", "seconds": 1.162094799001352, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 84, "status": "infeasible", "seconds": 1.5359518990007928, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 85, "status": "infeasible", "seconds": 1.8496487169904867, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 86, "status": "infeasible", "seconds": 1.9901074359950144, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 87, "status": "infeasible", "seconds": 0.9432180330040865, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 88, "status": "infeasible", "seconds": 1.9135797810013173, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 89, "status": "infeasible", "seconds": 1.9228528730018297, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 90, "status": "infeasible", "seconds": 1.590848855994409, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 91, "status": "infeasible", "seconds": 0.7487913810036844, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 92, "status": "infeasible", "seconds": 2.67920557501202, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 93, "status": "infeasible", "seconds": 0.9716591519973008, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 94, "status": "infeasible", "seconds": 2.347649112009094, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 95, "status": "infeasible", "seconds": 1.4386120160052087, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 96, "status": "infeasible", "seconds": 1.4044357919920003, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 97, "status": "infeasible", "seconds": 7.438839594004094, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 98, "status": "infeasible", "seconds": 1.8598932979948586, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, grid", "seed": 99, "status": "infeasible", "seconds": 2.142550664997543, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 0, "status": "infeasible", "seconds": 0.40593528500176035, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 1, "status": "infeasible", "seconds": 0.41584401798900217, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 2, "status": "infeasible", "seconds": 0.40230401601002086, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 3, "status": "infeasible", "seconds": 0.4087999939947622, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 4, "status": "infeasible", "seconds": 0.40064540899766143, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 5, "status": "infeasible", "seconds": 0.40366031099983957, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 6, "status": "infeasible", "seconds": 0.39811172599729616, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 7, "status": "infeasible", "seconds": 0.41286888500326313, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 8, "status": "infeasible", "seconds": 0.40839427399623673, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 9, "status": "infeasible", "seconds": 0.40295703799347393, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 10, "status": "infeasible", "seconds": 0.40602287799993064, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 11, "status": "infeasible", "seconds": 0.40823463299602736, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 12, "status": "infeasible", "seconds": 0.40165174899448175, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 13, "status": "infeasible", "seconds": 0.4116918820072897, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 14, "status": "infeasible", "seconds": 0.42945652500202414, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 15, "status": "infeasible", "seconds": 0.41647118300898, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 16, "status": "infeasible", "seconds": 0.4042603729903931, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 17, "status": "infeasible", "seconds": 0.39864493200730067, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 18, "status": "infeasible", "seconds": 0.40644173900363967, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 19, "status": "infeasible", "seconds": 0.4015742420015158, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 20, "status": "infeasible", "seconds": 0.41403428198827896, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 21, "status": "infeasible", "seconds": 0.3994585210020887, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 22, "status": "infeasible", "seconds": 0.4026197200000752, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 23, "status": "infeasible", "seconds": 0.40912436399958096, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 24, "status": "infeasible", "seconds": 0.40660137200029567, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 25, "status": "infeasible", "seconds": 0.40696377800486516, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 26, "status": "infeasible", "seconds": 0.4022304440004518, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 27, "status": "infeasible", "seconds": 0.4069215530034853, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 28, "status": "infeasible", "seconds": 0.4025728109991178, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 29, "status": "infeasible", "seconds": 0.4015229260112392, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 30, "status": "infeasible", "seconds": 0.40667459899850655, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 31, "status": "infeasible", "seconds": 0.3981008819973795, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 32, "status": "infeasible", "seconds": 0.3986294529895531, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 33, "status": "infeasible", "seconds": 0.4105210059933597, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 34, "status": "infeasible", "seconds": 0.400545135998982, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 35, "status": "infeasible", "seconds": 0.40102678700350225, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 36, "status": "infeasible", "seconds": 0.4088399660104187, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 37, "status": "infeasible", "seconds": 0.40883984600077383, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 38, "status": "infeasible", "seconds": 0.4141941440029768, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 39, "status": "infeasible", "seconds": 0.4114270980062429, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 40, "status": "infeasible", "seconds": 0.4289367809979012, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 41, "status": "infeasible", "seconds": 0.4219785289897118, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 42, "status": "infeasible", "seconds": 0.41082731599453837, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 43, "status": "infeasible", "seconds": 0.4100335340044694, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 44, "status": "infeasible", "seconds": 0.4067327100055991, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 45, "status": "infeasible", "seconds": 0.41215016799105797, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 46, "status": "infeasible", "seconds": 0.41659773999708705, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 47, "status": "infeasible", "seconds": 0.4062605060025817, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 48, "status": "infeasible", "seconds": 0.4107939209934557, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 49, "status": "infeasible", "seconds": 0.40607230900786817, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 50, "status": "infeasible", "seconds": 0.403447814998799, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 51, "status": "infeasible", "seconds": 0.4010268359998008, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 52, "status": "infeasible", "seconds": 0.40456442699360196, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 53, "status": "infeasible", "seconds": 0.41518180999264587, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 54, "status": "infeasible", "seconds": 0.43267300599836744, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 55, "status": "infeasible", "seconds": 0.4191887199995108, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 56, "status": "infeasible", "seconds": 0.40422423399286345, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 57, "status": "infeasible", "seconds": 0.4145899499999359, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 58, "status": "infeasible", "seconds": 0.41365615400718525, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 59, "status": "infeasible", "seconds": 0.42545165700721554, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 60, "status": "infeasible", "seconds": 0.40863923500000965, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 61, "status": "infeasible", "seconds": 0.4060837410070235, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 62, "status": "infeasible", "seconds": 0.4099856309912866, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 63, "status": "infeasible", "seconds": 0.4116234700049972, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 64, "status": "infeasible", "seconds": 0.4195284939924022, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 65, "status": "infeasible", "seconds": 0.4161701700068079, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 66, "status": "infeasible", "seconds": 0.417851973004872, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 67, "status": "infeasible", "seconds": 0.4195023560023401, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 68, "status": "infeasible", "seconds": 0.41648188199906144, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 69, "status": "infeasible", "seconds": 0.4121973489964148, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 70, "status": "infeasible", "seconds": 0.4105673559970455, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 71, "status": "infeasible", "seconds": 0.4143815189891029, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 72, "status": "infeasible", "seconds": 0.418113749998156, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 73, "status": "infeasible", "seconds": 0.4163378999946872, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 74, "status": "infeasible", "seconds": 0.416213604999939, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 75, "status": "infeasible", "seconds": 0.4200627949903719, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 76, "status": "infeasible", "seconds": 0.40827578099560924, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 77, "status": "infeasible", "seconds": 0.40969249000772834, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 78, "status": "infeasible", "seconds": 0.41429629900085274, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 79, "status": "infeasible", "seconds": 0.4108206649980275, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 80, "status": "infeasible", "seconds": 0.41667829400103074, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 81, "status": "infeasible", "seconds": 0.4047392509964993, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 82, "status": "infeasible", "seconds": 0.4048957979975967, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 83, "status": "infeasible", "seconds": 0.40500806900672615, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 84, "status": "infeasible", "seconds": 0.4039865480008302, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 85, "status": "infeasible", "seconds": 0.4114894990052562, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 86, "status": "infeasible", "seconds": 0.40716722200158983, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 87, "status": "infeasible", "seconds": 0.40458881499944255, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 88, "status": "infeasible", "seconds": 0.4007918429997517, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 89, "status": "infeasible", "seconds": 0.4065838079986861, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 90, "status": "infeasible", "seconds": 0.405244355002651, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 91, "status": "infeasible", "seconds": 0.4177884829987306, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 92, "status": "infeasible", "seconds": 0.4058314649882959, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 93, "status": "infeasible", "seconds": 0.41382261099352036, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 94, "status": "infeasible", "seconds": 0.40430864499649033, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 95, "status": "infeasible", "seconds": 0.40543776100093964, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 96, "status": "infeasible", "seconds": 0.41353128000628203, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 97, "status": "infeasible", "seconds": 0.4129084320011316, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 98, "status": "infeasible", "seconds": 0.41724713900475763, "cuts": null, "conflicts": null}}
+{"solve": {"engine": "cpsat", "case": "7x7 example, classify", "seed": 99, "status": "infeasible", "seconds": 0.41520201999810524, "cuts": null, "conflicts": null}}

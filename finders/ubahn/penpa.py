@@ -188,7 +188,7 @@ _MODE = {
 # The cross icon's four flags are [right, down, left, up] (§ 1.5). Per piece,
 # the icon beside a row of outside numbers and beside a column of them.
 # The turn's icon sits in the one cell the innermost row and column share.
-_ICONS = {
+ICONS = {
     "cross": ([1, 1, 1, 1], [1, 1, 1, 1]),
     "branch": ([1, 1, 1, 0], [1, 1, 0, 1]),
     "straight": ([1, 0, 1, 0], [0, 1, 0, 1]),
@@ -339,7 +339,7 @@ def payload(rows, cols, found, blank_number=False):
             number[t.cell(g - 1, MARGIN + j)] = [BLANK_ICON, 1, "1"]
             number[t.cell(MARGIN + j, g - 1)] = [BLANK_ICON, 1, "1"]
             continue
-        beside_rows, beside_cols = _ICONS[name]
+        beside_rows, beside_cols = ICONS[name]
         # The icon of the row of numbers at y sits in the last number column,
         # and the icon of the column at x in the last number row; the
         # innermost kind's two icons are the one cell where those meet.

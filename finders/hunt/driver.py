@@ -672,7 +672,7 @@ def _render_example(finder, out, seed, candidate, event):
     try:
         renders_dir = out / "renders"
         renders_dir.mkdir(exist_ok=True)
-        _save_render_atomic(render(candidate), renders_dir / f"{seed}.png")
+        save_render_atomic(render(candidate), renders_dir / f"{seed}.png")
     except Exception as e:
         event["render_error"] = f"{type(e).__name__}: {e}"
 
@@ -681,7 +681,7 @@ _RENDER_TMP_MARK = ".tmp-"
 _RENDER_TMP = re.compile(_SEED_STEM.pattern + re.escape(_RENDER_TMP_MARK) + r"\d+\.png")
 
 
-def _save_render_atomic(image, dest):
+def save_render_atomic(image, dest):
     """Save to a per-render temp file beside `dest`, then `Path.replace` it
     into place, so `dest` only ever exists complete (#537): a save that
     dies partway (a full disk) leaves the temp file, which is removed, and

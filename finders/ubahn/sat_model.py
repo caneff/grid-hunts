@@ -10,6 +10,9 @@ clause added in the first is still there in the second.
 
     docs/research/2026-10-10-u-bahn-optimization-queue.md,
     section "PySAT with lazy connectivity cuts"
+
+`hybrid_sat.py`, the hybrid's PySAT engines, builds on `network_rules`,
+`cut_clauses` and the solve helpers here.
 """
 
 import sys
@@ -46,25 +49,31 @@ class _Connectivity(Propagator):
     def check_model(self, model):
         true = {lit for lit in model if lit > 0}
         on = {e for e, var in self.edge.items() if var in true}
-        parts = _parts(on)
-        if len(parts) <= 1:
-            return True
-        for part in parts:
-            # A used cell of this part and one outside it are joined only
-            # if some edge leaves the part.
-            inside = min(part)
-            outside = min(
-                cell for other in parts if other is not part for cell in other
-            )
-            leaving = [
-                var for (a, b), var in self.edge.items() if (a in part) != (b in part)
-            ]
-            self.pending.append([self.blank[inside], self.blank[outside], *leaving])
-        self.cuts += len(parts)
-        return False
+        cuts = cut_clauses(self.edge, self.blank, on)
+        self.pending += cuts
+        self.cuts += len(cuts)
+        return not cuts
 
     def add_clause(self):
         return self.pending.pop() if self.pending else []
+
+
+def cut_clauses(edge, blank, on):
+    """The connectivity cuts for a set of edges: one clause per connected
+    part when it is in several, none when it is in one. `edge` holds each
+    edge's variable and `blank` each cell's blank variable."""
+    parts = _parts(on)
+    if len(parts) <= 1:
+        return []
+    cuts = []
+    for part in parts:
+        # A used cell of this part and one outside it are joined only if some
+        # edge leaves the part.
+        inside = min(part)
+        outside = min(cell for other in parts if other is not part for cell in other)
+        leaving = [var for (a, b), var in edge.items() if (a in part) != (b in part)]
+        cuts.append([blank[inside], blank[outside], *leaving])
+    return cuts
 
 
 def _parts(on):
@@ -114,7 +123,7 @@ def _piece_clauses(edge, kind, cells):
     return clauses
 
 
-def _solve(solver, deadline):
+def solve(solver, deadline):
     """True, False, or None when the clock ran out first."""
     while time.monotonic() < deadline:
         solver.conf_budget(CONFLICTS_PER_SLICE)
@@ -122,6 +131,21 @@ def _solve(solver, deadline):
         if answer is not None:
             return answer
     return None
+
+
+def network_rules(rows, cols):
+    """Every rule of a network but connectivity, whatever its outside
+    numbers. Returns `(pool, edge, kind, clauses)`: the variable pool, the
+    edge variables keyed by edge, the `kind[cell, k]` variables and the
+    clauses."""
+    pool = IDPool()
+    cells = [(r, c) for r in range(rows) for c in range(cols)]
+    edge = {e: pool.id(e) for e in all_edges(rows, cols)}
+    kind = {(cell, k): pool.id((cell, k)) for cell in cells for k in KINDS}
+    clauses = _piece_clauses(edge, kind, cells)
+    # A network has at least one edge.
+    clauses.append(list(edge.values()))
+    return pool, edge, kind, clauses
 
 
 def _add_rules(solver, rows, cols, numbers):
@@ -133,13 +157,8 @@ def _add_rules(solver, rows, cols, numbers):
         not 0 <= count <= len(held) for held, counts in held_counts for count in counts
     ):
         return None
-    pool = IDPool()
-    cells = [(r, c) for r in range(rows) for c in range(cols)]
-    edge = {e: pool.id(e) for e in all_edges(rows, cols)}
-    kind = {(cell, k): pool.id((cell, k)) for cell in cells for k in KINDS}
-    solver.append_formula(_piece_clauses(edge, kind, cells))
-    # A network has at least one edge.
-    solver.add_clause(list(edge.values()))
+    pool, edge, kind, clauses = network_rules(rows, cols)
+    solver.append_formula(clauses)
     for held, counts in held_counts:
         for k, count in zip(KINDS, counts, strict=True):
             solver.append_formula(
@@ -147,16 +166,16 @@ def _add_rules(solver, rows, cols, numbers):
                     [kind[cell, k] for cell in held], bound=count, vpool=pool
                 )
             )
-    return edge, {cell: kind[cell, BLANK] for cell in cells}
+    return edge, {cell: var for (cell, k), var in kind.items() if k == BLANK}
 
 
-def _edges_on(solver, edge):
+def edges_on(solver, edge):
     """The edges the solver's model turns on."""
     true = {lit for lit in solver.get_model() if lit > 0}
     return frozenset(e for e, var in edge.items() if var in true)
 
 
-def _forbid(solver, edge, found):
+def forbid(solver, edge, found):
     """Rule out exactly this set of edges."""
     solver.add_clause([-var if e in found else var for e, var in edge.items()])
 
@@ -179,14 +198,14 @@ def uniqueness(rows, cols, numbers, *, time_limit):
         for var in (*edge.values(), *blank.values()):
             solver.observe(var)
 
-        answer = _solve(solver, deadline)
+        answer = solve(solver, deadline)
         if answer is None:
             return "timeout", None, connectivity.cuts
         if not answer:
             return "infeasible", None, connectivity.cuts
-        found = _edges_on(solver, edge)
-        _forbid(solver, edge, found)
-        answer = _solve(solver, deadline)
+        found = edges_on(solver, edge)
+        forbid(solver, edge, found)
+        answer = solve(solver, deadline)
         status = {None: "timeout", False: "unique", True: "not_unique"}[answer]
         return status, found, connectivity.cuts
 
@@ -214,10 +233,10 @@ def fillings(rows, cols, numbers, *, cap):
         while solver.solve():
             if connected + not_connected == cap:
                 return Fillings(connected, not_connected, True)
-            found = _edges_on(solver, edge)
+            found = edges_on(solver, edge)
             if len(_parts(found)) == 1:
                 connected += 1
             else:
                 not_connected += 1
-            _forbid(solver, edge, found)
+            forbid(solver, edge, found)
     return Fillings(connected, not_connected, False)

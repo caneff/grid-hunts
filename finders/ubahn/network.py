@@ -20,7 +20,7 @@ KIND_NAMES = ("turn", "straight", "branch", "cross", "blank")
 TURN, STRAIGHT, BRANCH, CROSS, BLANK = KINDS = range(len(KIND_NAMES))
 
 # A cell's kind drawn from its (north, east, south, west) arms.
-_DRAWN = {
+DRAWN = {
     (0, 0, 0, 0): " ",
     (1, 0, 1, 0): "│",
     (0, 1, 0, 1): "─",
@@ -143,8 +143,20 @@ def rows_and_columns(rows, cols, numbers):
 def drawing(network, rows, cols):
     """The network as one string per row, a box-drawing character per cell."""
     return [
-        "".join(_DRAWN[arms(network, (r, c))] for c in range(cols)) for r in range(rows)
+        "".join(DRAWN[arms(network, (r, c))] for c in range(cols)) for r in range(rows)
     ]
+
+
+def from_drawing(lines):
+    """The network a `drawing` shows."""
+    arms_of = {char: cell_arms for cell_arms, char in DRAWN.items()}
+    edges = set()
+    for r, line in enumerate(lines):
+        for c, char in enumerate(line):
+            _, east, south, _ = arm_edges((r, c))
+            _, has_east, has_south, _ = arms_of[char]
+            edges |= {e for e, has in ((east, has_east), (south, has_south)) if has}
+    return frozenset(edges)
 
 
 class Exactly(NamedTuple):

@@ -57,10 +57,12 @@ PATTERNS = (
 
 
 class Built(NamedTuple):
-    """A built model and its edge variables, keyed by edge."""
+    """A built model, its edge variables keyed by edge, and its
+    `kind[cell, k]` booleans."""
 
     m: cp_model.CpModel
     edge: dict
+    kind: dict
 
 
 def _add_pieces(m, edge, cells):
@@ -160,18 +162,51 @@ def build(rows, cols, connectivity, *, exactly=None, numbers=None):
     root = _add_root(m, cells, used)
     add_connectivity = {"flow": _add_flow, "tree": _add_tree}[connectivity]
     add_connectivity(m, edge, cells, used, root, cap)
-    return Built(m, edge)
+    return Built(m, edge, kind)
+
+
+def sample(built, rng, *, time_limit):
+    """One network of a built model, steered by `rng`, on one worker so a
+    seed gives the same network every run. Returns `(status, network)`:
+    "found" with the network, or "infeasible" or "timeout" with None."""
+    # The seed picks which edges the search decides first and which way:
+    # left to itself the solver returns the same dull network every time.
+    order = list(built.edge.values())
+    rng.shuffle(order)
+    built.m.add_decision_strategy(
+        [var if rng.random() < 0.5 else var.Not() for var in order],
+        cp_model.CHOOSE_FIRST,
+        cp_model.SELECT_MAX_VALUE,
+    )
+    solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = time_limit
+    solver.parameters.num_workers = 1
+    solver.parameters.search_branching = cp_model.FIXED_SEARCH
+    status = solver.Solve(built.m)
+    if status == cp_model.UNKNOWN:
+        return "timeout", None
+    if status == cp_model.INFEASIBLE:
+        return "infeasible", None
+    if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        raise RuntimeError(solver.StatusName(status))
+    return "found", frozenset(e for e, var in built.edge.items() if solver.Value(var))
 
 
 def uniqueness(rows, cols, numbers, connectivity, *, time_limit, workers):
-    """Whether one full set of outside numbers has exactly one network.
+    """Whether one full set of outside numbers has exactly one network:
+    `network_uniqueness` of the model those numbers build."""
+    built = build(rows, cols, connectivity, numbers=numbers)
+    return network_uniqueness(built, time_limit=time_limit, workers=workers)
+
+
+def network_uniqueness(built, *, time_limit, workers):
+    """Whether a built model has exactly one network.
 
     Returns `(status, network)`: `status` is `check_uniqueness`'s ("unique",
     "not_unique", "infeasible", "timeout", "invalid") and `network` is the
     first network found, or None when there is none. A timeout is never
     unique.
     """
-    built = build(rows, cols, connectivity, numbers=numbers)
     edges = list(built.edge)
     result = check_uniqueness(
         built.m,

@@ -1,0 +1,606 @@
+{"asked": {"engine": "pysat-lazy", "case": "6x6", "call": "grid", "asked": 100, "timeout": 60.0}}
+{"asked": {"engine": "pysat-lazy", "case": "7x7", "call": "grid", "asked": 100, "timeout": 60.0}}
+{"asked": {"engine": "pysat-lazy", "case": "8x8", "call": "grid", "asked": 100, "timeout": 60.0}}
+{"asked": {"engine": "pysat-lazy", "case": "10x10", "call": "grid", "asked": 100, "timeout": 60.0}}
+{"asked": {"engine": "pysat-lazy", "case": "7x7 example, grid", "call": "grid", "asked": 100, "timeout": 60.0}}
+{"asked": {"engine": "pysat-lazy", "case": "7x7 example, classify", "call": "classify", "asked": 100, "timeout": 60.0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 0, "status": "found", "seconds": 0.028272377996472642, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 1, "status": "found", "seconds": 0.02248840799438767, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 2, "status": "found", "seconds": 0.022333494998747483, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 3, "status": "found", "seconds": 0.022161298998980783, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 4, "status": "found", "seconds": 0.019232999999076128, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 5, "status": "found", "seconds": 0.025399694990483113, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 6, "status": "found", "seconds": 0.02134625600592699, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 7, "status": "found", "seconds": 0.017680493998341262, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 8, "status": "found", "seconds": 0.026913146997685544, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 9, "status": "found", "seconds": 0.03413653098687064, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 10, "status": "found", "seconds": 0.022233695999602787, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 11, "status": "found", "seconds": 0.027922206005314365, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 12, "status": "found", "seconds": 0.037224361003609374, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 13, "status": "found", "seconds": 0.037761457002488896, "cuts": 5, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 14, "status": "found", "seconds": 0.01836360400193371, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 15, "status": "found", "seconds": 0.025579084001947194, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 16, "status": "found", "seconds": 0.01738264899177011, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 17, "status": "found", "seconds": 0.04675908701028675, "cuts": 8, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 18, "status": "found", "seconds": 0.018165832007071003, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 19, "status": "found", "seconds": 0.023597666004206985, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 20, "status": "found", "seconds": 0.0181599399948027, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 21, "status": "found", "seconds": 0.04230304800148588, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 22, "status": "found", "seconds": 0.03729030599060934, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 23, "status": "found", "seconds": 0.030233437995775603, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 24, "status": "found", "seconds": 0.02363412499835249, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 25, "status": "found", "seconds": 0.027774296002462506, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 26, "status": "found", "seconds": 0.028056720009772107, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 27, "status": "found", "seconds": 0.02405176499451045, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 28, "status": "found", "seconds": 0.024054819994489662, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 29, "status": "found", "seconds": 0.022876572009408846, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 30, "status": "found", "seconds": 0.020335936002084054, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 31, "status": "found", "seconds": 0.02610262398957275, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 32, "status": "found", "seconds": 0.022655154010863043, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 33, "status": "found", "seconds": 0.02745760699326638, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 34, "status": "found", "seconds": 0.03457050200086087, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 35, "status": "found", "seconds": 0.02800714700424578, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 36, "status": "found", "seconds": 0.026239703001920134, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 37, "status": "found", "seconds": 0.02114689999143593, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 38, "status": "found", "seconds": 0.01575335800589528, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 39, "status": "found", "seconds": 0.02408210300200153, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 40, "status": "found", "seconds": 0.019973360002040863, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 41, "status": "found", "seconds": 0.02568673700443469, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 42, "status": "found", "seconds": 0.020831303001614287, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 43, "status": "found", "seconds": 0.01581473500118591, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 44, "status": "found", "seconds": 0.02145189700240735, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 45, "status": "found", "seconds": 0.022393737992388196, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 46, "status": "found", "seconds": 0.022829222987638786, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 47, "status": "found", "seconds": 0.027960457999142818, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 48, "status": "found", "seconds": 0.017504329996882007, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 49, "status": "found", "seconds": 0.022809385001892224, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 50, "status": "found", "seconds": 0.015316571996663697, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 51, "status": "found", "seconds": 0.0170069179876009, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 52, "status": "found", "seconds": 0.027597551001235843, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 53, "status": "found", "seconds": 0.018531023000832647, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 54, "status": "found", "seconds": 0.02365552399714943, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 55, "status": "found", "seconds": 0.026637797011062503, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 56, "status": "found", "seconds": 0.049368182008038275, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 57, "status": "found", "seconds": 0.036627441993914545, "cuts": 3, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 58, "status": "found", "seconds": 0.027356204998795874, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 59, "status": "found", "seconds": 0.017866474998299964, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 60, "status": "found", "seconds": 0.04518320600618608, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 61, "status": "found", "seconds": 0.027799262999906205, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 62, "status": "found", "seconds": 0.01548669399926439, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 63, "status": "found", "seconds": 0.020064523007022217, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 64, "status": "found", "seconds": 0.03292250398953911, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 65, "status": "found", "seconds": 0.037453284006915055, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 66, "status": "found", "seconds": 0.017916550001245923, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 67, "status": "found", "seconds": 0.024978857996757142, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 68, "status": "found", "seconds": 0.021944469001027755, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 69, "status": "found", "seconds": 0.0284217099979287, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 70, "status": "found", "seconds": 0.02922030200716108, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 71, "status": "found", "seconds": 0.018885853001847863, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 72, "status": "found", "seconds": 0.017637212004046887, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 73, "status": "found", "seconds": 0.02406711399089545, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 74, "status": "found", "seconds": 0.024345680998521857, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 75, "status": "found", "seconds": 0.016420460990048014, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 76, "status": "found", "seconds": 0.02928912099741865, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 77, "status": "found", "seconds": 0.025737333999131806, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 78, "status": "found", "seconds": 0.04098984500160441, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 79, "status": "found", "seconds": 0.020837887001107447, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 80, "status": "found", "seconds": 0.01681246201042086, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 81, "status": "found", "seconds": 0.024603969999589026, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 82, "status": "found", "seconds": 0.023243275994900614, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 83, "status": "found", "seconds": 0.022282599995378405, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 84, "status": "found", "seconds": 0.015388358006021008, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 85, "status": "found", "seconds": 0.05216208699857816, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 86, "status": "found", "seconds": 0.021551985992118716, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 87, "status": "found", "seconds": 0.027531006999197416, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 88, "status": "found", "seconds": 0.01942258900089655, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 89, "status": "found", "seconds": 0.027209738997044042, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 90, "status": "found", "seconds": 0.032956698996713385, "cuts": 3, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 91, "status": "found", "seconds": 0.026210568990791216, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 92, "status": "found", "seconds": 0.02209712799231056, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 93, "status": "found", "seconds": 0.028341559998807497, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 94, "status": "found", "seconds": 0.019843223999487236, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 95, "status": "found", "seconds": 0.02996949000225868, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 96, "status": "found", "seconds": 0.020021972013637424, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 97, "status": "found", "seconds": 0.0253410029981751, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 98, "status": "found", "seconds": 0.023243686999194324, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "6x6", "seed": 99, "status": "found", "seconds": 0.018112541001755744, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 0, "status": "found", "seconds": 0.05650094599695876, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 1, "status": "found", "seconds": 0.035657048007124104, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 2, "status": "found", "seconds": 0.062091079002129845, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 3, "status": "found", "seconds": 0.07312784600071609, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 4, "status": "found", "seconds": 0.036354206007672474, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 5, "status": "found", "seconds": 0.06645228900015354, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 6, "status": "found", "seconds": 0.03521612299664412, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 7, "status": "found", "seconds": 0.08767026300483849, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 8, "status": "found", "seconds": 0.03706608200445771, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 9, "status": "found", "seconds": 0.03798093298973981, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 10, "status": "found", "seconds": 0.0658062659931602, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 11, "status": "found", "seconds": 0.03638024600513745, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 12, "status": "found", "seconds": 0.06714878500497434, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 13, "status": "found", "seconds": 0.07670284699997865, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 14, "status": "found", "seconds": 0.034600750004756264, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 15, "status": "found", "seconds": 0.05692282300151419, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 16, "status": "found", "seconds": 0.03625927699613385, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 17, "status": "found", "seconds": 0.16233431499858852, "cuts": 3, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 18, "status": "found", "seconds": 0.11290603800443932, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 19, "status": "found", "seconds": 0.03582917299354449, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 20, "status": "found", "seconds": 0.0503319560084492, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 21, "status": "found", "seconds": 0.06041681198985316, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 22, "status": "found", "seconds": 0.04702080300194211, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 23, "status": "found", "seconds": 0.06525940301071387, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 24, "status": "found", "seconds": 0.09907748999830801, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 25, "status": "found", "seconds": 0.03422927699284628, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 26, "status": "found", "seconds": 0.03636819300299976, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 27, "status": "found", "seconds": 0.041783126012887806, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 28, "status": "found", "seconds": 0.03817641199566424, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 29, "status": "found", "seconds": 0.058719250999274664, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 30, "status": "found", "seconds": 0.11795087199425325, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 31, "status": "found", "seconds": 0.0375038600031985, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 32, "status": "found", "seconds": 0.04405535299156327, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 33, "status": "found", "seconds": 0.04998864699155092, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 34, "status": "found", "seconds": 0.03627166000660509, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 35, "status": "found", "seconds": 0.04191691799496766, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 36, "status": "found", "seconds": 0.06603044101211708, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 37, "status": "found", "seconds": 0.0693638259981526, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 38, "status": "found", "seconds": 0.08003943899529986, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 39, "status": "found", "seconds": 0.05599188199266791, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 40, "status": "found", "seconds": 0.03937956900335848, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 41, "status": "found", "seconds": 0.03978006599936634, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 42, "status": "found", "seconds": 0.03861825900094118, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 43, "status": "found", "seconds": 0.08569120999891311, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 44, "status": "found", "seconds": 0.06888980900112074, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 45, "status": "found", "seconds": 0.039032372005749494, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 46, "status": "found", "seconds": 0.04693004100408871, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 47, "status": "found", "seconds": 0.0450316299975384, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 48, "status": "found", "seconds": 0.04165110600297339, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 49, "status": "found", "seconds": 0.0502302340028109, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 50, "status": "found", "seconds": 0.07434629999625031, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 51, "status": "found", "seconds": 0.06171036900195759, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 52, "status": "found", "seconds": 0.04691855900455266, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 53, "status": "found", "seconds": 0.03383169398875907, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 54, "status": "found", "seconds": 0.06806131200573873, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 55, "status": "found", "seconds": 0.06353381898952648, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 56, "status": "found", "seconds": 0.04372897600114811, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 57, "status": "found", "seconds": 0.15398264699615538, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 58, "status": "found", "seconds": 0.05582285299897194, "cuts": 4, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 59, "status": "found", "seconds": 0.0787798959936481, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 60, "status": "found", "seconds": 0.07196080799621996, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 61, "status": "found", "seconds": 0.04377630600356497, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 62, "status": "found", "seconds": 0.06492962800257374, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 63, "status": "found", "seconds": 0.03629033600736875, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 64, "status": "found", "seconds": 0.033482222992461175, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 65, "status": "found", "seconds": 0.034738250004011206, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 66, "status": "found", "seconds": 0.0787945650081383, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 67, "status": "found", "seconds": 0.03757289100030903, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 68, "status": "found", "seconds": 0.036022749001858756, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 69, "status": "found", "seconds": 0.03919299600238446, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 70, "status": "found", "seconds": 0.04648993800219614, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 71, "status": "found", "seconds": 0.037565968013950624, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 72, "status": "found", "seconds": 0.05148278300475795, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 73, "status": "found", "seconds": 0.06225957800052129, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 74, "status": "found", "seconds": 0.057531494996510446, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 75, "status": "found", "seconds": 0.07002574700163677, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 76, "status": "found", "seconds": 0.03619365199119784, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 77, "status": "found", "seconds": 0.04490939900279045, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 78, "status": "found", "seconds": 0.03765066800406203, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 79, "status": "found", "seconds": 0.05473458400228992, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 80, "status": "found", "seconds": 0.16169360300409608, "cuts": 4, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 81, "status": "found", "seconds": 0.041421300993533805, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 82, "status": "found", "seconds": 0.03870107499824371, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 83, "status": "found", "seconds": 0.0758177230018191, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 84, "status": "found", "seconds": 0.038194508000742644, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 85, "status": "found", "seconds": 0.03368046799732838, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 86, "status": "found", "seconds": 0.04633598700456787, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 87, "status": "found", "seconds": 0.06589296099264175, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 88, "status": "found", "seconds": 0.06982424699526746, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 89, "status": "found", "seconds": 0.05790920900471974, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 90, "status": "found", "seconds": 0.148256455999217, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 91, "status": "found", "seconds": 0.11725355200178456, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 92, "status": "found", "seconds": 0.1514585130062187, "cuts": 6, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 93, "status": "found", "seconds": 0.039309517000219785, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 94, "status": "found", "seconds": 0.04028993099927902, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 95, "status": "found", "seconds": 0.11035197699675336, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 96, "status": "found", "seconds": 0.15426527200907003, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 97, "status": "found", "seconds": 0.04195903800427914, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 98, "status": "found", "seconds": 0.03768459300044924, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7", "seed": 99, "status": "found", "seconds": 0.03945798700442538, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 0, "status": "found", "seconds": 0.08587635999720078, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 1, "status": "found", "seconds": 0.0518720890104305, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 2, "status": "found", "seconds": 0.12401953000517096, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 3, "status": "found", "seconds": 0.06995249900501221, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 4, "status": "found", "seconds": 0.05108360800659284, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 5, "status": "found", "seconds": 0.05533638200722635, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 6, "status": "found", "seconds": 0.055998844996793196, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 7, "status": "found", "seconds": 0.049854062002850696, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 8, "status": "found", "seconds": 0.07482122800138313, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 9, "status": "found", "seconds": 0.049789480995968916, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 10, "status": "found", "seconds": 0.053077909993589856, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 11, "status": "found", "seconds": 0.04925669200019911, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 12, "status": "found", "seconds": 0.0726125400105957, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 13, "status": "found", "seconds": 0.07226527501188684, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 14, "status": "found", "seconds": 0.057811724007478915, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 15, "status": "found", "seconds": 0.05198342999210581, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 16, "status": "found", "seconds": 0.06620339800429065, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 17, "status": "found", "seconds": 0.05576493400440086, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 18, "status": "found", "seconds": 0.05771665400243364, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 19, "status": "found", "seconds": 0.053692563000367954, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 20, "status": "found", "seconds": 0.07126741598767694, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 21, "status": "found", "seconds": 0.05339897800877225, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 22, "status": "found", "seconds": 0.06694690400036052, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 23, "status": "found", "seconds": 0.06166191698866896, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 24, "status": "found", "seconds": 0.07850792299723253, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 25, "status": "found", "seconds": 0.04814572099712677, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 26, "status": "found", "seconds": 0.046185723011149094, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 27, "status": "found", "seconds": 0.050956647988641635, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 28, "status": "found", "seconds": 0.06892414399771951, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 29, "status": "found", "seconds": 0.06350152699451428, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 30, "status": "found", "seconds": 0.049893791001522914, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 31, "status": "found", "seconds": 0.048426531997392885, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 32, "status": "found", "seconds": 0.08406625699717551, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 33, "status": "found", "seconds": 0.09128683499875478, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 34, "status": "found", "seconds": 0.04859019200375769, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 35, "status": "found", "seconds": 0.0833072009991156, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 36, "status": "found", "seconds": 0.09453125200525392, "cuts": 4, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 37, "status": "found", "seconds": 0.059113627998158336, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 38, "status": "found", "seconds": 0.0761273899988737, "cuts": 3, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 39, "status": "found", "seconds": 0.0518777899997076, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 40, "status": "found", "seconds": 0.05099453999719117, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 41, "status": "found", "seconds": 0.050349969998933375, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 42, "status": "found", "seconds": 0.05448631499893963, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 43, "status": "found", "seconds": 0.06663888199545909, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 44, "status": "found", "seconds": 0.05609174100391101, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 45, "status": "found", "seconds": 0.05078398100158665, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 46, "status": "found", "seconds": 0.049981714008026756, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 47, "status": "found", "seconds": 0.05308750800031703, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 48, "status": "found", "seconds": 0.0760944679932436, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 49, "status": "found", "seconds": 0.049584401000174694, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 50, "status": "found", "seconds": 0.08016018799389713, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 51, "status": "found", "seconds": 0.04723877500509843, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 52, "status": "found", "seconds": 0.07029161100217607, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 53, "status": "found", "seconds": 0.12048907300049905, "cuts": 5, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 54, "status": "found", "seconds": 0.054303348006214947, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 55, "status": "found", "seconds": 0.04834919598943088, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 56, "status": "found", "seconds": 0.056737401988357306, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 57, "status": "found", "seconds": 0.07287409600394312, "cuts": 5, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 58, "status": "found", "seconds": 0.04828109699883498, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 59, "status": "found", "seconds": 0.0488213789940346, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 60, "status": "found", "seconds": 0.06936320499517024, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 61, "status": "found", "seconds": 0.05218924999644514, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 62, "status": "found", "seconds": 0.06787232399801724, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 63, "status": "found", "seconds": 0.05017002900422085, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 64, "status": "found", "seconds": 0.08607038899208419, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 65, "status": "found", "seconds": 0.052677692990982905, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 66, "status": "found", "seconds": 0.05138052999973297, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 67, "status": "found", "seconds": 0.051514664010028355, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 68, "status": "found", "seconds": 0.055401143996277824, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 69, "status": "found", "seconds": 0.07928424199053552, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 70, "status": "found", "seconds": 0.08274519701080862, "cuts": 3, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 71, "status": "found", "seconds": 0.04762542698881589, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 72, "status": "found", "seconds": 0.04872916500607971, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 73, "status": "found", "seconds": 0.06143470799725037, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 74, "status": "found", "seconds": 0.13731672399444506, "cuts": 6, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 75, "status": "found", "seconds": 0.05657150900515262, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 76, "status": "found", "seconds": 0.047711838997201994, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 77, "status": "found", "seconds": 0.04860119200020563, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 78, "status": "found", "seconds": 0.051723599011893384, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 79, "status": "found", "seconds": 0.054313518005074, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 80, "status": "found", "seconds": 0.0489580669964198, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 81, "status": "found", "seconds": 0.05319630498706829, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 82, "status": "found", "seconds": 0.0550570740015246, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 83, "status": "found", "seconds": 0.06792310099990573, "cuts": 3, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 84, "status": "found", "seconds": 0.10801863500091713, "cuts": 6, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 85, "status": "found", "seconds": 0.055063296007574536, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 86, "status": "found", "seconds": 0.08219951699720696, "cuts": 4, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 87, "status": "found", "seconds": 0.05309148599917535, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 88, "status": "found", "seconds": 0.05034522101050243, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 89, "status": "found", "seconds": 0.047869467991404235, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 90, "status": "found", "seconds": 0.050583121003001, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 91, "status": "found", "seconds": 0.050851427993620746, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 92, "status": "found", "seconds": 0.061361009007669054, "cuts": 3, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 93, "status": "found", "seconds": 0.05222198099363595, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 94, "status": "found", "seconds": 0.10734642200986855, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 95, "status": "found", "seconds": 0.07336978400417138, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 96, "status": "found", "seconds": 0.08551287300360855, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 97, "status": "found", "seconds": 0.09621145999699365, "cuts": 4, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 98, "status": "found", "seconds": 0.07527786299760919, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "8x8", "seed": 99, "status": "found", "seconds": 0.05488922700169496, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 0, "status": "found", "seconds": 0.10810519799997564, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 1, "status": "found", "seconds": 0.1094404850009596, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 2, "status": "found", "seconds": 0.15662003699981142, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 3, "status": "found", "seconds": 0.12902190299064387, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 4, "status": "found", "seconds": 0.09617736600921489, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 5, "status": "found", "seconds": 0.30349664398818277, "cuts": 6, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 6, "status": "found", "seconds": 0.09529145099804737, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 7, "status": "found", "seconds": 0.15352962099132128, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 8, "status": "found", "seconds": 0.09884482200141065, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 9, "status": "found", "seconds": 0.12910580199968535, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 10, "status": "found", "seconds": 0.09524571400834247, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 11, "status": "found", "seconds": 0.10003765700093936, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 12, "status": "found", "seconds": 0.09833432600134984, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 13, "status": "found", "seconds": 0.12139511699206196, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 14, "status": "found", "seconds": 0.2937378040078329, "cuts": 6, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 15, "status": "found", "seconds": 0.2945245930022793, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 16, "status": "found", "seconds": 0.09379608200106304, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 17, "status": "found", "seconds": 0.15653823199681938, "cuts": 5, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 18, "status": "found", "seconds": 0.14255458099069074, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 19, "status": "found", "seconds": 0.09712348600442056, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 20, "status": "found", "seconds": 0.12890338999568485, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 21, "status": "found", "seconds": 0.09692132299824152, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 22, "status": "found", "seconds": 0.1505627799924696, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 23, "status": "found", "seconds": 0.11937869299435988, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 24, "status": "found", "seconds": 0.1641787150001619, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 25, "status": "found", "seconds": 0.11972173200047109, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 26, "status": "found", "seconds": 0.09537593000277411, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 27, "status": "found", "seconds": 0.13497675700637046, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 28, "status": "found", "seconds": 0.10976118998951279, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 29, "status": "found", "seconds": 0.1369103949982673, "cuts": 3, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 30, "status": "found", "seconds": 0.17830751999281347, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 31, "status": "found", "seconds": 0.09124026699282695, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 32, "status": "found", "seconds": 0.09600393800064921, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 33, "status": "found", "seconds": 0.25792588500189595, "cuts": 4, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 34, "status": "found", "seconds": 0.2871063310012687, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 35, "status": "found", "seconds": 0.2713641330046812, "cuts": 4, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 36, "status": "found", "seconds": 0.16134191000310238, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 37, "status": "found", "seconds": 0.13058685400756076, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 38, "status": "found", "seconds": 0.13321413300582208, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 39, "status": "found", "seconds": 0.11110018400358967, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 40, "status": "found", "seconds": 0.11478694799006917, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 41, "status": "found", "seconds": 0.09378508100053295, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 42, "status": "found", "seconds": 0.09684731299057603, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 43, "status": "found", "seconds": 0.13727747999655548, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 44, "status": "found", "seconds": 0.09901803900720552, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 45, "status": "found", "seconds": 0.11878545999934431, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 46, "status": "found", "seconds": 0.09813115099677816, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 47, "status": "found", "seconds": 0.10369444600655697, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 48, "status": "found", "seconds": 0.09886240499326959, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 49, "status": "found", "seconds": 0.09942884599149693, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 50, "status": "found", "seconds": 0.11379300699627493, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 51, "status": "found", "seconds": 0.28530902200145647, "cuts": 5, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 52, "status": "found", "seconds": 0.09735856100451201, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 53, "status": "found", "seconds": 0.15746777100139298, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 54, "status": "found", "seconds": 0.11057225499826018, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 55, "status": "found", "seconds": 0.12447922000137623, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 56, "status": "found", "seconds": 0.10049597499892116, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 57, "status": "found", "seconds": 0.14786808200005908, "cuts": 3, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 58, "status": "found", "seconds": 0.14224141999147832, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 59, "status": "found", "seconds": 0.1545461749919923, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 60, "status": "found", "seconds": 0.1338611969986232, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 61, "status": "found", "seconds": 0.0988309649983421, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 62, "status": "found", "seconds": 0.0943899150006473, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 63, "status": "found", "seconds": 0.09494342299876735, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 64, "status": "found", "seconds": 0.1649575079936767, "cuts": 3, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 65, "status": "found", "seconds": 0.2138853590004146, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 66, "status": "found", "seconds": 0.11367296100070234, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 67, "status": "found", "seconds": 0.10273298699758016, "cuts": 3, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 68, "status": "found", "seconds": 0.09573492899653502, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 69, "status": "found", "seconds": 0.12662039099086542, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 70, "status": "found", "seconds": 0.10097084299195558, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 71, "status": "found", "seconds": 0.10930625000037253, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 72, "status": "found", "seconds": 0.1030574899923522, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 73, "status": "found", "seconds": 0.11522151000099257, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 74, "status": "found", "seconds": 0.1367868119996274, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 75, "status": "found", "seconds": 0.1312068759871181, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 76, "status": "found", "seconds": 0.16258818699861877, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 77, "status": "found", "seconds": 0.14565681898966432, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 78, "status": "found", "seconds": 0.16293009399669245, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 79, "status": "found", "seconds": 0.09421846999612171, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 80, "status": "found", "seconds": 0.09463775400945451, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 81, "status": "found", "seconds": 0.10210768300748896, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 82, "status": "found", "seconds": 0.11760536899964791, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 83, "status": "found", "seconds": 0.09819742800027598, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 84, "status": "found", "seconds": 0.18598772799305152, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 85, "status": "found", "seconds": 0.10751774699019734, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 86, "status": "found", "seconds": 0.13397464199806564, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 87, "status": "found", "seconds": 0.11190811199776363, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 88, "status": "found", "seconds": 0.13334592399769463, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 89, "status": "found", "seconds": 0.09485465400211979, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 90, "status": "found", "seconds": 0.10076919200946577, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 91, "status": "found", "seconds": 0.31124827700841706, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 92, "status": "found", "seconds": 0.17725189500197303, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 93, "status": "found", "seconds": 0.10000443500757683, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 94, "status": "found", "seconds": 0.1370986410038313, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 95, "status": "found", "seconds": 0.09376223701110575, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 96, "status": "found", "seconds": 0.12092417701205704, "cuts": 2, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 97, "status": "found", "seconds": 0.09592603999772109, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 98, "status": "found", "seconds": 0.1122620009991806, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "10x10", "seed": 99, "status": "found", "seconds": 0.1492997109889984, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 0, "status": "infeasible", "seconds": 0.03710772198974155, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 1, "status": "infeasible", "seconds": 0.038573363999603316, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 2, "status": "infeasible", "seconds": 0.04001497999706771, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 3, "status": "infeasible", "seconds": 0.04450824100058526, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 4, "status": "infeasible", "seconds": 0.03928880699095316, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 5, "status": "infeasible", "seconds": 0.06190370599506423, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 6, "status": "infeasible", "seconds": 0.042728483997052535, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 7, "status": "infeasible", "seconds": 0.04225318500539288, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 8, "status": "infeasible", "seconds": 0.03859267200459726, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 9, "status": "infeasible", "seconds": 0.04170900500321295, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 10, "status": "infeasible", "seconds": 0.041792133008129895, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 11, "status": "infeasible", "seconds": 0.043373352993512526, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 12, "status": "infeasible", "seconds": 0.040879506996134296, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 13, "status": "infeasible", "seconds": 0.03888641600497067, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 14, "status": "infeasible", "seconds": 0.05983298899082001, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 15, "status": "infeasible", "seconds": 0.043103122006868944, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 16, "status": "infeasible", "seconds": 0.03894991699780803, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 17, "status": "infeasible", "seconds": 0.03964090399676934, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 18, "status": "infeasible", "seconds": 0.03761315799783915, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 19, "status": "infeasible", "seconds": 0.036264866997953504, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 20, "status": "infeasible", "seconds": 0.035663289003423415, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 21, "status": "infeasible", "seconds": 0.036591605996363796, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 22, "status": "infeasible", "seconds": 0.037760065009933896, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 23, "status": "infeasible", "seconds": 0.05353053699946031, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 24, "status": "infeasible", "seconds": 0.03583742900809739, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 25, "status": "infeasible", "seconds": 0.04014049800753128, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 26, "status": "infeasible", "seconds": 0.03960063798876945, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 27, "status": "infeasible", "seconds": 0.03726321599970106, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 28, "status": "infeasible", "seconds": 0.036293421013397165, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 29, "status": "infeasible", "seconds": 0.03870377100247424, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 30, "status": "infeasible", "seconds": 0.04208110900071915, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 31, "status": "infeasible", "seconds": 0.038881316999322735, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 32, "status": "infeasible", "seconds": 0.05274794599972665, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 33, "status": "infeasible", "seconds": 0.04076775599969551, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 34, "status": "infeasible", "seconds": 0.03703958299593069, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 35, "status": "infeasible", "seconds": 0.0402861639886396, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 36, "status": "infeasible", "seconds": 0.040842304995749146, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 37, "status": "infeasible", "seconds": 0.03788216700195335, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 38, "status": "infeasible", "seconds": 0.040215000000898726, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 39, "status": "infeasible", "seconds": 0.03976872400380671, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 40, "status": "infeasible", "seconds": 0.03781112299475353, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 41, "status": "infeasible", "seconds": 0.05378003900113981, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 42, "status": "infeasible", "seconds": 0.04177335700660478, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 43, "status": "infeasible", "seconds": 0.04420429600577336, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 44, "status": "infeasible", "seconds": 0.036859892003121786, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 45, "status": "infeasible", "seconds": 0.038304586996673606, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 46, "status": "infeasible", "seconds": 0.03714994199981447, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 47, "status": "infeasible", "seconds": 0.03645357399364002, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 48, "status": "infeasible", "seconds": 0.03652467999199871, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 49, "status": "infeasible", "seconds": 0.05683629999111872, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 50, "status": "infeasible", "seconds": 0.036697474992251955, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 51, "status": "infeasible", "seconds": 0.036417495997739024, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 52, "status": "infeasible", "seconds": 0.03875873499782756, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 53, "status": "infeasible", "seconds": 0.037583792000077665, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 54, "status": "infeasible", "seconds": 0.03644328498921823, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 55, "status": "infeasible", "seconds": 0.03900435999094043, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 56, "status": "infeasible", "seconds": 0.040001134999329224, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 57, "status": "infeasible", "seconds": 0.044860736990813166, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 58, "status": "infeasible", "seconds": 0.05835233800462447, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 59, "status": "infeasible", "seconds": 0.03992890799418092, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 60, "status": "infeasible", "seconds": 0.042249118007021025, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 61, "status": "infeasible", "seconds": 0.03953961298975628, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 62, "status": "infeasible", "seconds": 0.038700273988069966, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 63, "status": "infeasible", "seconds": 0.03552711199154146, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 64, "status": "infeasible", "seconds": 0.03957028000149876, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 65, "status": "infeasible", "seconds": 0.03966115100774914, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 66, "status": "infeasible", "seconds": 0.04052631900412962, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 67, "status": "infeasible", "seconds": 0.05630849099543411, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 68, "status": "infeasible", "seconds": 0.03772023000055924, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 69, "status": "infeasible", "seconds": 0.03704987200035248, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 70, "status": "infeasible", "seconds": 0.03600348299369216, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 71, "status": "infeasible", "seconds": 0.037418178995721973, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 72, "status": "infeasible", "seconds": 0.03868083700945135, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 73, "status": "infeasible", "seconds": 0.03820655000163242, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 74, "status": "infeasible", "seconds": 0.037890052000875585, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 75, "status": "infeasible", "seconds": 0.03680861499742605, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 76, "status": "infeasible", "seconds": 0.05190320799010806, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 77, "status": "infeasible", "seconds": 0.04058483900735155, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 78, "status": "infeasible", "seconds": 0.03577593200316187, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 79, "status": "infeasible", "seconds": 0.039145586008089595, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 80, "status": "infeasible", "seconds": 0.040895676997024566, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 81, "status": "infeasible", "seconds": 0.042358883991255425, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 82, "status": "infeasible", "seconds": 0.03689488999953028, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 83, "status": "infeasible", "seconds": 0.03691829300078098, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 84, "status": "infeasible", "seconds": 0.04028078400006052, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 85, "status": "infeasible", "seconds": 0.054386786010582, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 86, "status": "infeasible", "seconds": 0.037071633007144555, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 87, "status": "infeasible", "seconds": 0.035249376000138, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 88, "status": "infeasible", "seconds": 0.03636919500422664, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 89, "status": "infeasible", "seconds": 0.03701937499863561, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 90, "status": "infeasible", "seconds": 0.03835680500196759, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 91, "status": "infeasible", "seconds": 0.03941731099621393, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 92, "status": "infeasible", "seconds": 0.0381241839932045, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 93, "status": "infeasible", "seconds": 0.03568670299137011, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 94, "status": "infeasible", "seconds": 0.05544193398964126, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 95, "status": "infeasible", "seconds": 0.03681123099522665, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 96, "status": "infeasible", "seconds": 0.040523492003558204, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 97, "status": "infeasible", "seconds": 0.037574273999780416, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 98, "status": "infeasible", "seconds": 0.03840575698995963, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, grid", "seed": 99, "status": "infeasible", "seconds": 0.041368952006450854, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 0, "status": "infeasible", "seconds": 0.04173594698659144, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 1, "status": "infeasible", "seconds": 0.04279068099276628, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 2, "status": "infeasible", "seconds": 0.044313391990726814, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 3, "status": "infeasible", "seconds": 0.062568673005444, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 4, "status": "infeasible", "seconds": 0.04266935201303568, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 5, "status": "infeasible", "seconds": 0.04177121199609246, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 6, "status": "infeasible", "seconds": 0.04102946999773849, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 7, "status": "infeasible", "seconds": 0.04099082600441761, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 8, "status": "infeasible", "seconds": 0.041778366998187266, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 9, "status": "infeasible", "seconds": 0.041338814990012906, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 10, "status": "infeasible", "seconds": 0.041290163004305214, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 11, "status": "infeasible", "seconds": 0.04122380800254177, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 12, "status": "infeasible", "seconds": 0.05626306599879172, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 13, "status": "infeasible", "seconds": 0.044103295003878884, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 14, "status": "infeasible", "seconds": 0.04338998500315938, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 15, "status": "infeasible", "seconds": 0.041882735007675365, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 16, "status": "infeasible", "seconds": 0.041121242989902385, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 17, "status": "infeasible", "seconds": 0.04150115299853496, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 18, "status": "infeasible", "seconds": 0.0419280189962592, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 19, "status": "infeasible", "seconds": 0.041588366992073134, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 20, "status": "infeasible", "seconds": 0.05944398201245349, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 21, "status": "infeasible", "seconds": 0.04085592200863175, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 22, "status": "infeasible", "seconds": 0.04063946200767532, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 23, "status": "infeasible", "seconds": 0.04174493398750201, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 24, "status": "infeasible", "seconds": 0.0425466799933929, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 25, "status": "infeasible", "seconds": 0.04414479300612584, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 26, "status": "infeasible", "seconds": 0.04251379800552968, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 27, "status": "infeasible", "seconds": 0.04160952700476628, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 28, "status": "infeasible", "seconds": 0.0424441960058175, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 29, "status": "infeasible", "seconds": 0.06319234300462995, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 30, "status": "infeasible", "seconds": 0.04316946800099686, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 31, "status": "infeasible", "seconds": 0.04269538100925274, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 32, "status": "infeasible", "seconds": 0.04436992800037842, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 33, "status": "infeasible", "seconds": 0.04259991100116167, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 34, "status": "infeasible", "seconds": 0.04191855101089459, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 35, "status": "infeasible", "seconds": 0.04146380200108979, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 36, "status": "infeasible", "seconds": 0.04334558099799324, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 37, "status": "infeasible", "seconds": 0.04313045500020962, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 38, "status": "infeasible", "seconds": 0.05840311299834866, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 39, "status": "infeasible", "seconds": 0.0408945549861528, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 40, "status": "infeasible", "seconds": 0.041029950996744446, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 41, "status": "infeasible", "seconds": 0.040890677002607845, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 42, "status": "infeasible", "seconds": 0.0402278140099952, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 43, "status": "infeasible", "seconds": 0.042746788007207215, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 44, "status": "infeasible", "seconds": 0.04288171399093699, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 45, "status": "infeasible", "seconds": 0.045011713009444065, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 46, "status": "infeasible", "seconds": 0.04150485899299383, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 47, "status": "infeasible", "seconds": 0.05729501700261608, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 48, "status": "infeasible", "seconds": 0.0416922739968868, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 49, "status": "infeasible", "seconds": 0.043160209999768995, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 50, "status": "infeasible", "seconds": 0.042673640986322425, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 51, "status": "infeasible", "seconds": 0.04466083900479134, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 52, "status": "infeasible", "seconds": 0.04112432900001295, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 53, "status": "infeasible", "seconds": 0.04145691900339443, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 54, "status": "infeasible", "seconds": 0.04386092499771621, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 55, "status": "infeasible", "seconds": 0.045828647998860106, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 56, "status": "infeasible", "seconds": 0.06361786701017991, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 57, "status": "infeasible", "seconds": 0.04267028399044648, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 58, "status": "infeasible", "seconds": 0.04401201200380456, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 59, "status": "infeasible", "seconds": 0.042723566002678126, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 60, "status": "infeasible", "seconds": 0.04147395100153517, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 61, "status": "infeasible", "seconds": 0.04169027099851519, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 62, "status": "infeasible", "seconds": 0.04105170100228861, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 63, "status": "infeasible", "seconds": 0.04304958099965006, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 64, "status": "infeasible", "seconds": 0.04205455900228117, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 65, "status": "infeasible", "seconds": 0.0563182699988829, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 66, "status": "infeasible", "seconds": 0.043031687004258856, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 67, "status": "infeasible", "seconds": 0.0417747900064569, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 68, "status": "infeasible", "seconds": 0.043937100999755785, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 69, "status": "infeasible", "seconds": 0.042880691995378584, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 70, "status": "infeasible", "seconds": 0.04384295199997723, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 71, "status": "infeasible", "seconds": 0.04327908500272315, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 72, "status": "infeasible", "seconds": 0.04383059800602496, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 73, "status": "infeasible", "seconds": 0.04229895200114697, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 74, "status": "infeasible", "seconds": 0.057948433997808024, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 75, "status": "infeasible", "seconds": 0.0417864820046816, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 76, "status": "infeasible", "seconds": 0.040709575012442656, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 77, "status": "infeasible", "seconds": 0.04397589300060645, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 78, "status": "infeasible", "seconds": 0.04207686100562569, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 79, "status": "infeasible", "seconds": 0.04112676301156171, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 80, "status": "infeasible", "seconds": 0.040056951009319164, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 81, "status": "infeasible", "seconds": 0.04105362598784268, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 82, "status": "infeasible", "seconds": 0.06106443800672423, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 83, "status": "infeasible", "seconds": 0.042694158997619525, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 84, "status": "infeasible", "seconds": 0.04342640400864184, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 85, "status": "infeasible", "seconds": 0.0427635589876445, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 86, "status": "infeasible", "seconds": 0.04255716998886783, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 87, "status": "infeasible", "seconds": 0.041349745995830745, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 88, "status": "infeasible", "seconds": 0.04065574400010519, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 89, "status": "infeasible", "seconds": 0.041876192000927404, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 90, "status": "infeasible", "seconds": 0.04227835299388971, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 91, "status": "infeasible", "seconds": 0.06018474300799426, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 92, "status": "infeasible", "seconds": 0.04239396099001169, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 93, "status": "infeasible", "seconds": 0.04130103399802465, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 94, "status": "infeasible", "seconds": 0.04058961899136193, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 95, "status": "infeasible", "seconds": 0.04130095300206449, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 96, "status": "infeasible", "seconds": 0.04180778199224733, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 97, "status": "infeasible", "seconds": 0.04179617999761831, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 98, "status": "infeasible", "seconds": 0.04108376300428063, "cuts": 0, "conflicts": 0}}
+{"solve": {"engine": "pysat-lazy", "case": "7x7 example, classify", "seed": 99, "status": "infeasible", "seconds": 0.04160421699634753, "cuts": 0, "conflicts": 0}}
