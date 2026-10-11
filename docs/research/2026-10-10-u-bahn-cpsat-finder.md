@@ -207,7 +207,7 @@ hunt at a time, `uptime` first, long runs under `job-run`, speedups listed in
 the launch message (`AGENTS.md:41-68`).
 
 **Tests.** Standalone scripts named `test_*.py` beside the code, run by glob
-from `just test` with no justfile edit (`justfile:25-36`, `86-98`);
+from `just test` with no justfile edit (the finder loop in `tests/all.sh`);
 `finders/counting_shaded` is the one pytest suite. A test asserts an outcome
 and must go red on the planted bug (`CODING_STANDARDS.md:72-80`). Lint is
 `uvx ruff check finders` and `ruff format`.
