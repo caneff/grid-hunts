@@ -40,9 +40,12 @@ because the checker reads them and nothing under `docs/research/` does
   arrive one at a time as finder rules. Preflight answers and measurements:
   `docs/research/2026-10-10-u-bahn-finder-decision-log.md`.
   `hybrid.py` is the solver-free rule reader of the hybrid with Choco-Banana
-  (spec #781): values, regions, circles, a terminal drawing. `brute.py R C`
+  (spec #781): values, regions, circles, windows and Battenberg markings,
+  a terminal drawing. `brute.py R C`
   counts a tiny board's valid hybrid grids and classifies circle conditions,
-  with `--min-bananas N` under that condition too;
+  with `--min-bananas N` under that condition too; `--battenberg "CELLS"`
+  classifies a set of Battenberg markings, each window by its top-left cell,
+  and `--battenberg-only` adds the negative constraint (#21);
   the 4x4 answers every engine must match are in the decision log, § Hybrid.
   `hybrid_finder.py` is the hybrid finder on the hunt protocol (#783): the
   conditions `--circles "r6:turn r2c3"`, `--exactly N:PIECE:rK`,

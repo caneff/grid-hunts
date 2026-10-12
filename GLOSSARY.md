@@ -75,6 +75,18 @@ digit.
 - **valid circle** — a cell a circle could sit on in a given grid: its value
   equals the number of cells in its region. Every circle of a grid's
   conditions is one; the picture (`hybrid_finder.py render`) rings them all.
+- **window** — a 2x2 of board cells, grid cells, number cells or both, all
+  four on the board, so no window holds an icon cell. Named by its top-left
+  cell: `r2c3`, `r4:turn`, `c1:straight`. With the blank strip on, its cells
+  make windows like any other.
+- **checkerboard window** — a window whose diagonal cells share a parity of
+  value and whose side-by-side pairs differ: odd-even over even-odd, or
+  even-odd over odd-even. `hybrid.checkerboard_windows` lists a grid's.
+- **Battenberg marking** — a condition on one window: it is a checkerboard
+  window (spec #20; the finder's `--battenberg "CELLS"`). A window with no
+  marking is free, unless the **negative constraint** is on
+  (`--battenberg-only`): then every window with no marking is not a
+  checkerboard window, the windows in the number strips included.
 - **engine** — a solver the hybrid's rules are written on, picked by the
   finder's `--engine`: `cpsat`, `pysat-lazy` or `pysat-propagator`. Every
   engine answers the same two calls, a grid for a seed and a classification.

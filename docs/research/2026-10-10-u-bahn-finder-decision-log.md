@@ -668,6 +668,65 @@ code, to see what the marking has to work with. One core, this box,
   the parity test on four cells. No second program checked it. The finder's
   condition, when built, pins the 4x4 numbers in a test.
 
+## Hybrid: Battenberg markings, the 4x4 answers (#21)
+
+Spec #20's condition, counted by the brute force before any engine takes it.
+A **Battenberg marking** says one window is a checkerboard window; with the
+negative constraint on, every window with no marking is not one, the windows
+in the number strips included. One worker, this box, 2026-10-12. Each count
+is an exhaustive pass over the 18 valid 4x4 grids, judged by `hybrid.py`,
+about 2 s a command; none is sampled or capped.
+
+| 4x4 conditions | Grids | Class |
+| --- | --- | --- |
+| no marking | 18 | `not_unique` |
+| no marking, negative constraint | 16 | `not_unique` |
+| any one of `c1:turn`, `c2:turn`, `r3c1`, `r1:turn`, `r2:turn`, `r1c3` | 1 | `unique` |
+| `c1:turn c2:turn r3c1`, negative constraint | 1 | `unique` |
+| `r1:turn r2:turn r1c3`, negative constraint | 1 | `unique` |
+| `c1:turn`, negative constraint | 0 | `infeasible` |
+| `c1:turn r1:turn` | 0 | `infeasible` |
+| `r1c1` | 0 | `infeasible` |
+
+- **Every row agrees with the first count** above (§ Hybrid: checkerboard
+  windows, a first count), which came from a scratch script; no number
+  differs. The row for `r1:turn r2:turn r1c3` is new: it is the other grid's
+  full set of markings.
+- **A 4x4 board has 33 windows**, 9 on the grid and 12 in or across each
+  side's strips. 16 of the 18 grids have no checkerboard window and 2 have 3
+  each; the two are each other's reflection in the main diagonal.
+- **With the blank strip on**, a board has 39 windows, and none of the 8
+  valid grids has a checkerboard window: the negative constraint with no
+  marking leaves all 8.
+- **Commands.**
+
+  ```
+  uv run finders/ubahn/brute.py 4 4 --battenberg "c1:turn" \
+      --battenberg "c2:turn" --battenberg "r3c1" --battenberg "r1:turn" \
+      --battenberg "r2:turn" --battenberg "r1c3" \
+      --battenberg "c1:turn r1:turn" --battenberg "r1c1"
+  uv run finders/ubahn/brute.py 4 4 --battenberg-only \
+      --battenberg "c1:turn c2:turn r3c1" \
+      --battenberg "r1:turn r2:turn r1c3" --battenberg "c1:turn"
+  uv run finders/ubahn/brute.py 4 4 --blank-strip --battenberg-only
+  ```
+
+  `--battenberg-only` prints the negative constraint alone first, then each
+  `--battenberg` under it. `test_ubahn_brute.py` pins every row of the table
+  and the 16-and-2 split; the blank strip's 8 is this section's only.
+
+Worker's choices, none a ruling:
+
+- **The reader names a marking's failure by its window**: `Battenberg
+  marking at r1c1: not a checkerboard window`, `checkerboard window at
+  r1:turn has no Battenberg marking` under the negative constraint, and
+  `Battenberg marking at r4c4: r4c5 is off the board` for a window that is
+  not wholly on it. They come last in the list of broken rules.
+- **`hybrid.parse_windows` is the one place a window name is read and
+  refused**, for the brute force and the finder alike.
+- **`--battenberg-only` on the brute force applies to every classification
+  of the run**, `--circles` ones too, as `--min-bananas` does.
+
 ## Decisions
 
 - **Root.** The first used cell in reading order, stated as n² / 2

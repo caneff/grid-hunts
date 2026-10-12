@@ -180,6 +180,58 @@ def number_cell_circles(board):
     return [cell for cell in valid_circles(board) if min(cell) < 0]
 
 
+def window_cells(window):
+    """The four cells of the window named by its top-left cell, in reading
+    order."""
+    r, c = window
+    return [(r, c), (r, c + 1), (r + 1, c), (r + 1, c + 1)]
+
+
+def windows(board):
+    """Every window of the board, sorted: each cell that has the three cells
+    to its right, below it and below right on the board with it."""
+    return sorted(
+        cell for cell in board if all(held in board for held in window_cells(cell))
+    )
+
+
+def checkerboard_windows(board):
+    """The board's checkerboard windows, sorted: each window whose diagonal
+    cells share a parity of value and whose side-by-side pairs differ."""
+    found = []
+    for window in windows(board):
+        a, b, c, d = (board[cell] % 2 for cell in window_cells(window))
+        if a == d and b == c and a != b:
+            found.append(window)
+    return found
+
+
+def off_board(window, board):
+    """The first cell of the window that is not on the board, or None when
+    all four are."""
+    return next((cell for cell in window_cells(window) if cell not in board), None)
+
+
+def parse_windows(text, rows, cols, blank_strip=False):
+    """The windows `text` names, each by its top-left cell, a frozenset.
+    Raises ValueError on a name `parse_cell` refuses, and on a window that is
+    not wholly on the board, naming the cell that is off it."""
+    board = set(number_cells(rows, cols, blank_strip))
+    board |= {(r, c) for r in range(rows) for c in range(cols)}
+    found = set()
+    for name in text.split():
+        window = parse_cell(name)
+        off = off_board(window, board)
+        if off is not None:
+            strip = "" if blank_strip else ", no blank strip"
+            raise ValueError(
+                f"window {name} is not wholly on the {rows}x{cols} board{strip}: "
+                f"{cell_name(off)} is off it"
+            )
+        found.add(window)
+    return frozenset(found)
+
+
 def _box(region):
     """(top, left, height, width) of the smallest box that holds the region."""
     top, left = (min(cell[i] for cell in region) for i in (0, 1))
@@ -188,15 +240,28 @@ def _box(region):
 
 
 def failures(
-    net, rows, cols, circles=(), blank_strip=False, *, min_bananas=0, number_circles=0
+    net,
+    rows,
+    cols,
+    circles=(),
+    blank_strip=False,
+    *,
+    min_bananas=0,
+    number_circles=0,
+    battenberg=(),
+    battenberg_only=False,
 ):
     """Every reason these edges and circles are not a hybrid grid, [] when
     they are one. `circles` are cells of the board. A set of edges that is no
     U-Bahn network fails on that alone; a network then answers for each
     region and each circle: an even region is a rectangle, an odd region is
-    not, and a circled cell's value is its region's size. Last, a grid with
+    not, and a circled cell's value is its region's size. Then a grid with
     fewer than `min_bananas` banana regions fails on their number, and so
-    does one with fewer than `number_circles` valid circles on number cells."""
+    does one with fewer than `number_circles` valid circles on number cells.
+    Last, each Battenberg marking, a window of `battenberg`, answers by its
+    window: it is wholly on the board and a checkerboard window. With
+    `battenberg_only`, the negative constraint, every checkerboard window
+    that has no marking is a reason too."""
     broken = network.why_not_network(net, rows, cols)
     if broken:
         return [broken]
@@ -239,23 +304,31 @@ def failures(
         reasons.append(
             f"{held} valid circles on number cells, fewer than {number_circles}"
         )
+    checkerboards = checkerboard_windows(board)
+    for window in sorted(battenberg):
+        off = off_board(window, board)
+        if off is not None:
+            reasons.append(
+                f"Battenberg marking at {cell_name(window)}: "
+                f"{cell_name(off)} is off the board"
+            )
+        elif window not in checkerboards:
+            reasons.append(
+                f"Battenberg marking at {cell_name(window)}: not a checkerboard window"
+            )
+    if battenberg_only:
+        reasons += [
+            f"checkerboard window at {cell_name(window)} has no Battenberg marking"
+            for window in checkerboards
+            if window not in battenberg
+        ]
     return reasons
 
 
-def why_not_hybrid(
-    net, rows, cols, circles=(), blank_strip=False, *, min_bananas=0, number_circles=0
-):
+def why_not_hybrid(net, rows, cols, circles=(), blank_strip=False, **conditions):
     """Why these edges and circles are not a hybrid grid, or "" when they
-    are one: the first of `failures`."""
-    reasons = failures(
-        net,
-        rows,
-        cols,
-        circles,
-        blank_strip,
-        min_bananas=min_bananas,
-        number_circles=number_circles,
-    )
+    are one: the first of `failures`, which takes the same arguments."""
+    reasons = failures(net, rows, cols, circles, blank_strip, **conditions)
     return next(iter(reasons), "")
 
 
