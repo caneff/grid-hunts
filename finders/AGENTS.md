@@ -58,6 +58,11 @@ because the checker reads them and nothing under `docs/research/` does
   full grids or by a propagator during the search).
   `hybrid_sat.listing` returns up to a cap of grids with its cut and conflict
   counts.
+  **A new hybrid condition is written on the PySAT engines only** (Chris's
+  ruling of 2026-10-12): its clauses in `hybrid_sat.py`, which both PySAT
+  engines share, its reading in `hybrid.py` and its 4x4 answers from
+  `brute.py`. `--engine cpsat` refuses the new flag by name and is given no
+  model of it. The conditions already on all three engines stay there.
   `--number-circles K` is the condition "at least K valid circles on number
   cells" (#794), on all three engines; a grid cell that is a valid circle
   counts for nothing. `hybrid_finder.py climb --out DIR` is its hunt: it
