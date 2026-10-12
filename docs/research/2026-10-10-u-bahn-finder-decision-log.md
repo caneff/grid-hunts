@@ -786,6 +786,29 @@ Worker's choices, none a ruling:
   `c3:straight` marked leaves no symmetry and both grids of a transpose pair
   are examples.
 
+## Hybrid: the picture's checkerboard symbols (#23)
+
+`hybrid_finder.py render` draws a small checkerboard symbol at the centre of
+every checkerboard window, the corner its four cells share, whether the
+window is on the grid, in the strips or across them. 2026-10-12.
+
+- **The look, the worker's taste call.** A square of four quarters, the
+  top-left and bottom-right ones filled and the other two white. On a window
+  with no marking it is near-black, quarters of 7 pixels in a 1-pixel
+  outline. On a window that is a Battenberg marking of the hunt's conditions
+  it is in the given ring's purple, quarters of 10 pixels in a 2-pixel
+  outline. A cell is 64 pixels, so neither reaches a cell's number or the
+  network through its centre. The symbols are drawn last, over the heavy
+  line between cells of different parity.
+- **One picture**, the 4x4 grid with `c1:turn` and `r2c4` circled and the
+  window `c1:turn` marked; its other two checkerboard windows, `c2:turn` and
+  `r3c1`, carry the plain symbol:
+  `docs/research/2026-10-12-u-bahn-battenberg/picture-c1-turn-marked.png`.
+- **A marking on a window that is no checkerboard window is refused**, as a
+  circle that is not valid is, so the picture never shows a false clue. The
+  negative constraint is not re-read by `render`: the picture shows every
+  checkerboard window whatever the hunt asked.
+
 ## Decisions
 
 - **Root.** The first used cell in reading order, stated as n² / 2

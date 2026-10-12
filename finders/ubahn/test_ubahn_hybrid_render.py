@@ -3,8 +3,9 @@
 The grid is the decision log's one 4x4 grid with `c1:turn` and `r2c4`
 circled (§ Hybrid), drawn above `GRID` below with its regions worked out by
 hand. Then the `render` command, black-box, over a hunt directory written
-here by hand. No solver runs; about three seconds, a dozen subprocess
-starts.
+here by hand. The same grid has three checkerboard windows, so it is also
+where the checkerboard symbol is read back (spec #20, #23). No solver runs;
+about six seconds, a dozen and a half subprocess starts.
 
     uv run finders/ubahn/test_ubahn_hybrid_render.py
 """
@@ -154,6 +155,105 @@ check(
     ),
 )
 
+# Checkerboard windows (#23), by hand from the board above: c1:turn is 2 1
+# over 1 2, c2:turn is 1 0 over 2 1, both across the turn strip and the
+# grid, and r3c1 is 1 4 over 0 3, on the grid. Each has a small checkerboard
+# symbol at its centre, the corner its four cells share: the symbol's
+# top-left and bottom-right quarters in the symbol's colour, the other two
+# white.
+WINDOWS = ["c1:turn", "c2:turn", "r3c1"]
+check(
+    "the rule reader's checkerboard windows are the three worked out by hand",
+    [hybrid.cell_name(w) for w in hybrid.checkerboard_windows(picture.board)]
+    == WINDOWS,
+)
+
+
+def symbol(picture, corner):
+    """The colour of the checkerboard symbol at the bottom-right corner of
+    the cell `corner`, or None when none is drawn there: a symbol's top-left
+    and bottom-right quarters share a colour and its other two are white."""
+    _, _, x, y = picture.box(corner)
+    quarters = [
+        picture.image.getpixel((x + dx, y + dy))
+        for dx, dy in ((-4, -4), (3, 3), (3, -4), (-4, 3))
+    ]
+    white = hybrid_render.BACKGROUND
+    if quarters[0] == quarters[1] != white and quarters[2:] == [white, white]:
+        return quarters[0]
+    return None
+
+
+def weight(picture, name, colour):
+    """How many pixels of the symbol at this window's centre are `colour`."""
+    _, _, x, y = picture.box(cell(name))
+    return sum(
+        picture.image.getpixel((x + dx, y + dy)) == colour
+        for dx in range(-16, 16)
+        for dy in range(-16, 16)
+    )
+
+
+def symbols(picture, depth=4):
+    """{the name of a cell: the colour of the symbol at its bottom-right
+    corner}, over every corner inside the picture, the icon cells' and the
+    corner off the board included."""
+    return {
+        hybrid.cell_name((r, c)) if (r, c) in picture.board else str((r, c)): colour
+        for r in range(-depth, 4)
+        for c in range(-depth, 4)
+        if (colour := symbol(picture, (r, c))) is not None
+    }
+
+
+check(
+    f"a symbol sits at the centre of each checkerboard window and nowhere "
+    f"else, plain when no window is a condition ({symbols(picture)})",
+    symbols(picture) == dict.fromkeys(WINDOWS, hybrid_render.WINDOW),
+)
+marked = hybrid_render.Picture(GRID, 4, 4, GIVEN, battenberg=[cell("c1:turn")])
+check(
+    "a window that is a condition has its symbol in the given colour, the "
+    f"others stay plain ({symbols(marked)})",
+    symbols(marked)
+    == {
+        "c1:turn": hybrid_render.GIVEN_RING,
+        "c2:turn": hybrid_render.WINDOW,
+        "r3c1": hybrid_render.WINDOW,
+    },
+)
+plain_weight = weight(marked, "c2:turn", hybrid_render.WINDOW)
+check(
+    f"and it is the heavier of the two ({plain_weight} pixels plain, "
+    f"{weight(marked, 'c1:turn', hybrid_render.GIVEN_RING)} as a condition)",
+    plain_weight > 50
+    and weight(marked, "c1:turn", hybrid_render.GIVEN_RING) > 1.5 * plain_weight,
+)
+check(
+    "the rings are drawn as before, markings or none: the same four cells, "
+    "the two conditions in the given colour",
+    all(
+        count(marked, name, hybrid_render.GIVEN_RING) > 200
+        and count(marked, name, hybrid_render.GIVEN_RING)
+        >= count(picture, name, hybrid_render.GIVEN_RING)
+        for name in ("c1:turn", "r2c4")
+    )
+    and all(
+        count(marked, name, hybrid_render.VALID_RING)
+        == count(picture, name, hybrid_render.VALID_RING)
+        > 200
+        for name in ("r1:turn", "r3c4")
+    ),
+)
+try:
+    hybrid_render.Picture(GRID, 4, 4, battenberg=[cell("r1c1")])
+    check("a marking on a window that is no checkerboard is refused", False)
+except ValueError as e:
+    check(
+        f"a marking on a window that is no checkerboard is refused ({e})",
+        "Battenberg marking at r1c1" in str(e),
+    )
+
 # The network. r1c1 is a turn with arms east and south, so its outer corner
 # is up and to the left of its centre: the notch two butt-ended lines leave.
 x, y = centre(picture, "r1c1")
@@ -281,6 +381,14 @@ with tempfile.TemporaryDirectory() as d:
         same(pictures[3][1], picture),
     )
     check("seed 7's picture is the other grid's", same(pictures[7][1], four))
+    # GRID_RECORD has no `battenberg` field, as a record written before the
+    # condition: it is drawn with no markings, a plain symbol on each
+    # checkerboard window.
+    check(
+        "a record older than the condition is drawn with plain symbols only",
+        pictures[3][1] is not None
+        and set(symbols(picture).values()) == {hybrid_render.WINDOW},
+    )
     check(
         "`render` says how many it wrote and where, and prints no link",
         "2 pictures" in r.stdout
@@ -314,6 +422,21 @@ with tempfile.TemporaryDirectory() as d:
     check(
         "a record of a hunt with the blank strip on is drawn with five strips",
         r.returncode == 0 and same(decoded(with_blank / "renders" / "7.png")[1], five),
+    )
+
+    # A hunt with markings: the record names the windows that are conditions.
+    with_markings = hunt_dir(
+        d,
+        "markings",
+        {3: {**GRID_RECORD, "battenberg": ["c1:turn"], "battenberg_only": False}},
+    )
+    r = run_cli("render", str(with_markings))
+    check(
+        f"`render` over a hunt with markings draws the marked window as a "
+        f"condition (stderr: {r.stderr[-300:]})",
+        r.returncode == 0
+        and same(decoded(with_markings / "renders" / "3.png")[1], marked)
+        and not same(decoded(with_markings / "renders" / "3.png")[1], picture),
     )
 
     # A grid that is no hybrid grid on the board drawn is refused, and no
@@ -371,7 +494,8 @@ r = run_cli("--help")
 check(
     "--help names the render command and its flags",
     r.returncode == 0
-    and all(word in r.stdout for word in ("render DIR", "--seed", "--png", "renders/")),
+    and all(word in r.stdout for word in ("render DIR", "--seed", "--png", "renders/"))
+    and "checkerboard symbol" in " ".join(r.stdout.split()),
 )
 
 sys.exit(0 if ok else 1)

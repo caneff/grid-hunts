@@ -88,7 +88,9 @@ because the checker reads them and nothing under `docs/research/` does
   `DIR/renders/<seed>.png` (`hybrid_render.py`, #791): the board with its
   outside numbers and network, chocolate in one colour and a tint per banana,
   a ring on every valid circle and a heavier one in a second colour on a
-  circle that is a condition; `--seed N --png FILE` draws one example and
+  circle that is a condition, and a small checkerboard symbol at the centre
+  of every checkerboard window, heavier and in the second colour on a window
+  that is a Battenberg marking of the hunt (#23); `--seed N --png FILE` draws one example and
   `--blank-strip` the fifth strip.
   `time_engines.py run --engine E --progress FILE` times one engine on
   Chris's six cases and `time_engines.py report FILE...` prints the table and

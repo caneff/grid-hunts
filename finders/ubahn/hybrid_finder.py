@@ -105,7 +105,11 @@ stays ended: one a time limit stopped is taken up again in a new DIR, with
 outside number, the network, chocolate in one colour and a tint per banana,
 and a ring on every valid circle, each cell whose value is the size of its
 region; a circle that is one of the grid's conditions has a heavier ring in
-a second colour. A rerun replaces every picture there. `--seed N --png FILE`
+a second colour. A small checkerboard symbol sits at the centre of every
+checkerboard window of the grid, heavier and in the second colour on a window
+that is a Battenberg marking of the hunt's conditions; a record from before
+the condition is drawn as having no markings. A rerun replaces every picture
+there. `--seed N --png FILE`
 draws that one example to FILE instead. `--blank-strip` draws the fifth strip
 on a record of a hunt that had none; a grid that is no hybrid grid on the
 board drawn is refused and nothing is written.
@@ -601,6 +605,7 @@ def write_pictures(out, blank_strip=False, seed=None, png=None):
                 asked.cols,
                 asked.circles,
                 blank_strip or asked.blank_strip,
+                asked.battenberg,
             ).image
         except ValueError as e:
             raise ValueError(f"seed {s}: {e}") from e
