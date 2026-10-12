@@ -23,10 +23,9 @@ its own group is circled, on chocolate and banana groups alike.
 
 The circle score is the number of groups carrying a circle, forced ones left
 out: a rectangle repeats digits, so several of its cells can equal its size,
-and the score counts the rectangle once. This is the Renbanana lineup's rule
-(its generator records one circle per group, and counts 5-plus bananas as
-forced); the count is the builder's own choice for Banabner, since no hunt
-records a score.
+and the score counts the rectangle once. Chocolate groups and 3- or 4-cell
+bananas both count (Chris, 2026-10-12, #9); `circleable` holds the chocolate
+groups alone.
 """
 
 import json
