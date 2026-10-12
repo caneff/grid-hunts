@@ -1,0 +1,25 @@
+{
+ "note": "Second legal Banabner grid, from a standalone CP-SAT model the spec-758 controller ran, re-checked with renbanana_verify.check (difference 4, nabner) on spec-758 at 88a4902 (#761). Its 3x3 chocolate at r3-5 c3-5 holds a 5 at r5c3: a larger rectangle than known_grid.json's, and a chocolate 5, which the difference-5 encodings forbid.",
+ "grid": [
+  "473658291",
+  "968142537",
+  "251739846",
+  "689371425",
+  "315924768",
+  "724865913",
+  "537296184",
+  "142583679",
+  "896417352"
+ ],
+ "shading": [
+  "bbCbCbbCC",
+  "bCbbbCbCC",
+  "CbCCCbCbb",
+  "CbCCCbCbC",
+  "bbCCCbbCb",
+  "CCbbbCCbb",
+  "bbCbCbbCC",
+  "bCbCbbCbb",
+  "CbbbCCbbC"
+ ]
+}

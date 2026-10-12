@@ -7,12 +7,22 @@ import them and keep only what they do differently. The counting and hunting
 scripts (`count_circled_pairs`, `count_circled_sets`, `hunt_circled_pair`) do
 not use this module yet and carry their own sudoku and whisper code.
 
+The rule-5 pieces (`whisper`, `whisper_on_shading`, `whisper_on_digits`) take
+the chocolate `difference` (default 5, Renbanana). Nothing here encodes the
+banana rule: the callers do, and `renbanana_verify.check` takes it as
+`banana_rule`. Encodings that assume a difference of 5 (the high/low
+checkerboard, no 5 in a chocolate group of two or more) stay in the renban
+callers and are not offered for nabner.
+
 An encoding is either exact or a relaxation (never excludes a legal grid), and
 its docstring says which: an INFEASIBLE from a model built of these is a proof
 only while every piece is one of those two.
 
 `renbanana/tools/test_renbanana_model.py` pins each one to a small board.
 """
+
+import json
+from pathlib import Path
 
 from renbanana_verify import neighbours
 
@@ -30,6 +40,57 @@ PLACEMENTS = [
 ]
 
 
+# --------------------------------------------------------------- catalogue
+
+CATALOGUE_DIR = Path(__file__).resolve().parent.parent / "docs/research/renbanana"
+
+
+def catalogue_path(difference=5):
+    """Where the chocolate rectangle catalogue for one chocolate difference
+    lives: `finders/renbanana/tools/build_rectangle_catalogue.py` writes it
+    there and `load_catalogue` reads it."""
+    name = "rectangle-catalogue" + ("" if difference == 5 else f"-d{difference}")
+    return CATALOGUE_DIR / f"{name}.json"
+
+
+def load_catalogue(difference=5):
+    """The chocolate rectangle catalogue for one chocolate difference."""
+    return json.loads(catalogue_path(difference).read_text())
+
+
+def catalogue_fact(catalogue, a, b, ro, co):
+    """Layer B of `catalogue` for an `a` by `b` rectangle whose top-left cell
+    sits at box offset (ro, co), turned to that orientation: `count`,
+    `support` (per-cell digit lists, or None) and `circle_cells` ((i, j)
+    offsets).
+
+    A shape the catalogue does not hold raises: a caller reads a count of 0 as
+    proof that nothing fills the rectangle, and a shape nobody enumerated
+    proves nothing. An offset absent under a shape it does hold is one the
+    rectangle cannot sit at on the board, and reads as count 0.
+
+    The catalogue stores a <= b only. Transposing swaps rows and columns, and
+    the 3x3 boxes are symmetric under it, so the offset swaps too.
+    """
+    flip = a > b
+    if flip:
+        a, b, ro, co = b, a, co, ro
+    if f"{a}x{b}" not in catalogue:
+        raise ValueError(f"the rectangle catalogue holds no {a}x{b} shape")
+    entry = catalogue[f"{a}x{b}"]["B"].get(f"{ro},{co}", {})
+    support = entry.get("support")
+    if not support or not support[0]:
+        support = None
+    elif flip:  # stored rows are the other orientation's columns
+        support = [[support[j][i] for j in range(a)] for i in range(b)]
+    circles = entry.get("circle_cells", [])
+    return {
+        "count": entry.get("count", 0),
+        "support": support,
+        "circle_cells": [(c, r) if flip else (r, c) for r, c in circles],
+    }
+
+
 # ------------------------------------------------------------------ digits
 
 
@@ -45,9 +106,9 @@ def sudoku(m, d):
             )
 
 
-def whisper(m, d, choc):
+def whisper(m, d, choc, difference=5):
     """Rule 5, shading and digits both free: two adjacent chocolate cells
-    differ by 5 or more. Exact.
+    differ by `difference` or more. Exact.
 
     The magnitude gets its own variable and `far` is a genuine reification of
     it -- enforcing one branch on `far` and the other on its negation would
@@ -58,25 +119,26 @@ def whisper(m, d, choc):
         mag = m.new_int_var(0, 8, f"m{p}{q}")
         m.add_abs_equality(mag, d[p] - d[q])
         far = m.new_bool_var(f"far{p}{q}")
-        m.add(mag >= 5).only_enforce_if(far)
-        m.add(mag <= 4).only_enforce_if(far.negated())
+        m.add(mag >= difference).only_enforce_if(far)
+        m.add(mag <= difference - 1).only_enforce_if(far.negated())
         m.add_bool_or([choc[p].negated(), choc[q].negated(), far])
 
 
-def whisper_on_shading(m, d, is_choc):
-    """Rule 5 on a fixed shading: each chocolate adjacency differs by >= 5."""
+def whisper_on_shading(m, d, is_choc, difference=5):
+    """Rule 5 on a fixed shading: each chocolate adjacency differs by
+    >= `difference`."""
     for p, q in ADJACENT:
         if is_choc[p] and is_choc[q]:
             mag = m.new_int_var(0, 8, f"a{p}{q}")
             m.add_abs_equality(mag, d[p] - d[q])
-            m.add(mag >= 5)
+            m.add(mag >= difference)
 
 
-def whisper_on_digits(m, choc, grid):
-    """Rule 5 with the digits fixed: an adjacent pair differing by less than 5
-    cannot both be chocolate. A plain clause, and exact."""
+def whisper_on_digits(m, choc, grid, difference=5):
+    """Rule 5 with the digits fixed: an adjacent pair differing by less than
+    `difference` cannot both be chocolate. A plain clause, and exact."""
     for p, q in ADJACENT:
-        if abs(grid[p] - grid[q]) < 5:
+        if abs(grid[p] - grid[q]) < difference:
             m.add_bool_or([choc[p].negated(), choc[q].negated()])
 
 
@@ -97,7 +159,12 @@ def inside_of(h, w, r0, c0):
 
 
 def border_of(h, w, r0, c0):
-    inside = set(inside_of(h, w, r0, c0))
+    return border_of_cells(inside_of(h, w, r0, c0))
+
+
+def border_of_cells(cells):
+    """The cells outside `cells` that touch one of them orthogonally."""
+    inside = set(cells)
     return sorted({q for p in inside for q in neighbours(*p) if q not in inside})
 
 

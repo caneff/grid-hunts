@@ -19,7 +19,7 @@ IDENTITY = "IDENTITY"
 
 
 @lru_cache
-def _d4_cell_maps(n):
+def d4_cell_maps(n):
     """The eight index maps of the n x n dihedral group, flat row-major."""
 
     def idx(r, c):
@@ -110,7 +110,7 @@ def canonical_key(grid, group):
         n = isqrt(len(grid))
         if n * n != len(grid):
             raise ValueError(f"D4 needs a square grid, got {len(grid)} cells")
-        maps = _d4_cell_maps(n)
+        maps = d4_cell_maps(n)
     else:
         maps = _normalize_group(group)
         _validate_custom_group(maps, len(grid))

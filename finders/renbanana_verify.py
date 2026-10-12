@@ -15,6 +15,11 @@ The rules:
 5. German Chocolate: orthogonally adjacent chocolate digits differ by >= 5.
 6. Renbanana: every banana group's digits are distinct and consecutive.
 
+Two parameters of `check` reach the Dutch Chocolate Banabner variant: the
+chocolate `difference` (rule 5, default 5) and the `banana_rule` (rule 6,
+"renban" by default, or "nabner": no two digits of a banana group are equal or
+consecutive, the group taken whole across rows, columns and boxes).
+
 Plus the circle demand, when circles are supplied: a circled cell's digit
 equals the size of its own group.
 """
@@ -24,6 +29,8 @@ import sys
 from pathlib import Path
 
 N = 9
+RENBAN = "renban"
+NABNER = "nabner"
 
 
 def cells():
@@ -106,11 +113,33 @@ def group_sizes(is_choc):
     }
 
 
-def check(grid, is_choc, circles=()):
+def nabner_violations(group, grid):
+    """Rule 6 for nabner: one line per equal or consecutive pair in the group."""
+    out = []
+    for i, p in enumerate(group):
+        for q in group[i + 1 :]:
+            gap = abs(grid[p] - grid[q])
+            if gap <= 1:
+                kind = "repeats" if gap == 0 else "holds consecutive"
+                out.append(
+                    f"rule 6: banana group at {group[0]} {kind} digits "
+                    f"{grid[p]} at r{p[0] + 1}c{p[1] + 1} and "
+                    f"{grid[q]} at r{q[0] + 1}c{q[1] + 1}"
+                )
+    return out
+
+
+def check(grid, is_choc, circles=(), difference=5, banana_rule=RENBAN):
     """Return a list of human-readable violations; empty means the grid is legal.
 
     `grid` maps (r, c) -> digit, `is_choc` maps (r, c) -> True for chocolate.
+    `difference` is rule 5's minimum gap between touching chocolate digits;
+    `banana_rule` is rule 6, "renban" or "nabner".
     """
+    if banana_rule not in (RENBAN, NABNER):
+        raise ValueError(
+            f"banana_rule must be 'renban' or 'nabner', not {banana_rule!r}"
+        )
     bad = []
 
     for i in range(N):
@@ -148,7 +177,7 @@ def check(grid, is_choc, circles=()):
                 and b < N
                 and is_choc[r, c]
                 and is_choc[a, b]
-                and abs(grid[r, c] - grid[a, b]) < 5
+                and abs(grid[r, c] - grid[a, b]) < difference
             ):
                 bad.append(
                     f"rule 5: chocolate {grid[r, c]} at r{r + 1}c{c + 1} touches "
@@ -156,6 +185,9 @@ def check(grid, is_choc, circles=()):
                 )
 
     for group in components(is_choc, False):
+        if banana_rule == NABNER:
+            bad.extend(nabner_violations(group, grid))
+            continue
         digits = [grid[p] for p in group]
         if len(set(digits)) != len(digits):
             bad.append(f"rule 6: banana group at {group[0]} repeats a digit: {digits}")

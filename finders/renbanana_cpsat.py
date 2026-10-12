@@ -77,15 +77,7 @@ STATUS = {
 }
 
 
-CATALOGUE = json.loads(
-    (
-        Path(__file__).resolve().parent.parent
-        / "docs"
-        / "research"
-        / "renbanana"
-        / "rectangle-catalogue.json"
-    ).read_text()
-)
+CATALOGUE = rm.load_catalogue()
 
 
 @functools.cache
@@ -101,11 +93,7 @@ def circle_cells_at(a, b, ro, co):
     """
     if max(a, b) > 8:
         return ()
-    key, flip = (f"{a}x{b}", False) if a <= b else (f"{b}x{a}", True)
-    if flip:  # transposing swaps rows and cols; the 3x3 boxes are symmetric
-        ro, co = co, ro
-    cells = CATALOGUE[key]["B"].get(f"{ro},{co}", {}).get("circle_cells", [])
-    return tuple((c, r) if flip else (r, c) for r, c in cells)
+    return tuple(rm.catalogue_fact(CATALOGUE, a, b, ro, co)["circle_cells"])
 
 
 @functools.cache
@@ -121,14 +109,9 @@ def support_at(a, b, ro, co):
     """
     if max(a, b) > 8:
         return None
-    key, flip = (f"{a}x{b}", False) if a <= b else (f"{b}x{a}", True)
-    if flip:
-        ro, co = co, ro
-    sup = CATALOGUE[key]["B"].get(f"{ro},{co}", {}).get("support")
-    if not sup or not sup[0]:
+    sup = rm.catalogue_fact(CATALOGUE, a, b, ro, co)["support"]
+    if sup is None:
         return None  # absent, or an empty entry: nothing can be filled here
-    if flip:  # stored rows are the other orientation's columns
-        sup = [[sup[j][i] for j in range(len(sup))] for i in range(len(sup[0]))]
     # Frozen sets, cached: the domains are read once per placement per solve and
     # a membership test should not walk a list. The whole catalogue is a few
     # hundred entries, so the cache never needs evicting.
@@ -149,10 +132,7 @@ def fillings_at(a, b, ro, co):
     """
     if max(a, b) > 8:
         return 0
-    key, flip = (f"{a}x{b}", False) if a <= b else (f"{b}x{a}", True)
-    if flip:
-        ro, co = co, ro
-    return CATALOGUE[key]["B"].get(f"{ro},{co}", {}).get("count", 0)
+    return rm.catalogue_fact(CATALOGUE, a, b, ro, co)["count"]
 
 
 # Rectangle shapes a rectangle can take: no side exceeds 8 (RECTANGLE-CATALOGUE.md,
