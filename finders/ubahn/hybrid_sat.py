@@ -321,12 +321,9 @@ def _battenberg(odd, marked, only):
     the cell that is off it."""
     clauses = []
     for window in sorted(marked):
-        off = hybrid.off_board(window, odd)
+        off = hybrid.marking_off_board(window, odd)
         if off is not None:
-            raise ValueError(
-                f"Battenberg marking at {hybrid.cell_name(window)}: "
-                f"{hybrid.cell_name(off)} is off the board"
-            )
+            raise ValueError(off)
         a, b, c, d = (odd[cell] for cell in hybrid.window_cells(window))
         clauses += [[a, b], [-a, -b], [a, c], [-a, -c], [-a, d], [a, -d]]
     if only:

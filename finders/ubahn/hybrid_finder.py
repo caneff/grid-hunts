@@ -354,7 +354,9 @@ class HybridFinder:
         """Raises ValueError, naming it, on a circle `hybrid.parse_cell`
         refuses, anything the plain finder's reader refuses in the edge
         rows and the piece-count condition, a `min_bananas` that is no whole
-        number of 0 or more, or a field the record lacks. A record with no
+        number of 0 or more, a `battenberg` that is no list of window names,
+        a `battenberg_only` that is not true or false, or a field the record
+        lacks. A record with no
         `min_bananas` is of a hunt from before that condition (#792) and asks
         for none; `record` has written the field in every record since. One
         with no `battenberg` or `battenberg_only` is from before Battenberg
@@ -367,6 +369,18 @@ class HybridFinder:
                 raise ValueError(
                     f"min_bananas is {min_bananas!r}: it is a whole number, 0 or more"
                 )
+            battenberg = record.get("battenberg", [])
+            if type(battenberg) is not list or not all(
+                type(name) is str for name in battenberg
+            ):
+                raise ValueError(
+                    f"battenberg is {battenberg!r}: it is a list of window names"
+                )
+            battenberg_only = record.get("battenberg_only", False)
+            if type(battenberg_only) is not bool:
+                raise ValueError(
+                    f"battenberg_only is {battenberg_only!r}: it is true or false"
+                )
             conditions = hybrid.Conditions(
                 rows,
                 cols,
@@ -376,8 +390,8 @@ class HybridFinder:
                 min_bananas,
                 # A record older than the condition (#794) asked for none.
                 record.get("number_circles", 0),
-                frozenset(map(hybrid.parse_cell, record.get("battenberg", ()))),
-                bool(record.get("battenberg_only", False)),
+                frozenset(map(hybrid.parse_cell, battenberg)),
+                battenberg_only,
             )
         except KeyError as e:
             raise ValueError(
@@ -697,10 +711,13 @@ def write_links(
         except ValueError as e:
             raise ValueError(f"seed {s}: {e}") from e
     links = replace_links(out, built)
-    return [
-        f"wrote {len(built)} links to {links}, {len(circles)} circles, "
-        f"{len(numbers)} numbers and {len(battenberg)} Battenberg markings given"
-    ]
+    given = f"{len(circles)} circles and {len(numbers)} numbers given"
+    if battenberg:
+        given = (
+            f"{len(circles)} circles, {len(numbers)} numbers and "
+            f"{len(battenberg)} Battenberg markings given"
+        )
+    return [f"wrote {len(built)} links to {links}, {given}"]
 
 
 def main(argv):

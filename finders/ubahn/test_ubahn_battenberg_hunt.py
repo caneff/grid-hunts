@@ -193,6 +193,27 @@ for engine in ENGINES:
             and asked.battenberg_only is False,
         )
 
+        # A record whose two fields are not a list of names and a true or
+        # false is refused by the field's name, never read as "off".
+        for field, value in (
+            ("battenberg_only", None),
+            ("battenberg_only", "false"),
+            ("battenberg_only", 0),
+            ("battenberg", None),
+            ("battenberg", [3]),
+            ("battenberg", "r1c3"),
+        ):
+            try:
+                READER.candidate_from_record({**examples[0], field: value})
+                refused = "no error"
+            except ValueError as e:
+                refused = str(e)
+            check(
+                f"{engine}: a record with {field} {value!r} is refused, naming "
+                f"the field ({refused!r})",
+                refused.startswith(f"{field} is {value!r}"),
+            )
+
         # `verify` re-reads the markings: the same grid on a record that
         # claims a marking it does not have, and one under the negative
         # constraint with a checkerboard window left unmarked.

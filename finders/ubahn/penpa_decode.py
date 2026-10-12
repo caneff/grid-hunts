@@ -147,16 +147,16 @@ def numbers_of(decoded, strips, rows, cols):
     return by_row, by_col
 
 
-def symbols_on_vertices(decoded, strips, name):
-    """The cells whose bottom-right corner carries the symbol called `name`,
-    as (r, c) counted from the grid's first cell: a vertex's index is the
+def battenberg_vertices(decoded, strips):
+    """The cells whose bottom-right corner carries a `sudokuetc` symbol, the
+    Battenberg marking's, as (r, c) counted from the grid's first cell: a vertex's index is the
     padded table's size plus the index of the cell it is the bottom-right
     corner of (§ 1.4)."""
     size = decoded.nx0 * (decoded.ny + 4)
     g = 2 + strips
     found = set()
     for index, symbol in decoded.symbol.items():
-        if symbol[1] == name and size <= index < 2 * size:
+        if symbol[1] == "sudokuetc" and size <= index < 2 * size:
             x, y = decoded.xy(index - size)
             found.add((y - g, x - g))
     return found

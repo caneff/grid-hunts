@@ -370,10 +370,13 @@ class _Table(NamedTuple):
         """Vertex index of the centre of the window named by its top-left
         cell, in `hybrid.py`'s scheme: the bottom-right corner of that cell.
         Raises ValueError when one of the window's four cells is off the
-        board."""
+        board, giving the window and that cell as (r, c)."""
         r, c = window
         for cell in ((r, c), (r, c + 1), (r + 1, c), (r + 1, c + 1)):
-            self.board_cell(cell)
+            try:
+                self.board_cell(cell)
+            except ValueError as e:
+                raise ValueError(f"Battenberg marking at {window}: {e}") from e
         g = self.grid_origin
         return self.vertex(g + c, g + r)
 
@@ -546,9 +549,9 @@ def link(rows, cols, found, blank_number=False, hybrid=None):
     """The Penpa+ solve link for a network on a `rows` by `cols` board: its
     outside numbers as the numbers round the grid, its edges as the embedded
     answer. With a `Hybrid`, only its numbers, circles and Battenberg
-    markings are shown; the answer is the same. Raises ValueError, naming the
-    cell, on a circle, a number or a cell of a marked window that is not on
-    the board."""
+    markings are shown; the answer is the same. Raises ValueError, giving the
+    cell as (r, c), on a circle, a number or a cell of a marked window that
+    is not on the board."""
     text = abbreviate(payload(rows, cols, found, blank_number, hybrid))
     return (
         f"{PAGE}#m=solve&p={deflate_base64(text)}"

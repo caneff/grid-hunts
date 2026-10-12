@@ -722,8 +722,30 @@ Worker's choices, none a ruling:
   r1:turn has no Battenberg marking` under the negative constraint, and
   `Battenberg marking at r4c4: r4c5 is off the board` for a window that is
   not wholly on it. They come last in the list of broken rules.
-- **`hybrid.parse_windows` is the one place a window name is read and
-  refused**, for the brute force and the finder alike.
+- **`hybrid.parse_windows` reads the window names of `--battenberg` for the
+  brute force and for the finder's hunt and `classify`**, and refuses a
+  window that is not wholly on the board. `links` has no board until it has
+  read a record, so it reads the names with the finder's `parse_cells` and
+  leaves the board check to the rule reader; a record's `battenberg` is read
+  name by name with `hybrid.parse_cell`. The reader and the PySAT rules
+  refuse an off-board window in one sentence, `hybrid.marking_off_board`'s.
+  `penpa.link` has its own guard, in its own `(r, c)` cells, for a caller
+  that does not come through `links`.
+- **A record's `battenberg` must be a list of names and its
+  `battenberg_only` true or false**; anything else is refused by the field's
+  name (spec review of #20). A `null` read as "off" would have passed
+  `verify` on a grid the negative constraint forbids.
+- **The cpsat model refuses the two conditions itself** (`hybrid_model.build`),
+  as well as the finder's flags, so no caller gets an answer for the board
+  without them.
+- **With the blank strip on, the engines are held to the reader on 7x7.** No
+  grid found on 4x4 or 6x6 has a checkerboard window that touches the blank
+  strip, and 5x5 with the blank strip has no grid at all (scratch probe on
+  `hybrid_sat.listing`, 2026-10-12: 8 grids on 4x4, the first 2,000 on 6x6,
+  none with such a window; 244 of the first 2,000 on 7x7 have one). The test
+  takes one 7x7 grid with such a window: its full set of markings under the
+  negative constraint lists it, and the set with that window left unmarked
+  does not (`test_ubahn_battenberg_sat.py`).
 - **`--battenberg-only` on the brute force applies to every classification
   of the run**, `--circles` ones too, as `--min-bananas` does.
 

@@ -9,7 +9,12 @@ grid has one: a marking only ever rules a grid out, so the grids an engine
 lists under markings must be exactly the listed no-condition grids the
 reader accepts for them, with and without the negative constraint.
 
-One CaDiCaL thread; about fifteen seconds.
+With the blank strip on, its cells are board cells. No grid has a
+checkerboard window that touches the blank strip below 7x7, so that case is
+read there: a marking on such a window, and the negative constraint with
+that window marked and with it left unmarked.
+
+One CaDiCaL thread; about twenty seconds.
 
     uv run finders/ubahn/test_ubahn_battenberg_sat.py
 """
@@ -20,6 +25,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import brute
 import hybrid
+import hybrid_model
 import hybrid_sat
 
 TIME_LIMIT = 10.0
@@ -175,6 +181,91 @@ for engine in ENGINES:
     check(
         f"{engine}, 5x5: no marking under the negative constraint has no grid",
         got == () and not kept(every, 5, frozenset(), True),
+    )
+
+
+def blank_listed(marked, only, engine, cap):
+    """The 7x7 blank-strip grids the engine lists under these markings, or
+    None when the listing is not whole: a time limit, or `cap` reached."""
+    got = hybrid_sat.listing(
+        hybrid.Conditions(
+            7, 7, blank_strip=True, battenberg=marked, battenberg_only=only
+        ),
+        engine,
+        cap=cap,
+        time_limit=TIME_LIMIT,
+    )
+    return None if got.timed_out or len(got.grids) >= cap else set(got.grids)
+
+
+def blank_accepts(grid, marked, only):
+    return not hybrid.why_not_hybrid(
+        grid, 7, 7, blank_strip=True, battenberg=marked, battenberg_only=only
+    )
+
+
+# 7x7 with the blank strip: the smallest board where a checkerboard window
+# touches the blank strip. One grid is taken that has such a window; its
+# full set of checkerboard windows under the negative constraint must list
+# it, and the same set with the blank-strip window left unmarked must not,
+# which only the clause forbidding that window can bring about.
+for engine in ENGINES:
+    found = None
+    for window in hybrid.windows(hybrid.board_cells(7, 7, blank_strip=True)):
+        if not any(min(cell) == -5 for cell in hybrid.window_cells(window)):
+            continue
+        one = hybrid_sat.listing(
+            hybrid.Conditions(7, 7, blank_strip=True, battenberg=frozenset({window})),
+            engine,
+            cap=1,
+            time_limit=TIME_LIMIT,
+        )
+        if one.grids:
+            found = (window, one.grids[0])
+            break
+    check(
+        f"{engine}, 7x7 blank strip: a marking on a window that touches the "
+        f"blank strip has a grid, and the rule reader accepts it",
+        found is not None and blank_accepts(found[1], frozenset({found[0]}), False),
+    )
+    if found is None:
+        continue
+    window, grid = found
+    full = frozenset(
+        hybrid.checkerboard_windows(hybrid.values(grid, 7, 7, blank_strip=True))
+    )
+    marked = blank_listed(full, True, engine, 200)
+    check(
+        f"{engine}, 7x7 blank strip: the grid's full set of checkerboard "
+        f"windows under the negative constraint lists it, and every grid "
+        f"listed passes the rule reader",
+        marked is not None
+        and grid in marked
+        and all(blank_accepts(g, full, True) for g in marked),
+    )
+    unmarked = blank_listed(full - {window}, True, engine, 200)
+    check(
+        f"{engine}, 7x7 blank strip: with {hybrid.cell_name(window)} left "
+        f"unmarked the negative constraint rules that grid out",
+        unmarked is not None
+        and grid not in unmarked
+        and all(blank_accepts(g, full - {window}, True) for g in unmarked),
+    )
+
+# The cpsat engine has no model of the condition and says so itself, for a
+# caller that does not come through the finder's flags.
+for name, conditions in (
+    ("a marking", hybrid.Conditions(4, 4, battenberg=frozenset({(0, 2)}))),
+    ("the negative constraint", hybrid.Conditions(4, 4, battenberg_only=True)),
+):
+    try:
+        hybrid_model.build(conditions)
+        refused = "no error"
+    except ValueError as e:
+        refused = str(e)
+    check(
+        f"the cpsat model refuses {name} by name ({refused!r})",
+        "Battenberg markings are on the PySAT engines only" in refused,
     )
 
 sys.exit(0 if ok else 1)

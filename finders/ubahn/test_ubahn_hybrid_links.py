@@ -25,7 +25,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import hybrid
 import penpa
-from penpa_decode import Decoded, edges_of, parameter, symbols_on_vertices
+from penpa_decode import Decoded, battenberg_vertices, edges_of, parameter
 from subprocess_env import success_env
 
 FINDER = HERE / "hybrid_finder.py"
@@ -376,6 +376,11 @@ with tempfile.TemporaryDirectory() as tmp:
     without = link_of(out, seed)
     d0 = Decoded(without)
     check(
+        "with no --battenberg `links` counts circles and numbers only, as "
+        f"before the condition ({r.stdout.strip()!r})",
+        r.stdout.strip().endswith("1 circles and 2 numbers given"),
+    )
+    check(
         "with no --battenberg the link carries no checkerboard symbol and "
         "the pasted rules",
         r.returncode == 0
@@ -391,9 +396,8 @@ with tempfile.TemporaryDirectory() as tmp:
     marked = {i: v for i, v in d.symbol.items() if v[1] == "sudokuetc"}
     check(
         "the link decodes back to exactly the named markings, each on the "
-        f"vertex at its window's centre ({symbols_on_vertices(d, 4, 'sudokuetc')})",
-        symbols_on_vertices(d, 4, "sudokuetc") == {(0, 2), (0, -1)}
-        and len(marked) == 2,
+        f"vertex at its window's centre ({battenberg_vertices(d, 4)})",
+        battenberg_vertices(d, 4) == {(0, 2), (0, -1)} and len(marked) == 2,
     )
     check(
         "a marking is Penpa+'s checkerboard symbol, drawn over the grid lines",
@@ -430,7 +434,7 @@ with tempfile.TemporaryDirectory() as tmp:
         f"`links --battenberg-only` with every checkerboard window marked "
         f"shows the three and adds the second sentence ({r.stderr[-200:]})",
         r.returncode == 0
-        and symbols_on_vertices(d, 4, "sudokuetc") == {(0, -1), (0, 2), (1, -1)}
+        and battenberg_vertices(d, 4) == {(0, -1), (0, 2), (1, -1)}
         and d.rules == RULES + "\n" + MARKING_RULE + "\n" + ONLY_RULE,
     )
 
@@ -459,6 +463,21 @@ with tempfile.TemporaryDirectory() as tmp:
             f"links refuses {name}, exit 2, naming it ({r.stderr.strip()[-160:]!r})",
             r.returncode == 2 and reason in r.stderr and link_of(out, seed) == before,
         )
+
+# `penpa.link` called directly, past the rule reader `links` asks first: its
+# own guard refuses a marked window that is not wholly on the board.
+try:
+    penpa.link(
+        4, 4, network_of(rec), hybrid=penpa.Hybrid(frozenset(), frozenset(), {(3, 3)})
+    )
+    refused = "no error"
+except ValueError as e:
+    refused = str(e)
+check(
+    f"`penpa.link` refuses a marked window off the board, giving the window "
+    f"and the cell ({refused!r})",
+    refused == "Battenberg marking at (3, 3): cell (3, 4) is off the board",
+)
 
 r = run_cli("--help")
 check(

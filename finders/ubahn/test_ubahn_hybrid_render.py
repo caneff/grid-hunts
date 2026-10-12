@@ -169,13 +169,15 @@ check(
 )
 
 
-def symbol(picture, corner):
+def symbol(picture, corner, image=None):
     """The colour of the checkerboard symbol at the bottom-right corner of
     the cell `corner`, or None when none is drawn there: a symbol's top-left
-    and bottom-right quarters share a colour and its other two are white."""
+    and bottom-right quarters share a colour and its other two are white.
+    Read from `image`, a decoded file of the same layout, when one is given,
+    else from the picture's own."""
     _, _, x, y = picture.box(corner)
     quarters = [
-        picture.image.getpixel((x + dx, y + dy))
+        (image or picture.image).getpixel((x + dx, y + dy))
         for dx, dy in ((-4, -4), (3, 3), (3, -4), (-4, 3))
     ]
     white = hybrid_render.BACKGROUND
@@ -194,15 +196,15 @@ def weight(picture, name, colour):
     )
 
 
-def symbols(picture, depth=4):
+def symbols(picture, depth=4, image=None):
     """{the name of a cell: the colour of the symbol at its bottom-right
     corner}, over every corner inside the picture, the icon cells' and the
-    corner off the board included."""
+    corner off the board included. Read from `image` when one is given."""
     return {
         hybrid.cell_name((r, c)) if (r, c) in picture.board else str((r, c)): colour
         for r in range(-depth, 4)
         for c in range(-depth, 4)
-        if (colour := symbol(picture, (r, c))) is not None
+        if (colour := symbol(picture, (r, c), image)) is not None
     }
 
 
@@ -387,7 +389,8 @@ with tempfile.TemporaryDirectory() as d:
     check(
         "a record older than the condition is drawn with plain symbols only",
         pictures[3][1] is not None
-        and set(symbols(picture).values()) == {hybrid_render.WINDOW},
+        and set(symbols(picture, image=pictures[3][1]).values())
+        == {hybrid_render.WINDOW},
     )
     check(
         "`render` says how many it wrote and where, and prints no link",

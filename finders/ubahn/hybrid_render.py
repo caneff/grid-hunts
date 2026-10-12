@@ -56,9 +56,10 @@ NETWORK = (21, 101, 192)
 # condition of the grid.
 VALID_RING = (198, 40, 40)
 GIVEN_RING = (106, 27, 154)
-# The checkerboard symbol on a checkerboard window, drawn in `GIVEN_RING`
-# and heavier on a window that is a condition. Each is (the side of one of
-# its four quarters, the width of its outline), in pixels.
+# The checkerboard symbol on a checkerboard window is drawn in `WINDOW`, and
+# in `GIVEN_RING` and heavier on a window that is a condition. Each of the
+# two symbols is (the side of one of its four quarters, the width of its
+# outline), in pixels.
 WINDOW = (33, 33, 33)
 PLAIN_SYMBOL = (7, 1)
 GIVEN_SYMBOL = (10, 2)

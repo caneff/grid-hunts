@@ -184,6 +184,13 @@ def number_cell_circles(board):
     return [cell for cell in valid_circles(board) if min(cell) < 0]
 
 
+def board_cells(rows, cols, blank_strip=False):
+    """Every cell of the board, a set: its grid cells and its number cells."""
+    return set(number_cells(rows, cols, blank_strip)) | {
+        (r, c) for r in range(rows) for c in range(cols)
+    }
+
+
 def window_cells(window):
     """The four cells of the window named by its top-left cell, in reading
     order."""
@@ -216,12 +223,22 @@ def off_board(window, board):
     return next((cell for cell in window_cells(window) if cell not in board), None)
 
 
+def marking_off_board(window, board):
+    """The reason a Battenberg marking's window is not wholly on the board,
+    naming the cell that is off it, or None when all four cells are on it."""
+    off = off_board(window, board)
+    if off is None:
+        return None
+    return (
+        f"Battenberg marking at {cell_name(window)}: {cell_name(off)} is off the board"
+    )
+
+
 def parse_windows(text, rows, cols, blank_strip=False):
     """The windows `text` names, each by its top-left cell, a frozenset.
     Raises ValueError on a name `parse_cell` refuses, and on a window that is
     not wholly on the board, naming the cell that is off it."""
-    board = set(number_cells(rows, cols, blank_strip))
-    board |= {(r, c) for r in range(rows) for c in range(cols)}
+    board = board_cells(rows, cols, blank_strip)
     found = set()
     for name in text.split():
         window = parse_cell(name)
@@ -310,12 +327,9 @@ def failures(
         )
     checkerboards = checkerboard_windows(board)
     for window in sorted(battenberg):
-        off = off_board(window, board)
+        off = marking_off_board(window, board)
         if off is not None:
-            reasons.append(
-                f"Battenberg marking at {cell_name(window)}: "
-                f"{cell_name(off)} is off the board"
-            )
+            reasons.append(off)
         elif window not in checkerboards:
             reasons.append(
                 f"Battenberg marking at {cell_name(window)}: not a checkerboard window"
