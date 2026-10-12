@@ -1,0 +1,25 @@
+{
+ "note": "Banabner grid found by banabner_model.Model (seed 0, 4 workers, 109 s), checked by hand against the rules on 2026-10-09 (#761): 13 banana groups of 3-5 cells, none a rectangle, each pairwise non-consecutive; 9 chocolate rectangles of two or more cells, every side <= 3, each touching pair differing by >= 4; 13 lone chocolate cells.",
+ "grid": [
+  "824319567",
+  "769528413",
+  "513746298",
+  "356872941",
+  "172694835",
+  "498135726",
+  "237951684",
+  "981467352",
+  "645283179"
+ ],
+ "shading": [
+  "bbCbbbCbC",
+  "CbCbCCbbC",
+  "bCbCbbCbC",
+  "bCbbCbbCb",
+  "bbCCbCCbb",
+  "CbCCbbbCC",
+  "bCbbCbCbb",
+  "bCbCbCbCb",
+  "bbCbbCbbC"
+ ]
+}

@@ -129,5 +129,22 @@ different grid from `opener/solution.json`:
 438527961
 ```
 
+Its shading (`C` chocolate, `b` banana), the one shading that fits these
+digits and circles (`probe_circle_pattern --givens` with all 81 digits,
+`--enumerate`: one solution, search exhausted); `renbanana_verify.check` passes
+it, and `finders/renbanana/tools/test_renbanana_variant.py` pins it:
+
+```
+bbbCbCbbC
+bCbCbbCbC
+CbCbbCbCb
+bbbCbCbCb
+bbbbCbbCb
+bCCCbbbCb
+CbbbCCCbb
+bCbCbbbCb
+bbbbCbbbC
+```
+
 Not checked here: this file holds no CP-SAT uniqueness proof for this circle
-set, and the solution's shading is not recorded.
+set.

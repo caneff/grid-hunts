@@ -1,0 +1,1 @@
+{"argv": ["--out", "/home/caneff/.cache/banabner-hunt-764/out", "--seeds", "0:1000", "--workers", "8"], "config": {"timeout": 1200.0, "max_choc_side": 4, "speedups": true}, "git_sha": "c626aec8640c6da53b67dec939d10ca0cb664e20", "start_time": "2026-10-09T17:23:15.926021+00:00"}

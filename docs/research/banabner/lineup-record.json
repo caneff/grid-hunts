@@ -1,0 +1,47 @@
+[
+ {
+  "d": "2026-10-09",
+  "t": "ruling",
+  "x": "Rules set by Chris: choco-banana, size circles, Dutch Chocolate (difference ≥ 4), nabner bananas, no givens, normal sudoku."
+ },
+ {
+  "d": "2026-10-09",
+  "t": "proven",
+  "x": "No chocolate rectangle has a side longer than 4. The cells just past a side of 5 or more form one straight banana group of 5 or more cells: exactly 5 is the I-pentomino, a rectangle, and more than 5 breaks nabner. So a long side must lie on the board edge, which forces the whole 9x9 board; that has 0 fillings with boxes, and any circle rules it out too. Argument by Chris."
+ },
+ {
+  "d": "2026-10-09",
+  "t": "proven",
+  "x": "Difference-4 rectangle catalogue built (#760). Every shape up to 3x3 and up to 2x4 is enumerated in full. 3x4 and 4x4 without boxes and 4x4 at box offset (1,1) stopped at a 100,000 fill-count cap; their digit domains and circle cells come from exact CP-SAT solves. Full counts: 3x4 = 139,524, 4x4 (1,1) = 200,400, 4x4 = 2,107,212. Since #767 (merged as 88a4902), every layer with both sides at most 4 is enumerated in full in the catalogue."
+ },
+ {
+  "d": "2026-10-09",
+  "t": "proven",
+  "x": "Legal grids exist. The first finder (#761) found one with seed 0 in 109 s on 4 workers; it passes the independent checker at difference 4 with nabner, and fails it at the Renbanana defaults, as it should."
+ },
+ {
+  "d": "2026-10-09",
+  "t": "claim",
+  "x": "Timing: 4 seeds, 1 worker each, reached a legal grid in 170–248 s, capped at 300 s. Worker's measurement, not yet re-run."
+ },
+ {
+  "d": "2026-10-09",
+  "t": "claim",
+  "x": "Speedups compared (#762): the same 4 seeds through the #761 model and the #762 model, 1 worker each, all 8 at once on the shared box. #761 model: 195, 217, 293, 310 s (mean 254 s). #762 model: 156, 226, 361, 365 s (mean 277 s). On these 4 seeds the speedups are not faster. Every run found a grid, and all 8 grids pass the checker. Worker's measurement, not yet re-run."
+ },
+ {
+  "d": "2026-10-09",
+  "t": "claim",
+  "x": "Chris's opener (7 circles: r1c1 r1c3 r2c3 r3c1 r3c2 r3c3 r4c5; r1c1=3, r1c3=1, r2c3=4, r3c1=2; his shading of rows 1-5) has exactly 2 solutions, listed under run \"Chris opener: 7 circles + 3 1 4 2 (all solutions)\". They differ only by a 2/6 swap in r5c6-r6c7, so the setup is not yet unique. Enumeration by the controller's standalone CP-SAT model ended INFEASIBLE after the second (complete for that model); both grids pass banabner_finder.check and a separate checker. Completeness rests on that one model, not yet re-run on the #761 model."
+ },
+ {
+  "d": "2026-10-09",
+  "t": "proven",
+  "x": "The #764 hunt's 44 grids are legal: each passes banabner_finder.check at difference 4 with nabner, inline as found and again in the hunt's verify pass (44 of 44). They are 44 different grids under the board's 8 rotations and reflections, none is one of the 10 grids found before, and no two are digit reversals (d to 10-d) of each other."
+ },
+ {
+  "d": "2026-10-09",
+  "t": "claim",
+  "x": "Two-hour hunt (#764): the #762 model with chocolate sides at most 4 (a proven fact, not a cap), 8 CP-SAT workers, a 1200 s limit per seed, each seed forbidding every grid found before it. Seeds 0-43 each found a new grid (about 164 s a grid); none timed out and none proved the space empty. Seed 44 was stopped mid-solve by the 2-hour wall. So the search found 44 grids and did not show how many exist: the space is not exhausted. Worker's run, not re-run."
+ }
+]
