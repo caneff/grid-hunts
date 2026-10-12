@@ -95,3 +95,121 @@ for case, choc_is_odd in (("odd cells shaded", True), ("even cells shaded", Fals
     out.write(json.dumps(row) + "\n"); out.flush()
     print(json.dumps(row))
 ```
+
+## Why the odd side fails (added later the same day)
+
+No complete hand proof is written. What is known:
+
+**Solver, pattern only (no digits).** A 9x9 grid of odd/even marks with 5 odd
+in every row and every column, where the odd groups are rectangles, does not
+exist. Boxes, the sudoku digits and the banana rule are not needed for the
+impossibility. Dropping the column counts or the row counts makes it
+feasible.
+
+**Solver, general board.** n x n, m marked cells in every row and column,
+marked groups all rectangles (CP-SAT, 1 worker, 60 s cap, no run reached it):
+
+```
+m:     1   2   3   4   5   6   7   8   9  10  11  12
+n=2  yes yes
+n=3  yes  NO yes
+n=4  yes yes  NO yes
+n=5  yes yes  NO  NO yes
+n=6  yes yes yes  NO  NO yes
+n=7  yes yes yes  NO  NO  NO yes
+n=8  yes yes yes yes  NO  NO  NO yes
+n=9  yes yes yes yes  NO  NO  NO  NO yes
+n=10 yes yes yes yes yes  NO  NO  NO  NO yes
+n=11 yes yes yes yes yes yes  NO  NO  NO  NO yes
+n=12 yes yes yes yes yes yes yes  NO  NO  NO  NO yes
+```
+
+For every n from 2 to 12 it is impossible exactly when n/2 < m < n. That is
+a computed pattern, not a theorem.
+
+**By hand.**
+
+1. Two adjacent rows: a column marked in both must sit in a run that is
+   identical in both rows. Otherwise some 2x2 window holds exactly three
+   marked cells, and the group is not a rectangle.
+2. With 5 of 9 marked per row, two rows always share a column. So two
+   adjacent rows always share a whole run: some rectangle crosses every row
+   boundary. With 4 of 9 two adjacent rows can be disjoint, which is the
+   freedom the even side uses.
+3. Every rectangle is at most 3 wide and 3 tall. Take the widest, width w.
+   Its columns hold 9 marks if it spans all rows, so a row lies directly
+   above or below it. Across that boundary w columns change from unmarked to
+   marked, so at most 4 - w columns are unmarked in both rows, and the shared
+   runs need one such column each as a separator. The shared runs total
+   5 - e cells in at most 4 - e runs of width at most w, with e >= w changed
+   columns; w = 4 leaves no room.
+
+Steps 1 to 3 do not finish the proof. The remaining gap is a case analysis
+on how rows of 5 marks in runs of width 2 or 3 can follow each other while
+every column also ends on exactly 5.
+
+### The two extra scratch scripts
+
+`core_probe.py` (which count rules are needed):
+
+```python
+"""SCRATCH: which rules does 'odd = chocolate is impossible' need?
+Pattern only: odd[p] booleans, no digits."""
+import sys, itertools
+sys.path.insert(0, "/home/caneff/src/grid-hunts/finders")
+from ortools.sat.python import cp_model
+from renbanana_model import CELLS, N, forbid_banana_rectangles, rectangle_lemma
+
+def run(rows, cols, boxes, choc_rect=True, banana_nonrect=True, show=False):
+    m = cp_model.CpModel()
+    odd = {p: m.new_bool_var(f"o{p}") for p in CELLS}
+    if rows:
+        for r in range(N): m.add(sum(odd[r, c] for c in range(N)) == 5)
+    if cols:
+        for c in range(N): m.add(sum(odd[r, c] for r in range(N)) == 5)
+    if boxes:
+        for b in range(9): m.add(sum(odd[b//3*3+i, b%3*3+j] for i in range(3) for j in range(3)) == 5)
+    if choc_rect: rectangle_lemma(m, odd)
+    if banana_nonrect: forbid_banana_rectangles(m, odd)
+    s = cp_model.CpSolver(); s.parameters.num_workers = 1; s.parameters.max_time_in_seconds = 60
+    st = s.solve(m)
+    name = s.status_name(st)
+    if show and name in ("OPTIMAL", "FEASIBLE"):
+        for r in range(N): print("   ", "".join("#" if s.value(odd[r, c]) else "." for c in range(N)))
+    return name
+
+for rows, cols, boxes in itertools.product((1, 0), repeat=3):
+    print(f"rows={rows} cols={cols} boxes={boxes}: {run(rows, cols, boxes, show=True)}")
+print("all counts, chocolate-rectangle rule only:", run(1, 1, 1, banana_nonrect=False))
+print("all counts, banana-non-rectangle rule only:", run(1, 1, 1, choc_rect=False))
+```
+
+`core2.py` (the n, m table):
+
+```python
+"""SCRATCH: n x n 0/1 grid, ones-groups are rectangles (no 2x2 window with
+exactly three ones), m ones per row and per column. Which (n, m) work?"""
+from ortools.sat.python import cp_model
+def run(n, m, col="eq", rowsum=True, show=False):
+    M = cp_model.CpModel()
+    x = {(r, c): M.new_bool_var("") for r in range(n) for c in range(n)}
+    for r in range(n): M.add(sum(x[r, c] for c in range(n)) == m)
+    for c in range(n):
+        s = sum(x[r, c] for r in range(n))
+        if col == "eq": M.add(s == m)
+        elif col == "le": M.add(s <= m)
+        elif col == "ge": M.add(s >= m)
+    for r in range(n - 1):
+        for c in range(n - 1):
+            M.add(x[r, c] + x[r, c + 1] + x[r + 1, c] + x[r + 1, c + 1] != 3)
+    s = cp_model.CpSolver(); s.parameters.num_workers = 1; s.parameters.max_time_in_seconds = 60
+    st = s.status_name(s.solve(M))
+    if show and st == "OPTIMAL":
+        for r in range(n): print("   ", "".join("#" if s.value(x[r, c]) else "." for c in range(n)))
+    return {"OPTIMAL": "yes", "INFEASIBLE": "NO", "UNKNOWN": "t/o"}[st]
+print("m:   " + " ".join(f"{m:>3}" for m in range(1, 13)))
+for n in range(2, 13):
+    print(f"n={n:<2} " + " ".join(f"{run(n, m):>3}" for m in range(1, n + 1)))
+print("9,5 with column sums <= 5:", run(9, 5, "le", show=True))
+print("9,5 with column sums >= 5:", run(9, 5, "ge", show=True))
+```
