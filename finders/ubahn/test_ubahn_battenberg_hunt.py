@@ -366,6 +366,20 @@ with tempfile.TemporaryDirectory() as d:
             r.returncode == 2 and reason in r.stderr and not r.stdout,
         )
 
+# `verify` and `render` read a record's own markings: the flags are refused
+# there, not ignored.
+for command in ("verify", "render"):
+    for flags, named in (
+        (["--battenberg", "c1:turn"], "--battenberg"),
+        (["--battenberg-only"], "--battenberg-only"),
+    ):
+        r = run_cli(*flags, command, "nowhere")
+        check(
+            f"{command} {' '.join(flags)} is refused, exit 2, naming the flag",
+            r.returncode == 2
+            and f"hybrid_finder: {named} is not for `{command}`" in r.stderr,
+        )
+
 # The condition's symmetry counts markings: the reflection in the main
 # diagonal is kept only when the marked windows map onto themselves.
 for names, kept in (

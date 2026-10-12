@@ -111,9 +111,14 @@ because the checker reads them and nothing under `docs/research/` does
   [--blank-strip]` writes the hybrid's Penpa+ link per example (#795): only
   the circles and the number cells you name are shown, the grid dotted, the
   combined rules text, the plain link's lines-only answer check; an invalid
-  circle is refused by name. `penpa_decode.py` is the test decoder, shared
+  circle is refused by name. `--battenberg "CELLS"` puts Penpa+'s checkerboard
+  symbol on the centre of each named window and a sentence in the rules, and
+  `--battenberg-only` a second sentence, that every one is given (#24; the
+  symbol and its wire form: the link note, § 10); a window that is no
+  checkerboard window of the example is refused by name. `penpa_decode.py` is the test decoder, shared
   by `test_penpa.py` and `test_ubahn_hybrid_links.py`. The browser check takes
-  the same `--circles` and `--numbers` to confirm where they sit on the page.
+  the same `--circles`, `--numbers` and `--battenberg` to confirm where they
+  sit on the page.
   `finders/ubahn/penpa-browser-check.mjs LINKFILE` is the real-browser check
   (the success dialog, the Line tool, the icons'
   order, the centre point); it needs Chromium and the live page, so

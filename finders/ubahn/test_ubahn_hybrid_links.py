@@ -7,6 +7,9 @@ grids. For each link the test reads the board size, the circles and the
 printed numbers back, and checks that nothing else is drawn; that the answer
 part is the plain link's for the same network; that a circle which is not
 valid is refused by name; and that the rules text is the one Chris pasted.
+Then Battenberg markings (spec #20, #24) on the one 4x4 grid that has the
+checkerboard window r1c3: `--battenberg "CELLS"` puts a checkerboard symbol
+on the centre of each named window, a vertex of the table, and on no other.
 
     uv run finders/ubahn/test_ubahn_hybrid_links.py
 """
@@ -22,7 +25,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import hybrid
 import penpa
-from penpa_decode import Decoded, edges_of, parameter
+from penpa_decode import Decoded, edges_of, parameter, symbols_on_vertices
 from subprocess_env import success_env
 
 FINDER = HERE / "hybrid_finder.py"
@@ -332,5 +335,137 @@ with tempfile.TemporaryDirectory() as tmp:
         and {i: v[0] for i, v in d5.number.items() if v[0].isdigit()}
         == {table_index(d5, 5, (0, -5)): str(value5)},
     )
+
+# Battenberg markings. The one 4x4 grid with the marking r1c3 has three
+# checkerboard windows, r1:turn, r1c3 and r2:turn, and c1:turn is one of its
+# valid circles (decision log, § Hybrid: Battenberg markings).
+MARKING_RULE = (
+    "A checkerboard symbol on the corner shared by four cells, grid cells "
+    "or clue cells, indicates that those four cells form a checkerboard of "
+    "odd and even values: diagonally opposite cells have the same parity, "
+    "and cells sharing an edge have different parity."
+)
+ONLY_RULE = (
+    "All possible checkerboard symbols are given: no other 2x2 group of "
+    "cells, grid cells or clue cells, forms such a checkerboard."
+)
+
+
+def link_of(out, seed):
+    return (out / "links" / f"{seed}.txt").read_text().strip()
+
+
+def circles_of(decoded):
+    return {i: v for i, v in decoded.symbol.items() if v[1] == "circle_L"}
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    out = hunt(tmp, "marked", "--engine", "pysat-lazy", "--battenberg", "r1c3")
+    (seed,) = [
+        e["seed"]
+        for e in read_jsonl(out / "progress.jsonl")
+        if e.get("outcome") == "example"
+    ]
+    (rec,) = read_jsonl(out / "examples.jsonl")
+    check(
+        "the hunt's one grid has the checkerboard windows r1:turn, r1c3, r2:turn",
+        rec["checkerboard_windows"] == ["r1:turn", "r1c3", "r2:turn"],
+    )
+    shown = ["--circles", "c1:turn", "--numbers", "c1:turn r2:cross"]
+    r = run_cli(*shown, "links", str(out))
+    without = link_of(out, seed)
+    d0 = Decoded(without)
+    check(
+        "with no --battenberg the link carries no checkerboard symbol and "
+        "the pasted rules",
+        r.returncode == 0
+        and not [v for v in d0.symbol.values() if v[1] == "sudokuetc"]
+        and d0.rules == RULES,
+    )
+
+    # A window on the grid and one across the turn strip and the grid.
+    r = run_cli(*shown, "--battenberg", "r1c3 r1:turn", "links", str(out))
+    check(f"`links --battenberg` exits 0 ({r.stderr[-300:]})", r.returncode == 0)
+    text = link_of(out, seed)
+    d = Decoded(text)
+    marked = {i: v for i, v in d.symbol.items() if v[1] == "sudokuetc"}
+    check(
+        "the link decodes back to exactly the named markings, each on the "
+        f"vertex at its window's centre ({symbols_on_vertices(d, 4, 'sudokuetc')})",
+        symbols_on_vertices(d, 4, "sudokuetc") == {(0, 2), (0, -1)}
+        and len(marked) == 2,
+    )
+    check(
+        "a marking is Penpa+'s checkerboard symbol, drawn over the grid lines",
+        all(v == [1, "sudokuetc", 2] for v in marked.values()),
+    )
+    check(
+        "the circles, the given numbers and every other symbol are unchanged",
+        circles_of(d) == circles_of(d0)
+        and len(circles_of(d)) == 1
+        and d.number == d0.number
+        and {i: v for i, v in d.symbol.items() if i not in marked} == d0.symbol,
+    )
+    check(
+        "the answer part is unchanged, and the check is lines only",
+        parameter(text, "a") == parameter(without, "a")
+        and edges_of(d, 4) == network_of(rec)
+        and [k for k, v in d.flags.items() if v] == ["sol_loopline"],
+    )
+    check(
+        "the rules text gains the marking's sentence and no other",
+        d.rules == RULES + "\n" + MARKING_RULE,
+    )
+    check(
+        "`links` says how many markings it gave and prints no link",
+        "2 Battenberg markings" in r.stdout and "penpa-edit" not in r.stdout + r.stderr,
+    )
+
+    # The negative constraint: every checkerboard window of the grid is
+    # marked, and the rules text says so in a second sentence.
+    every = "r1:turn r1c3 r2:turn"
+    r = run_cli("--battenberg", every, "--battenberg-only", "links", str(out))
+    d = Decoded(link_of(out, seed))
+    check(
+        f"`links --battenberg-only` with every checkerboard window marked "
+        f"shows the three and adds the second sentence ({r.stderr[-200:]})",
+        r.returncode == 0
+        and symbols_on_vertices(d, 4, "sudokuetc") == {(0, -1), (0, 2), (1, -1)}
+        and d.rules == RULES + "\n" + MARKING_RULE + "\n" + ONLY_RULE,
+    )
+
+    # A refusal names the window and leaves the link set as it was.
+    before = link_of(out, seed)
+    for name, flags, reason in (
+        (
+            "a window that is no checkerboard window in the example",
+            ["--battenberg", "r1c3 r1c1"],
+            "Battenberg marking at r1c1: not a checkerboard window",
+        ),
+        (
+            "a checkerboard window left unmarked under --battenberg-only",
+            ["--battenberg", "r1c3", "--battenberg-only"],
+            "checkerboard window at r1:turn has no Battenberg marking",
+        ),
+        (
+            "a window that is not wholly on the board",
+            ["--battenberg", "r4c4"],
+            "Battenberg marking at r4c4: r4c5 is off the board",
+        ),
+        ("a name that is no cell", ["--battenberg", "r1"], "--battenberg: a cell is"),
+    ):
+        r = run_cli(*flags, "links", str(out))
+        check(
+            f"links refuses {name}, exit 2, naming it ({r.stderr.strip()[-160:]!r})",
+            r.returncode == 2 and reason in r.stderr and link_of(out, seed) == before,
+        )
+
+r = run_cli("--help")
+check(
+    "--help describes `links --battenberg` and `--battenberg-only`",
+    r.returncode == 0
+    and '--battenberg "r1c3 r1:turn"' in r.stdout
+    and "[--battenberg-only]" in r.stdout,
+)
 
 sys.exit(0 if ok else 1)

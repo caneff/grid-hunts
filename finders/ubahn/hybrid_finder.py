@@ -127,17 +127,24 @@ applies to every example of the directory, so a hunt run with the same
 `--circles` condition makes every example carry them. With neither flag the
 board shows no circle and no number. A circled number cell shows its number
 only if it is also in `--numbers`. The link's answer check is the plain
-link's: the drawn lines, nothing else. `--blank-strip` draws the fifth strip
+link's: the drawn lines, nothing else. `--battenberg "CELLS"` are the
+windows that carry a Battenberg marking, each by its top-left cell: Penpa+'s
+checkerboard symbol on the corner the window's four cells share, and one
+sentence more of rules. `--battenberg-only` adds a second sentence, that
+every checkerboard symbol is given, and is refused on an example with a
+checkerboard window left unmarked. `--blank-strip` draws the fifth strip
 on a record of a hunt that had none. A circle that is not valid on the grid
-(its value is not its region's size), a number cell off the board, a grid
-cell as a given number, or a grid that is no hybrid grid on the board drawn,
-is refused by name and nothing is written. A rerun replaces every link there.
+(its value is not its region's size), a marked window that is no
+checkerboard window of the grid or is not wholly on the board, a number cell
+off the board, a grid cell as a given number, or a grid that is no hybrid
+grid on the board drawn, is refused by name and nothing is written. A rerun replaces every link there.
 A link is never printed: the command reports the directory. The link does not
 say whether the givens leave one solution; `classify` answers that for the
 circles (it is given no outside number).
 
     uv run finders/ubahn/hybrid_finder.py links DIR --circles "r2c3 c1:turn" \
-        --numbers "r1:cross c1:turn" [--blank-strip]
+        --numbers "r1:cross c1:turn" [--blank-strip] \
+        [--battenberg "r1c3 r1:turn"] [--battenberg-only]
 
 The board's one symmetry is the reflection in the main diagonal, which swaps
 the row and column number cells; a left-right mirror image is another
@@ -633,15 +640,21 @@ def parse_cells(flag, text):
         raise ValueError(f"{flag}: {e}") from e
 
 
-def write_links(out, circles, numbers, blank_strip):
+def write_links(
+    out, circles, numbers, blank_strip, battenberg=frozenset(), battenberg_only=False
+):
     """Write `out/links/<seed>.txt`, one Penpa+ link per example of the hunt
-    in `out` (`ubahn_finder.seeded_examples`), showing the `circles` and the
-    `numbers` given and no other circle or number. The fifth strip is drawn
+    in `out` (`ubahn_finder.seeded_examples`), showing the `circles`, the
+    `numbers` and the Battenberg markings on the windows of `battenberg`, and
+    no other circle, number or marking. With `battenberg_only` the rules text
+    says every checkerboard window is marked. The fifth strip is drawn
     when `blank_strip` is set or the record's own is. Returns the lines to
     print. Raises ValueError, naming the seed and the cell, on a record the
     finder refuses, a circle or number that is not on the board, a circle that
-    is not valid, or a grid that is no hybrid grid on the board drawn; names a
-    missing or unpaired log."""
+    is not valid, a marked window that is not wholly on the board or is no
+    checkerboard window, a checkerboard window left unmarked under
+    `battenberg_only`, or a grid that is no hybrid grid on the board drawn;
+    names a missing or unpaired log."""
     out = Path(out)
     examples = seeded_examples(out)
     finder = HybridFinder(hybrid.Conditions(DEFAULT_SIDE, DEFAULT_SIDE))
@@ -668,17 +681,25 @@ def write_links(out, circles, numbers, blank_strip):
                         f"cell of the {rows}x{cols} board"
                         + ("" if strip else ", no blank strip")
                     )
-            reasons = hybrid.failures(found, rows, cols, circles, strip)
+            reasons = hybrid.failures(
+                found,
+                rows,
+                cols,
+                circles,
+                strip,
+                battenberg=battenberg,
+                battenberg_only=battenberg_only,
+            )
             if reasons:
                 raise ValueError("; ".join(reasons))
-            shown = penpa.Hybrid(circles, numbers)
+            shown = penpa.Hybrid(circles, numbers, battenberg, battenberg_only)
             built[s] = penpa.link(rows, cols, found, strip, shown) + "\n"
         except ValueError as e:
             raise ValueError(f"seed {s}: {e}") from e
     links = replace_links(out, built)
     return [
-        f"wrote {len(built)} links to {links}, {len(circles)} circles and "
-        f"{len(numbers)} numbers given"
+        f"wrote {len(built)} links to {links}, {len(circles)} circles, "
+        f"{len(numbers)} numbers and {len(battenberg)} Battenberg markings given"
     ]
 
 
@@ -703,6 +724,19 @@ def main(argv):
     if own.numbers and rest[:1] != ["links"]:
         print("hybrid_finder: --numbers is for `links` only", file=sys.stderr)
         return 2
+    if rest[:1] in (["verify"], ["render"]):
+        # Both read the markings off each record.
+        for flag, given in (
+            ("--battenberg", own.battenberg),
+            ("--battenberg-only", own.battenberg_only),
+        ):
+            if given:
+                print(
+                    f"hybrid_finder: {flag} is not for `{rest[0]}`, which reads "
+                    f"a record's own markings",
+                    file=sys.stderr,
+                )
+                return 2
     if rest[:1] == ["verify"]:
         # A record carries its own board and conditions, and `verify` runs
         # no solver.
@@ -732,8 +766,9 @@ def main(argv):
         print("\n".join(lines))
         return 0
     if rest[:1] == ["links"]:
-        # A record carries its own board; `--circles`, `--numbers` and
-        # `--blank-strip` are what the link shows.
+        # A record carries its own board; `--circles`, `--numbers`,
+        # `--battenberg`, `--battenberg-only` and `--blank-strip` are what
+        # the link shows.
         mine = argparse.ArgumentParser(prog="hybrid_finder links")
         mine.add_argument("dir")
         args = mine.parse_args(rest[1:])
@@ -743,6 +778,8 @@ def main(argv):
                 parse_cells("--circles", own.circles),
                 parse_cells("--numbers", own.numbers),
                 own.blank_strip,
+                parse_cells("--battenberg", own.battenberg),
+                own.battenberg_only,
             )
         except ValueError as e:
             print(f"hybrid_finder links: {e}", file=sys.stderr)

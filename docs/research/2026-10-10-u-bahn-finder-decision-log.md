@@ -809,6 +809,27 @@ window is on the grid, in the strips or across them. 2026-10-12.
   negative constraint is not re-read by `render`: the picture shows every
   checkerboard window whatever the hunt asked.
 
+## Hybrid: Battenberg markings on the Penpa+ link (#24)
+
+`hybrid_finder.py links DIR --battenberg "CELLS" [--battenberg-only]`,
+2026-10-12. The symbol, its wire form and the browser check are in
+`docs/research/2026-10-10-u-bahn-penpa-link.md`, § 10: Penpa+ has a
+checkerboard symbol that sits on a vertex, so the link uses it.
+
+Worker's choices, none a ruling:
+
+- **The negative constraint's flag on `links` is `--battenberg-only`**, the
+  finder's own name. It adds the second sentence of rules and is refused on
+  an example with a checkerboard window left unmarked, so a link never says
+  "all given" over a grid that has one more.
+- **The marking's sentence is written when a marking is shown or
+  `--battenberg-only` is given**; a link with neither keeps the pasted text
+  word for word.
+- **`links` takes its markings from the flag, not from the record**, as it
+  takes its circles: one set of flags for every example of the directory.
+- **`verify` and `render` refuse both flags**: they read a record's own
+  markings, and a flag there would be ignored in silence.
+
 ## Decisions
 
 - **Root.** The first used cell in reading order, stated as n² / 2
