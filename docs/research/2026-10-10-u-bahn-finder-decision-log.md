@@ -727,6 +727,65 @@ Worker's choices, none a ruling:
 - **`--battenberg-only` on the brute force applies to every classification
   of the run**, `--circles` ones too, as `--min-bananas` does.
 
+## Hybrid: Battenberg markings on the PySAT engines (#22)
+
+`--battenberg "CELLS"` and `--battenberg-only` on the hunt and on `classify`,
+`pysat-lazy` and `pysat-propagator` only. One CaDiCaL thread, this box,
+2026-10-12.
+
+- **The clauses.** `hybrid_sat._battenberg`, over the parity variable every
+  board cell already has. A marking is three facts on its window's four
+  variables, six clauses of two: the top-left cell differs from the cell on
+  its right and from the cell under it, and equals the cell diagonally
+  across. Under the negative constraint every unmarked window takes two
+  clauses of four, one per checkerboard pattern. No variable is added and
+  nothing is counted.
+- **4x4: both engines list the brute force's grids** for every row of the
+  table above and classify each row in its word, through the engines' own
+  calls and through the CLI.
+- **5x5, where no brute force reaches: both engines against the rule
+  reader.** The 31 grids `pysat-lazy` lists with no condition are the same
+  31 as before. A marking only ever rules a grid out, so under each set of
+  markings an engine must list exactly the grids of the 31 the reader keeps.
+  Checked on `pysat-lazy` for each of the board's 48 windows marked alone,
+  each of the 13 different full sets of checkerboard windows the 31 grids
+  hold, and no marking, every case with and without the negative
+  constraint: 124 listings, none wrong. `pysat-propagator` runs the same
+  clauses and is held to every fifth window and the same full sets.
+- **The first count's 5x5 claims, re-run on the engines and the reader.**
+  Every 5x5 grid has a checkerboard window, so no marking under the negative
+  constraint is `infeasible` on both engines. The 31 grids hold 13 different
+  sets of checkerboard windows and 7 of those sets are one grid's alone. No
+  number differs from the first count.
+- **Commands.**
+
+  ```
+  uv run finders/ubahn/hybrid_finder.py classify --rows 4 --cols 4 \
+      --battenberg "c1:turn c2:turn r3c1" --battenberg-only
+  uv run finders/ubahn/hybrid_finder.py --rows 5 --cols 5 \
+      --battenberg "r2c2" --out DIR --seeds 0:20 --workers 1
+  uv run finders/ubahn/test_ubahn_battenberg_sat.py
+  ```
+
+Worker's choices, none a ruling:
+
+- **Record fields**: `battenberg` (the marked windows' names, sorted as
+  `circles` is), `battenberg_only`, and `checkerboard_windows`, every
+  checkerboard window of the grid in the reader's order. A record with none
+  of them reads as no markings and the constraint off.
+- **`run.json` carries `battenberg` and `battenberg_only` only when asked
+  for**, as it does `min_bananas`: the driver refuses to resume a hunt whose
+  config differs, and a hunt from before the condition has neither key.
+- **The cpsat refusal names the flag given**: `--battenberg is on the PySAT
+  engines only: --engine cpsat has no model of it`, exit 2, before any
+  solve, on the hunt, `classify` and `climb`.
+- **Symmetry.** A window's image in the main diagonal is the window named by
+  its top-left cell's image, so the reflection is kept when the set of
+  marked top-left cells is its own image. On 5x5, `r2c2` marked keeps 3
+  grids and the hunt keeps 2 examples, one for a grid and its transpose;
+  `c3:straight` marked leaves no symmetry and both grids of a transpose pair
+  are examples.
+
 ## Decisions
 
 - **Root.** The first used cell in reading order, stated as n² / 2

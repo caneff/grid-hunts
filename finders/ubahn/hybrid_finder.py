@@ -27,6 +27,19 @@ Conditions are flags:
                                or more number cells whose value is the size
                                of their region. A grid cell that is a valid
                                circle counts for nothing (#794).
+    --battenberg "CELL CELL ..."  windows that carry a Battenberg marking
+                               (spec #20): each is a checkerboard window,
+                               its diagonal cells sharing a parity of value
+                               and its side-by-side pairs differing. A
+                               window is a 2x2 of board cells, grid cells,
+                               number cells or both, named by its top-left
+                               cell as `--circles` names a cell. A window
+                               that is not wholly on the board is refused.
+    --battenberg-only          the negative constraint: every window with no
+                               marking is not a checkerboard window, the
+                               windows in the number strips included. Both
+                               flags are on the PySAT engines only; `--engine
+                               cpsat` refuses them by name.
     --engine pysat-lazy        the solver the rules are written on: cpsat
                                (`hybrid_model.py`, connectivity as a flow),
                                pysat-lazy (`hybrid_sat.py`, a grid whose
@@ -126,8 +139,8 @@ The board's one symmetry is the reflection in the main diagonal, which swaps
 the row and column number cells; a left-right mirror image is another
 puzzle, since the number cells sit above and on the left only. A hunt
 dedupes under that reflection when the board is square, every circle's
-image is circled and there is no piece-count condition, and under nothing
-otherwise.
+image is circled, every marked window's image is marked and there is no
+piece-count condition, and under nothing otherwise.
 
 The driver's flags (`--out`, `--seeds`, `--workers`, ...) are its own
 (finders/hunt/driver.py).
@@ -202,14 +215,18 @@ def condition_symmetry(conditions):
     """The group a grid's key (`HybridFinder.key`) dedupes under: the
     identity and the reflection in the main diagonal when that reflection
     keeps the conditions, the identity alone when it moves one. It keeps
-    them on a square board whose circled cells are circled in the image too,
-    with no piece-count condition, which names a row or a column. The
-    reflection sends a cell's east arm to its image's south arm and back."""
+    them on a square board whose circled cells are circled in the image too
+    and whose marked windows are marked there too (a window's image is the
+    window named by its top-left cell's image), with no piece-count
+    condition, which names a row or a column. The reflection sends a cell's
+    east arm to its image's south arm and back."""
     rows, cols, circles = conditions.rows, conditions.cols, conditions.circles
+    marked = conditions.battenberg
     if (
         rows != cols
         or conditions.exactly
         or {(c, r) for r, c in circles} != set(circles)
+        or {(c, r) for r, c in marked} != set(marked)
     ):
         return IDENTITY
     cells = rows * cols
@@ -238,6 +255,12 @@ class HybridFinder:
         # config differs, and a hunt from before the condition has no such key.
         if conditions.min_bananas:
             self.config["min_bananas"] = conditions.min_bananas
+        if conditions.battenberg:
+            self.config["battenberg"] = sorted(
+                map(hybrid.cell_name, conditions.battenberg)
+            )
+        if conditions.battenberg_only:
+            self.config["battenberg_only"] = True
 
     def propose(self, rng):
         status, found = ENGINES[self.engine].grid(
@@ -262,6 +285,8 @@ class HybridFinder:
             asked.blank_strip,
             min_bananas=asked.min_bananas,
             number_circles=asked.number_circles,
+            battenberg=asked.battenberg,
+            battenberg_only=asked.battenberg_only,
         )
         if why:
             return Verdict(False, why)
@@ -289,6 +314,13 @@ class HybridFinder:
             "number_cell_circles": [
                 hybrid.cell_name(cell) for cell in hybrid.number_cell_circles(board)
             ],
+            "battenberg": sorted(map(hybrid.cell_name, asked.battenberg)),
+            "battenberg_only": asked.battenberg_only,
+            # Every checkerboard window of the grid, marked or not.
+            "checkerboard_windows": [
+                hybrid.cell_name(window)
+                for window in hybrid.checkerboard_windows(board)
+            ],
             "engine": self.engine,
             "drawing": hybrid.drawing(found, rows, cols, circles, asked.blank_strip),
         }
@@ -313,7 +345,9 @@ class HybridFinder:
         rows and the piece-count condition, a `min_bananas` that is no whole
         number of 0 or more, or a field the record lacks. A record with no
         `min_bananas` is of a hunt from before that condition (#792) and asks
-        for none; `record` has written the field in every record since."""
+        for none; `record` has written the field in every record since. One
+        with no `battenberg` or `battenberg_only` is from before Battenberg
+        markings (spec #20): no markings, the negative constraint off."""
         try:
             rows, cols, found, exactly = UbahnFinder().candidate_from_record(record)
             circles = frozenset(map(hybrid.parse_cell, record["circles"]))
@@ -331,6 +365,8 @@ class HybridFinder:
                 min_bananas,
                 # A record older than the condition (#794) asked for none.
                 record.get("number_circles", 0),
+                frozenset(map(hybrid.parse_cell, record.get("battenberg", ()))),
+                bool(record.get("battenberg_only", False)),
             )
         except KeyError as e:
             raise ValueError(
@@ -342,8 +378,9 @@ class HybridFinder:
 def parse_conditions(args):
     """The `hybrid.Conditions` the flags name. Raises ValueError, naming the
     flag, on a board with no network, a cell or condition that does not
-    parse, one that is off the board, a number of banana regions under 1, or
-    a count of number-cell circles below 0."""
+    parse, one that is off the board, a number of banana regions under 1, a
+    count of number-cell circles below 0, or a Battenberg marking whose
+    window is not wholly on the board."""
     rows, cols = args.rows, args.cols
     if rows < 2 or cols < 2:
         raise ValueError("the smallest board with a network is 2x2")
@@ -376,6 +413,10 @@ def parse_conditions(args):
         raise ValueError(f"--min-bananas takes 1 or more, got {args.min_bananas}")
     if args.number_circles < 0:
         raise ValueError(f"--number-circles is 0 or more, got {args.number_circles}")
+    try:
+        marked = hybrid.parse_windows(args.battenberg, rows, cols, args.blank_strip)
+    except ValueError as e:
+        raise ValueError(f"--battenberg: {e}") from e
     return hybrid.Conditions(
         rows,
         cols,
@@ -384,6 +425,8 @@ def parse_conditions(args):
         args.blank_strip,
         args.min_bananas or 0,
         args.number_circles,
+        marked,
+        args.battenberg_only,
     )
 
 
@@ -647,6 +690,8 @@ def main(argv):
     parser.add_argument("--blank-strip", action="store_true")
     parser.add_argument("--min-bananas", type=int, metavar="N")
     parser.add_argument("--number-circles", type=int, default=0, metavar="K")
+    parser.add_argument("--battenberg", default="", metavar="CELLS")
+    parser.add_argument("--battenberg-only", action="store_true")
     parser.add_argument("--engine", default=DEFAULT_ENGINE, choices=ENGINES)
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT)
     own, rest = parser.parse_known_args(argv)
@@ -701,6 +746,17 @@ def main(argv):
         return 0
     try:
         conditions = parse_conditions(own)
+        # A new hybrid condition is written on the PySAT engines only
+        # (Chris's ruling of 2026-10-12): cpsat has no model of these.
+        for flag, given in (
+            ("--battenberg", conditions.battenberg),
+            ("--battenberg-only", conditions.battenberg_only),
+        ):
+            if given and own.engine == "cpsat":
+                raise ValueError(
+                    f"{flag} is on the PySAT engines only: --engine cpsat has "
+                    f"no model of it"
+                )
     except ValueError as e:
         print(f"hybrid_finder: {e}", file=sys.stderr)
         return 2

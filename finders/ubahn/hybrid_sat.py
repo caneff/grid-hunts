@@ -29,6 +29,12 @@ engines check each other:
   of them are true. A grid cell has none, so it counts for nothing. The
   variable says nothing when false: a cell may be a valid circle with its
   variable false, which the count does not need.
+- Battenberg markings (spec #20): a marked window is a checkerboard window,
+  which is three facts on its four parity variables: the top-left cell
+  differs from the cell on its right and from the cell under it, and equals
+  the cell diagonally across. Under the negative constraint every other
+  window of the board takes two clauses, one per checkerboard pattern
+  (`_battenberg`). Nothing is counted.
 
 Connectivity is not encoded. `listing` solves, and a full grid whose network
 is in several parts is refused with `sat_model.cut_clauses`, the connectivity
@@ -308,6 +314,30 @@ def _add_bananas(pool, clauses, odd, wanted):
     clauses += [[label[cell, k] for cell in cells] for k in range(wanted)]
 
 
+def _battenberg(odd, marked, only):
+    """The clauses that make each window of `marked` a checkerboard window
+    and, when `only`, every other window of the board not one. Raises
+    ValueError on a marked window that is not wholly on the board, naming
+    the cell that is off it."""
+    clauses = []
+    for window in sorted(marked):
+        off = hybrid.off_board(window, odd)
+        if off is not None:
+            raise ValueError(
+                f"Battenberg marking at {hybrid.cell_name(window)}: "
+                f"{hybrid.cell_name(off)} is off the board"
+            )
+        a, b, c, d = (odd[cell] for cell in hybrid.window_cells(window))
+        clauses += [[a, b], [-a, -b], [a, c], [-a, -c], [-a, d], [a, -d]]
+    if only:
+        for window in hybrid.windows(odd):
+            if window not in marked:
+                a, b, c, d = (odd[cell] for cell in hybrid.window_cells(window))
+                # Not odd-even over even-odd, and not even-odd over odd-even.
+                clauses += [[-a, b, c, -d], [a, -b, -c, d]]
+    return clauses
+
+
 def _piece_value(pool, clauses, kind, cell, true):
     """A grid cell's value in unary, as `_at_least` would give it, up to one
     more than any piece is worth."""
@@ -324,7 +354,8 @@ def _piece_value(pool, clauses, kind, cell, true):
 def rules(conditions):
     """Every rule but connectivity, for these conditions. Returns `(clauses,
     edge, blank)`: the edge variables keyed by edge and each grid cell's
-    blank variable. Raises ValueError on a circle that is off the board."""
+    blank variable. Raises ValueError on a circle that is off the board, and
+    on a Battenberg marking whose window is not wholly on it."""
     rows, cols, circles = conditions.rows, conditions.cols, conditions.circles
     exactly, min_bananas = conditions.exactly, conditions.min_bananas
     number_circles = conditions.number_circles
@@ -334,6 +365,7 @@ def rules(conditions):
     count, odd = _add_values(pool, clauses, kind, conditions, true)
     clauses += _chocolate(odd)
     clauses += _banana(odd)
+    clauses += _battenberg(odd, conditions.battenberg, conditions.battenberg_only)
     for circle in sorted(circles):
         if circle not in odd:
             raise ValueError(f"circle off the board: {circle}")

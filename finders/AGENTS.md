@@ -66,6 +66,16 @@ because the checker reads them and nothing under `docs/research/` does
   engines share, its reading in `hybrid.py` and its 4x4 answers from
   `brute.py`. `--engine cpsat` refuses the new flag by name and is given no
   model of it. The conditions already on all three engines stay there.
+  `--battenberg "c1:turn r3c1"` is the first such condition (spec #20, #22):
+  each named window, a 2x2 of board cells named by its top-left cell, is a
+  checkerboard window in every grid returned, and `--battenberg-only` is the
+  negative constraint, no checkerboard window but the marked ones, the
+  number strips included. Both go on the hunt and on `classify`, with
+  `--circles` if wanted; a window not wholly on the board is refused, naming
+  the cell. A record carries `battenberg`, `battenberg_only` and
+  `checkerboard_windows`, every checkerboard window of its grid. The 4x4
+  answers and the 5x5 check against the rule reader: the decision log,
+  § Hybrid: Battenberg markings.
   `--number-circles K` is the condition "at least K valid circles on number
   cells" (#794), on all three engines; a grid cell that is a valid circle
   counts for nothing. `hybrid_finder.py climb --out DIR` is its hunt: it

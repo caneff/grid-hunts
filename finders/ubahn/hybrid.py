@@ -42,8 +42,10 @@ class Conditions(NamedTuple):
     """What a hybrid grid is asked to meet: the board, the circled cells,
     the piece-count condition (a `network.Exactly`, or None), whether the
     blank strip is on, the fewest banana regions it may have (0 asks for
-    none), and how many valid circles on number cells it holds at least
-    (#794)."""
+    none), how many valid circles on number cells it holds at least (#794),
+    the windows that carry a Battenberg marking, each by its top-left cell,
+    and whether the negative constraint is on: no checkerboard window but
+    the marked ones (spec #20)."""
 
     rows: int
     cols: int
@@ -52,6 +54,8 @@ class Conditions(NamedTuple):
     blank_strip: bool = False
     min_bananas: int = 0
     number_circles: int = 0
+    battenberg: frozenset = frozenset()
+    battenberg_only: bool = False
 
 
 class Sampled(NamedTuple):
