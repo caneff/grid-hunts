@@ -631,6 +631,43 @@ Worker's choices, none a ruling:
   (`number_cell_circles`), the rule reader's list, beside the K it was asked
   for. A record older than the condition reads as K = 0.
 
+## Hybrid: checkerboard windows, a first count
+
+Chris, 2026-10-12: a Battenberg marking in the centre of a 2x2 says its four
+cells are a checkerboard of parity, odd-even over even-odd or the other way
+round. A **window** here is a 2x2 of board cells, grid cells or number cells,
+all four on the board, named by its top-left cell. Counted before any finder
+code, to see what the marking has to work with. One core, this box,
+2026-10-12, about 16 s in all. Four strips a side, no condition.
+
+| Board | Grids read | Windows a grid | Checkerboard windows in a grid |
+| --- | --- | --- | --- |
+| 4x4 | all 18, the brute force's | 33 | 0 in 16 grids, 3 in 2 grids |
+| 5x5 | all 31, `pysat-lazy` listing, not capped | 48 | 1 to 12, never 0 |
+| 6x6 | 20,000, `pysat-lazy` listing, **capped at 20,000** | 65 | 0 to 19 |
+
+- **4x4 is exhaustive.** The six windows that are ever a checkerboard are
+  `c1:turn`, `c2:turn`, `r3c1` in one grid and `r1:turn`, `r2:turn`, `r1c3`
+  in the other. Each is a checkerboard in exactly one grid, so any one
+  marking leaves one grid, and "no window is a checkerboard" leaves 16.
+- **5x5 is every grid the engine lists**, the 31 of § Hybrid: the PySAT
+  engines; the list did not time out and did not reach its cap of 1,000. No
+  5x5 grid has no checkerboard window. 73 of the 165 checkerboard windows are
+  on the grid and 92 hold a number cell. The 31 grids hold 13 different sets
+  of checkerboard windows, and 7 of those sets belong to one grid each: with
+  every checkerboard window marked and every other window forbidden, 7 grids
+  of the 31 are the only grid for their markings.
+- **6x6 is a capped sample, not a count.** The listing stopped at its cap of
+  20,000 grids, so nothing here bounds 6x6: 1,406 of the 20,000 have no
+  checkerboard window and one has 19. Every window of the board is a
+  checkerboard in some grid of the sample.
+- **How it was counted.** A scratch script kept outside the repo, on the
+  repo's own readers: `brute.hybrid_grids(4, 4)`,
+  `hybrid_sat.listing(hybrid.Conditions(n, n), hybrid_sat.LAZY, ...)` for 5
+  and 6, and `hybrid.values` for each grid's values; the script's own code is
+  the parity test on four cells. No second program checked it. The finder's
+  condition, when built, pins the 4x4 numbers in a test.
+
 ## Decisions
 
 - **Root.** The first used cell in reading order, stated as n² / 2
