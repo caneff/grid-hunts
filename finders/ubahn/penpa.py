@@ -15,6 +15,10 @@ numbers: `Hybrid(circles, numbers)` names them in `hybrid.py`'s cells, `(r, c)`
 for a grid cell, `(r, -k)` and `(-k, c)` for a number cell in strip k (1 the
 innermost). Every number cell not named is drawn empty, the grid is dotted and
 the rules text is the combined puzzle's; the answer check is the plain link's.
+Its `battenberg` are the windows that carry a Battenberg marking (spec #20,
+#24), each named by its top-left cell: Penpa+'s checkerboard symbol on the
+vertex at the window's centre (§ 10), with a sentence of rules for it, and a
+second when `battenberg_only` says every checkerboard window is marked.
 
 `link` returns the URL as one string. A link is a 10 KB blob: write it to a
 file, never to chat.
@@ -202,6 +206,9 @@ ICONS = {
 }
 BLANK_ICON = "□"  # a number's text: a blank cell has no arm to draw
 CIRCLE = [1, "circle_L", 1]  # a symbol: the plain white ring, under the lines
+# A symbol: Penpa+'s 2x2 checkerboard, in the layer drawn over the grid
+# lines, as Penpa+'s own Battenberg import writes it (§ 10).
+BATTENBERG = [1, "sudokuetc", 2]
 
 TITLE = "U-Bahn"
 RULES = (
@@ -233,6 +240,18 @@ HYBRID_RULES = (
     "A digit in a circle counts the number of cells of the chocolate or "
     "banana region that circle lies in."
 )
+# The sentences a link with Battenberg markings adds (#24). Drafted by the
+# worker; the wording is Chris's to rule.
+BATTENBERG_RULE = (
+    "A checkerboard symbol on the corner shared by four cells, grid cells "
+    "or clue cells, indicates that those four cells form a checkerboard of "
+    "odd and even values: diagonally opposite cells have the same parity, "
+    "and cells sharing an edge have different parity."
+)
+BATTENBERG_ONLY_RULE = (
+    "All possible checkerboard symbols are given: no other 2x2 group of "
+    "cells, grid cells or clue cells, forms such a checkerboard."
+)
 DOTTED_GRID = ["2", "2", "1"]  # dotted gridlines, no lattice points, a frame
 _ESCAPES = ((",", "%2C"), ("\n", "%2D"), ("&", "%2E"), ("=", "%2F"))
 # What the rules text calls a kind, where it is not the kind's own name.
@@ -241,10 +260,14 @@ _KIND_WORDS = {"blank": "no arm at all"}
 
 class Hybrid(NamedTuple):
     """What the hybrid link shows: the cells that carry a circle and the
-    number cells whose outside number is printed, in `hybrid.py`'s cells."""
+    number cells whose outside number is printed, in `hybrid.py`'s cells,
+    the windows that carry a Battenberg marking, each by its top-left cell,
+    and whether the rules say every checkerboard window is marked."""
 
     circles: frozenset
     numbers: frozenset
+    battenberg: frozenset = frozenset()
+    battenberg_only: bool = False
 
 
 def _json(value):
@@ -343,6 +366,20 @@ class _Table(NamedTuple):
         g = self.grid_origin
         return self.cell(g + c, g + r)
 
+    def window_centre(self, window):
+        """Vertex index of the centre of the window named by its top-left
+        cell, in `hybrid.py`'s scheme: the bottom-right corner of that cell.
+        Raises ValueError when one of the window's four cells is off the
+        board, giving the window and that cell as (r, c)."""
+        r, c = window
+        for cell in ((r, c), (r, c + 1), (r + 1, c), (r + 1, c + 1)):
+            try:
+                self.board_cell(cell)
+            except ValueError as e:
+                raise ValueError(f"Battenberg marking at {window}: {e}") from e
+        g = self.grid_origin
+        return self.vertex(g + c, g + r)
+
     def number_cell(self, cell):
         """Cell-centre index of a number cell `(r, -k)` or `(-k, c)`. Raises
         ValueError on a grid cell or a cell this table does not hold."""
@@ -376,10 +413,23 @@ def _rules_text(kinds):
     return RULES.format(kinds=", ".join(_KIND_WORDS.get(k, k) for k in kinds))
 
 
+def _hybrid_rules(hybrid):
+    """The combined puzzle's rules, with the marking's sentence when the
+    link shows a marking or says they are all given, and then that
+    sentence too."""
+    lines = [HYBRID_RULES]
+    if hybrid.battenberg or hybrid.battenberg_only:
+        lines.append(BATTENBERG_RULE)
+    if hybrid.battenberg_only:
+        lines.append(BATTENBERG_ONLY_RULE)
+    return "\n".join(lines)
+
+
 def payload(rows, cols, found, blank_number=False, hybrid=None):
     """The inflated, unabbreviated text of the `p` parameter: 19 lines. A
-    `hybrid` draws only its numbers and circles, dotted, under the combined
-    rules; none draws every number, solid, under the U-Bahn rules."""
+    `hybrid` draws only its numbers, circles and Battenberg markings,
+    dotted, under the combined rules; none draws every number, solid, under
+    the U-Bahn rules."""
     kinds = KINDS_WITH_BLANK if blank_number else PIECE_ORDER
     t = _table(rows, cols, blank_number)
     g = t.grid_origin
@@ -425,6 +475,8 @@ def payload(rows, cols, found, blank_number=False, hybrid=None):
         mode = {**_MODE, "grid": DOTTED_GRID}
         for cell in hybrid.circles:
             symbol[t.board_cell(cell)] = copy.copy(CIRCLE)
+        for window in hybrid.battenberg:
+            symbol[t.window_centre(window)] = copy.copy(BATTENBERG)
 
     question = _layer(number=number, symbol=symbol, lineE=divider)
     center = center_point(t.nx, t.ny)
@@ -447,7 +499,7 @@ def payload(rows, cols, found, blank_number=False, hybrid=None):
         "Title: " + _escape(TITLE if hybrid is None else HYBRID_TITLE),
         "Author: ",
         "",
-        _escape(_rules_text(kinds) if hybrid is None else HYBRID_RULES),
+        _escape(_rules_text(kinds) if hybrid is None else _hybrid_rules(hybrid)),
         "OFF",
         "false",
     ]
@@ -496,9 +548,10 @@ def abbreviate(text):
 def link(rows, cols, found, blank_number=False, hybrid=None):
     """The Penpa+ solve link for a network on a `rows` by `cols` board: its
     outside numbers as the numbers round the grid, its edges as the embedded
-    answer. With a `Hybrid`, only its numbers and circles are shown; the
-    answer is the same. Raises ValueError, naming the cell, on a circle or a
-    number that is not on the board."""
+    answer. With a `Hybrid`, only its numbers, circles and Battenberg
+    markings are shown; the answer is the same. Raises ValueError, giving the
+    cell as (r, c), on a circle, a number or a cell of a marked window that
+    is not on the board."""
     text = abbreviate(payload(rows, cols, found, blank_number, hybrid))
     return (
         f"{PAGE}#m=solve&p={deflate_base64(text)}"

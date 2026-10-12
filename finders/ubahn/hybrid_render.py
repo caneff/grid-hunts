@@ -1,15 +1,20 @@
 """A hybrid grid as a picture (#791): the board in the puzzle's layout, with
 its regions coloured and a ring on every cell a circle could sit on.
 
-`Picture(net, rows, cols, circles, blank_strip).image` is a PIL image. The
+`Picture(net, rows, cols, circles, blank_strip, battenberg).image` is a PIL
+image. The
 strips of number cells lie above the grid and to its left with every outside
 number filled in, the icon cells at the head of each strip, and the network
 runs through the grid cells. A chocolate is one colour; each banana has a
 tint of its own, so separate bananas can be told apart and counted, and a
 heavy line runs wherever cells of different parity meet. A ring marks every
 valid circle, a cell whose value is the size of its region: a heavier ring
-in a second colour when the circle is one of the grid's conditions.
-Everything the picture says about values, regions and circles is
+in a second colour when the circle is one of the grid's conditions. A small
+checkerboard symbol sits at the centre of every checkerboard window, the
+corner its four cells share, on the grid, in the strips or across them: a
+heavier one in the second colour when the window is a Battenberg marking of
+the grid's conditions (spec #20).
+Everything the picture says about values, regions, circles and windows is
 `hybrid.py`'s, the solver-free rule reader; no model is asked.
 
 `hybrid_finder.py render` is the command that writes one.
@@ -51,6 +56,13 @@ NETWORK = (21, 101, 192)
 # condition of the grid.
 VALID_RING = (198, 40, 40)
 GIVEN_RING = (106, 27, 154)
+# The checkerboard symbol on a checkerboard window is drawn in `WINDOW`, and
+# in `GIVEN_RING` and heavier on a window that is a condition. Each of the
+# two symbols is (the side of one of its four quarters, the width of its
+# outline), in pixels.
+WINDOW = (33, 33, 33)
+PLAIN_SYMBOL = (7, 1)
+GIVEN_SYMBOL = (10, 2)
 NUMBER_SIZE = 34
 
 
@@ -64,13 +76,16 @@ def _tint(i):
 
 
 class Picture(GridCanvas):
-    """The picture of one hybrid grid. Raises ValueError, saying why, when
-    the edges and circles are not a hybrid grid on the board drawn: a region
-    coloured as a chocolate is then a rectangle, and the picture never shows
-    a grid the rules refuse."""
+    """The picture of one hybrid grid. `battenberg` are the windows that
+    carry a Battenberg marking, each by its top-left cell. Raises ValueError,
+    saying why, when the edges, circles and markings are not a hybrid grid on
+    the board drawn: a region coloured as a chocolate is then a rectangle,
+    and the picture never shows a grid the rules refuse."""
 
-    def __init__(self, net, rows, cols, circles=(), blank_strip=False):
-        why = hybrid.why_not_hybrid(net, rows, cols, circles, blank_strip)
+    def __init__(self, net, rows, cols, circles=(), blank_strip=False, battenberg=()):
+        why = hybrid.why_not_hybrid(
+            net, rows, cols, circles, blank_strip, battenberg=battenberg
+        )
         if why:
             raise ValueError(f"not a hybrid grid: {why}")
         self.rows, self.cols = rows, cols
@@ -89,12 +104,27 @@ class Picture(GridCanvas):
         # reach is one cell; drawn last, over the rings.
         for first, second in net:
             self._arm(first, 1 if first[0] == second[0] else 2, NETWORK, 4, CELL)
+        marked = set(battenberg)
+        for window in hybrid.checkerboard_windows(self.board):
+            self._symbol(window, window in marked)
 
     def box(self, cell):
         """The (x0, y0, x1, y1) pixel box of a cell of the board, or of an
         icon cell."""
         r, c = cell
         return self._cell_box(r + self.depth, c + self.depth)
+
+    def _symbol(self, window, given):
+        """The checkerboard symbol at the centre of a window: a square of
+        four quarters, the top-left and bottom-right ones filled and the
+        other two white, in an outline."""
+        colour = GIVEN_RING if given else WINDOW
+        quarter, outline = GIVEN_SYMBOL if given else PLAIN_SYMBOL
+        _, _, x, y = self.box(window)
+        half = quarter + outline
+        self.draw.rectangle([x - half, y - half, x + half - 1, y + half - 1], colour)
+        self.draw.rectangle([x, y - quarter, x + quarter - 1, y - 1], fill=BACKGROUND)
+        self.draw.rectangle([x - quarter, y, x - 1, y + quarter - 1], fill=BACKGROUND)
 
     def _cells(self):
         """Every cell's fill and thin outline, and a number cell's number."""

@@ -668,6 +668,190 @@ code, to see what the marking has to work with. One core, this box,
   the parity test on four cells. No second program checked it. The finder's
   condition, when built, pins the 4x4 numbers in a test.
 
+## Hybrid: Battenberg markings, the 4x4 answers (#21)
+
+Spec #20's condition, counted by the brute force before any engine takes it.
+A **Battenberg marking** says one window is a checkerboard window; with the
+negative constraint on, every window with no marking is not one, the windows
+in the number strips included. One worker, this box, 2026-10-12. Each count
+is an exhaustive pass over the 18 valid 4x4 grids, judged by `hybrid.py`,
+about 2 s a command; none is sampled or capped.
+
+| 4x4 conditions | Grids | Class |
+| --- | --- | --- |
+| no marking | 18 | `not_unique` |
+| no marking, negative constraint | 16 | `not_unique` |
+| any one of `c1:turn`, `c2:turn`, `r3c1`, `r1:turn`, `r2:turn`, `r1c3` | 1 | `unique` |
+| `c1:turn c2:turn r3c1`, negative constraint | 1 | `unique` |
+| `r1:turn r2:turn r1c3`, negative constraint | 1 | `unique` |
+| `c1:turn`, negative constraint | 0 | `infeasible` |
+| `c1:turn r1:turn` | 0 | `infeasible` |
+| `r1c1` | 0 | `infeasible` |
+
+- **Every row agrees with the first count** above (§ Hybrid: checkerboard
+  windows, a first count), which came from a scratch script; no number
+  differs. The row for `r1:turn r2:turn r1c3` is new: it is the other grid's
+  full set of markings.
+- **A 4x4 board has 33 windows**, 9 on the grid and 12 in or across each
+  side's strips. 16 of the 18 grids have no checkerboard window and 2 have 3
+  each; the two are each other's reflection in the main diagonal.
+- **With the blank strip on**, a board has 39 windows, and none of the 8
+  valid grids has a checkerboard window: the negative constraint with no
+  marking leaves all 8.
+- **Commands.**
+
+  ```
+  uv run finders/ubahn/brute.py 4 4 --battenberg "c1:turn" \
+      --battenberg "c2:turn" --battenberg "r3c1" --battenberg "r1:turn" \
+      --battenberg "r2:turn" --battenberg "r1c3" \
+      --battenberg "c1:turn r1:turn" --battenberg "r1c1"
+  uv run finders/ubahn/brute.py 4 4 --battenberg-only \
+      --battenberg "c1:turn c2:turn r3c1" \
+      --battenberg "r1:turn r2:turn r1c3" --battenberg "c1:turn"
+  uv run finders/ubahn/brute.py 4 4 --blank-strip --battenberg-only
+  ```
+
+  `--battenberg-only` prints the negative constraint alone first, then each
+  `--battenberg` under it. `test_ubahn_brute.py` pins every row of the table
+  and the 16-and-2 split; the blank strip's 8 is this section's only.
+
+Worker's choices, none a ruling:
+
+- **The reader names a marking's failure by its window**: `Battenberg
+  marking at r1c1: not a checkerboard window`, `checkerboard window at
+  r1:turn has no Battenberg marking` under the negative constraint, and
+  `Battenberg marking at r4c4: r4c5 is off the board` for a window that is
+  not wholly on it. They come last in the list of broken rules.
+- **`hybrid.parse_windows` reads the window names of `--battenberg` for the
+  brute force and for the finder's hunt and `classify`**, and refuses a
+  window that is not wholly on the board. `links` has no board until it has
+  read a record, so it reads the names with the finder's `parse_cells` and
+  leaves the board check to the rule reader; a record's `battenberg` is read
+  name by name with `hybrid.parse_cell`. The reader and the PySAT rules
+  refuse an off-board window in one sentence, `hybrid.marking_off_board`'s.
+  `penpa.link` has its own guard, in its own `(r, c)` cells, for a caller
+  that does not come through `links`.
+- **A record's `battenberg` must be a list of names and its
+  `battenberg_only` true or false**; anything else is refused by the field's
+  name (spec review of #20). A `null` read as "off" would have passed
+  `verify` on a grid the negative constraint forbids.
+- **The cpsat model refuses the two conditions itself** (`hybrid_model.build`),
+  as well as the finder's flags, so no caller gets an answer for the board
+  without them.
+- **With the blank strip on, the engines are held to the reader on 7x7.** No
+  grid found on 4x4 or 6x6 has a checkerboard window that touches the blank
+  strip, and 5x5 with the blank strip has no grid at all (scratch probe on
+  `hybrid_sat.listing`, 2026-10-12: 8 grids on 4x4, the first 2,000 on 6x6,
+  none with such a window; 244 of the first 2,000 on 7x7 have one). The test
+  takes one 7x7 grid with such a window: its full set of markings under the
+  negative constraint lists it, and the set with that window left unmarked
+  does not (`test_ubahn_battenberg_sat.py`).
+- **`--battenberg-only` on the brute force applies to every classification
+  of the run**, `--circles` ones too, as `--min-bananas` does.
+
+## Hybrid: Battenberg markings on the PySAT engines (#22)
+
+`--battenberg "CELLS"` and `--battenberg-only` on the hunt and on `classify`,
+`pysat-lazy` and `pysat-propagator` only. One CaDiCaL thread, this box,
+2026-10-12.
+
+- **The clauses.** `hybrid_sat._battenberg`, over the parity variable every
+  board cell already has. A marking is three facts on its window's four
+  variables, six clauses of two: the top-left cell differs from the cell on
+  its right and from the cell under it, and equals the cell diagonally
+  across. Under the negative constraint every unmarked window takes two
+  clauses of four, one per checkerboard pattern. No variable is added and
+  nothing is counted.
+- **4x4: both engines list the brute force's grids** for every row of the
+  table above and classify each row in its word, through the engines' own
+  calls and through the CLI.
+- **5x5, where no brute force reaches: both engines against the rule
+  reader.** The 31 grids `pysat-lazy` lists with no condition are the same
+  31 as before. A marking only ever rules a grid out, so under each set of
+  markings an engine must list exactly the grids of the 31 the reader keeps.
+  Checked on `pysat-lazy` for each of the board's 48 windows marked alone,
+  each of the 13 different full sets of checkerboard windows the 31 grids
+  hold, and no marking, every case with and without the negative
+  constraint: 124 listings, none wrong. `pysat-propagator` runs the same
+  clauses and is held to every fifth window and the same full sets.
+- **The first count's 5x5 claims, re-run on the engines and the reader.**
+  Every 5x5 grid has a checkerboard window, so no marking under the negative
+  constraint is `infeasible` on both engines. The 31 grids hold 13 different
+  sets of checkerboard windows and 7 of those sets are one grid's alone. No
+  number differs from the first count.
+- **Commands.**
+
+  ```
+  uv run finders/ubahn/hybrid_finder.py classify --rows 4 --cols 4 \
+      --battenberg "c1:turn c2:turn r3c1" --battenberg-only
+  uv run finders/ubahn/hybrid_finder.py --rows 5 --cols 5 \
+      --battenberg "r2c2" --out DIR --seeds 0:20 --workers 1
+  uv run finders/ubahn/test_ubahn_battenberg_sat.py
+  ```
+
+Worker's choices, none a ruling:
+
+- **Record fields**: `battenberg` (the marked windows' names, sorted as
+  `circles` is), `battenberg_only`, and `checkerboard_windows`, every
+  checkerboard window of the grid in the reader's order. A record with none
+  of them reads as no markings and the constraint off.
+- **`run.json` carries `battenberg` and `battenberg_only` only when asked
+  for**, as it does `min_bananas`: the driver refuses to resume a hunt whose
+  config differs, and a hunt from before the condition has neither key.
+- **The cpsat refusal names the flag given**: `--battenberg is on the PySAT
+  engines only: --engine cpsat has no model of it`, exit 2, before any
+  solve, on the hunt, `classify` and `climb`.
+- **Symmetry.** A window's image in the main diagonal is the window named by
+  its top-left cell's image, so the reflection is kept when the set of
+  marked top-left cells is its own image. On 5x5, `r2c2` marked keeps 3
+  grids and the hunt keeps 2 examples, one for a grid and its transpose;
+  `c3:straight` marked leaves no symmetry and both grids of a transpose pair
+  are examples.
+
+## Hybrid: the picture's checkerboard symbols (#23)
+
+`hybrid_finder.py render` draws a small checkerboard symbol at the centre of
+every checkerboard window, the corner its four cells share, whether the
+window is on the grid, in the strips or across them. 2026-10-12.
+
+- **The look, the worker's taste call.** A square of four quarters, the
+  top-left and bottom-right ones filled and the other two white. On a window
+  with no marking it is near-black, quarters of 7 pixels in a 1-pixel
+  outline. On a window that is a Battenberg marking of the hunt's conditions
+  it is in the given ring's purple, quarters of 10 pixels in a 2-pixel
+  outline. A cell is 64 pixels, so neither reaches a cell's number or the
+  network through its centre. The symbols are drawn last, over the heavy
+  line between cells of different parity.
+- **One picture**, the 4x4 grid with `c1:turn` and `r2c4` circled and the
+  window `c1:turn` marked; its other two checkerboard windows, `c2:turn` and
+  `r3c1`, carry the plain symbol:
+  `docs/research/2026-10-12-u-bahn-battenberg/picture-c1-turn-marked.png`.
+- **A marking on a window that is no checkerboard window is refused**, as a
+  circle that is not valid is, so the picture never shows a false clue. The
+  negative constraint is not re-read by `render`: the picture shows every
+  checkerboard window whatever the hunt asked.
+
+## Hybrid: Battenberg markings on the Penpa+ link (#24)
+
+`hybrid_finder.py links DIR --battenberg "CELLS" [--battenberg-only]`,
+2026-10-12. The symbol, its wire form and the browser check are in
+`docs/research/2026-10-10-u-bahn-penpa-link.md`, § 10: Penpa+ has a
+checkerboard symbol that sits on a vertex, so the link uses it.
+
+Worker's choices, none a ruling:
+
+- **The negative constraint's flag on `links` is `--battenberg-only`**, the
+  finder's own name. It adds the second sentence of rules and is refused on
+  an example with a checkerboard window left unmarked, so a link never says
+  "all given" over a grid that has one more.
+- **The marking's sentence is written when a marking is shown or
+  `--battenberg-only` is given**; a link with neither keeps the pasted text
+  word for word.
+- **`links` takes its markings from the flag, not from the record**, as it
+  takes its circles: one set of flags for every example of the directory.
+- **`verify` and `render` refuse both flags**: they read a record's own
+  markings, and a flag there would be ignored in silence.
+
 ## Decisions
 
 - **Root.** The first used cell in reading order, stated as n² / 2

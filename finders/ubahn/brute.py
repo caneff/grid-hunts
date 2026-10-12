@@ -7,12 +7,17 @@ part.
 The hybrid's answers (#782) come from the same pass, judged by `hybrid.py`:
 
     uv run finders/ubahn/brute.py 4 4 [--blank-strip] [--draw] \
-        [--min-bananas N] [--circles "r2c2 c1:turn"]...
+        [--min-bananas N] [--circles "r2c2 c1:turn"]... \
+        [--battenberg "c1:turn r3c1"]... [--battenberg-only]
 
 prints how many edge sets have no dead end, how many are valid hybrid grids,
 how many of those have each number of banana regions, and each `--circles`
 condition's classification. `--min-bananas N` (#792) classifies each with
 at least N banana regions asked for as well, and the condition alone.
+`--battenberg "CELLS"` (#21) classifies a set of Battenberg markings, each
+window named by its top-left cell. `--battenberg-only` asks every
+classification for the negative constraint as well, no checkerboard window
+but the marked ones, and classifies that alone.
 """
 
 import argparse
@@ -126,17 +131,34 @@ def banana_counts(rows, cols, blank_strip=False):
     )
 
 
-def classify(rows, cols, circles, blank_strip=False, *, min_bananas=0):
-    """(word, count): how many valid hybrid grids meet these circles with at
-    least `min_bananas` banana regions, and the uniqueness check's word for
-    it: "infeasible" for none, "unique" for one, "not_unique" for more. A
-    condition only ever rules a grid out, so the grids with no condition are
-    the ones to ask."""
+def classify(
+    rows,
+    cols,
+    circles,
+    blank_strip=False,
+    *,
+    min_bananas=0,
+    battenberg=(),
+    battenberg_only=False,
+):
+    """(word, count): how many valid hybrid grids meet these circles and
+    these Battenberg markings with at least `min_bananas` banana regions,
+    under the negative constraint when `battenberg_only`, and the uniqueness
+    check's word for it: "infeasible" for none, "unique" for one,
+    "not_unique" for more. A condition only ever rules a grid out, so the
+    grids with no condition are the ones to ask."""
     count = sum(
         1
         for net in hybrid_grids(rows, cols, blank_strip)
         if not hybrid.why_not_hybrid(
-            net, rows, cols, circles, blank_strip, min_bananas=min_bananas
+            net,
+            rows,
+            cols,
+            circles,
+            blank_strip,
+            min_bananas=min_bananas,
+            battenberg=battenberg,
+            battenberg_only=battenberg_only,
         )
     )
     return ("infeasible", "unique", "not_unique")[min(count, 2)], count
@@ -163,11 +185,32 @@ def main(argv):
         metavar="CELLS",
         help="circled cells to classify, as in 'r2c2 c1:turn'; may repeat",
     )
+    parser.add_argument(
+        "--battenberg",
+        action="append",
+        default=[],
+        metavar="CELLS",
+        help="Battenberg markings to classify, each window by its top-left "
+        "cell, as in 'c1:turn r3c1'; may repeat",
+    )
+    parser.add_argument(
+        "--battenberg-only",
+        action="store_true",
+        help="ask every classification for the negative constraint too: no "
+        "checkerboard window but the marked ones",
+    )
     args = parser.parse_args(argv)
     if args.min_bananas is not None and args.min_bananas < 1:
         # The finder's own refusal (`hybrid_finder.parse_conditions`).
         parser.error(f"--min-bananas takes 1 or more, got {args.min_bananas}")
     rows, cols, blank_strip = args.rows, args.cols, args.blank_strip
+    try:
+        marked = [
+            (text, hybrid.parse_windows(text, rows, cols, blank_strip))
+            for text in args.battenberg
+        ]
+    except ValueError as e:
+        parser.error(f"--battenberg: {e}")
     edges = len(network.all_edges(rows, cols))
     kept = sum(1 for _ in no_dead_end(rows, cols))
     grids = hybrid_grids(rows, cols, blank_strip)
@@ -180,15 +223,31 @@ def main(argv):
             "banana regions: "
             + ", ".join(f"{counts[n]} grids with {n}" for n in sorted(counts))
         )
-    asked = args.min_bananas or 0
+    asked, only = args.min_bananas or 0, args.battenberg_only
     also = f", at least {asked} banana regions" if asked else ""
-    if asked:
-        word, count = classify(rows, cols, (), blank_strip, min_bananas=asked)
-        print(f"at least {asked} banana regions: {word} ({count})")
+    also += ", no other checkerboard window" if only else ""
+
+    def say(what, circles=(), battenberg=()):
+        word, count = classify(
+            rows,
+            cols,
+            circles,
+            blank_strip,
+            min_bananas=asked,
+            battenberg=battenberg,
+            battenberg_only=only,
+        )
+        print(f"{what}: {word} ({count})")
+
+    if also:
+        say(also.removeprefix(", "))
     for text in args.circles:
-        circles = frozenset(hybrid.parse_cell(name) for name in text.split())
-        word, count = classify(rows, cols, circles, blank_strip, min_bananas=asked)
-        print(f"circles {text}{also}: {word} ({count})")
+        say(
+            f"circles {text}{also}",
+            frozenset(hybrid.parse_cell(name) for name in text.split()),
+        )
+    for text, windows in marked:
+        say(f"Battenberg markings {text}{also}", battenberg=windows)
     if args.draw:
         for net in sorted(grids, key=sorted):
             print()

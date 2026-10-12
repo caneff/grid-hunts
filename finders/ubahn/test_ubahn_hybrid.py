@@ -255,6 +255,129 @@ check(
     == ["circle at r1:blank: value 0, region of 20 cells"],
 )
 
+# Battenberg markings (spec #20). A window is a 2x2 of board cells named by
+# its top-left cell, and a checkerboard window has its diagonal cells sharing
+# a parity and its side-by-side pairs differing. This grid, checked by hand,
+# has three: r1:turn is 2 1 over 1 2, across the turn strip and the grid;
+# r2:turn is 1 2 over 0 3, across them too; r1c3 is 1 0 over 4 1, on the grid.
+CHECKERED = from_drawing(["┌┬┐ ", "│├┼┐", "├┴┴┤", "└──┘"])
+check(
+    "checkered: the board's values as worked by hand",
+    value_rows(CHECKERED, 4, 4)
+    == [
+        "    0010",
+        "    1311",
+        "    1110",
+        "    2012",
+        "01021310",
+        "11112341",
+        "04003333",
+        "00221221",
+    ],
+)
+checkered = hybrid.values(CHECKERED, 4, 4)
+check(
+    "a 4x4 board has 33 windows: 9 on the grid, 12 in or across each side's strips",
+    len(hybrid.windows(checkered)) == 33,
+)
+check(
+    "the blank strip adds 3 windows a side, and r1:blank names one only then",
+    len(hybrid.windows(hybrid.values(CHECKERED, 4, 4, blank_strip=True))) == 39
+    and (0, -5) not in hybrid.windows(checkered),
+)
+check(
+    "checkered: its checkerboard windows are r1:turn, r1c3 and r2:turn",
+    hybrid.checkerboard_windows(checkered) == cells("r1:turn", "r1c3", "r2:turn"),
+)
+check(
+    "four loops: no checkerboard window",
+    hybrid.checkerboard_windows(hybrid.values(FOUR_LOOPS, 4, 4)) == [],
+)
+check("checkered: a valid hybrid grid", hybrid.failures(CHECKERED, 4, 4) == [])
+check(
+    "checkered: a marking on the grid and one across the grid and a strip hold",
+    hybrid.failures(CHECKERED, 4, 4, battenberg=cells("r1c3", "r1:turn")) == [],
+)
+# r1c1 is 1 3 over 2 3; c1:turn is 2 0 over 1 3, across the strip and the grid.
+check(
+    "checkered: a marking that fails is reported by its window",
+    hybrid.failures(CHECKERED, 4, 4, battenberg=cells("r1c3", "r1c1", "c1:turn"))
+    == [
+        "Battenberg marking at c1:turn: not a checkerboard window",
+        "Battenberg marking at r1c1: not a checkerboard window",
+    ],
+)
+check(
+    "checkered: the negative constraint reports each unmarked checkerboard window",
+    hybrid.failures(CHECKERED, 4, 4, battenberg=cells("r1c3"), battenberg_only=True)
+    == [
+        "checkerboard window at r1:turn has no Battenberg marking",
+        "checkerboard window at r2:turn has no Battenberg marking",
+    ],
+)
+check(
+    "checkered: all three marked meets the negative constraint",
+    hybrid.failures(
+        CHECKERED,
+        4,
+        4,
+        battenberg=cells("r1:turn", "r1c3", "r2:turn"),
+        battenberg_only=True,
+    )
+    == [],
+)
+check(
+    "four loops: the negative constraint with no marking holds",
+    hybrid.failures(FOUR_LOOPS, 4, 4, battenberg_only=True) == [],
+)
+# r4c4's window would need r4c5; c4:turn's would need c5:turn; r1:blank is a
+# board cell only with the blank strip on.
+check(
+    "a window that is not wholly on the board is refused, naming the cell",
+    hybrid.failures(CHECKERED, 4, 4, battenberg=cells("r4c4", "c4:turn", "r1:blank"))
+    == [
+        "Battenberg marking at c4:turn: c5:turn is off the board",
+        "Battenberg marking at r1:blank: r1:blank is off the board",
+        "Battenberg marking at r4c4: r4c5 is off the board",
+    ],
+)
+# With the blank strip on, r1:blank names a window in the blank and cross
+# strips: row 1 holds 1 blank and no cross, row 2 neither, so it is 1 0 over
+# 0 1 by the same reading.
+blank_board = hybrid.values(CHECKERED, 4, 4, blank_strip=True)
+check(
+    "blank strip on: the strip's values as worked by hand",
+    [blank_board[r, -5] for r in range(4)] == [1, 0, 0, 0]
+    and [blank_board[-5, c] for c in range(4)] == [0, 0, 0, 1],
+)
+check(
+    "blank strip on: a window in the blank strip is a window like any other",
+    (0, -5) in hybrid.checkerboard_windows(blank_board)
+    and not any(
+        "Battenberg" in reason
+        for reason in hybrid.failures(
+            CHECKERED, 4, 4, blank_strip=True, battenberg=cells("r1:blank")
+        )
+    ),
+)
+check(
+    "parse_windows reads window names on the board",
+    hybrid.parse_windows("r1c3 r1:turn", 4, 4) == frozenset(cells("r1c3", "r1:turn")),
+)
+for bad, off in (("r4c4", "r4c5"), ("r4:turn", "r5:turn"), ("r1:blank", "r1:blank")):
+    try:
+        hybrid.parse_windows(f"r1c3 {bad}", 4, 4)
+        check(f"parse_windows refuses {bad}", False)
+    except ValueError as e:
+        check(
+            f"parse_windows refuses {bad}, naming {off} ({e})",
+            f"window {bad} " in str(e) and f"{off} is off" in str(e),
+        )
+check(
+    "parse_windows takes r1:blank with the blank strip on",
+    hybrid.parse_windows("r1:blank", 4, 4, blank_strip=True) == frozenset([(0, -5)]),
+)
+
 # The drawing: number cells as digits, icon cells as their pieces, the
 # network as box characters, a circled cell in brackets.
 check(

@@ -27,6 +27,19 @@ Conditions are flags:
                                or more number cells whose value is the size
                                of their region. A grid cell that is a valid
                                circle counts for nothing (#794).
+    --battenberg "CELL CELL ..."  windows that carry a Battenberg marking
+                               (spec #20): each is a checkerboard window,
+                               its diagonal cells sharing a parity of value
+                               and its side-by-side pairs differing. A
+                               window is a 2x2 of board cells, grid cells,
+                               number cells or both, named by its top-left
+                               cell as `--circles` names a cell. A window
+                               that is not wholly on the board is refused.
+    --battenberg-only          the negative constraint: every window with no
+                               marking is not a checkerboard window, the
+                               windows in the number strips included. Both
+                               flags are on the PySAT engines only; `--engine
+                               cpsat` refuses them by name.
     --engine pysat-lazy        the solver the rules are written on: cpsat
                                (`hybrid_model.py`, connectivity as a flow),
                                pysat-lazy (`hybrid_sat.py`, a grid whose
@@ -92,7 +105,11 @@ stays ended: one a time limit stopped is taken up again in a new DIR, with
 outside number, the network, chocolate in one colour and a tint per banana,
 and a ring on every valid circle, each cell whose value is the size of its
 region; a circle that is one of the grid's conditions has a heavier ring in
-a second colour. A rerun replaces every picture there. `--seed N --png FILE`
+a second colour. A small checkerboard symbol sits at the centre of every
+checkerboard window of the grid, heavier and in the second colour on a window
+that is a Battenberg marking of the hunt's conditions; a record from before
+the condition is drawn as having no markings. A rerun replaces every picture
+there. `--seed N --png FILE`
 draws that one example to FILE instead. `--blank-strip` draws the fifth strip
 on a record of a hunt that had none; a grid that is no hybrid grid on the
 board drawn is refused and nothing is written.
@@ -110,24 +127,31 @@ applies to every example of the directory, so a hunt run with the same
 `--circles` condition makes every example carry them. With neither flag the
 board shows no circle and no number. A circled number cell shows its number
 only if it is also in `--numbers`. The link's answer check is the plain
-link's: the drawn lines, nothing else. `--blank-strip` draws the fifth strip
+link's: the drawn lines, nothing else. `--battenberg "CELLS"` are the
+windows that carry a Battenberg marking, each by its top-left cell: Penpa+'s
+checkerboard symbol on the corner the window's four cells share, and one
+sentence more of rules. `--battenberg-only` adds a second sentence, that
+every checkerboard symbol is given, and is refused on an example with a
+checkerboard window left unmarked. `--blank-strip` draws the fifth strip
 on a record of a hunt that had none. A circle that is not valid on the grid
-(its value is not its region's size), a number cell off the board, a grid
-cell as a given number, or a grid that is no hybrid grid on the board drawn,
-is refused by name and nothing is written. A rerun replaces every link there.
+(its value is not its region's size), a marked window that is no
+checkerboard window of the grid or is not wholly on the board, a number cell
+off the board, a grid cell as a given number, or a grid that is no hybrid
+grid on the board drawn, is refused by name and nothing is written. A rerun replaces every link there.
 A link is never printed: the command reports the directory. The link does not
 say whether the givens leave one solution; `classify` answers that for the
 circles (it is given no outside number).
 
     uv run finders/ubahn/hybrid_finder.py links DIR --circles "r2c3 c1:turn" \
-        --numbers "r1:cross c1:turn" [--blank-strip]
+        --numbers "r1:cross c1:turn" [--blank-strip] \
+        [--battenberg "r1c3 r1:turn"] [--battenberg-only]
 
 The board's one symmetry is the reflection in the main diagonal, which swaps
 the row and column number cells; a left-right mirror image is another
 puzzle, since the number cells sit above and on the left only. A hunt
 dedupes under that reflection when the board is square, every circle's
-image is circled and there is no piece-count condition, and under nothing
-otherwise.
+image is circled, every marked window's image is marked and there is no
+piece-count condition, and under nothing otherwise.
 
 The driver's flags (`--out`, `--seeds`, `--workers`, ...) are its own
 (finders/hunt/driver.py).
@@ -202,14 +226,18 @@ def condition_symmetry(conditions):
     """The group a grid's key (`HybridFinder.key`) dedupes under: the
     identity and the reflection in the main diagonal when that reflection
     keeps the conditions, the identity alone when it moves one. It keeps
-    them on a square board whose circled cells are circled in the image too,
-    with no piece-count condition, which names a row or a column. The
-    reflection sends a cell's east arm to its image's south arm and back."""
+    them on a square board whose circled cells are circled in the image too
+    and whose marked windows are marked there too (a window's image is the
+    window named by its top-left cell's image), with no piece-count
+    condition, which names a row or a column. The reflection sends a cell's
+    east arm to its image's south arm and back."""
     rows, cols, circles = conditions.rows, conditions.cols, conditions.circles
+    marked = conditions.battenberg
     if (
         rows != cols
         or conditions.exactly
         or {(c, r) for r, c in circles} != set(circles)
+        or {(c, r) for r, c in marked} != set(marked)
     ):
         return IDENTITY
     cells = rows * cols
@@ -238,6 +266,12 @@ class HybridFinder:
         # config differs, and a hunt from before the condition has no such key.
         if conditions.min_bananas:
             self.config["min_bananas"] = conditions.min_bananas
+        if conditions.battenberg:
+            self.config["battenberg"] = sorted(
+                map(hybrid.cell_name, conditions.battenberg)
+            )
+        if conditions.battenberg_only:
+            self.config["battenberg_only"] = True
 
     def propose(self, rng):
         status, found = ENGINES[self.engine].grid(
@@ -262,6 +296,8 @@ class HybridFinder:
             asked.blank_strip,
             min_bananas=asked.min_bananas,
             number_circles=asked.number_circles,
+            battenberg=asked.battenberg,
+            battenberg_only=asked.battenberg_only,
         )
         if why:
             return Verdict(False, why)
@@ -289,6 +325,13 @@ class HybridFinder:
             "number_cell_circles": [
                 hybrid.cell_name(cell) for cell in hybrid.number_cell_circles(board)
             ],
+            "battenberg": sorted(map(hybrid.cell_name, asked.battenberg)),
+            "battenberg_only": asked.battenberg_only,
+            # Every checkerboard window of the grid, marked or not.
+            "checkerboard_windows": [
+                hybrid.cell_name(window)
+                for window in hybrid.checkerboard_windows(board)
+            ],
             "engine": self.engine,
             "drawing": hybrid.drawing(found, rows, cols, circles, asked.blank_strip),
         }
@@ -311,9 +354,13 @@ class HybridFinder:
         """Raises ValueError, naming it, on a circle `hybrid.parse_cell`
         refuses, anything the plain finder's reader refuses in the edge
         rows and the piece-count condition, a `min_bananas` that is no whole
-        number of 0 or more, or a field the record lacks. A record with no
+        number of 0 or more, a `battenberg` that is no list of window names,
+        a `battenberg_only` that is not true or false, or a field the record
+        lacks. A record with no
         `min_bananas` is of a hunt from before that condition (#792) and asks
-        for none; `record` has written the field in every record since."""
+        for none; `record` has written the field in every record since. One
+        with no `battenberg` or `battenberg_only` is from before Battenberg
+        markings (spec #20): no markings, the negative constraint off."""
         try:
             rows, cols, found, exactly = UbahnFinder().candidate_from_record(record)
             circles = frozenset(map(hybrid.parse_cell, record["circles"]))
@@ -321,6 +368,18 @@ class HybridFinder:
             if type(min_bananas) is not int or min_bananas < 0:
                 raise ValueError(
                     f"min_bananas is {min_bananas!r}: it is a whole number, 0 or more"
+                )
+            battenberg = record.get("battenberg", [])
+            if type(battenberg) is not list or not all(
+                type(name) is str for name in battenberg
+            ):
+                raise ValueError(
+                    f"battenberg is {battenberg!r}: it is a list of window names"
+                )
+            battenberg_only = record.get("battenberg_only", False)
+            if type(battenberg_only) is not bool:
+                raise ValueError(
+                    f"battenberg_only is {battenberg_only!r}: it is true or false"
                 )
             conditions = hybrid.Conditions(
                 rows,
@@ -331,6 +390,8 @@ class HybridFinder:
                 min_bananas,
                 # A record older than the condition (#794) asked for none.
                 record.get("number_circles", 0),
+                frozenset(map(hybrid.parse_cell, battenberg)),
+                battenberg_only,
             )
         except KeyError as e:
             raise ValueError(
@@ -342,8 +403,9 @@ class HybridFinder:
 def parse_conditions(args):
     """The `hybrid.Conditions` the flags name. Raises ValueError, naming the
     flag, on a board with no network, a cell or condition that does not
-    parse, one that is off the board, a number of banana regions under 1, or
-    a count of number-cell circles below 0."""
+    parse, one that is off the board, a number of banana regions under 1, a
+    count of number-cell circles below 0, or a Battenberg marking whose
+    window is not wholly on the board."""
     rows, cols = args.rows, args.cols
     if rows < 2 or cols < 2:
         raise ValueError("the smallest board with a network is 2x2")
@@ -376,6 +438,10 @@ def parse_conditions(args):
         raise ValueError(f"--min-bananas takes 1 or more, got {args.min_bananas}")
     if args.number_circles < 0:
         raise ValueError(f"--number-circles is 0 or more, got {args.number_circles}")
+    try:
+        marked = hybrid.parse_windows(args.battenberg, rows, cols, args.blank_strip)
+    except ValueError as e:
+        raise ValueError(f"--battenberg: {e}") from e
     return hybrid.Conditions(
         rows,
         cols,
@@ -384,6 +450,8 @@ def parse_conditions(args):
         args.blank_strip,
         args.min_bananas or 0,
         args.number_circles,
+        marked,
+        args.battenberg_only,
     )
 
 
@@ -558,6 +626,7 @@ def write_pictures(out, blank_strip=False, seed=None, png=None):
                 asked.cols,
                 asked.circles,
                 blank_strip or asked.blank_strip,
+                asked.battenberg,
             ).image
         except ValueError as e:
             raise ValueError(f"seed {s}: {e}") from e
@@ -585,15 +654,21 @@ def parse_cells(flag, text):
         raise ValueError(f"{flag}: {e}") from e
 
 
-def write_links(out, circles, numbers, blank_strip):
+def write_links(
+    out, circles, numbers, blank_strip, battenberg=frozenset(), battenberg_only=False
+):
     """Write `out/links/<seed>.txt`, one Penpa+ link per example of the hunt
-    in `out` (`ubahn_finder.seeded_examples`), showing the `circles` and the
-    `numbers` given and no other circle or number. The fifth strip is drawn
+    in `out` (`ubahn_finder.seeded_examples`), showing the `circles`, the
+    `numbers` and the Battenberg markings on the windows of `battenberg`, and
+    no other circle, number or marking. With `battenberg_only` the rules text
+    says every checkerboard window is marked. The fifth strip is drawn
     when `blank_strip` is set or the record's own is. Returns the lines to
     print. Raises ValueError, naming the seed and the cell, on a record the
     finder refuses, a circle or number that is not on the board, a circle that
-    is not valid, or a grid that is no hybrid grid on the board drawn; names a
-    missing or unpaired log."""
+    is not valid, a marked window that is not wholly on the board or is no
+    checkerboard window, a checkerboard window left unmarked under
+    `battenberg_only`, or a grid that is no hybrid grid on the board drawn;
+    names a missing or unpaired log."""
     out = Path(out)
     examples = seeded_examples(out)
     finder = HybridFinder(hybrid.Conditions(DEFAULT_SIDE, DEFAULT_SIDE))
@@ -620,18 +695,29 @@ def write_links(out, circles, numbers, blank_strip):
                         f"cell of the {rows}x{cols} board"
                         + ("" if strip else ", no blank strip")
                     )
-            reasons = hybrid.failures(found, rows, cols, circles, strip)
+            reasons = hybrid.failures(
+                found,
+                rows,
+                cols,
+                circles,
+                strip,
+                battenberg=battenberg,
+                battenberg_only=battenberg_only,
+            )
             if reasons:
                 raise ValueError("; ".join(reasons))
-            shown = penpa.Hybrid(circles, numbers)
+            shown = penpa.Hybrid(circles, numbers, battenberg, battenberg_only)
             built[s] = penpa.link(rows, cols, found, strip, shown) + "\n"
         except ValueError as e:
             raise ValueError(f"seed {s}: {e}") from e
     links = replace_links(out, built)
-    return [
-        f"wrote {len(built)} links to {links}, {len(circles)} circles and "
-        f"{len(numbers)} numbers given"
-    ]
+    given = f"{len(circles)} circles and {len(numbers)} numbers given"
+    if battenberg:
+        given = (
+            f"{len(circles)} circles, {len(numbers)} numbers and "
+            f"{len(battenberg)} Battenberg markings given"
+        )
+    return [f"wrote {len(built)} links to {links}, {given}"]
 
 
 def main(argv):
@@ -647,12 +733,27 @@ def main(argv):
     parser.add_argument("--blank-strip", action="store_true")
     parser.add_argument("--min-bananas", type=int, metavar="N")
     parser.add_argument("--number-circles", type=int, default=0, metavar="K")
+    parser.add_argument("--battenberg", default="", metavar="CELLS")
+    parser.add_argument("--battenberg-only", action="store_true")
     parser.add_argument("--engine", default=DEFAULT_ENGINE, choices=ENGINES)
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT)
     own, rest = parser.parse_known_args(argv)
     if own.numbers and rest[:1] != ["links"]:
         print("hybrid_finder: --numbers is for `links` only", file=sys.stderr)
         return 2
+    if rest[:1] in (["verify"], ["render"]):
+        # Both read the markings off each record.
+        for flag, given in (
+            ("--battenberg", own.battenberg),
+            ("--battenberg-only", own.battenberg_only),
+        ):
+            if given:
+                print(
+                    f"hybrid_finder: {flag} is not for `{rest[0]}`, which reads "
+                    f"a record's own markings",
+                    file=sys.stderr,
+                )
+                return 2
     if rest[:1] == ["verify"]:
         # A record carries its own board and conditions, and `verify` runs
         # no solver.
@@ -682,8 +783,9 @@ def main(argv):
         print("\n".join(lines))
         return 0
     if rest[:1] == ["links"]:
-        # A record carries its own board; `--circles`, `--numbers` and
-        # `--blank-strip` are what the link shows.
+        # A record carries its own board; `--circles`, `--numbers`,
+        # `--battenberg`, `--battenberg-only` and `--blank-strip` are what
+        # the link shows.
         mine = argparse.ArgumentParser(prog="hybrid_finder links")
         mine.add_argument("dir")
         args = mine.parse_args(rest[1:])
@@ -693,6 +795,8 @@ def main(argv):
                 parse_cells("--circles", own.circles),
                 parse_cells("--numbers", own.numbers),
                 own.blank_strip,
+                parse_cells("--battenberg", own.battenberg),
+                own.battenberg_only,
             )
         except ValueError as e:
             print(f"hybrid_finder links: {e}", file=sys.stderr)
@@ -701,6 +805,17 @@ def main(argv):
         return 0
     try:
         conditions = parse_conditions(own)
+        # A new hybrid condition is written on the PySAT engines only
+        # (Chris's ruling of 2026-10-12): cpsat has no model of these.
+        for flag, given in (
+            ("--battenberg", conditions.battenberg),
+            ("--battenberg-only", conditions.battenberg_only),
+        ):
+            if given and own.engine == "cpsat":
+                raise ValueError(
+                    f"{flag} is on the PySAT engines only: --engine cpsat has "
+                    f"no model of it"
+                )
     except ValueError as e:
         print(f"hybrid_finder: {e}", file=sys.stderr)
         return 2

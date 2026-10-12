@@ -16,11 +16,15 @@ connected.
 The hybrid's answers (#782) are pinned at the end: the valid hybrid grids of
 the whole 4x4 board with no condition, and the class of seven circle
 conditions. They are what each engine must match; `test_ubahn_hybrid_model.py`
-holds the CP-SAT engine to them (#783).
+holds the CP-SAT engine to them (#783). After them, the answers under
+Battenberg markings (#21), which the PySAT engines must match.
 
     uv run finders/ubahn/test_ubahn_brute.py
 """
 
+import contextlib
+import io
+import subprocess
 import sys
 from pathlib import Path
 
@@ -195,5 +199,79 @@ for names, want in (
     circles = frozenset(hybrid.parse_cell(name) for name in names)
     got = brute.classify(4, 4, circles)
     check(f"4x4 circles {' '.join(names) or 'none'}: {want} (got {got})", got == want)
+
+# Battenberg markings (spec #20, #21): each marked window is a checkerboard
+# window, and with the negative constraint no other window is one. The table
+# of the decision log, § Hybrid: Battenberg markings, the 4x4 answers.
+ONE_GRID = ("c1:turn", "c2:turn", "r3c1", "r1:turn", "r2:turn", "r1c3")
+for names, only, want in (
+    ((), False, ("not_unique", 18)),
+    ((), True, ("not_unique", 16)),
+    *(((name,), False, ("unique", 1)) for name in ONE_GRID),
+    (("c1:turn", "c2:turn", "r3c1"), True, ("unique", 1)),
+    (("r1:turn", "r2:turn", "r1c3"), True, ("unique", 1)),
+    (("c1:turn",), True, ("infeasible", 0)),
+    (("c1:turn", "r1:turn"), False, ("infeasible", 0)),
+    (("r1c1",), False, ("infeasible", 0)),
+):
+    marked = hybrid.parse_windows(" ".join(names), 4, 4)
+    got = brute.classify(4, 4, (), battenberg=marked, battenberg_only=only)
+    check(
+        f"4x4 Battenberg markings {' '.join(names) or 'none'}"
+        f"{', negative constraint' if only else ''}: {want} (got {got})",
+        got == want,
+    )
+with_windows = [
+    hybrid.checkerboard_windows(hybrid.values(net, 4, 4))
+    for net in brute.hybrid_grids(4, 4)
+]
+check(
+    "4x4: 16 grids have no checkerboard window and 2 have 3 each",
+    sorted(map(len, with_windows)) == [0] * 16 + [3, 3],
+)
+
+
+def printed(*argv):
+    """What the brute-force command prints for these arguments, by line."""
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        brute.main(list(argv))
+    return out.getvalue().splitlines()
+
+
+check(
+    "the command prints a count and class for each --battenberg",
+    printed("4", "4", "--battenberg", "c1:turn", "--battenberg", "c1:turn r1:turn")[-2:]
+    == [
+        "Battenberg markings c1:turn: unique (1)",
+        "Battenberg markings c1:turn r1:turn: infeasible (0)",
+    ],
+)
+check(
+    "with --battenberg-only it prints the negative constraint alone, then "
+    "each --battenberg under it",
+    printed(
+        "4", "4", "--battenberg-only", "--battenberg", "c1:turn",
+        "--battenberg", "c1:turn c2:turn r3c1",
+    )[-3:]
+    == [
+        "no other checkerboard window: not_unique (16)",
+        "Battenberg markings c1:turn, no other checkerboard window: infeasible (0)",
+        "Battenberg markings c1:turn c2:turn r3c1, no other checkerboard window: "
+        "unique (1)",
+    ],
+)  # fmt: skip
+r = subprocess.run(
+    [sys.executable, str(Path(__file__).with_name("brute.py")), "4", "4",
+     "--battenberg", "r4c4"],
+    capture_output=True,
+    text=True,
+)  # fmt: skip
+check(
+    f"a window off the board is refused, exit 2, naming r4c5 ({r.stderr[-200:]!r})",
+    r.returncode == 2
+    and "--battenberg: window r4c4 is not wholly on the 4x4 board" in r.stderr
+    and "r4c5 is off it" in r.stderr,
+)
 
 sys.exit(0 if ok else 1)

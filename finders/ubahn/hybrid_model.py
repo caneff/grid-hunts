@@ -185,7 +185,14 @@ def _add_bananas(m, odd, wanted):
 
 def build(conditions):
     """The model of every hybrid grid that meets the conditions, as a
-    `model.Built`. Raises ValueError on a circle that is off the board."""
+    `model.Built`. Raises ValueError on a circle that is off the board, and
+    on Battenberg markings or the negative constraint: this engine has no
+    model of them, and building without them would answer another question."""
+    if conditions.battenberg or conditions.battenberg_only:
+        raise ValueError(
+            "Battenberg markings are on the PySAT engines only: the cpsat "
+            "engine has no model of them"
+        )
     rows, cols, circles = conditions.rows, conditions.cols, conditions.circles
     built = model.build(rows, cols, "flow", exactly=conditions.exactly)
     value, odd = _add_parity(built.m, built.kind, conditions)

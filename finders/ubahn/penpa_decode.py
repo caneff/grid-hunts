@@ -1,4 +1,4 @@
-"""A Penpa+ link read back, for the tests of `penpa.py` (#774, #795).
+"""A Penpa+ link read back, for the tests of `penpa.py` (#774, #795, #24).
 
 Written from the note's § 1.2 (docs/research/2026-10-10-u-bahn-penpa-link.md)
 and sharing no code with `penpa.py`: it inflates a link, undoes the
@@ -145,3 +145,18 @@ def numbers_of(decoded, strips, rows, cols):
     by_row = [[num(2 + j, g + r) for j in range(strips)] for r in range(rows)]
     by_col = [[num(g + c, 2 + j) for j in range(strips)] for c in range(cols)]
     return by_row, by_col
+
+
+def battenberg_vertices(decoded, strips):
+    """The cells whose bottom-right corner carries a `sudokuetc` symbol, the
+    Battenberg marking's, as (r, c) counted from the grid's first cell: a vertex's index is the
+    padded table's size plus the index of the cell it is the bottom-right
+    corner of (§ 1.4)."""
+    size = decoded.nx0 * (decoded.ny + 4)
+    g = 2 + strips
+    found = set()
+    for index, symbol in decoded.symbol.items():
+        if symbol[1] == "sudokuetc" and size <= index < 2 * size:
+            x, y = decoded.xy(index - size)
+            found.add((y - g, x - g))
+    return found

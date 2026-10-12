@@ -40,9 +40,12 @@ because the checker reads them and nothing under `docs/research/` does
   arrive one at a time as finder rules. Preflight answers and measurements:
   `docs/research/2026-10-10-u-bahn-finder-decision-log.md`.
   `hybrid.py` is the solver-free rule reader of the hybrid with Choco-Banana
-  (spec #781): values, regions, circles, a terminal drawing. `brute.py R C`
+  (spec #781): values, regions, circles, windows and Battenberg markings,
+  a terminal drawing. `brute.py R C`
   counts a tiny board's valid hybrid grids and classifies circle conditions,
-  with `--min-bananas N` under that condition too;
+  with `--min-bananas N` under that condition too; `--battenberg "CELLS"`
+  classifies a set of Battenberg markings, each window by its top-left cell,
+  and `--battenberg-only` adds the negative constraint (#21);
   the 4x4 answers every engine must match are in the decision log, § Hybrid.
   `hybrid_finder.py` is the hybrid finder on the hunt protocol (#783): the
   conditions `--circles "r6:turn r2c3"`, `--exactly N:PIECE:rK`,
@@ -63,6 +66,16 @@ because the checker reads them and nothing under `docs/research/` does
   engines share, its reading in `hybrid.py` and its 4x4 answers from
   `brute.py`. `--engine cpsat` refuses the new flag by name and is given no
   model of it. The conditions already on all three engines stay there.
+  `--battenberg "c1:turn r3c1"` is the first such condition (spec #20, #22):
+  each named window, a 2x2 of board cells named by its top-left cell, is a
+  checkerboard window in every grid returned, and `--battenberg-only` is the
+  negative constraint, no checkerboard window but the marked ones, the
+  number strips included. Both go on the hunt and on `classify`, with
+  `--circles` if wanted; a window not wholly on the board is refused, naming
+  the cell. A record carries `battenberg`, `battenberg_only` and
+  `checkerboard_windows`, every checkerboard window of its grid. The 4x4
+  answers and the 5x5 check against the rule reader: the decision log,
+  § Hybrid: Battenberg markings.
   `--number-circles K` is the condition "at least K valid circles on number
   cells" (#794), on all three engines; a grid cell that is a valid circle
   counts for nothing. `hybrid_finder.py climb --out DIR` is its hunt: it
@@ -75,7 +88,9 @@ because the checker reads them and nothing under `docs/research/` does
   `DIR/renders/<seed>.png` (`hybrid_render.py`, #791): the board with its
   outside numbers and network, chocolate in one colour and a tint per banana,
   a ring on every valid circle and a heavier one in a second colour on a
-  circle that is a condition; `--seed N --png FILE` draws one example and
+  circle that is a condition, and a small checkerboard symbol at the centre
+  of every checkerboard window, heavier and in the second colour on a window
+  that is a Battenberg marking of the hunt (#23); `--seed N --png FILE` draws one example and
   `--blank-strip` the fifth strip.
   `time_engines.py run --engine E --progress FILE` times one engine on
   Chris's six cases and `time_engines.py report FILE...` prints the table and
@@ -96,9 +111,14 @@ because the checker reads them and nothing under `docs/research/` does
   [--blank-strip]` writes the hybrid's Penpa+ link per example (#795): only
   the circles and the number cells you name are shown, the grid dotted, the
   combined rules text, the plain link's lines-only answer check; an invalid
-  circle is refused by name. `penpa_decode.py` is the test decoder, shared
+  circle is refused by name. `--battenberg "CELLS"` puts Penpa+'s checkerboard
+  symbol on the centre of each named window and a sentence in the rules, and
+  `--battenberg-only` a second sentence, that every one is given (#24; the
+  symbol and its wire form: the link note, § 10); a window that is no
+  checkerboard window of the example is refused by name. `penpa_decode.py` is the test decoder, shared
   by `test_penpa.py` and `test_ubahn_hybrid_links.py`. The browser check takes
-  the same `--circles` and `--numbers` to confirm where they sit on the page.
+  the same `--circles`, `--numbers` and `--battenberg` to confirm where they
+  sit on the page.
   `finders/ubahn/penpa-browser-check.mjs LINKFILE` is the real-browser check
   (the success dialog, the Line tool, the icons'
   order, the centre point); it needs Chromium and the live page, so
