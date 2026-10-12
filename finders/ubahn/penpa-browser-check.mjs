@@ -4,13 +4,15 @@
 // session: it needs Chromium and the live Penpa+ page.
 //
 //   node finders/ubahn/penpa-browser-check.mjs LINKFILE [--shots DIR]
-//       [--circles "CELLS"] [--numbers "CELLS"]
+//       [--circles "CELLS"] [--numbers "CELLS"] [--battenberg "CELLS"]
 //
 // A hybrid link (hybrid_finder.py links, #795) is checked with the cells it
-// was asked to show, in the finder's names (rKcK, rK:PIECE, cK:PIECE): either
-// flag, even empty, adds three checks on the opened page: the circles are
-// exactly the cells named, the printed numbers are exactly the number cells
-// named, and the grid is dotted.
+// was asked to show, in the finder's names (rKcK, rK:PIECE, cK:PIECE): any
+// of the three flags, even empty, adds checks on the opened page: the circles
+// are exactly the cells named, the printed numbers are exactly the number
+// cells named, the grid is dotted, and the Battenberg markings (#24) are
+// exactly the windows named, each by its top-left cell, with the page's
+// checkerboard symbol at the point midway between the window's four cells.
 //
 // On the opened page it also reads the page's own state: the number strips'
 // icons run cross, branch, straight, turn from the outside in (a hollow square
@@ -33,7 +35,7 @@ import { chromium } from 'playwright'
 const args = process.argv.slice(2)
 function refuse (why) {
   console.error(`penpa-browser-check: ${why}`)
-  console.error('usage: penpa-browser-check.mjs LINKFILE [--shots DIR]')
+  console.error('usage: penpa-browser-check.mjs LINKFILE [--shots DIR] [--circles CELLS] [--numbers CELLS] [--battenberg CELLS]')
   process.exit(2)
 }
 const linkFile = args[0]
@@ -50,7 +52,8 @@ function flagValue (name) {
 }
 const askedCircles = flagValue('--circles')
 const askedNumbers = flagValue('--numbers')
-const hybrid = askedCircles !== null || askedNumbers !== null
+const askedBattenberg = flagValue('--battenberg')
+const hybrid = askedCircles !== null || askedNumbers !== null || askedBattenberg !== null
 
 // The table index of a cell in the finder's names, given the number of
 // strips and the table's width: a grid cell sits `strips` in from the
@@ -194,7 +197,19 @@ try {
       const circles = Object.keys(pu.pu_q.symbol).filter(i => pu.pu_q.symbol[i][1] === 'circle_L').map(Number)
       // A printed number is a digit; the blank strip's icon is a hollow square.
       const numbers = Object.keys(pu.pu_q.number).filter(i => /^[0-9]+$/.test(pu.pu_q.number[i][0])).map(Number)
-      return { nx0, strips, circles, numbers, grid: pu.mode.grid[0] }
+      // A marking is the checkerboard symbol on a vertex. For each: its
+      // index, and how far its point is from the middle of the four cells
+      // round the vertex, the cell it is the bottom-right corner of first.
+      const size = nx0 * (pu.ny + 4)
+      const markings = Object.keys(pu.pu_q.symbol).filter(i => pu.pu_q.symbol[i][1] === 'sudokuetc').map(Number)
+      const off = markings.map(i => {
+        const cell = i - size
+        const round = [cell, cell + 1, cell + nx0, cell + nx0 + 1].map(c => pu.point[c])
+        const at = pu.point[i]
+        return Math.abs(at.x - round.reduce((sum, p) => sum + p.x, 0) / 4) +
+          Math.abs(at.y - round.reduce((sum, p) => sum + p.y, 0) / 4)
+      })
+      return { nx0, size, strips, circles, numbers, markings, off, grid: pu.mode.grid[0] }
     })
     const index = list => list.map(n => cellIndex(n, page.strips, page.nx0)).sort((a, b) => a - b)
     const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
@@ -205,6 +220,12 @@ try {
       same([...page.numbers].sort((a, b) => a - b), index(wantNumbers)),
       `asked ${wantNumbers.length}, page has ${page.numbers.length}`)
     report('the grid is dotted', page.grid === '2', `grid style ${page.grid}`)
+    const wantMarkings = names(askedBattenberg || '')
+    report('the Battenberg markings are on exactly the windows asked for',
+      same([...page.markings].sort((a, b) => a - b), index(wantMarkings).map(i => page.size + i)),
+      `asked ${wantMarkings.length}, page has ${page.markings.length}`)
+    report("each marking sits midway between its window's four cells",
+      page.off.every(d => d < 0.01), `distances ${page.off.map(d => d.toFixed(2)).join(',') || 'none'}`)
   }
   const centre = await opened.page.evaluate(() => {
     const header = pu.center_n

@@ -556,6 +556,70 @@ not given) and confirmed in a real browser the same day.
   solution raised the success dialog, and the solution with an edge missing or
   moved did not `[ran]`.
 
+## 10. Battenberg markings: a checkerboard symbol on a vertex (#24)
+
+Spec #20 asked first whether Penpa+ has a Battenberg or checkerboard symbol
+that can sit on a vertex, the centre of a 2x2. It has. Read from `[P1]`, a
+fresh clone on 2026-10-12 whose head is still commit `34e3fe9`, so the line
+numbers are that commit's; then checked in a real browser the same day.
+
+- **The symbol is `sudokuetc`, value 1** `[read]`. `draw_sudokuetc`
+  (`class_square.js:3825-3836`) draws four squares round the symbol's point,
+  each 0.28 of a cell wide and centred 0.14 of a cell out on both axes: the
+  top-left and bottom-right ones dark grey, the other two light grey. So it
+  is a 2x2 checkerboard 0.56 of a cell wide. Penpa+'s own name for it in
+  the code is "Large square" (`puzzlink.js:3004`).
+- **It is Penpa+'s Battenberg symbol** `[read]`. The constraint preset
+  `"battenberg"` sets the Shape tool to the submode `sudokuetc`
+  (`constraints.js:172-180`) and is listed among the presets whose clues go
+  "on edges and corners" (`constraints.js:44`); choosing it shows the hint
+  to turn "Draw on Edges" on (`main.js:2209`, `translate.js:939`).
+- **It sits on a vertex, and a link says so by the key** `[read]`.
+  `draw_symbol` draws every key of `symbol` at `this.point[key]`, whatever
+  kind of point the key is (`class_square.js:1471-1485`), so a vertex index
+  (§ 1.4: `S + x + y*nx0`, the bottom-right corner of cell (x, y)) puts the
+  symbol on that corner. Penpa+'s importer for puzz.link's Battenberg
+  Painting does exactly this: `drawCrossMark` writes
+  `symbol[nx0*ny0 + nx0*(2 + row) + 2 + col] = [1, "sudokuetc", 2]`
+  (`puzzlink.js:517-531`, called at `puzzlink.js:2996-3013`).
+- **Wire form.** One entry of the question layer's `symbol` per marking:
+  the key is the vertex index of the bottom-right corner of the window's
+  top-left cell, the value `[1, "sudokuetc", 2]`. Layer 2 is drawn after the
+  frame and the lines and before the numbers (`draw`,
+  `class_square.js:759-796`); layer 1, which the circles use, is drawn
+  before the frame, so the grid lines would run over the symbol. The
+  importer's own comment calls 2 "behind line", which the draw order does
+  not bear out `[read]`.
+- **No stand-in was needed**, so none was invented.
+- **Encoder.** `penpa.Hybrid.battenberg` holds the marked windows, each by
+  its top-left cell in `hybrid.py`'s cells; `_Table.window_centre` gives the
+  vertex index and refuses a window with a cell off the board.
+  `hybrid_finder.py links --battenberg "CELLS"` supplies them and refuses a
+  window that is no checkerboard window of the example. The test decoder's
+  `symbols_on_vertices` reads them back.
+- **Rules text.** A link with a marking carries one sentence more, and a
+  link written with `--battenberg-only` a second. Both are the worker's
+  draft; the text they follow is the one Chris pasted, so the wording is his
+  to rule:
+  - "A checkerboard symbol on the corner shared by four cells, grid cells or
+    clue cells, indicates that those four cells form a checkerboard of odd
+    and even values: diagonally opposite cells have the same parity, and
+    cells sharing an edge have different parity."
+  - "All possible checkerboard symbols are given: no other 2x2 group of
+    cells, grid cells or clue cells, forms such a checkerboard."
+- **Browser check** `[ran]`, 2026-10-12, headless Chromium on the live
+  swaroopg92 page: `penpa-browser-check.mjs LINKFILE --circles "c1:turn"
+  --numbers "c1:turn r2:cross" --battenberg "r1c3 r1:turn r2:turn"` on a 4x4
+  hybrid link written with those flags and `--battenberg-only`. All 13
+  checks passed: the page loaded with no error, its question layer holds a
+  `sudokuetc` symbol on exactly the three vertices asked for, each symbol's
+  point is midway between the centres of its window's four cells, the circle
+  and the two numbers are where asked, and drawing the solution raised the
+  success dialog while a missing or a moved edge did not. The opened board:
+  `docs/research/2026-10-12-u-bahn-battenberg/penpa-three-markings.png`. The
+  two markings on the divider between the turn strip and the grid show the
+  thick divider line through them: the symbol's greys do not hide it.
+
 ## Sources
 
 Repo files are cited inline as `path:line`. Outside sources:
