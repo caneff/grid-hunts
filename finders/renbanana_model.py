@@ -45,18 +45,29 @@ PLACEMENTS = [
 CATALOGUE_DIR = Path(__file__).resolve().parent.parent / "docs/research/renbanana"
 
 
-def load_catalogue(difference=5):
-    """The chocolate rectangle catalogue for one chocolate difference, as
-    `finders/renbanana/tools/build_rectangle_catalogue.py` wrote it."""
+def catalogue_path(difference=5):
+    """Where the chocolate rectangle catalogue for one chocolate difference
+    lives: `finders/renbanana/tools/build_rectangle_catalogue.py` writes it
+    there and `load_catalogue` reads it."""
     name = "rectangle-catalogue" + ("" if difference == 5 else f"-d{difference}")
-    return json.loads((CATALOGUE_DIR / f"{name}.json").read_text())
+    return CATALOGUE_DIR / f"{name}.json"
+
+
+def load_catalogue(difference=5):
+    """The chocolate rectangle catalogue for one chocolate difference."""
+    return json.loads(catalogue_path(difference).read_text())
 
 
 def catalogue_fact(catalogue, a, b, ro, co):
     """Layer B of `catalogue` for an `a` by `b` rectangle whose top-left cell
-    sits at box offset (ro, co), turned to that orientation: `count` (0 when
-    the shape or offset is absent), `support` (per-cell digit lists, or None)
-    and `circle_cells` ((i, j) offsets).
+    sits at box offset (ro, co), turned to that orientation: `count`,
+    `support` (per-cell digit lists, or None) and `circle_cells` ((i, j)
+    offsets).
+
+    A shape the catalogue does not hold raises: a caller reads a count of 0 as
+    proof that nothing fills the rectangle, and a shape nobody enumerated
+    proves nothing. An offset absent under a shape it does hold is one the
+    rectangle cannot sit at on the board, and reads as count 0.
 
     The catalogue stores a <= b only. Transposing swaps rows and columns, and
     the 3x3 boxes are symmetric under it, so the offset swaps too.
@@ -64,7 +75,9 @@ def catalogue_fact(catalogue, a, b, ro, co):
     flip = a > b
     if flip:
         a, b, ro, co = b, a, co, ro
-    entry = catalogue.get(f"{a}x{b}", {}).get("B", {}).get(f"{ro},{co}", {})
+    if f"{a}x{b}" not in catalogue:
+        raise ValueError(f"the rectangle catalogue holds no {a}x{b} shape")
+    entry = catalogue[f"{a}x{b}"]["B"].get(f"{ro},{co}", {})
     support = entry.get("support")
     if not support or not support[0]:
         support = None

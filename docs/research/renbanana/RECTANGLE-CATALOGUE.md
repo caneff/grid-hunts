@@ -524,8 +524,8 @@ Built by `build_rectangle_catalogue.py --difference 4` (about 75 s, one core).
 Its fill-count cap (100,000) never cuts a shape with both sides <= 4, because
 the banabner finder only places such rectangles (#761, #758): every L and every
 B offset of those 10 shapes is enumerated in full (#767, Chris's ruling:
-"I want them to be enumerated"). Three layers the cap used to cut now hold
-their full counts:
+"I want them to be enumerated"). Three of those layers hold more fillings
+than the cap:
 
 | layer | full count |
 |---|---|

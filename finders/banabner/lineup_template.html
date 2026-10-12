@@ -35,7 +35,7 @@ main{padding:24px 32px 48px;display:grid;grid-template-columns:repeat(auto-fill,
 .cell.c::after,.cell.bc::after,.cell.fc::after{content:"";position:absolute;inset:12%;border:2.5px solid var(--edge);border-radius:50%}
 .cell.k.c::after{border-color:var(--chocInk)}
 .cell.bc::after{border-color:var(--bcirc);border-width:3px}
-/* forced: every banana group of 5+ cells has one, so it rules out nothing */
+/* forced: every 5-cell banana holds a 5, so its circle rules out nothing */
 .cell.fc::after{border-color:var(--bcirc);border-style:dashed;opacity:.55}
 .board.nocircle .cell.c::after{display:none}
 .board.nobcircle .cell.bc::after{display:none}
@@ -97,6 +97,7 @@ main{padding:24px 32px 48px;display:grid;grid-template-columns:repeat(auto-fill,
   <option value="largest">largest group</option>
   <option value="cells">chocolate cells</option>
   <option value="groups">chocolate groups</option>
+  <option value="circleable">circleable groups</option>
   <option value="fiveCell">5-cell bananas</option>
   <option value="bananaCircles">banana circles</option>
   <option value="smallBanana">small banana circles</option>
@@ -160,7 +161,6 @@ function render(){
     .sort((a,b)=>(rank(b)-rank(a))||b.value-a.value||a.i-b.i);
   const m=document.getElementById('main');
   m.innerHTML=rows.length?rows.map(card).join(''):'<div class="empty">No grid matches these filters.</div>';
-  const on=k=>k?'':'no';
   const dig=document.getElementById('digits').checked, cir=document.getElementById('circles').checked,
         bci=document.getElementById('bcircles').checked, fc=document.getElementById('forced').checked,
         out=document.getElementById('outline').checked,

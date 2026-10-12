@@ -57,7 +57,9 @@ def main():
         path = out / "examples.jsonl"
         lines = path.read_text().splitlines() if path.exists() else []
         records = [json.loads(line) for line in lines if line]
-        check("the hunt records at least one grid", len(records) >= 1)
+        progress = out / "progress.jsonl"
+        why = progress.read_text()[-500:] if progress.exists() else "no progress.jsonl"
+        check("the hunt records at least one grid", len(records) >= 1, why)
         for i, rec in enumerate(records):
             bad = bf.check(bf.Candidate(tuple(rec["grid"]), tuple(rec["shading"])))
             check(f"recorded grid {i} passes check", not bad, bad[0] if bad else "")

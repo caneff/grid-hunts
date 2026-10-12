@@ -14,7 +14,7 @@ At difference 5 the output is byte for byte the committed
 write `rectangle-catalogue-d<difference>.json` beside it (#760).
 
 Counting every filling of a big shape is millions of fillings per layer at
-difference 4, so a layer's enumeration stops at `--count-cap` fillings, except
+difference 4, so a layer's enumeration stops at `DEFAULT_COUNT_CAP` fillings, except
 a shape with both sides <= 4 (`UNCAPPED_SIDE`), which is always enumerated in
 full: the banabner finder only places such rectangles, so each of their counts
 must be exact (#767). A layer
@@ -28,11 +28,14 @@ under the cap is exact throughout. The cap is never hit at difference 5.
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 from ortools.sat.python import cp_model
 
-CATALOGUE_DIR = Path(__file__).resolve().parents[3] / "docs/research/renbanana"
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from renbanana_model import catalogue_path
+
 DIGITS = range(1, 10)
 DEFAULT_COUNT_CAP = 100_000
 UNCAPPED_SIDE = 4
@@ -51,11 +54,6 @@ def default_max_side(difference):
     § Side bound). Below 5 that argument is gone, and the grid's own 9 is the bound.
     """
     return 8 if difference >= 5 else 9
-
-
-def default_path(difference):
-    name = "rectangle-catalogue" + ("" if difference == 5 else f"-d{difference}")
-    return CATALOGUE_DIR / f"{name}.json"
 
 
 def enumerate_fillings(a, b, difference, offset=None):
@@ -233,15 +231,12 @@ def build(difference, max_side, count_cap=DEFAULT_COUNT_CAP):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--difference", type=int, default=5)
-    ap.add_argument("--max-side", type=int, help="default: 8 from difference 5, else 9")
-    ap.add_argument("--count-cap", type=int, default=DEFAULT_COUNT_CAP)
     ap.add_argument(
         "--out", type=Path, help="default: beside the difference-5 catalogue"
     )
     args = ap.parse_args(argv)
-    max_side = args.max_side or default_max_side(args.difference)
-    out = args.out or default_path(args.difference)
-    catalogue = build(args.difference, max_side, args.count_cap)
+    out = args.out or catalogue_path(args.difference)
+    catalogue = build(args.difference, default_max_side(args.difference))
     out.write_text(json.dumps(catalogue))
     print(f"wrote {out} ({len(catalogue)} shapes, difference {args.difference})")
 

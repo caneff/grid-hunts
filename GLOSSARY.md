@@ -82,3 +82,30 @@ digit.
   grid whose network is in several parts: it refuses that grid and the solve
   goes on. Not the region-building **cut** in the glossary of
   `caneff/sudokumaker-custom-constraints`.
+
+### Banabner terms (`finders/banabner/`)
+
+Dutch Chocolate Banabner is a sudoku with a chocolate and banana shading
+(spec #758; rules read by `finders/renbanana_verify.py` at difference 4 with
+the nabner rule). **Chocolate**, **banana** and **circle** above are the
+U-Bahn hybrid's; here they mean the following.
+
+- **group** — a maximal orthogonally connected set of cells of one shading.
+  A **chocolate group** is a rectangle; a **banana group** is not one.
+- **Dutch Chocolate** — the chocolate rule: two orthogonally adjacent
+  chocolate cells hold digits at least 4 apart. Renbanana's German Chocolate
+  asks for 5.
+- **nabner** — the banana rule: no two digits of one banana group are equal
+  or consecutive. The reverse of Renbanana's renban, where a group's digits
+  are a run. A nabner group holds at most five cells, and a 5-cell one holds
+  exactly 1, 3, 5, 7 and 9.
+- **circle** — a cell whose digit equals the number of cells in its group,
+  chocolate or banana.
+- **forced circle** — the circle on the 5 of a 5-cell banana group. Every
+  such group has one whatever the shading, so it tells the solver nothing.
+- **lineup** — the page that shows every checked grid of a puzzle type as a
+  card, with filters and sorts: `finders/banabner/build_lineup.py` builds the
+  Banabner Lineup, `finders/renbanana/tools/build_lineup.py` Renbanana's.
+- **circle score** — the number a lineup ranks its grids by. On the Banabner
+  Lineup it is the number of groups holding a circle, forced circles left
+  out.

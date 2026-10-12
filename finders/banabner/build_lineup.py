@@ -39,6 +39,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(ROOT / "finders"))
 sys.path.insert(0, str(ROOT / "finders" / "hunt"))
 import banabner_finder as bf
+import banabner_model as bm
 import renbanana_verify as rv
 from dedupe import D4, canonical_key
 
@@ -49,17 +50,10 @@ FORCED_SIZE = 5
 
 
 def houses():
-    out = [(f"row {i + 1}", [(i, c) for c in range(N)]) for i in range(N)]
-    out += [(f"col {i + 1}", [(r, i) for r in range(N)]) for i in range(N)]
-    out += [
-        (
-            f"box r{br * 3 + 1}c{bc * 3 + 1}",
-            [(br * 3 + r, bc * 3 + c) for r in range(3) for c in range(3)],
-        )
-        for br in range(3)
-        for bc in range(3)
-    ]
-    return out
+    """`banabner_model.HOUSES` (rows, columns, boxes, in that order), named."""
+    names = [f"row {i + 1}" for i in range(N)] + [f"col {i + 1}" for i in range(N)]
+    names += [f"box r{br * 3 + 1}c{bc * 3 + 1}" for br in range(3) for bc in range(3)]
+    return list(zip(names, bm.HOUSES, strict=True))
 
 
 def shape_of(group):
@@ -77,6 +71,7 @@ def row(candidate, run, ident):
     size_of = {}
     circles, bcircles, forced = [], [], []
     circled_groups = 0
+    circled_choc = 0
     small_banana = 0
     five_cell = 0
     choc_groups = []
@@ -92,6 +87,7 @@ def row(candidate, run, ident):
                 choc_groups.append(group)
                 circles += hits
                 circled_groups += bool(hits)
+                circled_choc += bool(hits)
             elif k == FORCED_SIZE:
                 forced += hits
                 five_cell += 1
@@ -119,6 +115,7 @@ def row(candidate, run, ident):
         "shapes": [shape_of(g) for g in big],
         "cells": sum(len(g) for g in choc_groups),
         "groups": len(choc_groups),
+        "circleable": circled_choc,
         "largest": max(len(g) for g in choc_groups),
         "bananaCircles": len(bcircles),
         "smallBanana": small_banana,

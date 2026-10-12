@@ -22,7 +22,7 @@ from test_renbanana_model import digits_and_shading, pin, status_of
 # The published "German Chocolate Renbanana" (docs/research/renbanana/
 # OPENER-UNIQUE.md, "Published version"): digits from the puzzle's metadata,
 # shading solved for with probe_circle_pattern --givens (its only
-# solution; the doc does not record it).
+# solution; the doc records it beside the digits).
 PUBLISHED_DIGITS = [
     "796831452",
     "845276139",
@@ -125,9 +125,21 @@ def test_unknown_banana_rule_is_refused():
     grid, is_choc = published()
     try:
         rv.check(grid, is_choc, banana_rule="renbn")
-    except ValueError:
+    except ValueError as refusal:
+        assert "renbn" in str(refusal), refusal
         return
     raise AssertionError("a misspelt banana_rule was accepted")
+
+
+def test_a_shape_the_catalogue_lacks_is_an_error_not_a_zero_count():
+    catalogue = {"1x2": rm.load_catalogue(4)["1x2"]}
+    assert rm.catalogue_fact(catalogue, 2, 1, 0, 0)["count"] == 30
+    try:
+        rm.catalogue_fact(catalogue, 2, 2, 0, 0)
+    except ValueError as refusal:
+        assert "2x2" in str(refusal), refusal
+        return
+    raise AssertionError("a shape missing from the catalogue read as count 0")
 
 
 def test_difference_moves_the_rule_5_boundary():
@@ -175,6 +187,7 @@ if __name__ == "__main__":
     test_nabner_names_the_consecutive_pair()
     test_nabner_repeat_across_two_boxes_is_a_violation()
     test_unknown_banana_rule_is_refused()
+    test_a_shape_the_catalogue_lacks_is_an_error_not_a_zero_count()
     test_difference_moves_the_rule_5_boundary()
     test_model_difference()
     print("OK")

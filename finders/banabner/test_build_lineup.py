@@ -96,6 +96,14 @@ def main():
         scores = [d["value"] for d in data_of(record.read_text())]
         n = len((checked / "examples.jsonl").read_text().splitlines())
         check(f"the record's {n} grids all listed", len(scores) == n, str(len(scores)))
+        # 762-0 has two chocolate groups holding two circle cells each: 6 such
+        # cells in 4 groups, beside 6 banana circles in 6 groups.
+        multi = next(d for d in data_of(record.read_text()) if d["id"] == "762-0")
+        check(
+            "a group with two circle cells counts once",
+            (len(multi["circles"]), multi["circleable"], multi["value"]) == (6, 4, 10),
+            str((len(multi["circles"]), multi["circleable"], multi["value"])),
+        )
         check(
             "listed in circle-score order, best first",
             scores == sorted(scores, reverse=True) and scores[0] > scores[-1],
@@ -107,7 +115,7 @@ def main():
         )
         check("title", "<title>Banabner Lineup</title>" in html)
         check("rules text names difference 4", "at least 4" in html)
-        check("rules text names the nabner rule", "nabner" in html.lower())
+        check("rules text names the nabner rule", "(nabner bananas)" in html)
 
         # A grid that breaks a rule is refused, not listed.
         bad = {
@@ -118,10 +126,14 @@ def main():
         write_hunt(bad_hunt, [bad])
         try:
             bl.main([str(Path(tmp) / "bad.html"), str(bad_hunt)])
-            refused = False
-        except SystemExit:
-            refused = True
-        check("an illegal grid is refused", refused)
+            reason = "listed"
+        except SystemExit as refusal:
+            reason = str(refusal.code)
+        check(
+            "an illegal grid is refused by name",
+            "bad/0 is not a legal Banabner grid" in reason,
+            reason,
+        )
 
     print(f"\n{len(FAIL)} failing" if FAIL else "\nall checks pass")
     return 1 if FAIL else 0

@@ -13,6 +13,7 @@ written from the rules and not from this model.
 
 The driver's flags (`--out`, `--seeds`, `--workers`, ...) are its own
 (`finders/hunt/driver.py`); `--workers` is the solver's worker count.
+`--timeout` is the seconds one seed's solve may take, and a hunt needs it.
 `--max-choc-side` is the chocolate side bound, 4 by default
 (`banabner_model.MAX_CHOC_SIDE` says why it is a fact, not a cap).
 `--no-speedups` drops #762's facts and lex-leader, for timing against them.
@@ -26,6 +27,7 @@ from typing import NamedTuple
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(ROOT / "finders"))
 sys.path.insert(0, str(ROOT / "finders" / "hunt"))
 import banabner_model as bm
 import renbanana_verify as rv
@@ -112,8 +114,10 @@ class BanabnerFinder:
         )
         if status == cp.INFEASIBLE:
             return Empty(f"infeasible with {len(self.found)} grids forbidden")
-        if grid is None:
+        if status == cp.UNKNOWN:
             return Empty("timeout")
+        if grid is None:
+            raise RuntimeError(f"banabner model: solver status {status.name}")
         candidate = from_maps(grid, is_choc)
         self.found.append([list(candidate.grid), list(candidate.shading)])
         return candidate
@@ -144,6 +148,9 @@ class BanabnerFinder:
 
 
 def main(argv):
+    if argv[:1] in (["-h"], ["--help"]):
+        print(__doc__)
+        return 0
     parser = argparse.ArgumentParser(prog="banabner_finder", add_help=False)
     parser.add_argument("--timeout", type=float)
     parser.add_argument("--max-choc-side", type=int, default=bm.MAX_CHOC_SIDE)

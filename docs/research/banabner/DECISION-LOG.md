@@ -167,11 +167,23 @@ search.
 
 **Lineup.** The Banabner Lineup is
 https://claude.ai/artifact/N5uQ4JBGdGydL5V3aAUyGB, republished as version 7
-(`1791574193-f200`) from `build_lineup.py` over `checked-grids/` and the
-controller's opener solutions (`.scratch/banabner-opener-solutions/`, outside
-git), merged onto the live version 6: 56 grids, every card and Record entry of
-version 6 kept. The opener's Record entry now also lives in
-`lineup-record.json`, so a rebuild keeps it.
+(`1791574193-f200`) from `build_lineup.py` over `checked-grids/` (54 grids)
+and `opener-solutions/` (2 grids, the controller's solutions of Chris's
+opener), merged onto the live version 6: 56 grids, every card and Record entry
+of version 6 kept. The opener's Record entry now also lives in
+`lineup-record.json`, so a rebuild keeps it:
+
+    uv run finders/banabner/build_lineup.py OUT.html \
+      docs/research/banabner/checked-grids docs/research/banabner/opener-solutions
+
+The opener's Record entry says the opener has exactly 2 solutions. That count
+came from a standalone model that is not in this repo and has not been re-run
+on the finder's model; choosing circles and proving a puzzle unique are outside
+spec #758. The two grids themselves pass `banabner_finder.check`, which the
+build runs on every card.
+
+Sorts: the page keeps the Renbanana lineup's sorts except "sharpest banana
+circle", which ranks a renban run's top digit and has no nabner reading.
 
 **Wrapper.** The hunt ran from a throwaway wrapper (not committed): the finder
 under `timeout -s TERM 7200`, a 300 s loop copying the four driver files above
