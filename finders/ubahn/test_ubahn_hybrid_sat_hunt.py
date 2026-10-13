@@ -4,8 +4,9 @@
 one runs the hunt and `classify` again with `--engine` naming each PySAT
 engine: every example must be one of the brute force's valid hybrid grids for
 its conditions and pass the hunt's own `verify`, which is the solver-free
-rule reader, and `classify` must give the decision log's words, § Hybrid.
-One CaDiCaL thread; about ten seconds an engine.
+rule reader, and `classify` must give the decision log's words for five
+conditions of its table, § Hybrid (`test_ubahn_hybrid_sat.py` holds the rest).
+One CaDiCaL thread; about eight seconds an engine.
 
     uv run finders/ubahn/test_ubahn_hybrid_sat_hunt.py
 """
@@ -161,15 +162,14 @@ for engine in ENGINES:
             and all("infeasible" in reason for reason in reasons),
         )
 
-    # `classify`: the decision log's table, § Hybrid, word for word.
+    # `classify` through the CLI: five rows of the decision log's table,
+    # § Hybrid, one of each word and the `--exactly` flag. All seven circle
+    # conditions of the table, on both engines, are held in process by
+    # `test_ubahn_hybrid_sat.py`'s table of count and word.
     for flags, word, said in (
         ([], "not_unique", "more than one grid"),
-        (["--circles", "r2c2"], "not_unique", "more than one grid"),
         (["--circles", "c1:turn r2c4"], "unique", "exactly one grid"),
-        (["--circles", "r1:turn r4c2"], "unique", "exactly one grid"),
         (["--circles", "r2c2 r2c4"], "infeasible", "no grid"),
-        (["--circles", "c4:turn r4:turn"], "infeasible", "no grid"),
-        (["--circles", "r1c1"], "infeasible", "no grid"),
         (["--exactly", "2:cross:r2"], "not_unique", "more than one grid"),
         (["--exactly", "2:cross:r2", "--circles", "r2c4"], "infeasible", "no grid"),
     ):

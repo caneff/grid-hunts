@@ -1,19 +1,24 @@
 #!/usr/bin/env bash
 # The gate's one listing of suites. A suite is one command (`uv run <file>`,
 # one lint step), and it is its own label. With no flag this runs every suite
-# `just check` runs, one at a time. Test files are found by glob from the tree
-# on disk, so a new test needs no edit here; the lists below are the
-# exceptions.
+# `just check` runs, one at a time unless asked. Test files are found by glob
+# from the tree on disk, so a new test needs no edit here; the lists below are
+# the exceptions.
 #
-#   bash tests/all.sh [--list] [--group <group>]
+#   bash tests/all.sh [--list] [--group <group>] [--jobs <n>]
 #
 # `--list` prints the suites the run would cover, one per line, and runs none.
 # `--group <group>` runs one group: `lint`, `test`, or `slow` (outside the
 # gate, run by hand through `just test-slow`).
 #
-# One line per suite as it finishes (`PASS <suite>`); the first failing suite
-# prints `FAIL <suite>` and its whole output, and the run exits 1 there. The
-# last line states what ran: `N of M suites passed`.
+# `--jobs <n>` runs n suites at once (default 1, or $GATE_JOBS when set: CI
+# sets it, so a local run stays one suite at a time on the shared box). The
+# suites are independent processes, each with its own temp directories.
+#
+# One line per suite as it finishes (`PASS <suite>`); a failing suite prints
+# `FAIL <suite>` and its whole output, no further suite starts, the suites
+# already running finish, and the run exits 1. The last line states what ran:
+# `N of M suites passed`.
 set -uf
 # A caller's GIT_DIR or GIT_INDEX_FILE (a git hook sets both) would point every
 # suite that calls git at that caller's repository.
@@ -39,6 +44,7 @@ suites() {
   local f
   printf 'lint\t%s\n' \
     "uvx ruff check finders" "uvx ruff format --check finders" "uv lock --check"
+  printf 'test\tuv run tests/test_all_sh.py\n'
   for f in finders/**/test_*.py; do
     if listed "$finder_slow" "$f"; then continue
     elif listed "$finder_pytest" "$f"; then printf 'test\tuv run pytest %s -q\n' "$f"
@@ -50,20 +56,25 @@ suites() {
 
 usage() { # <what is wrong>
   echo "tests/all.sh: $1" >&2
-  echo "usage: tests/all.sh [--list] [--group <group>]" >&2
+  echo "usage: tests/all.sh [--list] [--group <group>] [--jobs <n>]" >&2
   exit 2
 }
 
-list_only=0 group=""
+list_only=0 group="" jobs=${GATE_JOBS:-1}
 while [ $# -gt 0 ]; do
   case $1 in
     --list) list_only=1; shift ;;
     --group)
       [ $# -ge 2 ] || usage "$1 needs a value"
       group=$2; shift 2 ;;
+    --jobs)
+      [ $# -ge 2 ] || usage "$1 needs a value"
+      jobs=$2; shift 2 ;;
     *) usage "no flag named $1" ;;
   esac
 done
+
+case $jobs in '' | *[!0-9]* | 0) usage "--jobs needs a positive integer, not '$jobs'" ;; esac
 
 # The tree is globbed here and nowhere else; `set -f` holds everywhere else so
 # a suite command is word-split without its path being expanded.
@@ -84,17 +95,32 @@ selected=$(cut -f2 <<<"$all")
 if [ "$list_only" = 1 ]; then [ -z "$selected" ] || printf '%s\n' "$selected"; exit 0; fi
 
 total=$(grep -c . <<<"$selected")
-passed=0
-while IFS= read -r suite; do
-  [ -n "$suite" ] || continue
-  if out=$($suite 2>&1 </dev/null); then
-    echo "PASS $suite"
-    passed=$((passed + 1))
+
+# One suite: its PASS line (and a tally mark), or its FAIL line and whole
+# output (and its name on the failed list) with exit 255, which makes xargs
+# start no further suite. Run in a child bash, so it is exported.
+run_suite() { # <suite command>
+  local out
+  set -f
+  if out=$($1 2>&1 </dev/null); then
+    echo "PASS $1"
+    echo "$1" >>"$state/passed"
   else
-    echo "FAIL $suite"
-    printf '%s\n' "$out"
-    echo "$passed of $total suites passed before $suite failed$note"
-    exit 1
+    printf 'FAIL %s\n%s\n' "$1" "$out"
+    echo "$1" >>"$state/failed"
+    exit 255
   fi
-done <<<"$selected"
+}
+export -f run_suite
+
+state=$(mktemp -d) || exit 1
+trap 'rm -rf "$state"' EXIT
+export state
+touch "$state/passed" "$state/failed"
+grep . <<<"$selected" | xargs -d '\n' -n1 -P "$jobs" bash -c 'run_suite "$0"'
+passed=$(grep -c . "$state/passed")
+if [ -s "$state/failed" ]; then
+  echo "$passed of $total suites passed before $(head -n1 "$state/failed") failed$note"
+  exit 1
+fi
 echo "$passed of $total suites passed$note"
