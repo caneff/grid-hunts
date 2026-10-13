@@ -74,7 +74,8 @@ digit.
   number cell is drawn empty; the solver is not asked to enter any of them.
 - **valid circle** — a cell a circle could sit on in a given grid: its value
   equals the number of cells in its region. Every circle of a grid's
-  conditions is one; the picture (`hybrid_finder.py render`) rings them all.
+  conditions is one; the picture (`hybrid_finder.py render`) rings a circle
+  that is a condition and no other valid circle.
 - **window** — a 2x2 of board cells, grid cells, number cells or both, all
   four on the board, so no window holds an icon cell. Named by its top-left
   cell: `r2c3`, `r4:turn`, `c1:straight`. With the blank strip on, its cells

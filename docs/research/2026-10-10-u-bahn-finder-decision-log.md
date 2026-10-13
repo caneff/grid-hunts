@@ -831,6 +831,26 @@ window is on the grid, in the strips or across them. 2026-10-12.
   negative constraint is not re-read by `render`: the picture shows every
   checkerboard window whatever the hunt asked.
 
+## Hybrid: the picture has no ring on a valid circle (#31)
+
+Chris ruled on 2026-10-12 that `hybrid_finder.py render` draws no ring on a
+valid circle: on a grid set on markings the rings were noise. It reverses
+spec #20's "rings on valid circles are drawn as before" and the red 4 px
+ring of § Hybrid: the picture, and there is no flag to turn the rings back
+on.
+
+- **A circle that is a condition keeps its ring**, purple and 7 px. Every
+  other valid circle is bare.
+- **Only the picture changed.** The record's `number_cell_circles`, `verify`
+  and the link's refusal of an invalid circle are as they were, and so are
+  the checkerboard symbols, plain and heavier.
+- **One picture**, the 4x4 grid with `c1:turn` and `r2c4` circled and the
+  window `c1:turn` marked. Its other two valid circles, `r1:turn` and `r3c4`,
+  have no ring:
+  `docs/research/2026-10-12-u-bahn-battenberg/picture-no-ring-on-valid-circles.png`.
+  The picture of § Hybrid: the picture's checkerboard symbols is the same
+  grid as it was drawn before the ruling.
+
 ## Hybrid: Battenberg markings on the Penpa+ link (#24)
 
 `hybrid_finder.py links DIR --battenberg "CELLS" [--battenberg-only]`,

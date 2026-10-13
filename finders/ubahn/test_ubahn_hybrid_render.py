@@ -4,7 +4,9 @@ The grid is the decision log's one 4x4 grid with `c1:turn` and `r2c4`
 circled (§ Hybrid), drawn above `GRID` below with its regions worked out by
 hand. Then the `render` command, black-box, over a hunt directory written
 here by hand. The same grid has three checkerboard windows, so it is also
-where the checkerboard symbol is read back (spec #20, #23). No solver runs;
+where the checkerboard symbol is read back (spec #20, #23). A ring is drawn
+on a circle that is a condition and on no other valid circle (#31). No solver
+runs;
 about six seconds, a dozen and a half subprocess starts.
 
     uv run finders/ubahn/test_ubahn_hybrid_render.py
@@ -63,7 +65,7 @@ def cell(name):
 
 def fill(picture, name):
     """The colour a cell is filled with: a pixel just inside its corner,
-    clear of its number, its ring and the network through its centre."""
+    clear of its number, a ring and the network through its centre."""
     x0, y0, _, _ = picture.box(cell(name))
     return picture.image.getpixel((x0 + 8, y0 + 8))
 
@@ -122,37 +124,54 @@ check(
     "the rule reader's valid circles are the four worked out by hand",
     sorted(map(hybrid.cell_name, hybrid.valid_circles(picture.board))) == VALID,
 )
-ringed = sorted(
-    hybrid.cell_name(c)
-    for c in picture.board
-    if count(picture, hybrid.cell_name(c), hybrid_render.VALID_RING)
-    + count(picture, hybrid.cell_name(c), hybrid_render.GIVEN_RING)
-)
+
+
+def ring(picture, name):
+    """The colours where a ring runs through a cell, a set: the four points
+    on the ring's line that lie on the cell's diagonals, clear of its number,
+    the network through its centre and a symbol on its corner."""
+    x, y = centre(picture, name)
+    return {
+        picture.image.getpixel((x + dx, y + dy)) for dx in (-18, 18) for dy in (-18, 18)
+    }
+
+
+def ringed(picture):
+    """The names of the cells with a ring in the given colour, sorted."""
+    return sorted(
+        hybrid.cell_name(c)
+        for c in picture.board
+        if count(picture, hybrid.cell_name(c), hybrid_render.GIVEN_RING) > 200
+    )
+
+
 check(
-    f"a ring is drawn on those four cells and on no other ({ringed})", ringed == VALID
-)
-check(
-    "a valid circle that is no condition has a whole ring in the valid colour",
+    "a circle that is a condition has a whole ring in the given colour, "
+    "heavier than a symbol's outline",
     all(
-        count(picture, name, hybrid_render.VALID_RING) > 200
-        and not count(picture, name, hybrid_render.GIVEN_RING)
-        for name in ("r1:turn", "r3c4")
-    ),
-)
-check(
-    "a circle that is a condition has its ring in the given colour instead",
-    all(
-        count(picture, name, hybrid_render.GIVEN_RING) > 200
-        and not count(picture, name, hybrid_render.VALID_RING)
+        ring(picture, name) == {hybrid_render.GIVEN_RING}
+        and count(picture, name, hybrid_render.GIVEN_RING) > 600
         for name in ("c1:turn", "r2c4")
     ),
 )
 check(
-    "with no condition, the same four rings are all in the valid colour",
+    f"a ring is drawn on those two cells and on no other ({ringed(picture)})",
+    ringed(picture) == ["c1:turn", "r2c4"],
+)
+check(
+    "a valid circle that is no condition has no ring: where one would run, "
+    "the cell's own fill",
     all(
-        count(hybrid_render.Picture(GRID, 4, 4), name, hybrid_render.VALID_RING) > 200
-        for name in VALID
+        ring(picture, name) == {fill(picture, name)}
+        and not count(picture, name, hybrid_render.GIVEN_RING)
+        for name in ("r1:turn", "r3c4")
     ),
+)
+bare = hybrid_render.Picture(GRID, 4, 4)
+check(
+    "with no condition no cell has a ring, the four valid circles included",
+    ringed(bare) == []
+    and all(ring(bare, name) == {fill(bare, name)} for name in VALID),
 )
 
 # Checkerboard windows (#23), by hand from the board above: c1:turn is 2 1
@@ -232,20 +251,12 @@ check(
     and weight(marked, "c1:turn", hybrid_render.GIVEN_RING) > 1.5 * plain_weight,
 )
 check(
-    "the rings are drawn as before, markings or none: the same four cells, "
-    "the two conditions in the given colour",
+    "the rings are the same with a marking: the two conditions ringed in the "
+    "given colour, the other two valid circles bare",
     all(
-        count(marked, name, hybrid_render.GIVEN_RING) > 200
-        and count(marked, name, hybrid_render.GIVEN_RING)
-        >= count(picture, name, hybrid_render.GIVEN_RING)
-        for name in ("c1:turn", "r2c4")
+        ring(marked, name) == {hybrid_render.GIVEN_RING} for name in ("c1:turn", "r2c4")
     )
-    and all(
-        count(marked, name, hybrid_render.VALID_RING)
-        == count(picture, name, hybrid_render.VALID_RING)
-        > 200
-        for name in ("r1:turn", "r3c4")
-    ),
+    and all(ring(marked, name) == {fill(marked, name)} for name in ("r1:turn", "r3c4")),
 )
 try:
     hybrid_render.Picture(GRID, 4, 4, battenberg=[cell("r1c1")])
@@ -498,7 +509,8 @@ check(
     "--help names the render command and its flags",
     r.returncode == 0
     and all(word in r.stdout for word in ("render DIR", "--seed", "--png", "renders/"))
-    and "checkerboard symbol" in " ".join(r.stdout.split()),
+    and "checkerboard symbol" in " ".join(r.stdout.split())
+    and "no ring on any other valid circle" in " ".join(r.stdout.split()),
 )
 
 sys.exit(0 if ok else 1)

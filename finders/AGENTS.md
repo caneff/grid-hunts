@@ -95,8 +95,8 @@ because the checker reads them and nothing under `docs/research/` does
   `hybrid_finder.py render DIR` draws each example of a hunt as a picture,
   `DIR/renders/<seed>.png` (`hybrid_render.py`, #791): the board with its
   outside numbers and network, chocolate in one colour and a tint per banana,
-  a ring on every valid circle and a heavier one in a second colour on a
-  circle that is a condition, and a small checkerboard symbol at the centre
+  a heavy ring in a second colour on a circle that is a condition and no ring
+  on any other valid circle (#31), and a small checkerboard symbol at the centre
   of every checkerboard window, heavier and in the second colour on a window
   that is a Battenberg marking of the hunt (#23); `--seed N --png FILE` draws one example and
   `--blank-strip` the fifth strip.

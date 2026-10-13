@@ -103,9 +103,9 @@ stays ended: one a time limit stopped is taken up again in a new DIR, with
 `render DIR` draws every example of the hunt in DIR as a picture,
 `DIR/renders/<seed>.png` (`hybrid_render.py`, #791): the board with every
 outside number, the network, chocolate in one colour and a tint per banana,
-and a ring on every valid circle, each cell whose value is the size of its
-region; a circle that is one of the grid's conditions has a heavier ring in
-a second colour. A small checkerboard symbol sits at the centre of every
+and a heavy ring in a second colour on every circle that is one of the
+grid's conditions, with no ring on any other valid circle. A small
+checkerboard symbol sits at the centre of every
 checkerboard window of the grid, heavier and in the second colour on a window
 that is a Battenberg marking of the hunt's conditions; a record from before
 the condition is drawn as having no markings. A rerun replaces every picture
