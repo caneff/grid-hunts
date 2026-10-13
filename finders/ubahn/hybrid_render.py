@@ -1,5 +1,5 @@
 """A hybrid grid as a picture (#791): the board in the puzzle's layout, with
-its regions coloured and a ring on every cell a circle could sit on.
+its regions coloured and a ring on every circle that is a condition.
 
 `Picture(net, rows, cols, circles, blank_strip, battenberg).image` is a PIL
 image. The
@@ -7,9 +7,10 @@ strips of number cells lie above the grid and to its left with every outside
 number filled in, the icon cells at the head of each strip, and the network
 runs through the grid cells. A chocolate is one colour; each banana has a
 tint of its own, so separate bananas can be told apart and counted, and a
-heavy line runs wherever cells of different parity meet. A ring marks every
-valid circle, a cell whose value is the size of its region: a heavier ring
-in a second colour when the circle is one of the grid's conditions. A small
+heavy line runs wherever cells of different parity meet. A heavy ring in a
+second colour marks every circle that is one of the grid's conditions; a
+valid circle that is no condition, a cell whose value is the size of its
+region, has no ring (Chris's ruling of 2026-10-12, #31). A small
 checkerboard symbol sits at the centre of every checkerboard window, the
 corner its four cells share, on the grid, in the strips or across them: a
 heavier one in the second colour when the window is a Battenberg marking of
@@ -52,9 +53,7 @@ ICON = (232, 185, 35)
 GRID_LINE = (136, 136, 136)
 FRAME = (0, 0, 0)
 NETWORK = (21, 101, 192)
-# A ring on a valid circle, and the heavier one on a circle that is a
-# condition of the grid.
-VALID_RING = (198, 40, 40)
+# The ring on a circle that is a condition of the grid.
 GIVEN_RING = (106, 27, 154)
 # The checkerboard symbol on a checkerboard window is drawn in `WINDOW`, and
 # in `GIVEN_RING` and heavier on a window that is a condition. Each of the
@@ -96,10 +95,9 @@ class Picture(GridCanvas):
         self._parity_lines()
         self._icons()
         self._frames()
-        given = set(circles)
-        for r, c in hybrid.valid_circles(self.board):
-            colour, width = (GIVEN_RING, 7) if (r, c) in given else (VALID_RING, 4)
-            self.circle(r + self.depth, c + self.depth, colour, width, radius_frac=0.41)
+        # `why_not_hybrid` has passed each circle as valid.
+        for r, c in circles:
+            self.circle(r + self.depth, c + self.depth, GIVEN_RING, 7, radius_frac=0.41)
         # Each edge runs from one cell's centre to the next, so the bar's
         # reach is one cell; drawn last, over the rings.
         for first, second in net:
