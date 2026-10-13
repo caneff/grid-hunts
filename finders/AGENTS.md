@@ -99,10 +99,14 @@ because the checker reads them and nothing under `docs/research/` does
   background, and stops at the first size with a `unique` set, up to
   `--max-size K` (3 unless given); `--workers N` splits one size's sets over
   N processes. Each set tried is a line of `DIR/sets.jsonl`, so a killed run
-  resumes; a mirror pair is solved once where the conditions keep the
+  resumes, a last line cut short dropped and any other line that does not
+  read refused; a mirror pair is solved once where the conditions keep the
   reflection; each unique set of the smallest size is a hunt directory under
-  `DIR` that `verify`, `render` and `links` read. A set that reached the time
-  limit is named and the minimum is then not called proven. The 4x4 answer
+  `DIR` that `verify`, `render` and `links` read, its grid the one the set's
+  own solve found. A set that reached the time
+  limit is named and the minimum is then not called proven (#33: settling
+  one needs a new directory). `test_ubahn_fewest_markings_e2e.py` is spec
+  #29 end to end. The 4x4 answer
   and the 7x7 run of record: the decision log, § Hybrid: the fewest Battenberg
   markings.
   `hybrid_finder.py render DIR` draws each example of a hunt as a picture,

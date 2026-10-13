@@ -874,7 +874,8 @@ of either run reached it.
 
 - **Minimum 3, proven**, on `pysat-lazy` (15.4 s wall clock) and on
   `pysat-propagator` (16.0 s), the same counts on both. The two sets are
-  `c1:turn c2:turn r3c1` and its mirror `r1:turn r2:turn r1c3`, the two rows
+  `c1:turn c2:turn r3c1` and its mirror `r1:turn r1c3 r2:turn` (that set's
+  windows in board order, as its own record spells them), the two rows
   of § Hybrid: Battenberg markings, the 4x4 answers. That is what the spec's
   filer expected; sizes 1 and 2, which the filer had not enumerated, hold no
   set with a grid.
@@ -886,7 +887,7 @@ of either run reached it.
 **7x7**, four strips, no other condition, 84 windows, the run of record:
 
     uv run finders/ubahn/hybrid_finder.py fewest-markings --rows 7 --cols 7 \
-        --out DIR
+        --out docs/research/2026-10-12-u-bahn-fewest-markings/7x7
 
 | Size | Sets | `unique` | `not_unique` | `infeasible` | `timeout` |
 | --- | --- | --- | --- | --- | --- |
@@ -894,8 +895,8 @@ of either run reached it.
 | 1 | 84 | 0 | 79 | 5 | 0 |
 | 2 | 3,486 | 4 | 2,817 | 665 | 0 |
 
-- **Minimum 2, proven on `pysat-lazy`**, 486.8 s wall clock on one core
-  (488.2 s of CPU). The four unique sets are `c1:cross r5c3` and its mirror
+- **Minimum 2, proven on `pysat-lazy`**, 474 s wall clock on one core
+  (472.8 s summed over the sets solved). The four unique sets are `c1:cross r5c3` and its mirror
   `r1:cross r3c5`, and `c2:branch r4:branch` and its mirror
   `c4:branch r2:branch`.
 - **Every count is the filer's.** The spec's scratch loop around `classify`
@@ -904,17 +905,20 @@ of either run reached it.
   and the same four sets. No number differs.
 - **The reflection halved the solves**: 1,816 sets were solved (1 of size 0,
   45 of 84, 1,770 of 3,486) and 1,755 copied from a mirror. The slowest set
-  took 15.2 s, so the 60 s limit had room.
+  took 14.9 s, so the 60 s limit had room.
+- **The run was made twice, with the same counts.** The first, 486.8 s, was
+  the command as the slice built it. The spec's review then changed what a
+  unique set's line holds and how a mirror set is spelled, so the run of
+  record is the second, made with the command as it landed.
 - **No second engine ran 7x7.** The answer stands on `pysat-lazy`; the two
   engines agree on 4x4 above.
 - **The run's directory** is
   `docs/research/2026-10-12-u-bahn-fewest-markings/7x7/`: `sets.jsonl`, a line
   per set, and a hunt directory for each of the four unique sets, each
   passing `verify`, its record's checkerboard windows exactly its two
-  markings. `render` and `links` read them there. The run was made in
-  another directory and copied in, so a `fewest-markings` rerun into the
-  copy prints the same counts and is then refused by the hunt driver, which
-  holds each hunt to the `--out` it was started with.
+  markings. `render` and `links` read them there. The run was made into that
+  path from the repo root, so a rerun from the root prints the same report
+  and solves nothing.
 
 Worker's choices, none a ruling:
 
@@ -924,13 +928,32 @@ Worker's choices, none a ruling:
   the command does anyway.
 - **A rerun under another `--timeout` is refused**, as `climb` refuses one:
   the limit is part of what `sets.jsonl`'s first line records. Sets that
-  timed out are solved again only in a new directory.
-- **A unique set's example is a hunt of seed 0** under the set's conditions,
-  one more solve per set, so the directory is the driver's own and nothing
-  writes a hunt directory by hand. Its name is the set's windows joined by
-  `+`, each `:` as `-`, and `no-markings` for the empty set.
+  timed out are solved again only in a new directory. The spec's review
+  disagreed (a 7x7 size 3 is 95,284 sets to solve again); retrying only the
+  timed-out sets is #33.
+- **A unique set's directory is named** for the set's windows joined by `+`,
+  each `:` as `-`, and `no-markings` for the empty set.
 - **`sets.jsonl`'s first line is the run's config**, as `verified.jsonl`
   opens with a heading line.
+
+Changed by the spec's review (#29), the spec run's choices, none a ruling:
+
+- **A unique set's example is the grid its own solve found**, kept in the
+  set's line as a hunt's record and written as seed 0 through the hunt
+  driver by a finder that proposes that grid. The slice hunted the set a
+  second time, and that second solve could reach the time limit after the
+  first had answered `unique`, leaving a unique set with no example and no
+  way to get one. A mirror set's grid is the solved set's, reflected.
+- **A file a write cut short is mended on a rerun**: a last line with no end
+  is dropped and solved again, and a solved set whose mirror's line is
+  missing gets that line copied again. Any other line that does not read,
+  or whose answer is none of the four words, is refused by name; such a line
+  was counted in no column before and the minimum still called proven.
+- **An example already written is left as it is** on a rerun, so naming the
+  directory another way no longer ends in the hunt driver's refusal.
+- **A mirror set is spelled in board order**, the spelling of its own record
+  and directory; the slice listed it in image order, which gave one set two
+  spellings.
 
 ## Hybrid: Battenberg markings on the Penpa+ link (#24)
 
