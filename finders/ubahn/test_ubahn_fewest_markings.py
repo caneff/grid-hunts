@@ -316,11 +316,11 @@ with tempfile.TemporaryDirectory() as d:
             and len({frozenset(line["windows"]) for line in tried}) == len(tried),
         )
 
-    # The file of a run still unfinished, under another time limit: refused
-    # before any solve, with no line added.
+    # The file of a run killed before its first set, under another time
+    # limit: refused before any solve, with no line added.
     unfinished = Path(d) / "unfinished"
     unfinished.mkdir()
-    (unfinished / "sets.jsonl").write_text("".join(whole[:cut]))
+    (unfinished / "sets.jsonl").write_text(whole[0])
     r = run_cli(
         "fewest-markings", "--rows", 4, "--cols", 4, "--timeout", 5,
         "--out", unfinished,
@@ -331,7 +331,7 @@ with tempfile.TemporaryDirectory() as d:
         r.returncode == 2
         and "holds a run under" in r.stderr
         and not r.stdout
-        and (unfinished / "sets.jsonl").read_text() == "".join(whole[:cut]),
+        and (unfinished / "sets.jsonl").read_text() == whole[0],
     )
 
     # A file that does not read is refused by name, never counted around.
