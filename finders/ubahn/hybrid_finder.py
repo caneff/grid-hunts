@@ -117,9 +117,12 @@ hunt's own dedupe rule, below) one set of each mirror pair is solved and
 both are listed, each naming the other. A rerun into the same DIR, under the
 same conditions, engine and limit, solves only the sets with no line; under
 any other it is refused, and so is a second run while one is running there.
-Each unique set of the smallest size is hunted once more, seed 0, into a
-hunt directory of its own under DIR, named for its windows, which `verify`,
-`render` and `links` read.
+A last line a write cut short is dropped and solved again; any other line
+that does not read is refused, naming it. Each unique set of the smallest
+size is written, with the one grid its solve found, as seed 0 of a hunt
+directory of its own under DIR, named for its windows, which `verify`,
+`render` and `links` read; a rerun leaves a directory already written as it
+is.
 
 A size is finished even when a set reaches `--timeout`: the set is named in
 the report and never read as "no grid". The minimum is called proven only
@@ -134,8 +137,8 @@ refused: it has no model of a marking.
     size 2: 0 unique, 0 not_unique, 528 infeasible, 0 timeout
     size 3: 2 unique, 0 not_unique, 5454 infeasible, 0 timeout
     minimum 3: proven on pysat-lazy, 2 unique sets of 3 markings
-    unique: c1:turn c2:turn r3c1, mirror r1:turn r2:turn r1c3: DIR/c1-turn+c2-turn+r3c1 (seed 0)
-    unique: r1:turn r2:turn r1c3, mirror c1:turn c2:turn r3c1: DIR/r1-turn+r2-turn+r1c3 (seed 0)
+    unique: c1:turn c2:turn r3c1, mirror r1:turn r1c3 r2:turn: DIR/c1-turn+c2-turn+r3c1 (seed 0)
+    unique: r1:turn r1c3 r2:turn, mirror c1:turn c2:turn r3c1: DIR/r1-turn+r1c3+r2-turn (seed 0)
 
 `render DIR` draws every example of the hunt in DIR as a picture,
 `DIR/renders/<seed>.png` (`hybrid_render.py`, #791): the board with every
@@ -238,11 +241,12 @@ ENGINES = {
 # in docs/research/2026-10-10-u-bahn-optimization-queue.md (#786).
 DEFAULT_ENGINE = "pysat-lazy"
 
-# The classification's words as Chris reads them.
+# The classification's words as Chris reads them, in the order the
+# `fewest-markings` report counts them.
 SAID = {
-    "infeasible": "no grid",
     "unique": "exactly one grid",
     "not_unique": "more than one grid",
+    "infeasible": "no grid",
     "timeout": "time limit reached",
 }
 
@@ -252,10 +256,8 @@ EMPTY_TIMEOUT = "timeout sampling a grid"
 EMPTY_INFEASIBLE = "infeasible: no grid meets the conditions"
 # The one seed every step of a climb hunts.
 CLIMB_SEED = 0
-# The one seed a unique set's example is hunted on by `fewest-markings`.
+# The one seed a unique set's example is written under by `fewest-markings`.
 SET_SEED = 0
-# The answers `fewest-markings` counts, in the order its report gives them.
-ANSWERS = ("unique", "not_unique", "infeasible", "timeout")
 
 
 class Candidate(NamedTuple):
@@ -263,6 +265,12 @@ class Candidate(NamedTuple):
 
     conditions: hybrid.Conditions
     network: frozenset
+
+
+def _mirror(cells):
+    """The cells reflected in the main diagonal, sorted. A window's image is
+    the window named by its top-left cell's image."""
+    return tuple(sorted((c, r) for r, c in cells))
 
 
 def condition_symmetry(conditions):
@@ -279,8 +287,8 @@ def condition_symmetry(conditions):
     if (
         rows != cols
         or conditions.exactly
-        or {(c, r) for r, c in circles} != set(circles)
-        or {(c, r) for r, c in marked} != set(marked)
+        or set(_mirror(circles)) != set(circles)
+        or set(_mirror(marked)) != set(marked)
     ):
         return IDENTITY
     cells = rows * cols
@@ -642,30 +650,36 @@ def climb(conditions, engine, timeout, out, start=None):
     print(f"best grid: {out / best['dir']} (seed {CLIMB_SEED})")
 
 
-def _set_name(windows):
-    """A set of windows as the report names it."""
-    return " ".join(map(hybrid.cell_name, windows)) or "no markings"
+def _set_name(names):
+    """A set of windows, given by their names, as the report names it."""
+    return " ".join(names) or "no markings"
 
 
-def _mirror(windows):
-    """The windows reflected in the main diagonal, each in the place of the
-    window it is the image of: a window's image is the window named by its
-    top-left cell's image."""
-    return tuple((c, r) for r, c in windows)
+class _HeldGrid(HybridFinder):
+    """The finder of a hunt whose one seed is a grid already in hand: a
+    unique set's grid as `classify` found it, written as an ordinary example
+    with no second solve."""
+
+    def __init__(self, conditions, engine, timeout, found):
+        super().__init__(conditions, engine, timeout)
+        self.found = found
+
+    def propose(self, rng):
+        return Candidate(self.conditions, self.found)
 
 
 def _classify_sets(conditions, engine, timeout, sets, mirrored, path):
     """Classify each set of windows as the conditions' markings and append
-    its line to the per-set file at `path` as the answer lands. With
-    `mirrored`, a set that is not its own mirror is followed by its mirror's
-    line, copied from it, in the same write."""
+    its line to the per-set file at `path` as the answer lands; a unique
+    set's line carries its one grid as a hunt's record. With `mirrored`, a
+    set that is not its own mirror is followed by its mirror's line, copied
+    from it, in the same write."""
     with path.open("a") as log:
         for windows in sets:
             began = time.monotonic()
-            status, _ = ENGINES[engine].classify(
-                conditions._replace(battenberg=frozenset(windows)),
-                time_limit=timeout,
-                workers=1,
+            marked = conditions._replace(battenberg=frozenset(windows))
+            status, found = ENGINES[engine].classify(
+                marked, time_limit=timeout, workers=1
             )
             solved = {
                 "size": len(windows),
@@ -675,39 +689,87 @@ def _classify_sets(conditions, engine, timeout, sets, mirrored, path):
                 "mirror": None,
                 "seconds": round(time.monotonic() - began, 3),
             }
+            if status == "unique":
+                finder = HybridFinder(marked, engine, timeout)
+                solved["record"] = finder.record(Candidate(marked, found))
             lines = [solved]
             image = _mirror(windows)
-            if mirrored and set(image) != set(windows):
+            if mirrored and image != windows:
                 solved["mirror"] = [hybrid.cell_name(window) for window in image]
-                lines.append(
-                    {
-                        **solved,
-                        "windows": solved["mirror"],
-                        "how": "mirror",
-                        "mirror": solved["windows"],
-                        "seconds": None,
-                    }
-                )
+                lines.append(_mirror_line(conditions, engine, timeout, solved))
             log.write("".join(json.dumps(line) + "\n" for line in lines))
             log.flush()
 
 
+def _mirror_line(conditions, engine, timeout, solved):
+    """The line of a solved set's mirror, copied from the solved set's own:
+    the same answer, and a unique set's grid reflected with it."""
+    line = {
+        **solved,
+        "windows": solved["mirror"],
+        "how": "mirror",
+        "mirror": solved["windows"],
+        "seconds": None,
+    }
+    if solved["status"] == "unique":
+        image = conditions._replace(
+            battenberg=frozenset(map(hybrid.parse_cell, line["windows"]))
+        )
+        finder = HybridFinder(image, engine, timeout)
+        found = finder.candidate_from_record(solved["record"]).network
+        reflected = frozenset((_mirror([a])[0], _mirror([b])[0]) for a, b in found)
+        line["record"] = finder.record(Candidate(image, reflected))
+    return line
+
+
 def _sets_on_file(path, asked):
     """{a set of windows: its line} from the per-set file at `path`, whose
-    first line is the run's heading. Raises ValueError when the heading is
-    another run's (`asked` is this one's config) or a line does not read."""
+    first line is the run's heading. Raises ValueError, naming the file,
+    when the heading does not read or is another run's (`asked` is this
+    one's config), or when a line is no set's line: it does not read, its
+    answer is none of `SAID`'s words, or it is a unique set's with no grid."""
     heading, *lines = path.read_text().splitlines()
-    held = json.loads(heading).get("config")
+    try:
+        held = json.loads(heading)["config"]
+    except (ValueError, KeyError, TypeError) as e:
+        raise ValueError(f"{path}: line 1 is no run's heading: {e!r}") from e
     if held != asked:
         raise ValueError(f"{path.parent} holds a run under {held}")
     tried = {}
     for number, line in enumerate(lines, 2):
         try:
             entry = json.loads(line)
+            if entry["status"] not in SAID:
+                raise ValueError(f"its answer is {entry['status']!r}")
+            if entry["status"] == "unique" and "record" not in entry:
+                raise ValueError("a unique set's line with no grid")
+            if not {"mirror", "how"} <= entry.keys():
+                raise ValueError("it does not say how it was answered")
             tried[frozenset(map(hybrid.parse_cell, entry["windows"]))] = entry
         except (ValueError, KeyError, TypeError) as e:
-            raise ValueError(f"{path}: line {number} is no set's line: {e}") from e
+            raise ValueError(f"{path}: line {number} is no set's line: {e!r}") from e
     return tried
+
+
+def _mend(log, path, conditions, engine, timeout, asked):
+    """Make the per-set file ready to read. A new file gets the run's
+    heading. In one a write cut short, the last line with no end is dropped
+    and a solved set whose mirror's line is missing gets that line copied
+    again. Any other line that does not read is refused (`_sets_on_file`)."""
+    text = path.read_text()
+    if not text.endswith("\n"):
+        log.truncate(text.rfind("\n") + 1)
+    if "\n" not in text:
+        log.write(json.dumps({"config": asked}) + "\n")
+        log.flush()
+    tried = _sets_on_file(path, asked)
+    for line in list(tried.values()):
+        image = line["mirror"] and frozenset(map(hybrid.parse_cell, line["mirror"]))
+        if line["how"] == "solved" and image and image not in tried:
+            log.write(
+                json.dumps(_mirror_line(conditions, engine, timeout, line)) + "\n"
+            )
+    log.flush()
 
 
 def fewest_markings(conditions, engine, timeout, out, max_size, workers):
@@ -739,51 +801,43 @@ def fewest_markings(conditions, engine, timeout, out, max_size, workers):
         except BlockingIOError:
             raise ValueError(f"another run is in {out}") from None
         log.seek(0)
-        if not log.read():
-            log.write(json.dumps({"config": asked}) + "\n")
-            log.flush()
+        _mend(log, path, conditions, engine, timeout, asked)
         for size in range(max_size + 1):
             sets = list(itertools.combinations(windows, size))
             tried = _sets_on_file(path, asked)
             # Of a mirror pair the set that sorts first is the one solved.
             todo = [
-                held
-                for held in sets
-                if frozenset(held) not in tried
-                and not (mirrored and tuple(sorted(_mirror(held))) < held)
+                chosen
+                for chosen in sets
+                if frozenset(chosen) not in tried
+                and not (mirrored and _mirror(chosen) < chosen)
             ]
-            shares = [todo[i::workers] for i in range(workers)]
-            job = (conditions, engine, timeout)
-            if workers == 1:
-                _classify_sets(*job, todo, mirrored, path)
-            else:
-                crew = [
-                    multiprocessing.Process(
-                        target=_classify_sets, args=(*job, share, mirrored, path)
-                    )
-                    for share in shares
-                    if share
-                ]
-                for worker in crew:
-                    worker.start()
-                for worker in crew:
-                    worker.join()
-                if any(worker.exitcode for worker in crew):
-                    raise ValueError(f"a worker died at size {size}: rerun into {out}")
+            crew = [
+                multiprocessing.Process(
+                    target=_classify_sets,
+                    args=(conditions, engine, timeout, share, mirrored, path),
+                )
+                for share in (todo[i::workers] for i in range(workers))
+                if share
+            ]
+            for worker in crew:
+                worker.start()
+            for worker in crew:
+                worker.join()
+            if any(worker.exitcode for worker in crew):
+                raise ValueError(f"a worker died at size {size}: rerun into {out}")
             tried = _sets_on_file(path, asked)
             try:
-                lines = [tried[frozenset(held)] for held in sets]
+                lines = [tried[frozenset(chosen)] for chosen in sets]
             except KeyError as e:
-                raise ValueError(
-                    f"{path}: no line for {_set_name(sorted(e.args[0]))}"
-                ) from e
-            said = {
+                missing = _set_name(map(hybrid.cell_name, sorted(e.args[0])))
+                raise ValueError(f"{path}: no line for {missing}") from e
+            counts = {
                 word: sum(1 for line in lines if line["status"] == word)
-                for word in ANSWERS
+                for word in SAID
             }
             print(
-                f"size {size}: "
-                + ", ".join(f"{said[word]} {word}" for word in ANSWERS),
+                f"size {size}: " + ", ".join(f"{counts[word]} {word}" for word in SAID),
                 flush=True,
             )
             timed += [line for line in lines if line["status"] == "timeout"]
@@ -791,7 +845,7 @@ def fewest_markings(conditions, engine, timeout, out, max_size, workers):
             if unique:
                 break
         for line in timed:
-            print(f"time limit reached: {' '.join(line['windows']) or 'no markings'}")
+            print(f"time limit reached: {_set_name(line['windows'])}")
         sets_timed = f"{len(timed)} set{'' if len(timed) == 1 else 's'}"
         if not unique:
             if timed:
@@ -813,27 +867,23 @@ def fewest_markings(conditions, engine, timeout, out, max_size, workers):
                 f"set{'' if len(unique) == 1 else 's'} of {size} markings"
             )
         for line in unique:
-            name = " ".join(line["windows"]) or "no markings"
+            name = _set_name(line["windows"])
             if line["mirror"]:
-                name += f", mirror {' '.join(line['mirror'])}"
+                name += f", mirror {_set_name(line['mirror'])}"
             example = out / (
                 "+".join(window.replace(":", "-") for window in line["windows"])
                 or "no-markings"
             )
-            marked = frozenset(map(hybrid.parse_cell, line["windows"]))
-            finder = HybridFinder(
-                conditions._replace(battenberg=marked), engine, timeout
-            )
-            status, _ = _step(finder, SET_SEED, example)
-            if status == "infeasible":
-                raise ValueError(
-                    f"{name} was classified unique, and its hunt in {example} "
-                    f"found no grid"
+            # An example already written is left as it is: the hunt driver
+            # holds a hunt directory to the `--out` it was first given.
+            if not (example / "examples.jsonl").is_file():
+                marked = conditions._replace(
+                    battenberg=frozenset(map(hybrid.parse_cell, line["windows"]))
                 )
-            if status == "timeout":
-                print(f"unique: {name}: no example, its hunt reached the time limit")
-            else:
-                print(f"unique: {name}: {example} (seed {SET_SEED})")
+                finder = HybridFinder(marked, engine, timeout)
+                found = finder.candidate_from_record(line["record"]).network
+                _step(_HeldGrid(marked, engine, timeout, found), SET_SEED, example)
+            print(f"unique: {name}: {example} (seed {SET_SEED})")
 
 
 def write_pictures(out, blank_strip=False, seed=None, png=None):

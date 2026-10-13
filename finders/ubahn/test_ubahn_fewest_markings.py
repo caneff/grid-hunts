@@ -10,7 +10,8 @@ with no solver: the minimum, the unique sets of that size and each size's
 counts. Then the examples it writes, a rerun of a stopped run, a time limit
 reached, the size cap, mirror sets, the workers and the refusals.
 
-One CaDiCaL thread, but for the two-worker run; about a minute.
+One CaDiCaL thread a process, two processes in the two-worker run, which
+is the only witness `--workers` has; about a minute.
 
     uv run finders/ubahn/test_ubahn_fewest_markings.py
 """
@@ -73,37 +74,36 @@ def sets_tried(out):
     return read_jsonl(out / "sets.jsonl")[1:]
 
 
-def names(windows):
-    """A set of windows, each by its name, whatever order a line gives them."""
-    return frozenset(windows)
-
-
 def mirror(windows):
     """A set of window names reflected in the main diagonal."""
-    return names(hybrid.cell_name((c, r)) for r, c in map(hybrid.parse_cell, windows))
+    return frozenset(
+        hybrid.cell_name((c, r)) for r, c in map(hybrid.parse_cell, windows)
+    )
 
 
-def by_brute(keep=lambda net: True):
+def by_brute(keep=lambda board: True, blank_strip=False):
     """{a set of window names: the grids whose checkerboard windows are
-    exactly that set}, over the brute force's 4x4 grids that `keep` takes:
-    the grids each set of markings leaves under the negative constraint."""
+    exactly that set}, over the brute force's 4x4 grids whose board of
+    values `keep` takes: the grids each set of markings leaves under the
+    negative constraint."""
     held = {}
-    for net in brute.hybrid_grids(4, 4):
-        if keep(net):
-            windows = hybrid.checkerboard_windows(hybrid.values(net, 4, 4))
-            held.setdefault(names(map(hybrid.cell_name, windows)), []).append(net)
+    for net in brute.hybrid_grids(4, 4, blank_strip):
+        board = hybrid.values(net, 4, 4, blank_strip)
+        if keep(board):
+            windows = hybrid.checkerboard_windows(board)
+            held.setdefault(frozenset(map(hybrid.cell_name, windows)), []).append(net)
     return held
 
 
-def counts(held, size):
+def counts(held, size, windows=WINDOWS):
     """The brute force's count of each answer word over the sets of one
-    size."""
-    grids = [len(nets) for windows, nets in held.items() if len(windows) == size]
+    size, on a board of that many windows."""
+    grids = [len(nets) for marked, nets in held.items() if len(marked) == size]
     unique = sum(1 for n in grids if n == 1)
     return {
         "unique": unique,
         "not_unique": len(grids) - unique,
-        "infeasible": math.comb(WINDOWS, size) - len(grids),
+        "infeasible": math.comb(windows, size) - len(grids),
         "timeout": 0,
     }
 
@@ -169,7 +169,9 @@ with tempfile.TemporaryDirectory() as d:
         )
         tried = sets_tried(out)
         found = {
-            names(line["windows"]): line for line in tried if line["status"] == "unique"
+            frozenset(line["windows"]): line
+            for line in tried
+            if line["status"] == "unique"
         }
         check(
             f"{engine}: the unique sets are exactly the brute force's "
@@ -180,17 +182,17 @@ with tempfile.TemporaryDirectory() as d:
             f"{engine}: every set of every size up to the minimum has one line",
             Counter(line["size"] for line in tried)
             == {k: math.comb(WINDOWS, k) for k in range(MINIMUM + 1)}
-            and len({names(line["windows"]) for line in tried}) == len(tried),
+            and len({frozenset(line["windows"]) for line in tried}) == len(tried),
         )
 
         # Mirror sets: 4x4 with no other condition keeps the reflection in
         # the main diagonal, so one set of each mirror pair is solved and the
         # other is copied from it, each naming the other.
-        line_of = {names(line["windows"]): line for line in tried}
+        line_of = {frozenset(line["windows"]): line for line in tried}
         pairs = [
             (line, line_of[mirror(line["windows"])])
             for line in tried
-            if mirror(line["windows"]) != names(line["windows"])
+            if mirror(line["windows"]) != frozenset(line["windows"])
         ]
         check(
             f"{engine}: of each mirror pair one set was solved and the other "
@@ -200,12 +202,14 @@ with tempfile.TemporaryDirectory() as d:
             and all(
                 {a["how"], b["how"]} == {"solved", "mirror"}
                 and a["status"] == b["status"]
-                and names(a["mirror"]) == names(b["windows"])
+                and frozenset(a["mirror"]) == frozenset(b["windows"])
                 for a, b in pairs
             ),
         )
         own = [
-            line for line in tried if mirror(line["windows"]) == names(line["windows"])
+            line
+            for line in tried
+            if mirror(line["windows"]) == frozenset(line["windows"])
         ]
         check(
             f"{engine}: a set that is its own mirror is solved and names no "
@@ -233,7 +237,7 @@ with tempfile.TemporaryDirectory() as d:
         for name in subdirectories(out):
             example = out / name
             (record,) = read_jsonl(example / "examples.jsonl")
-            marked = names(record["battenberg"])
+            marked = frozenset(record["battenberg"])
             r = run_cli("verify", example)
             verdicts = read_verified(example / "verified.jsonl")[1]
             check(
@@ -246,14 +250,16 @@ with tempfile.TemporaryDirectory() as d:
                 f"exactly its markings, a unique set, under the negative "
                 f"constraint ({sorted(marked)})",
                 marked in SMALLEST
-                and names(record["checkerboard_windows"]) == marked
+                and frozenset(record["checkerboard_windows"]) == marked
                 and len(record["checkerboard_windows"]) == len(marked)
                 and record["battenberg_only"] is True,
             )
             check(
                 f"{engine}, {name}: its grid is the brute force's one grid for "
-                f"that set",
-                READER.candidate_from_record(record).network == SMALLEST.get(marked),
+                f"that set, and the grid its set's line holds, mirror or solved",
+                READER.candidate_from_record(record).network == SMALLEST.get(marked)
+                and (found[marked]["record"]["h"], found[marked]["record"]["v"])
+                == (record["h"], record["v"]),
             )
             r = run_cli("render", example)
             r2 = run_cli(
@@ -280,10 +286,20 @@ with tempfile.TemporaryDirectory() as d:
         for i in range(len(whole) - 800, len(whole))
         if json.loads(whole[i])["how"] == "solved"
     )
-    for label, kept in (("inside the last size", cut), ("at once", 1)):
+    # Three ways a stopped run leaves its file: cut between two sets; cut
+    # inside a line, as a write cut short leaves it; and cut between a
+    # solved set's line and its mirror's.
+    paired = next(
+        i for i in range(cut, len(whole)) if json.loads(whole[i])["how"] == "mirror"
+    )
+    for label, text, kept in (
+        ("inside the last size", "".join(whole[:cut]), cut),
+        ("inside a line", "".join(whole[:cut]) + whole[cut][:25], cut),
+        ("before a mirror's line", "".join(whole[:paired]), paired),
+    ):
         again = Path(d) / f"again {label}"
         again.mkdir()
-        (again / "sets.jsonl").write_text("".join(whole[:kept]))
+        (again / "sets.jsonl").write_text(text)
         r = run_cli("fewest-markings", *BOARD, "--engine", engine, "--out", again)
         after = (again / "sets.jsonl").read_text().splitlines(keepends=True)
         check(
@@ -293,11 +309,74 @@ with tempfile.TemporaryDirectory() as d:
         )
         tried = [json.loads(line) for line in after[1:]]
         check(
-            f"stopped {label}: the lines on file are kept as they were and no "
-            f"set is solved twice ({len(after) - kept} lines added)",
+            f"stopped {label}: the whole lines on file are kept as they were "
+            f"and no set is solved twice ({len(after) - kept} lines added)",
             after[:kept] == whole[:kept]
             and len(after) == len(whole)
-            and len({names(line["windows"]) for line in tried}) == len(tried),
+            and len({frozenset(line["windows"]) for line in tried}) == len(tried),
+        )
+
+    # The file of a run still unfinished, under another time limit: refused
+    # before any solve, with no line added.
+    unfinished = Path(d) / "unfinished"
+    unfinished.mkdir()
+    (unfinished / "sets.jsonl").write_text("".join(whole[:cut]))
+    r = run_cli(
+        "fewest-markings", "--rows", 4, "--cols", 4, "--timeout", 5,
+        "--out", unfinished,
+    )  # fmt: skip
+    check(
+        f"a run into an unfinished directory another time limit wrote is "
+        f"refused and adds no line ({r.stderr.strip()[:60]!r})",
+        r.returncode == 2
+        and "holds a run under" in r.stderr
+        and not r.stdout
+        and (unfinished / "sets.jsonl").read_text() == "".join(whole[:cut]),
+    )
+
+    # A file that does not read is refused by name, never counted around.
+    broken = Path(d) / "broken"
+    broken.mkdir()
+    for label, lines, named in (
+        (
+            "a line whose answer is no answer word",
+            [
+                *whole[:5],
+                json.dumps({**json.loads(whole[5]), "status": "unknown"}) + "\n",
+                *whole[6:],
+            ],
+            "line 6 is no set's line",
+        ),
+        (
+            "a line with no answer",
+            [*whole[:5], json.dumps({"windows": []}) + "\n", *whole[6:]],
+            "line 6 is no set's line",
+        ),
+        (
+            "a line that is no JSON, not the last",
+            [*whole[:5], "{\n", *whole[6:]],
+            "line 6 is no set's line",
+        ),
+        (
+            "a heading that is a list",
+            ["[]\n", *whole[1:]],
+            "line 1 is no run's heading",
+        ),
+        (
+            "a heading that is no JSON",
+            ["x\n", *whole[1:]],
+            "line 1 is no run's heading",
+        ),
+    ):
+        (broken / "sets.jsonl").write_text("".join(lines))
+        r = run_cli("fewest-markings", *BOARD, "--engine", engine, "--out", broken)
+        check(
+            f"{label}: refused, exit 2, naming the file and the line "
+            f"({r.stderr.strip()[-70:]!r})",
+            r.returncode == 2
+            and f"{broken / 'sets.jsonl'}: {named}" in r.stderr
+            and "Traceback" not in r.stderr
+            and not r.stdout,
         )
     r = run_cli("fewest-markings", *BOARD, "--engine", engine, "--out", done)
     check(
@@ -305,6 +384,13 @@ with tempfile.TemporaryDirectory() as d:
         r.returncode == 0
         and r.stdout == finished[engine].stdout
         and (done / "sets.jsonl").read_text() == "".join(whole),
+    )
+    respelt = done / ".." / done.name
+    r = run_cli("fewest-markings", *BOARD, "--engine", engine, "--out", respelt)
+    check(
+        f"a rerun naming the finished directory another way: the same report "
+        f"(stderr: {r.stderr[-200:]})",
+        r.returncode == 0 and report(r, respelt) == report(finished[engine], done),
     )
 
     # Another run is in the directory: this one starts nothing.
@@ -340,7 +426,7 @@ with tempfile.TemporaryDirectory() as d:
         i for i, line in enumerate(whole) if i and json.loads(line)["size"] == 1
     )
     pair = [json.loads(line) for line in whole[first : first + 2]]
-    timed = {names(line["windows"]) for line in pair}
+    timed = {frozenset(line["windows"]) for line in pair}
     (stopped / "sets.jsonl").write_text(
         "".join(
             json.dumps({**json.loads(line), "status": "timeout"}) + "\n"
@@ -438,8 +524,8 @@ with tempfile.TemporaryDirectory() as d:
 
     # A condition that breaks the reflection: r2c4 circled, whose image r4c2
     # is not. Every set is solved, none copied.
-    def circled(net):
-        return not hybrid.why_not_hybrid(net, 4, 4, [hybrid.parse_cell("r2c4")])
+    def circled(board):
+        return hybrid.parse_cell("r2c4") in hybrid.valid_circles(board)
 
     out = Path(d) / "a circle"
     r = run_cli(
@@ -457,10 +543,41 @@ with tempfile.TemporaryDirectory() as d:
         == [size_line(k, counts(by_brute(circled), k)) for k in (0, 1)],
     )
 
+    # The other conditions as fixed background: each changes the grids the
+    # brute force keeps, and the counts follow it.
+    strip_windows = len(hybrid.windows(hybrid.board_cells(4, 4, True)))
+    for flags, held, windows in (
+        (
+            ["--min-bananas", 2],
+            by_brute(lambda board: len(hybrid.bananas(board)) >= 2),
+            WINDOWS,
+        ),
+        (
+            ["--number-circles", 3],
+            by_brute(lambda board: len(hybrid.number_cell_circles(board)) >= 3),
+            WINDOWS,
+        ),
+        (["--blank-strip"], by_brute(blank_strip=True), strip_windows),
+    ):
+        out = Path(d) / flags[0]
+        r = run_cli("fewest-markings", *BOARD, *flags, "--max-size", 1, "--out", out)
+        want = [size_line(k, counts(held, k, windows)) for k in (0, 1)]
+        check(
+            f"with {' '.join(map(str, flags))} the counts are the brute force's "
+            f"under it, and not the plain board's ({r.stdout.splitlines()[:2]})",
+            r.returncode == 0
+            and r.stdout.splitlines()[:2] == want
+            and want != [size_line(k, counts(HELD, k)) for k in (0, 1)],
+        )
+
     # A condition as fixed background, and a minimum of 0: with exactly 4
     # branches in row 2 one grid has no checkerboard window.
     exactly = network.Exactly.parse("4:branch:r2")
-    held = by_brute(lambda net: exactly.holds(net, 4, 4))
+    held = {
+        marked: kept
+        for marked, nets in by_brute().items()
+        if (kept := [net for net in nets if exactly.holds(net, 4, 4)])
+    }
     out = Path(d) / "exactly"
     r = run_cli("fewest-markings", *BOARD, "--exactly", exactly.text(), "--out", out)
     lines = r.stdout.splitlines()

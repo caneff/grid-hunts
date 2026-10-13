@@ -88,6 +88,12 @@ digit.
   marking is free, unless the **negative constraint** is on
   (`--battenberg-only`): then every window with no marking is not a
   checkerboard window, the windows in the number strips included.
+- **mirror set** — the image of a set of Battenberg markings under the
+  reflection in the main diagonal, each window going to the window named by
+  its top-left cell's image; the two sets are a **mirror pair**. Where the
+  conditions keep the reflection, `hybrid_finder.py fewest-markings` solves
+  one set of a pair and copies the answer to the other. A set is always
+  spelled with its windows in board order, columns' number cells first.
 - **engine** — a solver the hybrid's rules are written on, picked by the
   finder's `--engine`: `cpsat`, `pysat-lazy` or `pysat-propagator`. Every
   engine answers the same two calls, a grid for a seed and a classification.
