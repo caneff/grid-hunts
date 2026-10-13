@@ -851,6 +851,87 @@ on.
   The picture of § Hybrid: the picture's checkerboard symbols is the same
   grid as it was drawn before the ruling.
 
+## Hybrid: the fewest Battenberg markings (#30)
+
+`hybrid_finder.py fewest-markings` (spec #29): the fewest Battenberg markings
+that leave exactly one grid with the negative constraint on. It classifies
+every set of one size before any set of the next, each set as `classify`
+does, so the size it stops at is a minimum once every smaller set has an
+answer. One process, this box, 2026-10-12, a 60 s limit on each set; no set
+of either run reached it.
+
+**4x4**, no other condition, 33 windows:
+
+    uv run finders/ubahn/hybrid_finder.py fewest-markings --rows 4 --cols 4 \
+        --engine ENGINE --out DIR
+
+| Size | Sets | `unique` | `not_unique` | `infeasible` | `timeout` |
+| --- | --- | --- | --- | --- | --- |
+| 0 | 1 | 0 | 1 | 0 | 0 |
+| 1 | 33 | 0 | 0 | 33 | 0 |
+| 2 | 528 | 0 | 0 | 528 | 0 |
+| 3 | 5,456 | 2 | 0 | 5,454 | 0 |
+
+- **Minimum 3, proven**, on `pysat-lazy` (15.4 s wall clock) and on
+  `pysat-propagator` (16.0 s), the same counts on both. The two sets are
+  `c1:turn c2:turn r3c1` and its mirror `r1:turn r2:turn r1c3`, the two rows
+  of § Hybrid: Battenberg markings, the 4x4 answers. That is what the spec's
+  filer expected; sizes 1 and 2, which the filer had not enumerated, hold no
+  set with a grid.
+- **The test derives the same from the brute force**
+  (`test_ubahn_fewest_markings.py`): under the negative constraint a grid
+  meets a set of markings exactly when the set is its checkerboard windows,
+  so the 18 grids give every size's counts with no solver.
+
+**7x7**, four strips, no other condition, 84 windows, the run of record:
+
+    uv run finders/ubahn/hybrid_finder.py fewest-markings --rows 7 --cols 7 \
+        --out DIR
+
+| Size | Sets | `unique` | `not_unique` | `infeasible` | `timeout` |
+| --- | --- | --- | --- | --- | --- |
+| 0 | 1 | 0 | 1 | 0 | 0 |
+| 1 | 84 | 0 | 79 | 5 | 0 |
+| 2 | 3,486 | 4 | 2,817 | 665 | 0 |
+
+- **Minimum 2, proven on `pysat-lazy`**, 486.8 s wall clock on one core
+  (488.2 s of CPU). The four unique sets are `c1:cross r5c3` and its mirror
+  `r1:cross r3c5`, and `c2:branch r4:branch` and its mirror
+  `c4:branch r2:branch`.
+- **Every count is the filer's.** The spec's scratch loop around `classify`
+  (same engine and limit, no reflection, about 15 minutes for the pairs) had
+  no markings `not_unique`, the singles 79 and 5, the pairs 2,817, 665 and 4,
+  and the same four sets. No number differs.
+- **The reflection halved the solves**: 1,816 sets were solved (1 of size 0,
+  45 of 84, 1,770 of 3,486) and 1,755 copied from a mirror. The slowest set
+  took 15.2 s, so the 60 s limit had room.
+- **No second engine ran 7x7.** The answer stands on `pysat-lazy`; the two
+  engines agree on 4x4 above.
+- **The run's directory** is
+  `docs/research/2026-10-12-u-bahn-fewest-markings/7x7/`: `sets.jsonl`, a line
+  per set, and a hunt directory for each of the four unique sets, each
+  passing `verify`, its record's checkerboard windows exactly its two
+  markings. `render` and `links` read them there. The run was made in
+  another directory and copied in, so a `fewest-markings` rerun into the
+  copy prints the same counts and is then refused by the hunt driver, which
+  holds each hunt to the `--out` it was started with.
+
+Worker's choices, none a ruling:
+
+- **Each set goes through the engine's own `classify`**, the call
+  `hybrid_finder.classify` wraps, since that function returns printed lines.
+- **`--battenberg` is refused** and `--battenberg-only` is accepted as what
+  the command does anyway.
+- **A rerun under another `--timeout` is refused**, as `climb` refuses one:
+  the limit is part of what `sets.jsonl`'s first line records. Sets that
+  timed out are solved again only in a new directory.
+- **A unique set's example is a hunt of seed 0** under the set's conditions,
+  one more solve per set, so the directory is the driver's own and nothing
+  writes a hunt directory by hand. Its name is the set's windows joined by
+  `+`, each `:` as `-`, and `no-markings` for the empty set.
+- **`sets.jsonl`'s first line is the run's config**, as `verified.jsonl`
+  opens with a heading line.
+
 ## Hybrid: Battenberg markings on the Penpa+ link (#24)
 
 `hybrid_finder.py links DIR --battenberg "CELLS" [--battenberg-only]`,

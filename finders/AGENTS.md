@@ -92,6 +92,19 @@ because the checker reads them and nothing under `docs/research/` does
   proven only when one more came back as no grid, never on a time limit
   reached. The 7x7 run of record: the decision log, § Hybrid: the most valid
   circles on number cells.
+  `hybrid_finder.py fewest-markings --out DIR` finds the fewest Battenberg
+  markings that leave exactly one grid with the negative constraint on
+  (spec #29, #30), on the PySAT engines only. It classifies no markings, then
+  every set of 1 window, then every set of 2, the other conditions as fixed
+  background, and stops at the first size with a `unique` set, up to
+  `--max-size K` (3 unless given); `--workers N` splits one size's sets over
+  N processes. Each set tried is a line of `DIR/sets.jsonl`, so a killed run
+  resumes; a mirror pair is solved once where the conditions keep the
+  reflection; each unique set of the smallest size is a hunt directory under
+  `DIR` that `verify`, `render` and `links` read. A set that reached the time
+  limit is named and the minimum is then not called proven. The 4x4 answer
+  and the 7x7 run of record: the decision log, § Hybrid: the fewest Battenberg
+  markings.
   `hybrid_finder.py render DIR` draws each example of a hunt as a picture,
   `DIR/renders/<seed>.png` (`hybrid_render.py`, #791): the board with its
   outside numbers and network, chocolate in one colour and a tint per banana,
