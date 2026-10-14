@@ -17,10 +17,12 @@ each board.
 """
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import human_solver
 from human_solver import Human, load_board, seed_from_link
 
 BOARDS = (
@@ -77,8 +79,56 @@ def test_board27_stops_at_fifty_seven_digits_seven_rungs():
     assert len(h.log) == 7, h.log
 
 
+HERE = Path(__file__).resolve().parent
+BOARD28 = BOARDS / "board28-pair43x25-solved.json"
+
+
+def run_cli(*args, cwd):
+    return subprocess.run(
+        [sys.executable, str(HERE / "human_solver.py"), *args],
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+    )
+
+
+def test_cli_no_arguments_prints_usage_without_traceback():
+    r = run_cli(cwd=HERE)
+    assert r.returncode != 0
+    assert "usage" in r.stderr.lower(), r.stderr
+    assert "Traceback" not in r.stderr, r.stderr
+
+
+def test_cli_from_its_own_directory_finds_default_inputs():
+    r = run_cli(
+        f"../../{BOARD28.relative_to(BOARDS.parents[3])}",
+        "--seed",
+        f"../../{LINK.relative_to(BOARDS.parents[3])}",
+        "--no-check",
+        cwd=HERE,
+    )
+    assert r.returncode == 0, r.stderr
+    assert "solved placed (81, 9) rungs 6" in r.stdout, r.stdout
+
+
+def test_cli_no_check_runs_without_the_npz(tmp_path):
+    saved = human_solver.RESIDUAL_NPZ
+    human_solver.RESIDUAL_NPZ = tmp_path / "absent.npz"
+    try:
+        assert human_solver.main([str(BOARD28), "--seed", str(LINK), "--no-check"]) == 0
+        assert human_solver.main([str(BOARD28)]) != 0  # names the npz, no traceback
+    finally:
+        human_solver.RESIDUAL_NPZ = saved
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):
-            fn()
+            if "tmp_path" in fn.__code__.co_varnames[: fn.__code__.co_argcount]:
+                import tempfile
+
+                with tempfile.TemporaryDirectory() as d:
+                    fn(Path(d))
+            else:
+                fn()
     print("OK")
