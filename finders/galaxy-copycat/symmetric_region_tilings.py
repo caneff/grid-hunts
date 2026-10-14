@@ -1,3 +1,13 @@
+"""Count the tilings of an n x n grid by n point-symmetric n-ominoes (one
+galaxy region each), then list the distinct tilings up to rotation and
+reflection and those with no 1 x n bar.
+
+Arguments: n, the grid side; optional time cap in seconds for the tiling
+search (default 300).
+
+Run from the repo root: uv run finders/galaxy-copycat/symmetric_region_tilings.py <n> [cap]
+"""
+
 import sys
 import time
 
