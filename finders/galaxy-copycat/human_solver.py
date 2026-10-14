@@ -16,6 +16,7 @@ elimination is checked against the known solution when one is given.
     uv run finders/galaxy-copycat/human_solver.py board.json [--seed link.json]
         [--no-locked] [--no-check]
     uv run finders/galaxy-copycat/human_solver.py batch [seed.json|-] [src] [dst]
+    uv run finders/galaxy-copycat/human_solver.py --help
 
 Both modes check each elimination against the solution read from
 `.scratch/copycat-rsl/b14-residual.npz` (gitignored, scratch-only); without
@@ -23,6 +24,7 @@ that file the plain mode needs `--no-check`, and `batch` needs the file.
 Default paths resolve from the repo root, not the working directory.
 """
 
+import argparse
 import json
 import sys
 from collections import defaultdict
@@ -35,10 +37,6 @@ from copycat_rsl_solver import parse_cell
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BOARDS_DIR = REPO_ROOT / "docs/research/2026-09-14-galaxy-copycat/boards"
 RESIDUAL_NPZ = REPO_ROOT / ".scratch/copycat-rsl/b14-residual.npz"
-USAGE = (
-    "usage: human_solver.py board.json [--seed link.json] [--no-locked] [--no-check]\n"
-    "       human_solver.py batch [seed.json|-] [src.jsonl] [dst.jsonl]"
-)
 
 
 def idx(c):
@@ -493,8 +491,8 @@ def batch(
     import residual
 
     f = residual.load(RESIDUAL_NPZ)
-    base = json.loads(Path(BOARDS_DIR / "board25-pair7-relaxed.json").read_text())
-    forced = json.loads(Path(BOARDS_DIR / "board14-forced.json").read_text())
+    base = json.loads(BOARDS_DIR / "board25-pair7-relaxed.json".read_text())
+    forced = json.loads(BOARDS_DIR / "board14-forced.json".read_text())
     rows = [json.loads(line) for line in Path(src).read_text().splitlines()]
     with Path(dst).open("w") as out:
         for n, r in enumerate(rows):
@@ -534,17 +532,44 @@ def batch(
             )
 
 
+def parse_args(argv):
+    if argv[:1] == ["batch"]:
+        ap = argparse.ArgumentParser(prog="human_solver.py batch", allow_abbrev=False)
+        ap.add_argument("seed", nargs="?", help="link-state json, or - for none")
+        ap.add_argument("src", nargs="?", default=None)
+        ap.add_argument("dst", nargs="?", default=None)
+        args = ap.parse_args(argv[1:])
+        args.batch = True
+        return args
+    ap = argparse.ArgumentParser(
+        prog="human_solver.py",
+        allow_abbrev=False,
+        epilog="`human_solver.py batch [seed] [src] [dst]` runs a whole jsonl "
+        "(scratch-only).",
+    )
+    ap.add_argument("board", help="board json with lines and pairs")
+    ap.add_argument("--seed", help="link-state json to seed candidates from")
+    ap.add_argument("--no-locked", action="store_true")
+    ap.add_argument(
+        "--no-check",
+        action="store_true",
+        help="skip the solution check, which needs the scratch npz",
+    )
+    args = ap.parse_args(argv)
+    args.batch = False
+    return args
+
+
 def main(argv):
-    if len(argv) < 1 or argv[0] in ("-h", "--help"):
-        print(USAGE, file=sys.stderr)
-        return 2
-    if argv[0] == "batch":
+    args = parse_args(argv)
+    if args.batch:
         if not RESIDUAL_NPZ.exists():
             print(f"batch needs {RESIDUAL_NPZ} (scratch-only)", file=sys.stderr)
             return 1
-        batch(argv[1] if len(argv) > 1 else None, *argv[2:])
+        extra = {k: v for k, v in (("src", args.src), ("dst", args.dst)) if v}
+        batch(args.seed, **extra)
         return 0
-    check = "--no-check" not in argv
+    check = not args.no_check
     if check and not RESIDUAL_NPZ.exists():
         print(
             f"the solution check needs {RESIDUAL_NPZ} (scratch-only); "
@@ -552,7 +577,7 @@ def main(argv):
             file=sys.stderr,
         )
         return 1
-    board_lines, board_pairs = load_board(argv[0])
+    board_lines, board_pairs = load_board(args.board)
     forced_facts = json.loads((BOARDS_DIR / "board14-forced.json").read_text())
     solution = copycats = None
     if check:
@@ -570,10 +595,12 @@ def main(argv):
         forced_facts,
         solution,
         copycats,
-        locked="--no-locked" not in argv,
+        locked=not args.no_locked,
     )
-    if "--seed" in argv:
-        seed_from_link(human, argv[argv.index("--seed") + 1])
+    if args.seed:
+        seed_from_link(human, args.seed)
+    if not check:
+        print("solution check skipped (--no-check)")
     human.run(verbose=True)
     print(
         "solved" if human.solved() else "STUCK",

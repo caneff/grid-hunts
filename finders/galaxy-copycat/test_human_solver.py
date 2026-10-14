@@ -16,9 +16,12 @@ each board.
     uv run finders/galaxy-copycat/test_human_solver.py
 """
 
+import contextlib
+import io
 import json
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -101,9 +104,9 @@ def test_cli_no_arguments_prints_usage_without_traceback():
 
 def test_cli_from_its_own_directory_finds_default_inputs():
     r = run_cli(
-        f"../../{BOARD28.relative_to(BOARDS.parents[3])}",
+        f"../../{BOARD28.relative_to(human_solver.REPO_ROOT)}",
         "--seed",
-        f"../../{LINK.relative_to(BOARDS.parents[3])}",
+        f"../../{LINK.relative_to(human_solver.REPO_ROOT)}",
         "--no-check",
         cwd=HERE,
     )
@@ -111,24 +114,62 @@ def test_cli_from_its_own_directory_finds_default_inputs():
     assert "solved placed (81, 9) rungs 6" in r.stdout, r.stdout
 
 
-def test_cli_no_check_runs_without_the_npz(tmp_path):
+def call_main(*argv):
+    out, err = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        try:
+            code = human_solver.main(list(argv))
+        except SystemExit as e:  # argparse refusals
+            code = e.code
+    return code, out.getvalue(), err.getvalue()
+
+
+def with_absent_npz(fn):
     saved = human_solver.RESIDUAL_NPZ
-    human_solver.RESIDUAL_NPZ = tmp_path / "absent.npz"
-    try:
-        assert human_solver.main([str(BOARD28), "--seed", str(LINK), "--no-check"]) == 0
-        assert human_solver.main([str(BOARD28)]) != 0  # names the npz, no traceback
-    finally:
-        human_solver.RESIDUAL_NPZ = saved
+    with tempfile.TemporaryDirectory() as d:
+        human_solver.RESIDUAL_NPZ = Path(d) / "absent.npz"
+        try:
+            fn(human_solver.RESIDUAL_NPZ)
+        finally:
+            human_solver.RESIDUAL_NPZ = saved
+
+
+def test_cli_no_check_runs_without_the_npz_and_says_so():
+    def body(npz):
+        code, out, err = call_main(str(BOARD28), "--seed", str(LINK), "--no-check")
+        assert code == 0, err
+        assert "solution check skipped" in out, out
+        assert "solved placed (81, 9) rungs 6" in out, out
+
+    with_absent_npz(body)
+
+
+def test_cli_plain_and_batch_modes_name_the_missing_npz():
+    def body(npz):
+        for argv in ([str(BOARD28)], ["batch"]):
+            code, out, err = call_main(*argv)
+            assert code == 1, (argv, code)
+            assert str(npz) in err, err
+
+    with_absent_npz(body)
+
+
+def test_cli_refuses_unknown_flags_and_a_dangling_seed():
+    for argv in ([str(BOARD28), "--no-lock"], [str(BOARD28), "--seed"]):
+        code, out, err = call_main(*argv)
+        assert code == 2, (argv, code)
+        assert "usage" in err.lower(), err
+
+
+def test_default_npz_resolves_from_the_repo_root():
+    assert human_solver.RESIDUAL_NPZ == (
+        human_solver.REPO_ROOT / ".scratch/copycat-rsl/b14-residual.npz"
+    )
+    assert Path(__file__).resolve().parents[2] == human_solver.REPO_ROOT
 
 
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):
-            if "tmp_path" in fn.__code__.co_varnames[: fn.__code__.co_argcount]:
-                import tempfile
-
-                with tempfile.TemporaryDirectory() as d:
-                    fn(Path(d))
-            else:
-                fn()
+            fn()
     print("OK")
