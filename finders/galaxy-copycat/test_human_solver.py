@@ -147,7 +147,7 @@ def test_cli_no_check_runs_without_the_npz_and_says_so():
 def test_cli_plain_and_batch_modes_name_the_missing_npz():
     def body(npz):
         for argv in ([str(BOARD28)], ["batch"]):
-            code, out, err = call_main(*argv)
+            code, _out, err = call_main(*argv)
             assert code == 1, (argv, code)
             assert str(npz) in err, err
 
@@ -156,7 +156,7 @@ def test_cli_plain_and_batch_modes_name_the_missing_npz():
 
 def test_cli_refuses_unknown_flags_and_a_dangling_seed():
     for argv in ([str(BOARD28), "--no-lock"], [str(BOARD28), "--seed"]):
-        code, out, err = call_main(*argv)
+        code, _out, err = call_main(*argv)
         assert code == 2, (argv, code)
         assert "usage" in err.lower(), err
 
