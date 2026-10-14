@@ -18,7 +18,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "hunt"))
+sys.path.insert(0, str(HERE.parent / "hunt"))
 import hybrid
 import time_engines
 from cli_checks import check, finish

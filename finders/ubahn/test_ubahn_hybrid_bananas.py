@@ -22,7 +22,6 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import json
 import random
-import subprocess
 import tempfile
 
 import brute
@@ -32,7 +31,6 @@ import hybrid_sat
 import network
 import time_bananas
 from cli_checks import check, finish, run_cli
-from subprocess_env import success_env
 
 FINDER = HERE / "hybrid_finder.py"
 BOARD = ["--rows", "4", "--cols", "4", "--timeout", "20"]
@@ -355,12 +353,7 @@ def test_flag():
             == f"hybrid_finder: --min-bananas takes 1 or more, got {bad}",
         )
     for bad in ("0", "-1"):
-        r = subprocess.run(
-            [sys.executable, str(HERE / "brute.py"), "4", "4", "--min-bananas", bad],
-            capture_output=True,
-            text=True,
-            env=success_env(),
-        )
+        r = run_cli(HERE / "brute.py", "4", "4", "--min-bananas", bad)
         check(
             f"brute.py --min-bananas {bad} is refused the same way",
             r.returncode == 2

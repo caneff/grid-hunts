@@ -2,6 +2,7 @@
 
 Run by name: `uv run finders/hunt/test_cli_checks.py`."""
 
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -51,6 +52,9 @@ with tempfile.TemporaryDirectory() as tmp:
         "print(repr(sys.argv[1:]))\n"
         "print(os.environ['HUNT_FAKE_LOAD1'])\n"
     )
+    # A parent that is itself busy: the idle value must come from run_cli,
+    # not from the environment the test happens to run in.
+    os.environ["HUNT_FAKE_LOAD1"] = "99"
     r = cli_checks.run_cli(echo, 4, Path("x"), "s")
     lines = r.stdout.splitlines()
     verify(

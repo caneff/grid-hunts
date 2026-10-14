@@ -55,8 +55,7 @@ check(
 
 with tempfile.TemporaryDirectory() as d:
     out = Path(d) / "hunt"
-    r = run_cli(HERE /
-        "hybrid_finder.py", *BOARD, "--battenberg", "r1c3",
+    r = run_cli(HERE / "hybrid_finder.py", *BOARD, "--battenberg", "r1c3",
         "--out", str(out), "--seeds=0:6", "--workers", "1",
     )  # fmt: skip
     examples = read_jsonl(out / "examples.jsonl") if r.returncode == 0 else []
