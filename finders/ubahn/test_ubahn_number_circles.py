@@ -24,6 +24,7 @@ import hybrid_finder
 import hybrid_model
 import hybrid_sat
 import network
+from cli_checks import check, finish
 from ortools.sat.python import cp_model
 from pysat.solvers import Cadical195
 
@@ -31,16 +32,6 @@ ROWS = COLS = 4
 # The most valid circles on number cells any of the 18 grids holds.
 MOST = 2
 TIME_LIMIT = 20.0
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
 
 
 def split(net):
@@ -244,4 +235,4 @@ word, _ = hybrid_model.classify(
 )
 check(f"cpsat, at least {MOST + 1}: infeasible ({word})", word == "infeasible")
 
-sys.exit(0 if ok else 1)
+finish()

@@ -12,7 +12,6 @@ The note: docs/research/2026-10-10-u-bahn-penpa-link.md
 """
 
 import json
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -22,21 +21,11 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import network
 import penpa
+from cli_checks import check, finish, run_cli
 from penpa_decode import Decoded, edges_of, numbers_of, unabbreviate
-from subprocess_env import success_env
 
 FIXTURES = HERE / "fixtures"
 FINDER = HERE / "ubahn_finder.py"
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
 
 
 def read(path):
@@ -326,18 +315,10 @@ check("encoding is deterministic", penpa.link(ROWS, COLS, BLOCK) == url)
 
 
 # --- The `links` subcommand, over a fresh hunt: no link on stdout or stderr
-def run_cli(*args):
-    return subprocess.run(
-        [sys.executable, str(FINDER), *args],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
-
-
 with tempfile.TemporaryDirectory() as tmp:
     out = Path(tmp) / "hunt"
     r = run_cli(
+        FINDER,
         "--rows",
         "4",
         "--cols",
@@ -369,7 +350,7 @@ with tempfile.TemporaryDirectory() as tmp:
     ]
     check(f"the hunt found examples ({len(records)})", len(records) >= 2)
 
-    r = run_cli("links", str(out))
+    r = run_cli(FINDER, "links", str(out))
     check(f"`links` exits 0 ({r.stderr[-300:]})", r.returncode == 0)
     check(
         "`links` prints no link: under 500 characters on stdout and stderr",
@@ -407,7 +388,7 @@ with tempfile.TemporaryDirectory() as tmp:
         good &= cols_ == [[want[1][c][k] for k in order] for c in range(4)]
     check("every hunt link decodes to its record's numbers and edges", good)
 
-    r = run_cli("links", str(out), "--blank-number")
+    r = run_cli(FINDER, "links", str(out), "--blank-number")
     check("`links --blank-number` exits 0", r.returncode == 0)
     first = Decoded((out / "links" / f"{seeds[0]}.txt").read_text().strip())
     check(
@@ -415,7 +396,7 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
     (out / "links" / "999.txt").write_text("stale\n")
-    r = run_cli("links", str(out))
+    r = run_cli(FINDER, "links", str(out))
     check(
         "a rerun replaces the link set: a stale file goes, the variant is named",
         r.returncode == 0
@@ -423,7 +404,7 @@ with tempfile.TemporaryDirectory() as tmp:
         and "without the blank number" in r.stdout,
     )
 
-    r = run_cli("links", str(Path(tmp) / "nowhere"))
+    r = run_cli(FINDER, "links", str(Path(tmp) / "nowhere"))
     check(
         "`links` on a missing directory exits 2 and says it is not a hunt directory",
         r.returncode == 2 and "has no examples.jsonl: not a hunt directory" in r.stderr,
@@ -438,7 +419,7 @@ with tempfile.TemporaryDirectory() as tmp:
         + json.dumps({"seed": 99, "outcome": "example"})
         + "\n"
     )
-    r = run_cli("links", str(bad))
+    r = run_cli(FINDER, "links", str(bad))
     check(
         "`links` refuses an example count that disagrees with progress.jsonl, "
         "naming it, and writes no links directory",
@@ -447,4 +428,4 @@ with tempfile.TemporaryDirectory() as tmp:
         and not (bad / "links").exists(),
     )
 
-sys.exit(0 if ok else 1)
+finish()

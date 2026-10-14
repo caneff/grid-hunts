@@ -40,22 +40,13 @@ import brute
 import hybrid
 import hybrid_finder
 import hybrid_render
+from cli_checks import check, finish
 from penpa_decode import Decoded, battenberg_vertices
 from subprocess_env import success_env
 from verified_io import read_verified
 
 BOARD = ["--rows", "4", "--cols", "4", "--timeout", "20"]
 CIRCLE = "r2c4"
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
 
 
 def run_finder(*args):
@@ -212,4 +203,4 @@ with tempfile.TemporaryDirectory() as d:
         and not (Path(d) / "unused").exists(),
     )
 
-sys.exit(0 if ok else 1)
+finish()

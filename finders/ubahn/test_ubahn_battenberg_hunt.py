@@ -16,7 +16,6 @@ One CaDiCaL thread; about forty seconds.
 """
 
 import json
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -27,37 +26,14 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import hybrid
 import hybrid_finder
+from cli_checks import check, finish, read_jsonl, run_cli
 from dedupe import IDENTITY
-from subprocess_env import success_env
 from verified_io import read_verified
 
 FINDER = HERE / "hybrid_finder.py"
 ENGINES = ("pysat-lazy", "pysat-propagator")
 # A record carries its own board and conditions.
 READER = hybrid_finder.HybridFinder(hybrid.Conditions(4, 4))
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
-
-def run_cli(*args):
-    return subprocess.run(
-        [sys.executable, str(FINDER), *args],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
-
-
-def read_jsonl(path):
-    return [json.loads(line) for line in path.read_text().splitlines() if line]
 
 
 def transposed(net):
@@ -84,6 +60,7 @@ def hunt(d, engine, name, *flags, side=4, seeds=20):
     out = Path(d) / f"{engine} {name}"
     board = ["--rows", str(side), "--cols", str(side), "--timeout", "10"]
     r = run_cli(
+        FINDER,
         *board,
         "--engine",
         engine,
@@ -104,7 +81,7 @@ def hunt(d, engine, name, *flags, side=4, seeds=20):
         and summary["examples"] + summary["duplicates"] + summary["empty"] == seeds
         and summary["rejected"] == 0,
     )
-    r = run_cli("verify", str(out))
+    r = run_cli(FINDER, "verify", str(out))
     _, verdicts = read_verified(out / "verified.jsonl") if examples else (None, [])
     check(
         f"{label}: `verify` passes every example ({len(verdicts)})",
@@ -182,7 +159,7 @@ for engine in ENGINES:
         for field in ("battenberg", "battenberg_only", "checkerboard_windows"):
             del record[field]
         (old / "examples.jsonl").write_text(json.dumps(record) + "\n")
-        r = run_cli("verify", str(old))
+        r = run_cli(FINDER, "verify", str(old))
         asked = READER.candidate_from_record(record).conditions
         check(
             f"{engine}: a record older than the condition verifies, as no "
@@ -225,7 +202,7 @@ for engine in ENGINES:
             + json.dumps({**examples[0], "battenberg_only": True})
             + "\n"
         )
-        r = run_cli("verify", str(bad))
+        r = run_cli(FINDER, "verify", str(bad))
         verdicts = read_verified(bad / "verified.jsonl")[1]
         check(
             f"{engine}: `verify` rejects a marking that fails and a forbidden "
@@ -327,7 +304,7 @@ for engine in ENGINES:
     # `classify`: the decision log's table, word for word.
     for flags, word, said in TABLE:
         label = f"{engine}, classify {' '.join(flags) or 'no condition'}"
-        r = run_cli(
+        r = run_cli(FINDER,
             "classify", "--rows", "4", "--cols", "4", "--timeout", "10",
             "--engine", engine, *flags,
         )  # fmt: skip
@@ -346,7 +323,9 @@ for engine in ENGINES:
             out = Path(d) / str(i)
             flags = ["--rows", "4", "--cols", "4", "--engine", engine]
             flags += ["--battenberg", name]
-            r = run_cli(*flags, "--out", str(out), "--seeds=0:1", "--workers", "1")
+            r = run_cli(
+                FINDER, *flags, "--out", str(out), "--seeds=0:1", "--workers", "1"
+            )
             check(
                 f"{engine}: hunt --battenberg {name} is refused, exit 2, naming "
                 f"{off} ({r.stderr.strip()[-120:]!r})",
@@ -355,7 +334,7 @@ for engine in ENGINES:
                 and f"{off} is off it" in r.stderr
                 and not out.exists(),
             )
-            r = run_cli("classify", *flags)
+            r = run_cli(FINDER, "classify", *flags)
             check(
                 f"{engine}: classify --battenberg {name} is refused, exit 2, "
                 f"naming {off}",
@@ -373,14 +352,16 @@ with tempfile.TemporaryDirectory() as d:
     ):
         out = Path(d) / str(i)
         board = ["--rows", "4", "--cols", "4", "--engine", "cpsat"]
-        r = run_cli(*board, *flags, "--out", str(out), "--seeds=0:1", "--workers", "1")
+        r = run_cli(
+            FINDER, *board, *flags, "--out", str(out), "--seeds=0:1", "--workers", "1"
+        )
         reason = f"hybrid_finder: {named} is on the PySAT engines only"
         check(
             f"hunt --engine cpsat {' '.join(flags)} is refused, exit 2, naming "
             f"the flag ({r.stderr.strip()[-160:]!r})",
             r.returncode == 2 and reason in r.stderr and not out.exists(),
         )
-        r = run_cli("classify", *board, *flags)
+        r = run_cli(FINDER, "classify", *board, *flags)
         check(
             f"classify --engine cpsat {' '.join(flags)} is refused, exit 2, "
             f"naming the flag",
@@ -394,7 +375,7 @@ for command in ("verify", "render"):
         (["--battenberg", "c1:turn"], "--battenberg"),
         (["--battenberg-only"], "--battenberg-only"),
     ):
-        r = run_cli(*flags, command, "nowhere")
+        r = run_cli(FINDER, *flags, command, "nowhere")
         check(
             f"{command} {' '.join(flags)} is refused, exit 2, naming the flag",
             r.returncode == 2
@@ -418,7 +399,7 @@ for names, kept in (
         (group != IDENTITY) is kept,
     )
 
-r = run_cli("--help")
+r = run_cli(FINDER, "--help")
 check(
     "--help describes --battenberg and --battenberg-only",
     r.returncode == 0
@@ -427,4 +408,4 @@ check(
     and "checkerboard window" in r.stdout,
 )
 
-sys.exit(0 if ok else 1)
+finish()

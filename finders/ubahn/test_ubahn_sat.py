@@ -8,24 +8,15 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "hunt"))
 import brute
 import model
 import network
 import sat_model
 import time_sat
+from cli_checks import check, finish
 
 TIME_LIMIT = 10.0
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
 
 # The fixture writes a row or column as cross, branch, straight, turn and leaves the
 # blank count out. A 3x3 board whose top-left 2x2 block is a loop has blank
@@ -248,4 +239,4 @@ for puzzle in puzzles:
         and network.outside_numbers(found, rows, cols) == numbers,
     )
 
-sys.exit(0 if ok else 1)
+finish()
