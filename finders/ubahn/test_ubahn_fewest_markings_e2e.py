@@ -26,7 +26,6 @@ so every set is solved.
 """
 
 import json
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -40,31 +39,12 @@ import brute
 import hybrid
 import hybrid_finder
 import hybrid_render
+from cli_checks import check, finish, run_cli
 from penpa_decode import Decoded, battenberg_vertices
-from subprocess_env import success_env
 from verified_io import read_verified
 
 BOARD = ["--rows", "4", "--cols", "4", "--timeout", "20"]
 CIRCLE = "r2c4"
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
-
-def run_finder(*args):
-    return subprocess.run(
-        [sys.executable, str(HERE / "hybrid_finder.py"), *map(str, args)],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
 
 
 def pixels(image, box, colour):
@@ -97,7 +77,15 @@ check(
 with tempfile.TemporaryDirectory() as d:
     out = Path(d) / "fewest"
     example = out / "+".join(name.replace(":", "-") for name in names)
-    r = run_finder("fewest-markings", *BOARD, "--circles", CIRCLE, "--out", out)
+    r = run_cli(
+        HERE / "hybrid_finder.py",
+        "fewest-markings",
+        *BOARD,
+        "--circles",
+        CIRCLE,
+        "--out",
+        out,
+    )
     report = r.stdout
     check(
         f"fewest-markings, {CIRCLE} circled, no --engine: the brute force's "
@@ -112,7 +100,7 @@ with tempfile.TemporaryDirectory() as d:
         ],
     )
 
-    r = run_finder("verify", example)
+    r = run_cli(HERE / "hybrid_finder.py", "verify", example)
     stamp, verdicts = read_verified(example / "verified.jsonl")
     check(
         "verify, the solver-free reader, passes the example",
@@ -139,7 +127,7 @@ with tempfile.TemporaryDirectory() as d:
         == sorted(names),
     )
 
-    r = run_finder("render", example)
+    r = run_cli(HERE / "hybrid_finder.py", "render", example)
     # The same grid drawn in process, for where each cell's box is.
     drawn = hybrid_render.Picture(
         grid, 4, 4, [hybrid.parse_cell(CIRCLE)], False, windows
@@ -179,7 +167,7 @@ with tempfile.TemporaryDirectory() as d:
             ),
         )
 
-    r = run_finder(
+    r = run_cli(HERE / "hybrid_finder.py",
         "--circles", CIRCLE, "--battenberg", " ".join(names), "--battenberg-only",
         "links", example,
     )  # fmt: skip
@@ -194,7 +182,15 @@ with tempfile.TemporaryDirectory() as d:
     )
 
     before = (out / "sets.jsonl").read_text()
-    r = run_finder("fewest-markings", *BOARD, "--circles", CIRCLE, "--out", out)
+    r = run_cli(
+        HERE / "hybrid_finder.py",
+        "fewest-markings",
+        *BOARD,
+        "--circles",
+        CIRCLE,
+        "--out",
+        out,
+    )
     check(
         "a rerun into the finished directory: the same report, no set solved again",
         r.returncode == 0
@@ -202,8 +198,14 @@ with tempfile.TemporaryDirectory() as d:
         and (out / "sets.jsonl").read_text() == before,
     )
 
-    r = run_finder(
-        "fewest-markings", *BOARD, "--engine", "cpsat", "--out", Path(d) / "unused"
+    r = run_cli(
+        HERE / "hybrid_finder.py",
+        "fewest-markings",
+        *BOARD,
+        "--engine",
+        "cpsat",
+        "--out",
+        Path(d) / "unused",
     )
     check(
         "fewest-markings on cpsat is refused by name, exit 2, before any solve",
@@ -212,4 +214,4 @@ with tempfile.TemporaryDirectory() as d:
         and not (Path(d) / "unused").exists(),
     )
 
-sys.exit(0 if ok else 1)
+finish()

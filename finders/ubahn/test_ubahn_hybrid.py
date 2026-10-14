@@ -7,19 +7,12 @@ cells, #782) read off hand-made grids, with no solver.
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE.parent / "hunt"))
 import hybrid
 import network
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
+from cli_checks import check, finish
 
 
 def ring(top, left, bottom, right):
@@ -410,4 +403,4 @@ check(
 )
 
 
-sys.exit(0 if ok else 1)
+finish()

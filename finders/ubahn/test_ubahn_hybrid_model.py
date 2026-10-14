@@ -28,25 +28,18 @@ import random
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import hybrid
 import hybrid_model
 import network
+from cli_checks import check, finish
 from ortools.sat.python import cp_model
 
 TIME_LIMIT = 10.0
 TWO_CROSSES = network.Exactly.parse("2:cross:r2")
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
 
 
 def said(call, *args, **kwargs):
@@ -301,4 +294,4 @@ check(
     not wrongly_taken,
 )
 
-sys.exit(0 if ok else 1)
+finish()

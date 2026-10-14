@@ -28,27 +28,19 @@ import subprocess
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import hybrid
 import model
 import network
+from cli_checks import check, finish
 from ortools.sat.python import cp_model
 
 ROWS = COLS = 4
 EXACTLY = network.Exactly(2, network.CROSS, "r", 1)
 TIME_LIMIT = 10.0
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
 
 space = brute.two_crosses_in_r2()
 check("two crosses in r2 leave 17 free edges", space.free_edges == 17)
@@ -274,4 +266,4 @@ check(
     and "r4c5 is off it" in r.stderr,
 )
 
-sys.exit(0 if ok else 1)
+finish()

@@ -22,24 +22,17 @@ One CaDiCaL thread; about twenty seconds.
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import hybrid
 import hybrid_model
 import hybrid_sat
+from cli_checks import check, finish
 
 TIME_LIMIT = 10.0
 ENGINES = (hybrid_sat.LAZY, hybrid_sat.PROPAGATOR)
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
 
 
 def kept(grids, side, marked, only):
@@ -268,4 +261,4 @@ for name, conditions in (
         "Battenberg markings are on the PySAT engines only" in refused,
     )
 
-sys.exit(0 if ok else 1)
+finish()

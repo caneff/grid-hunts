@@ -14,7 +14,6 @@ before any engine is asked. One CP-SAT worker; about twenty seconds in all.
 """
 
 import json
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -26,35 +25,12 @@ import brute
 import hybrid
 import hybrid_finder
 import network
+from cli_checks import check, finish, read_jsonl, run_cli
 from dedupe import canonical_key
-from subprocess_env import success_env
 from verified_io import read_verified
 
 FINDER = HERE / "hybrid_finder.py"
 BOARD = ["--rows", "4", "--cols", "4", "--timeout", "10", "--engine", "cpsat"]
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
-
-def run_cli(*args):
-    return subprocess.run(
-        [sys.executable, str(FINDER), *args],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
-
-
-def read_jsonl(path):
-    return [json.loads(line) for line in path.read_text().splitlines() if line]
 
 
 def record(net, rows=4, cols=4, circles=(), exactly=None, blank_strip=False):
@@ -146,7 +122,9 @@ def hunt(d, name, *flags, seeds="0:40"):
     """Run a hunt with these flags; returns (exit, examples, summary,
     progress, run.json's config)."""
     out = Path(d) / name
-    r = run_cli(*BOARD, *flags, "--out", str(out), f"--seeds={seeds}", "--workers", "1")
+    r = run_cli(
+        FINDER, *BOARD, *flags, "--out", str(out), f"--seeds={seeds}", "--workers", "1"
+    )
     check(f"{name}: the hunt exits 0 (stderr: {r.stderr[-500:]})", r.returncode == 0)
     return (
         read_jsonl(out / "examples.jsonl"),
@@ -444,7 +422,7 @@ with tempfile.TemporaryDirectory() as d:
     (out / "examples.jsonl").write_text(
         "".join(json.dumps(rec) + "\n" for _, rec, _, _ in cases)
     )
-    r = run_cli("verify", str(out))
+    r = run_cli(FINDER, "verify", str(out))
     check(f"verify exits 0 (stderr: {r.stderr[-500:]})", r.returncode == 0)
     _, verdicts = read_verified(out / "verified.jsonl")
     for (name, _, want, reason), v in zip(cases, verdicts, strict=True):
@@ -468,7 +446,7 @@ with tempfile.TemporaryDirectory() as d:
         (bad / "examples.jsonl").write_text(
             json.dumps({**record(FOUR_LOOPS), **damage}) + "\n"
         )
-        r = run_cli("verify", str(bad))
+        r = run_cli(FINDER, "verify", str(bad))
         check(
             f"verify refuses {name}, exit 2, naming {reason!r}",
             r.returncode == 2
@@ -490,7 +468,7 @@ for flags, word, said in (
     (["--exactly", "2:cross:r2", "--circles", "r2c4"], "infeasible", "no grid"),
 ):
     label = " ".join(flags) or "no condition"
-    r = run_cli("classify", *BOARD, *flags)
+    r = run_cli(FINDER, "classify", *BOARD, *flags)
     first = r.stdout.splitlines()[:1]
     check(
         f"classify {label}: {word}, {said} ({first}, stderr: {r.stderr[-300:]})",
@@ -498,7 +476,7 @@ for flags, word, said in (
     )
     # A time limit reached is a timeout whatever the true answer is.
     for limit in ("0", "-1"):
-        r = run_cli(
+        r = run_cli(FINDER,
             "classify", "--rows", "4", "--cols", "4", "--engine", "cpsat",
             *flags, f"--timeout={limit}",
         )  # fmt: skip
@@ -511,7 +489,7 @@ for flags, word, said in (
 
 # The one grid of a unique condition is drawn under the answer, circles in
 # brackets.
-r = run_cli("classify", *BOARD, "--circles", "c1:turn r2c4")
+r = run_cli(FINDER, "classify", *BOARD, "--circles", "c1:turn r2c4")
 (only,) = meeting(["c1:turn", "r2c4"])
 check(
     "classify draws the one grid of a unique condition",
@@ -533,18 +511,18 @@ with tempfile.TemporaryDirectory() as d:
         )
     ):
         out = Path(d) / str(i)
-        r = run_cli(*flags, "--out", str(out), "--seeds=0:1", "--workers", "1")
+        r = run_cli(FINDER, *flags, "--out", str(out), "--seeds=0:1", "--workers", "1")
         check(
             f"hunt {' '.join(flags)} is refused, exit 2, naming {reason!r}",
             r.returncode == 2 and reason in r.stderr and not out.exists(),
         )
-        r = run_cli("classify", *flags)
+        r = run_cli(FINDER, "classify", *flags)
         check(
             f"classify {' '.join(flags)} is refused, exit 2, naming {reason!r}",
             r.returncode == 2 and reason in r.stderr and not r.stdout,
         )
     # The blank number cell is on the board once the blank strip is on.
-    r = run_cli(
+    r = run_cli(FINDER,
         "classify", *board, "--engine", "cpsat", "--blank-strip",
         "--circles", "r1:blank",
     )  # fmt: skip
@@ -553,7 +531,7 @@ with tempfile.TemporaryDirectory() as d:
         r.returncode == 0 and r.stdout.startswith("infeasible: no grid"),
     )
 
-r = run_cli("--help")
+r = run_cli(FINDER, "--help")
 check(
     "--help prints the usage text, naming every condition and classify",
     r.returncode == 0
@@ -577,7 +555,7 @@ check(
 # The default engine is PySAT with lazy cuts (Chris's ruling, 2026-10-11).
 with tempfile.TemporaryDirectory() as d:
     out = Path(d) / "default engine"
-    r = run_cli(
+    r = run_cli(FINDER,
         "--rows", "4", "--cols", "4", "--timeout", "10",
         "--out", str(out), "--seeds=0:3", "--workers", "1",
     )  # fmt: skip
@@ -590,4 +568,4 @@ with tempfile.TemporaryDirectory() as d:
         == "pysat-lazy",
     )
 
-sys.exit(0 if ok else 1)
+finish()
