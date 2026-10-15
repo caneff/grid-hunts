@@ -5,12 +5,13 @@ black-box, on each PySAT engine.
 top-left cell, and `--battenberg-only` turns the negative constraint on. On
 4x4 every example of a hunt must be one of the brute force's grids for its
 conditions and pass the hunt's own `verify`, which is the solver-free rule
-reader, and `classify` must give the word of every row of the decision log's
-table, § Hybrid: Battenberg markings, the 4x4 answers. Then the record's
+reader, and `classify` must give the word of four rows of the decision log's
+table, § Hybrid: Battenberg markings, the 4x4 answers (the sat suite holds
+every row). Then the record's
 fields, a record older than the condition, the refusals, and on 5x5 the
 symmetry the markings leave.
 
-One CaDiCaL thread; about forty seconds.
+One CaDiCaL thread; about thirty-five seconds.
 
     uv run finders/ubahn/test_ubahn_battenberg_hunt.py
 """
@@ -101,26 +102,19 @@ def hunt(d, engine, name, *flags, side=4, seeds=20):
     )
 
 
+# Four rows of the decision log's table, one of each word and each flag
+# through the CLI's `classify`. Every row of the table, on both engines, is
+# held in process by `test_ubahn_battenberg_sat.py`'s TABLE, which checks the
+# brute force's count and the engine's classification word for each row.
 TABLE = (
     ([], "not_unique", "more than one grid"),
-    (["--battenberg-only"], "not_unique", "more than one grid"),
-    *(
-        (["--battenberg", name], "unique", "exactly one grid")
-        for name in ("c1:turn", "c2:turn", "r3c1", "r1:turn", "r2:turn", "r1c3")
-    ),
+    (["--battenberg", "c1:turn"], "unique", "exactly one grid"),
     (
         ["--battenberg", "c1:turn c2:turn r3c1", "--battenberg-only"],
         "unique",
         "exactly one grid",
     ),
-    (
-        ["--battenberg", "r1:turn r2:turn r1c3", "--battenberg-only"],
-        "unique",
-        "exactly one grid",
-    ),
     (["--battenberg", "c1:turn", "--battenberg-only"], "infeasible", "no grid"),
-    (["--battenberg", "c1:turn r1:turn"], "infeasible", "no grid"),
-    (["--battenberg", "r1c1"], "infeasible", "no grid"),
 )
 
 for engine in ENGINES:
@@ -301,7 +295,7 @@ for engine in ENGINES:
             any(transposed(a) == b for a in nets for b in nets if a != b),
         )
 
-    # `classify`: the decision log's table, word for word.
+    # `classify` through the CLI: the table's word for each row of TABLE.
     for flags, word, said in TABLE:
         label = f"{engine}, classify {' '.join(flags) or 'no condition'}"
         r = run_cli(FINDER,
