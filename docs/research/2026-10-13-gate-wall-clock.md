@@ -1,7 +1,7 @@
 # The gate's wall clock, and which U-Bahn tests overlap (#18)
 
 Measured 2026-10-13 on the shared box, one suite at a time, one core each
-(`tests/all.sh --list`, each suite timed alone). The sum over the gate's 56
+(`tests/all.sh --list`, each suite timed alone). XX
 non-lint suites is 564 s; `finders/ubahn/` is 429 s of it.
 
 ## Slowest suites
