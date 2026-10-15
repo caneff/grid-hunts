@@ -7,9 +7,9 @@ on:
 
 jobs:
   # The whole gate is `just check`: ruff and the finder tests. uv is the only
-  # tool installed; it fetches Python, ruff and just itself. The runner takes
-  # its suite count from GATE_JOBS: the runner has 4 vCPUs and every suite is
-  # one process, so 4 suites at once.
+  # tool installed; it fetches Python, ruff and just itself. tests/all.sh takes
+  # its suite count from GATE_JOBS: the Actions VM has 4 vCPUs and every suite
+  # is one process, so 4 suites at once.
   check:
     runs-on: ubuntu-latest
     steps:

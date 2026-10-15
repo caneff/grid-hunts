@@ -2,8 +2,9 @@
 # The gate's one listing of suites. A suite is one command (`uv run <file>`,
 # one lint step), and it is its own label. With no flag this runs every suite
 # `just check` runs, one at a time unless asked. Test files are found by glob
-# from the tree on disk, so a new test needs no edit here; the lists below are
-# the exceptions.
+# from the tree on disk, so a new test needs no edit here; the lists below and
+# the runner's own test (`tests/test_all_sh.py`, in `suites`) are the
+# exceptions.
 #
 #   bash tests/all.sh [--list] [--group <group>] [--jobs <n>]
 #
@@ -11,14 +12,17 @@
 # `--group <group>` runs one group: `lint`, `test`, or `slow` (outside the
 # gate, run by hand through `just test-slow`).
 #
-# `--jobs <n>` runs n suites at once (default 1, or $GATE_JOBS when set: CI
-# sets it, so a local run stays one suite at a time on the shared box). The
-# suites are independent processes, each with its own temp directories.
+# `--jobs <n>` runs n suites at once (default $GATE_JOBS when set, else 1: CI
+# sets the variable, so a local run stays one suite at a time on the shared
+# box). The suites are independent processes, each with its own temp
+# directories.
 #
 # One line per suite as it finishes (`PASS <suite>`); a failing suite prints
 # `FAIL <suite>` and its whole output, no further suite starts, the suites
 # already running finish, and the run exits 1. The last line states what ran:
-# `N of M suites passed`.
+# `N of M suites passed`, or `N of M suites passed, K failed: <suites>`. A
+# suite that reports neither pass nor fail (its shell was killed) fails the run
+# as well: every suite selected must have passed.
 set -uf
 # A caller's GIT_DIR or GIT_INDEX_FILE (a git hook sets both) would point every
 # suite that calls git at that caller's repository.
@@ -43,7 +47,7 @@ listed() { case " $1 " in *" $2 "*) return 0 ;; esac; return 1; } # <list> <file
 suites() {
   local f
   printf 'lint\t%s\n' \
-    "uvx ruff check finders" "uvx ruff format --check finders" "uv lock --check"
+    "uvx ruff check finders tests" "uvx ruff format --check finders tests" "uv lock --check"
   printf 'test\tuv run tests/test_all_sh.py\n'
   for f in finders/**/test_*.py; do
     if listed "$finder_slow" "$f"; then continue
@@ -96,31 +100,42 @@ if [ "$list_only" = 1 ]; then [ -z "$selected" ] || printf '%s\n' "$selected"; e
 
 total=$(grep -c . <<<"$selected")
 
-# One suite: its PASS line (and a tally mark), or its FAIL line and whole
-# output (and its name on the failed list) with exit 255, which makes xargs
-# start no further suite. Run in a child bash, so it is exported.
+# One suite, run in the background of this shell: a PASS line and its name on
+# the passed list, or a FAIL line with its whole output and its name on the
+# failed list. A suite this function never finishes (its shell killed) is on
+# neither list, which the count below refuses.
 run_suite() { # <suite command>
   local out
-  set -f
   if out=$($1 2>&1 </dev/null); then
     echo "PASS $1"
     echo "$1" >>"$state/passed"
   else
-    printf 'FAIL %s\n%s\n' "$1" "$out"
     echo "$1" >>"$state/failed"
-    exit 255
+    printf 'FAIL %s\n%s\n' "$1" "$out"
   fi
 }
-export -f run_suite
 
 state=$(mktemp -d) || exit 1
 trap 'rm -rf "$state"' EXIT
-export state
 touch "$state/passed" "$state/failed"
-grep . <<<"$selected" | xargs -d '\n' -n1 -P "$jobs" bash -c 'run_suite "$0"'
+while IFS= read -r suite; do
+  [ -n "$suite" ] || continue
+  while [ "$(jobs -rp | wc -l)" -ge "$jobs" ]; do wait -n; done
+  # A failure starts no further suite; those already running finish below.
+  [ -s "$state/failed" ] && break
+  run_suite "$suite" &
+done <<<"$selected"
+wait
+
 passed=$(grep -c . "$state/passed")
-if [ -s "$state/failed" ]; then
-  echo "$passed of $total suites passed before $(head -n1 "$state/failed") failed$note"
+failed=$(grep -c . "$state/failed")
+if [ "$failed" -gt 0 ]; then
+  echo "$passed of $total suites passed, $failed failed: $(paste -sd';' "$state/failed")$note"
+  exit 1
+fi
+# Every suite must have said pass or fail; one that said neither was killed.
+if [ "$passed" -ne "$total" ]; then
+  echo "$passed of $total suites passed, the rest reported nothing$note"
   exit 1
 fi
 echo "$passed of $total suites passed$note"

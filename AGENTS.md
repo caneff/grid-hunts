@@ -36,8 +36,9 @@ the U-Bahn finder's engines and flags. Read it before touching `finders/`.
 ## Commands
 
 - **Gate — run before each commit and before opening a PR:** `just check` —
-  ruff on `finders/`, `uv lock --check`, and every `finders/**/test_*.py`
-  except the slow ones. CI runs it on every pull request and on pushes to
+  ruff on `finders/` and `tests/`, `uv lock --check`, every
+  `finders/**/test_*.py` except the slow ones, and `tests/test_all_sh.py`
+  (the runner's own test). CI runs it on every pull request and on pushes to
   main, installing only uv.
 - Suites run one at a time. `GATE_JOBS=<n>` (or `bash tests/all.sh --jobs <n>`)
   runs n at once; CI sets 4 on its 4-vCPU runner, and a local run leaves it

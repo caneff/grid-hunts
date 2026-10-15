@@ -1,8 +1,8 @@
 # Coding standards
 
 The rules a change to a finder (or its tests and tools) must satisfy.
-`just check` gates the mechanical part: ruff on `finders/` and every finder
-test. The rules below are the part a gate cannot judge: a human reviewer or an
+`just check` gates the mechanical part: ruff on `finders/` and `tests/`, and
+every finder test. The rules below are the part a gate cannot judge: a human reviewer or an
 agent reads them off the diff. Thin on purpose: the detail lives in
 `finders/AGENTS.md` and `docs/agents/grid-finder-lessons.md`.
 
