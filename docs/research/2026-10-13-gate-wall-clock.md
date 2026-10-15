@@ -52,4 +52,4 @@ it start-up.
 
 The gate step took 15 min 15 s on the push to main of run 38341110336 (one
 suite at a time). The gate now runs 4 suites at once in CI (`GATE_JOBS=4`);
-the figure after is in `AGENTS.md` § Commands.
+the gate step took 6 min 22 s on pull request run 38724587608.

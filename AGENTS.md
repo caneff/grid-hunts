@@ -45,7 +45,8 @@ the U-Bahn finder's engines and flags. Read it before touching `finders/`.
   unset because the box is shared.
 - CI gate wall clock, the `Gate (check)` step: **before** 15 min 15 s, one
   suite at a time (run 38341110336, push to main, 2026-10-13). **After:**
-  not yet measured.
+  6 min 22 s, 4 suites at once (run 38724587608, pull request, 2026-10-15,
+  the same 64 test suites plus the runner's own test).
 - Lint + auto-fix: `just fmt`
 - Tests alone: `just test` — slow tests, by hand: `just test-slow`
 - Most tests are standalone scripts run by name (`uv run <file>`).
