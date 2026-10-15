@@ -19,20 +19,10 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import measure_baseline
 import model
+from cli_checks import check, finish
 from dedupe import canonical_key
 from protocol import Empty
 from ubahn_finder import UbahnFinder
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
 
 # Seeds 0:60 on 4x4 reach every cause the board can: unique, one duplicate
 # and one not unique.
@@ -211,4 +201,4 @@ for seeds in ("5:5", "7:3", "x:3", "3"):
         ),
     )
 
-sys.exit(0 if ok else 1)
+finish()

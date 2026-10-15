@@ -11,7 +11,6 @@ square. One CP-SAT worker; about five seconds in all.
 """
 
 import json
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -21,36 +20,13 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import network
+from cli_checks import check, finish, read_jsonl, run_cli
 from dedupe import D4, canonical_key
-from subprocess_env import success_env
 from verified_io import read_verified
 
 FINDER = HERE / "ubahn_finder.py"
 ROWS = COLS = 4
 EXACTLY = "2:cross:r2"
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
-
-def run_cli(*args):
-    return subprocess.run(
-        [sys.executable, str(FINDER), *args],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
-
-
-def read_jsonl(path):
-    return [json.loads(line) for line in path.read_text().splitlines() if line]
 
 
 def record(net, exactly=EXACTLY):
@@ -104,7 +80,7 @@ shared = sorted(brute.two_crosses_in_r2().valid - unique, key=sorted)
 with tempfile.TemporaryDirectory() as d:
     out = Path(d) / "hunt"
     config = ["--rows", "4", "--cols", "4", "--exactly", EXACTLY, "--timeout", "10"]
-    r = run_cli(*config, "--out", str(out), "--seeds=0:40", "--workers", "1")
+    r = run_cli(FINDER, *config, "--out", str(out), "--seeds=0:40", "--workers", "1")
     check(f"a 40-seed hunt exits 0 (stderr: {r.stderr[-500:]})", r.returncode == 0)
 
     examples = read_jsonl(out / "examples.jsonl")
@@ -235,7 +211,7 @@ with tempfile.TemporaryDirectory() as d:
     (out / "examples.jsonl").write_text(
         "".join(json.dumps(rec) + "\n" for _, rec, _, _ in cases)
     )
-    r = run_cli("verify", str(out))
+    r = run_cli(FINDER, "verify", str(out))
     check(f"hunt verify exits 0 (stderr: {r.stderr[-500:]})", r.returncode == 0)
     _, verdicts = read_verified(out / "verified.jsonl")
     for (name, _, want, reason), v in zip(cases, verdicts, strict=True):
@@ -267,7 +243,7 @@ with tempfile.TemporaryDirectory() as d:
         (out / "examples.jsonl").write_text(
             json.dumps({**record(good), **damage}) + "\n"
         )
-        r = run_cli("verify", str(out))
+        r = run_cli(FINDER, "verify", str(out))
         check(
             f"verify refuses {name}, exit 2, naming {reason!r}",
             r.returncode == 2
@@ -288,7 +264,7 @@ with tempfile.TemporaryDirectory() as d:
         )
     ):
         out = Path(d) / str(i)
-        r = run_cli(*flags, "--out", str(out), "--seeds=0:1", "--workers", "1")
+        r = run_cli(FINDER, *flags, "--out", str(out), "--seeds=0:1", "--workers", "1")
         check(
             f"{' '.join(flags)} is refused, exit 2, naming {reason!r}",
             r.returncode == 2 and reason in r.stderr and not out.exists(),
@@ -297,7 +273,7 @@ with tempfile.TemporaryDirectory() as d:
 with tempfile.TemporaryDirectory() as d:
     # 2x8 has 16 cells, a square's count: D4 would take it for a 4x4.
     out = Path(d) / "hunt"
-    r = run_cli(
+    r = run_cli(FINDER,
         "--rows", "2", "--cols", "8", "--timeout", "10",
         "--out", str(out), "--seeds=0:12", "--workers", "1",
     )  # fmt: skip
@@ -343,4 +319,4 @@ with tempfile.TemporaryDirectory() as d:
         all(mirrored(a, 8) != b for a in nets for b in nets if a != b),
     )
 
-sys.exit(0 if ok else 1)
+finish()

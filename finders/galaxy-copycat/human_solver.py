@@ -12,8 +12,19 @@ equal run sums where runs are contiguous box runs, a digit confined to the
 line inside a house must sit on it).  A rung is one argument on one pair:
 equal line totals, or one digit's count equal on both lines.  Every
 elimination is checked against the known solution when one is given.
+
+    uv run finders/galaxy-copycat/human_solver.py board.json [--seed link.json]
+        [--no-locked] [--no-check]
+    uv run finders/galaxy-copycat/human_solver.py batch [seed.json|-] [src] [dst]
+    uv run finders/galaxy-copycat/human_solver.py --help
+
+Both modes check each elimination against the solution read from
+`.scratch/copycat-rsl/b14-residual.npz` (gitignored, scratch-only); without
+that file the plain mode needs `--no-check`, and `batch` needs the file.
+Default paths resolve from the repo root, not the working directory.
 """
 
+import argparse
 import json
 import sys
 from collections import defaultdict
@@ -23,7 +34,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from copycat_rsl_solver import parse_cell
 
-BOARDS_DIR = "docs/research/2026-09-14-galaxy-copycat/boards"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+BOARDS_DIR = REPO_ROOT / "docs/research/2026-09-14-galaxy-copycat/boards"
+RESIDUAL_NPZ = REPO_ROOT / ".scratch/copycat-rsl/b14-residual.npz"
 
 
 def idx(c):
@@ -429,7 +442,7 @@ def solution_for(lines):
     import numpy as np
     import residual
 
-    f = residual.load(".scratch/copycat-rsl/b14-residual.npz")
+    f = residual.load(RESIDUAL_NPZ)
     m = np.ones(f.n, bool)
     for line_cells in lines.values():
         m &= f.line_mask(line_cells)
@@ -469,17 +482,17 @@ def seed_from_link(h, path):
 
 def batch(
     seed,
-    src=f"{BOARDS_DIR}/board14-pair7.unique-dedup.jsonl",
-    dst=".scratch/copycat-rsl/p7/human_batch.jsonl",
+    src=BOARDS_DIR / "board14-pair7.unique-dedup.jsonl",
+    dst=REPO_ROOT / ".scratch/copycat-rsl/p7/human_batch.jsonl",
 ):
     """Scratch-only: needs `.scratch/copycat-rsl/b14-residual.npz` for the
     solution check, so this stays outside `just test`/`just check-full`."""
     import numpy as np
     import residual
 
-    f = residual.load(".scratch/copycat-rsl/b14-residual.npz")
-    base = json.loads(Path(f"{BOARDS_DIR}/board25-pair7-relaxed.json").read_text())
-    forced = json.loads(Path(f"{BOARDS_DIR}/board14-forced.json").read_text())
+    f = residual.load(RESIDUAL_NPZ)
+    base = json.loads(BOARDS_DIR / "board25-pair7-relaxed.json".read_text())
+    forced = json.loads(BOARDS_DIR / "board14-forced.json".read_text())
     rows = [json.loads(line) for line in Path(src).read_text().splitlines()]
     with Path(dst).open("w") as out:
         for n, r in enumerate(rows):
@@ -519,30 +532,75 @@ def batch(
             )
 
 
-if __name__ == "__main__":
-    import numpy as np
+def parse_args(argv):
+    if argv[:1] == ["batch"]:
+        ap = argparse.ArgumentParser(prog="human_solver.py batch", allow_abbrev=False)
+        ap.add_argument("seed", nargs="?", help="link-state json, or - for none")
+        ap.add_argument("src", nargs="?", default=None)
+        ap.add_argument("dst", nargs="?", default=None)
+        args = ap.parse_args(argv[1:])
+        args.batch = True
+        return args
+    ap = argparse.ArgumentParser(
+        prog="human_solver.py",
+        allow_abbrev=False,
+        epilog="`human_solver.py batch [seed] [src] [dst]` runs a whole jsonl "
+        "(scratch-only).",
+    )
+    ap.add_argument("board", help="board json with lines and pairs")
+    ap.add_argument("--seed", help="link-state json to seed candidates from")
+    ap.add_argument("--no-locked", action="store_true")
+    ap.add_argument(
+        "--no-check",
+        action="store_true",
+        help="skip the solution check, which needs the scratch npz",
+    )
+    args = ap.parse_args(argv)
+    args.batch = False
+    return args
 
-    if sys.argv[1] == "batch":
-        batch(sys.argv[2] if len(sys.argv) > 2 else None, *sys.argv[3:])
-        sys.exit()
-    board_lines, board_pairs = load_board(sys.argv[1])
-    forced_facts = json.loads(Path(f"{BOARDS_DIR}/board14-forced.json").read_text())
-    residual_f, residual_m = solution_for(board_lines)
-    for line_a, line_b in board_pairs:
-        residual_m &= residual_f.pair_mask(board_lines[line_a], board_lines[line_b])
-    assert residual_m.sum() == 1, residual_m.sum()
-    solution = [int(d) for d in residual_f.digits[residual_m][0]]
-    copycats = [int(i) for i in np.where(residual_f.flags[residual_m][0])[0]]
+
+def main(argv):
+    args = parse_args(argv)
+    if args.batch:
+        if not RESIDUAL_NPZ.exists():
+            print(f"batch needs {RESIDUAL_NPZ} (scratch-only)", file=sys.stderr)
+            return 1
+        extra = {k: v for k, v in (("src", args.src), ("dst", args.dst)) if v}
+        batch(args.seed, **extra)
+        return 0
+    check = not args.no_check
+    if check and not RESIDUAL_NPZ.exists():
+        print(
+            f"the solution check needs {RESIDUAL_NPZ} (scratch-only); "
+            "pass --no-check to run without it",
+            file=sys.stderr,
+        )
+        return 1
+    board_lines, board_pairs = load_board(args.board)
+    forced_facts = json.loads((BOARDS_DIR / "board14-forced.json").read_text())
+    solution = copycats = None
+    if check:
+        import numpy as np
+
+        residual_f, residual_m = solution_for(board_lines)
+        for line_a, line_b in board_pairs:
+            residual_m &= residual_f.pair_mask(board_lines[line_a], board_lines[line_b])
+        assert residual_m.sum() == 1, residual_m.sum()
+        solution = [int(d) for d in residual_f.digits[residual_m][0]]
+        copycats = [int(i) for i in np.where(residual_f.flags[residual_m][0])[0]]
     human = Human(
         board_lines,
         board_pairs,
         forced_facts,
         solution,
         copycats,
-        locked="--no-locked" not in sys.argv,
+        locked=not args.no_locked,
     )
-    if "--seed" in sys.argv:
-        seed_from_link(human, sys.argv[sys.argv.index("--seed") + 1])
+    if args.seed:
+        seed_from_link(human, args.seed)
+    if not check:
+        print("solution check skipped (--no-check)")
     human.run(verbose=True)
     print(
         "solved" if human.solved() else "STUCK",
@@ -557,3 +615,8 @@ if __name__ == "__main__":
                 k,
                 [(nm(i), sorted(human.cand[i]), human.cc[i]) for i in line_cells],
             )
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

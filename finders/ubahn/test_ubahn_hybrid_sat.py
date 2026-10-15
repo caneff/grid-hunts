@@ -24,26 +24,19 @@ import random
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import hybrid
 import hybrid_sat
 import network
+from cli_checks import check, finish
 from pysat.solvers import Cadical195
 
 TIME_LIMIT = 10.0
 TWO_CROSSES = network.Exactly.parse("2:cross:r2")
 ENGINES = (hybrid_sat.LAZY, hybrid_sat.PROPAGATOR)
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
 
 
 def agrees(engine, name, conditions, want):
@@ -374,4 +367,4 @@ check(
     not takes(hybrid.Conditions(7, 7, cells("r6c4")), found),
 )
 
-sys.exit(0 if ok else 1)
+finish()

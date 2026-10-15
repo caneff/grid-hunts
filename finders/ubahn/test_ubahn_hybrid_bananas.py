@@ -22,7 +22,6 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import json
 import random
-import subprocess
 import tempfile
 
 import brute
@@ -31,7 +30,7 @@ import hybrid_finder
 import hybrid_sat
 import network
 import time_bananas
-from subprocess_env import success_env
+from cli_checks import check, finish, run_cli
 
 FINDER = HERE / "hybrid_finder.py"
 BOARD = ["--rows", "4", "--cols", "4", "--timeout", "20"]
@@ -46,16 +45,6 @@ TWO_BANANAS = (
     ("┌──┬──┐", "│  ├──┼──┐", "├──┴──┴──┤", "└────────┘"),
 )
 ONE_BANANA = ("┌──┬──┬──┐", "├──┼──┼──┤", "├──┼──┼──┤", "└──┴──┴──┘")
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
 
 
 def drawn(net):
@@ -230,21 +219,19 @@ def test_blank_strip(name, engine):
     )
 
 
-def run_cli(*args):
-    return subprocess.run(
-        [sys.executable, str(FINDER), *args],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
-
-
 def hunt(d, name, *flags, seeds=6):
     """Run a hunt with these flags; returns (the examples' records, the
     `empty` reasons, summary.json, run.json's config)."""
     out = Path(d) / name
     r = run_cli(
-        *BOARD, *flags, "--out", str(out), f"--seeds=0:{seeds}", "--workers", "1"
+        FINDER,
+        *BOARD,
+        *flags,
+        "--out",
+        str(out),
+        f"--seeds=0:{seeds}",
+        "--workers",
+        "1",
     )
     check(f"{name}: the hunt exits 0 (stderr: {r.stderr[-500:]})", r.returncode == 0)
     progress = (out / "progress.jsonl").read_text().splitlines()
@@ -349,7 +336,7 @@ def test_cli(engine, d):
         (("--min-bananas", "2", "--circles", "r2c4"), "unique: exactly one grid"),
         (("--min-bananas", "2", "--blank-strip"), "infeasible: no grid"),
     ):
-        r = run_cli(*BOARD, *flags, *more, "classify")
+        r = run_cli(FINDER, *BOARD, *flags, *more, "classify")
         check(
             f"{engine}, classify {' '.join(more)}: {want}",
             r.returncode == 0 and r.stdout.splitlines()[:1] == [want],
@@ -358,7 +345,7 @@ def test_cli(engine, d):
 
 def test_flag():
     for bad in ("0", "-1"):
-        r = run_cli(*BOARD, "--min-bananas", bad, "classify")
+        r = run_cli(FINDER, *BOARD, "--min-bananas", bad, "classify")
         check(
             f"--min-bananas {bad} is refused, by name",
             r.returncode == 2
@@ -366,12 +353,7 @@ def test_flag():
             == f"hybrid_finder: --min-bananas takes 1 or more, got {bad}",
         )
     for bad in ("0", "-1"):
-        r = subprocess.run(
-            [sys.executable, str(HERE / "brute.py"), "4", "4", "--min-bananas", bad],
-            capture_output=True,
-            text=True,
-            env=success_env(),
-        )
+        r = run_cli(HERE / "brute.py", "4", "4", "--min-bananas", bad)
         check(
             f"brute.py --min-bananas {bad} is refused the same way",
             r.returncode == 2
@@ -380,7 +362,7 @@ def test_flag():
         )
     check(
         "the usage text names the condition",
-        "--min-bananas N" in run_cli("--help").stdout,
+        "--min-bananas N" in run_cli(FINDER, "--help").stdout,
     )
 
 
@@ -448,4 +430,4 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory() as d:
         for name in hybrid_finder.ENGINES:
             test_cli(name, d)
-    sys.exit(0 if ok else 1)
+    finish()

@@ -13,7 +13,6 @@ about six seconds, a dozen and a half subprocess starts.
 """
 
 import json
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -26,20 +25,9 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 import hybrid
 import hybrid_render
 import network
-from subprocess_env import success_env
+from cli_checks import check, finish, run_cli
 
 FINDER = HERE / "hybrid_finder.py"
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
 
 # The board, number cells and all (cross, branch, straight, turn from the
 # outside in):
@@ -315,15 +303,6 @@ FULL_RECORD = {
 }
 
 
-def run_cli(*args):
-    return subprocess.run(
-        [sys.executable, str(FINDER), *args],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
-
-
 def hunt_dir(parent, name, records):
     """A hunt directory holding these {seed: record}, with a seed that found
     nothing between them, as progress.jsonl pairs them."""
@@ -377,7 +356,7 @@ with tempfile.TemporaryDirectory() as d:
     out = hunt_dir(d, "hunt", {3: GRID_RECORD, 7: FULL_RECORD})
     (out / "renders").mkdir()
     (out / "renders" / "99.png").write_text("left by an earlier example list")
-    r = run_cli("render", str(out))
+    r = run_cli(FINDER, "render", str(out))
     check(f"`render DIR` exits 0 (stderr: {r.stderr[-500:]})", r.returncode == 0)
     check(
         "one PNG per example, named by seed, and nothing else: no temporary "
@@ -412,7 +391,7 @@ with tempfile.TemporaryDirectory() as d:
     )
 
     one = Path(d) / "one.png"
-    r = run_cli("render", str(out), "--seed", "7", "--png", str(one))
+    r = run_cli(FINDER, "render", str(out), "--seed", "7", "--png", str(one))
     check(
         f"`render DIR --seed 7 --png FILE` writes that one grid to FILE "
         f"(stderr: {r.stderr[-300:]})",
@@ -426,13 +405,15 @@ with tempfile.TemporaryDirectory() as d:
     )
 
     # The blank strip: by the flag, or by a record of a hunt that had it on.
-    r = run_cli("render", str(out), "--seed", "7", "--png", str(one), "--blank-strip")
+    r = run_cli(
+        FINDER, "render", str(out), "--seed", "7", "--png", str(one), "--blank-strip"
+    )
     check(
         f"`--blank-strip` draws five strips (stderr: {r.stderr[-300:]})",
         r.returncode == 0 and same(decoded(one)[1], five),
     )
     with_blank = hunt_dir(d, "blank", {7: {**FULL_RECORD, "blank_strip": True}})
-    r = run_cli("render", str(with_blank))
+    r = run_cli(FINDER, "render", str(with_blank))
     check(
         "a record of a hunt with the blank strip on is drawn with five strips",
         r.returncode == 0 and same(decoded(with_blank / "renders" / "7.png")[1], five),
@@ -444,7 +425,7 @@ with tempfile.TemporaryDirectory() as d:
         "markings",
         {3: {**GRID_RECORD, "battenberg": ["c1:turn"], "battenberg_only": False}},
     )
-    r = run_cli("render", str(with_markings))
+    r = run_cli(FINDER, "render", str(with_markings))
     check(
         f"`render` over a hunt with markings draws the marked window as a "
         f"condition (stderr: {r.stderr[-300:]})",
@@ -456,7 +437,7 @@ with tempfile.TemporaryDirectory() as d:
     # A grid that is no hybrid grid on the board drawn is refused, and no
     # picture of the directory is touched: GRID breaks on the fifth strip.
     before = {p.name: p.read_bytes() for p in (out / "renders").iterdir()}
-    r = run_cli("render", str(out), "--blank-strip")
+    r = run_cli(FINDER, "render", str(out), "--blank-strip")
     check(
         f"`render DIR --blank-strip` refuses seed 3, exit 2, naming the seed "
         f"and the broken rule ({r.stderr.strip()!r})",
@@ -494,7 +475,7 @@ with tempfile.TemporaryDirectory() as d:
         ("a network with a dead end", [str(dead_end)], "dead end"),
         ("a record with no circles, a plain hunt's", [str(plain)], "'circles'"),
     ):
-        r = run_cli("render", *args)
+        r = run_cli(FINDER, "render", *args)
         check(
             f"render refuses {name}, exit 2, naming {reason!r} ({r.stderr.strip()[-200:]!r})",
             r.returncode == 2 and reason in r.stderr and not r.stdout,
@@ -504,7 +485,7 @@ with tempfile.TemporaryDirectory() as d:
         not (dead_end / "renders").exists(),
     )
 
-r = run_cli("--help")
+r = run_cli(FINDER, "--help")
 check(
     "--help names the render command and its flags",
     r.returncode == 0
@@ -513,4 +494,4 @@ check(
     and "no ring on any other valid circle" in " ".join(r.stdout.split()),
 )
 
-sys.exit(0 if ok else 1)
+finish()

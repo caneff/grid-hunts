@@ -18,7 +18,6 @@ One solver thread throughout; about fifteen seconds.
 """
 
 import json
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -28,7 +27,7 @@ from PIL import Image
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
-from subprocess_env import success_env
+from cli_checks import check, finish, read_jsonl, run_cli
 from verified_io import read_verified
 
 BOARD = ["--rows", "4", "--cols", "4", "--timeout", "10"]
@@ -42,35 +41,12 @@ ANSWERS = (
     (("--blank-strip",), "not_unique"),
 )
 
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
-
-def run_script(script, *args):
-    return subprocess.run(
-        [sys.executable, str(HERE / script), *args],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
-
-
-def read_jsonl(path):
-    return [json.loads(line) for line in path.read_text().splitlines() if line]
-
 
 def verified(script, out, examples):
     """Whether `verify` read every example of the hunt in `out` and passed
     each one. Its exit status is 0 whatever the verdicts, so the verdicts
     are read from the file it writes."""
-    r = run_script(script, "verify", str(out))
+    r = run_cli(HERE / script, "verify", str(out))
     if r.returncode != 0:
         return False
     stamp, verdicts = read_verified(out / "verified.jsonl")
@@ -81,7 +57,7 @@ def verified(script, out, examples):
     )
 
 
-r = run_script("brute.py", "4", "4", "--circles", "c1:turn r2c4")
+r = run_cli(HERE / "brute.py", "4", "4", "--circles", "c1:turn r2c4")
 check(
     f"the enumeration: 18 valid 4x4 grids, one with c1:turn and r2c4 circled "
     f"({r.stdout.splitlines()[1:]})",
@@ -93,8 +69,7 @@ check(
 
 with tempfile.TemporaryDirectory() as d:
     out = Path(d) / "hunt"
-    r = run_script(
-        "hybrid_finder.py", *BOARD, "--circles", "r2c2",
+    r = run_cli(HERE / "hybrid_finder.py", *BOARD, "--circles", "r2c2",
         "--out", str(out), "--seeds=0:20", "--workers", "1",
     )  # fmt: skip
     examples = read_jsonl(out / "examples.jsonl") if r.returncode == 0 else []
@@ -115,8 +90,7 @@ with tempfile.TemporaryDirectory() as d:
     # Number-cell circles together with the piece-count condition: the
     # decision log's two grids, on the default engine.
     both = Path(d) / "both"
-    r = run_script(
-        "hybrid_finder.py", *BOARD, "--circles", "c1:turn c4:turn",
+    r = run_cli(HERE / "hybrid_finder.py", *BOARD, "--circles", "c1:turn c4:turn",
         "--exactly", "2:cross:r2",
         "--out", str(both), "--seeds=0:20", "--workers", "1",
     )  # fmt: skip
@@ -132,7 +106,7 @@ with tempfile.TemporaryDirectory() as d:
         and verified("hybrid_finder.py", both, found),
     )
 
-    r = run_script("hybrid_finder.py", "render", str(out))
+    r = run_cli(HERE / "hybrid_finder.py", "render", str(out))
     pictures = sorted(p.name for p in (out / "renders").glob("*.png"))
     check(
         f"render writes one picture per example ({len(pictures)})",
@@ -147,15 +121,19 @@ with tempfile.TemporaryDirectory() as d:
 
     for engine in ENGINES:
         for flags, word in ANSWERS:
-            r = run_script(
-                "hybrid_finder.py", "classify", *BOARD, "--engine", engine, *flags
+            r = run_cli(
+                HERE / "hybrid_finder.py",
+                "classify",
+                *BOARD,
+                "--engine",
+                engine,
+                *flags,
             )
             check(
                 f"classify on {engine}, {' '.join(flags) or 'no condition'}: {word}",
                 r.returncode == 0 and r.stdout.startswith(f"{word}:"),
             )
-        r = run_script(
-            "hybrid_finder.py", "classify", "--rows", "4", "--cols", "4",
+        r = run_cli(HERE / "hybrid_finder.py", "classify", "--rows", "4", "--cols", "4",
             "--engine", engine, "--timeout", "0",
         )  # fmt: skip
         check(
@@ -166,8 +144,7 @@ with tempfile.TemporaryDirectory() as d:
     progress = []
     for engine in ENGINES:
         progress.append(str(Path(d) / f"{engine}.jsonl"))
-        r = run_script(
-            "time_engines.py", "run", "--engine", engine, "--progress", progress[-1],
+        r = run_cli(HERE / "time_engines.py", "run", "--engine", engine, "--progress", progress[-1],
             "--case", "6x6", "--seeds", "0:2",
         )  # fmt: skip
         check(
@@ -175,7 +152,7 @@ with tempfile.TemporaryDirectory() as d:
             r.returncode == 0
             and sum("solve" in line for line in read_jsonl(Path(progress[-1]))) == 2,
         )
-    r = run_script("time_engines.py", "report", *progress)
+    r = run_cli(HERE / "time_engines.py", "report", *progress)
     check(
         "timing report: a 6x6 row per engine, found and timed out apart",
         r.returncode == 0
@@ -192,8 +169,7 @@ with tempfile.TemporaryDirectory() as d:
     )
 
     plain = Path(d) / "plain"
-    r = run_script(
-        "ubahn_finder.py", "--rows", "4", "--cols", "4", "--timeout", "10",
+    r = run_cli(HERE / "ubahn_finder.py", "--rows", "4", "--cols", "4", "--timeout", "10",
         "--out", str(plain), "--seeds=0:3", "--workers", "1",
     )  # fmt: skip
     config = json.loads((plain / "run.json").read_text())["config"]
@@ -206,4 +182,4 @@ with tempfile.TemporaryDirectory() as d:
         verified("ubahn_finder.py", plain, read_jsonl(plain / "examples.jsonl")),
     )
 
-sys.exit(0 if ok else 1)
+finish()

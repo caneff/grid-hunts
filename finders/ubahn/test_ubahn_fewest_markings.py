@@ -19,7 +19,6 @@ is the only witness `--workers` has; about a minute.
 import fcntl
 import json
 import math
-import subprocess
 import sys
 import tempfile
 from collections import Counter
@@ -32,7 +31,7 @@ import brute
 import hybrid
 import hybrid_finder
 import network
-from subprocess_env import success_env
+from cli_checks import check, finish, read_jsonl, run_cli
 from verified_io import read_verified
 
 FINDER = HERE / "hybrid_finder.py"
@@ -44,29 +43,6 @@ WINDOWS = 33
 WORDS = ("unique", "not_unique", "infeasible", "timeout")
 # A record carries its own board and conditions.
 READER = hybrid_finder.HybridFinder(hybrid.Conditions(4, 4))
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
-
-def run_cli(*args):
-    return subprocess.run(
-        [sys.executable, str(FINDER), *map(str, args)],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
-
-
-def read_jsonl(path):
-    return [json.loads(line) for line in path.read_text().splitlines() if line]
 
 
 def sets_tried(out):
@@ -144,7 +120,7 @@ finished = {}
 with tempfile.TemporaryDirectory() as d:
     for engine in ENGINES:
         out = Path(d) / engine
-        r = run_cli("fewest-markings", *BOARD, "--engine", engine, "--out", out)
+        r = run_cli(FINDER, "fewest-markings", *BOARD, "--engine", engine, "--out", out)
         finished[engine] = r
         lines = r.stdout.splitlines()
         check(
@@ -238,7 +214,7 @@ with tempfile.TemporaryDirectory() as d:
             example = out / name
             (record,) = read_jsonl(example / "examples.jsonl")
             marked = frozenset(record["battenberg"])
-            r = run_cli("verify", example)
+            r = run_cli(FINDER, "verify", example)
             verdicts = read_verified(example / "verified.jsonl")[1]
             check(
                 f"{engine}, {name}: the example passes `verify` "
@@ -261,8 +237,8 @@ with tempfile.TemporaryDirectory() as d:
                 and (found[marked]["record"]["h"], found[marked]["record"]["v"])
                 == (record["h"], record["v"]),
             )
-            r = run_cli("render", example)
-            r2 = run_cli(
+            r = run_cli(FINDER, "render", example)
+            r2 = run_cli(FINDER,
                 "links", example, "--battenberg", " ".join(sorted(marked)),
                 "--battenberg-only",
             )  # fmt: skip
@@ -300,7 +276,9 @@ with tempfile.TemporaryDirectory() as d:
         again = Path(d) / f"again {label}"
         again.mkdir()
         (again / "sets.jsonl").write_text(text)
-        r = run_cli("fewest-markings", *BOARD, "--engine", engine, "--out", again)
+        r = run_cli(
+            FINDER, "fewest-markings", *BOARD, "--engine", engine, "--out", again
+        )
         after = (again / "sets.jsonl").read_text().splitlines(keepends=True)
         check(
             f"a run stopped {label} and started again exits 0 and ends with "
@@ -321,7 +299,7 @@ with tempfile.TemporaryDirectory() as d:
     unfinished = Path(d) / "unfinished"
     unfinished.mkdir()
     (unfinished / "sets.jsonl").write_text(whole[0])
-    r = run_cli(
+    r = run_cli(FINDER,
         "fewest-markings", "--rows", 4, "--cols", 4, "--timeout", 5,
         "--out", unfinished,
     )  # fmt: skip
@@ -369,7 +347,9 @@ with tempfile.TemporaryDirectory() as d:
         ),
     ):
         (broken / "sets.jsonl").write_text("".join(lines))
-        r = run_cli("fewest-markings", *BOARD, "--engine", engine, "--out", broken)
+        r = run_cli(
+            FINDER, "fewest-markings", *BOARD, "--engine", engine, "--out", broken
+        )
         check(
             f"{label}: refused, exit 2, naming the file and the line "
             f"({r.stderr.strip()[-70:]!r})",
@@ -378,7 +358,7 @@ with tempfile.TemporaryDirectory() as d:
             and "Traceback" not in r.stderr
             and not r.stdout,
         )
-    r = run_cli("fewest-markings", *BOARD, "--engine", engine, "--out", done)
+    r = run_cli(FINDER, "fewest-markings", *BOARD, "--engine", engine, "--out", done)
     check(
         "a rerun into a finished directory: the same report, no line added",
         r.returncode == 0
@@ -386,7 +366,7 @@ with tempfile.TemporaryDirectory() as d:
         and (done / "sets.jsonl").read_text() == "".join(whole),
     )
     respelt = done / ".." / done.name
-    r = run_cli("fewest-markings", *BOARD, "--engine", engine, "--out", respelt)
+    r = run_cli(FINDER, "fewest-markings", *BOARD, "--engine", engine, "--out", respelt)
     check(
         f"a rerun naming the finished directory another way: the same report "
         f"(stderr: {r.stderr[-200:]})",
@@ -396,7 +376,9 @@ with tempfile.TemporaryDirectory() as d:
     # Another run is in the directory: this one starts nothing.
     with (done / "sets.jsonl").open("a") as held:
         fcntl.flock(held, fcntl.LOCK_EX)
-        r = run_cli("fewest-markings", *BOARD, "--engine", engine, "--out", done)
+        r = run_cli(
+            FINDER, "fewest-markings", *BOARD, "--engine", engine, "--out", done
+        )
     check(
         f"a run into a directory another run holds is refused "
         f"({r.stderr.strip()[-60:]!r})",
@@ -407,7 +389,7 @@ with tempfile.TemporaryDirectory() as d:
         ([*BOARD, "--circles", "r2c4"], "another condition"),
         ([*BOARD, "--engine", ENGINES[1]], "another engine"),
     ):
-        r = run_cli("fewest-markings", *flags, "--out", done)
+        r = run_cli(FINDER, "fewest-markings", *flags, "--out", done)
         check(
             f"a run into a directory {why} wrote is refused "
             f"({r.stderr.strip()[:70]!r})",
@@ -435,7 +417,7 @@ with tempfile.TemporaryDirectory() as d:
             for i, line in enumerate(whole)
         )
     )
-    r = run_cli("fewest-markings", *BOARD, "--engine", engine, "--out", stopped)
+    r = run_cli(FINDER, "fewest-markings", *BOARD, "--engine", engine, "--out", stopped)
     lines = r.stdout.splitlines()
     check(
         f"a single marking that timed out, and its mirror: both are named in "
@@ -463,7 +445,7 @@ with tempfile.TemporaryDirectory() as d:
     # A time limit too short for any set: every set is named as timed out,
     # none is read as "no grid", and nothing is proven.
     out = Path(d) / "no time"
-    r = run_cli(
+    r = run_cli(FINDER,
         "fewest-markings", "--rows", 4, "--cols", 4, "--timeout", 0,
         "--max-size", 1, "--out", out,
     )  # fmt: skip
@@ -489,7 +471,9 @@ with tempfile.TemporaryDirectory() as d:
 
     # The size cap, below the minimum.
     out = Path(d) / "capped"
-    r = run_cli("fewest-markings", *BOARD, "--max-size", MINIMUM - 1, "--out", out)
+    r = run_cli(
+        FINDER, "fewest-markings", *BOARD, "--max-size", MINIMUM - 1, "--out", out
+    )
     capped = r.stdout
     check(
         f"--max-size {MINIMUM - 1}, below the minimum: 'no unique set up to "
@@ -505,7 +489,7 @@ with tempfile.TemporaryDirectory() as d:
 
     # Two workers: the same report and the same answers, set for set.
     two = Path(d) / "two workers"
-    r = run_cli(
+    r = run_cli(FINDER,
         "fewest-markings", *BOARD, "--max-size", MINIMUM - 1, "--workers", 2,
         "--out", two,
     )  # fmt: skip
@@ -529,7 +513,15 @@ with tempfile.TemporaryDirectory() as d:
 
     out = Path(d) / "a circle"
     r = run_cli(
-        "fewest-markings", *BOARD, "--circles", "r2c4", "--max-size", 1, "--out", out
+        FINDER,
+        "fewest-markings",
+        *BOARD,
+        "--circles",
+        "r2c4",
+        "--max-size",
+        1,
+        "--out",
+        out,
     )
     tried = sets_tried(out)
     check(
@@ -560,7 +552,9 @@ with tempfile.TemporaryDirectory() as d:
         (["--blank-strip"], by_brute(blank_strip=True), strip_windows),
     ):
         out = Path(d) / flags[0]
-        r = run_cli("fewest-markings", *BOARD, *flags, "--max-size", 1, "--out", out)
+        r = run_cli(
+            FINDER, "fewest-markings", *BOARD, *flags, "--max-size", 1, "--out", out
+        )
         want = [size_line(k, counts(held, k, windows)) for k in (0, 1)]
         check(
             f"with {' '.join(map(str, flags))} the counts are the brute force's "
@@ -579,7 +573,9 @@ with tempfile.TemporaryDirectory() as d:
         if (kept := [net for net in nets if exactly.holds(net, 4, 4)])
     }
     out = Path(d) / "exactly"
-    r = run_cli("fewest-markings", *BOARD, "--exactly", exactly.text(), "--out", out)
+    r = run_cli(
+        FINDER, "fewest-markings", *BOARD, "--exactly", exactly.text(), "--out", out
+    )
     lines = r.stdout.splitlines()
     check(
         f"with {exactly.text()} the brute force has one grid with no "
@@ -601,7 +597,7 @@ with tempfile.TemporaryDirectory() as d:
         and record["battenberg_only"] is True
         and record["battenberg"] == record["checkerboard_windows"] == []
         and READER.candidate_from_record(record).network == held[frozenset()][0]
-        and run_cli("verify", out / "no-markings").returncode == 0,
+        and run_cli(FINDER, "verify", out / "no-markings").returncode == 0,
     )
 
     # Refused before any solve, and before anything is written.
@@ -612,7 +608,7 @@ with tempfile.TemporaryDirectory() as d:
         (["--max-size", -1], "--max-size"),
         (["--workers", 0], "--workers"),
     ):
-        r = run_cli("fewest-markings", *BOARD, *flags, "--out", unused)
+        r = run_cli(FINDER, "fewest-markings", *BOARD, *flags, "--out", unused)
         check(
             f"fewest-markings {flags[0]} {flags[1]} is refused, exit 2, naming "
             f"the flag ({r.stderr.strip()!r})",
@@ -622,7 +618,7 @@ with tempfile.TemporaryDirectory() as d:
             and not unused.exists(),
         )
 
-r = run_cli("--help")
+r = run_cli(FINDER, "--help")
 check(
     "--help describes fewest-markings and its flags",
     r.returncode == 0
@@ -632,4 +628,4 @@ check(
     ),
 )
 
-sys.exit(0 if ok else 1)
+finish()

@@ -13,7 +13,6 @@ report a maximum of 2, proven, on every engine. About twenty seconds.
 import fcntl
 import itertools
 import json
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -24,36 +23,13 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import hybrid
 import hybrid_finder
-from subprocess_env import success_env
+from cli_checks import check, finish, read_jsonl, run_cli
 
 FINDER = HERE / "hybrid_finder.py"
 BOARD = ["--rows", "4", "--cols", "4", "--timeout", "20"]
 MOST = 2
 # A record carries its own board and conditions.
 READER = hybrid_finder.HybridFinder(hybrid.Conditions(4, 4))
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
-
-def run_cli(*args):
-    return subprocess.run(
-        [sys.executable, str(FINDER), *map(str, args)],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
-
-
-def read_jsonl(path):
-    return [json.loads(line) for line in path.read_text().splitlines() if line]
 
 
 def on_numbers(net):
@@ -67,7 +43,7 @@ WANT = {net for net in brute.hybrid_grids(4, 4) if on_numbers(net) >= MOST}
 
 with tempfile.TemporaryDirectory() as d:
     out = Path(d) / "at least 2"
-    r = run_cli(*BOARD, "--number-circles", MOST, "--out", out, "--seeds=0:20")
+    r = run_cli(FINDER, *BOARD, "--number-circles", MOST, "--out", out, "--seeds=0:20")
     check(f"at least {MOST}: the hunt exits 0 ({r.stderr[-300:]})", r.returncode == 0)
     examples = read_jsonl(out / "examples.jsonl")
     nets = [READER.candidate_from_record(ex).network for ex in examples]
@@ -87,7 +63,7 @@ with tempfile.TemporaryDirectory() as d:
     config = json.loads((out / "run.json").read_text())["config"]
     check("run.json records the condition", config["number_circles"] == MOST)
 
-    r = run_cli("verify", out)
+    r = run_cli(FINDER, "verify", out)
     verdicts = read_jsonl(out / "verified.jsonl")[1:]
     check(
         "verify takes every example of the hunt",
@@ -99,7 +75,7 @@ with tempfile.TemporaryDirectory() as d:
             json.dumps({**ex, "number_circles": MOST + 1}) + "\n" for ex in examples
         )
     )
-    r = run_cli("verify", out)
+    r = run_cli(FINDER, "verify", out)
     verdicts = read_jsonl(out / "verified.jsonl")[1:]
     reason = f"{MOST} valid circles on number cells, fewer than {MOST + 1}"
     check(
@@ -110,7 +86,9 @@ with tempfile.TemporaryDirectory() as d:
     )
 
     out = Path(d) / "at least 3"
-    r = run_cli(*BOARD, "--number-circles", MOST + 1, "--out", out, "--seeds=0:3")
+    r = run_cli(
+        FINDER, *BOARD, "--number-circles", MOST + 1, "--out", out, "--seeds=0:3"
+    )
     reasons = [e.get("empty_reason") for e in read_jsonl(out / "progress.jsonl")]
     check(
         f"at least {MOST + 1}: no example, three seeds empty as infeasible ({reasons})",
@@ -121,7 +99,7 @@ with tempfile.TemporaryDirectory() as d:
     )
 
     for k, line in ((MOST, "not_unique: more than one grid"), (MOST + 1, "infeasible: no grid")):  # fmt: skip
-        r = run_cli("classify", *BOARD, "--number-circles", k)
+        r = run_cli(FINDER, "classify", *BOARD, "--number-circles", k)
         check(
             f"classify at least {k}: {line} ({r.stdout.splitlines()[:1]})",
             r.returncode == 0 and r.stdout.splitlines()[:1] == [line],
@@ -129,7 +107,7 @@ with tempfile.TemporaryDirectory() as d:
 
     # A record written before the condition existed has no field for it.
     old = Path(d) / "old"
-    run_cli(*BOARD, "--out", old, "--seeds=0:2")
+    run_cli(FINDER, *BOARD, "--out", old, "--seeds=0:2")
     (old / "examples.jsonl").write_text(
         "".join(
             json.dumps({k: v for k, v in ex.items() if "number" not in k or k == "numbers"})
@@ -137,7 +115,7 @@ with tempfile.TemporaryDirectory() as d:
             for ex in read_jsonl(old / "examples.jsonl")
         )
     )  # fmt: skip
-    r = run_cli("verify", old)
+    r = run_cli(FINDER, "verify", old)
     check(
         f"verify still reads a record with no number_circles ({r.stderr[-200:]})",
         r.returncode == 0 and all(v["ok"] for v in read_jsonl(old / "verified.jsonl")[1:]),
@@ -146,7 +124,7 @@ with tempfile.TemporaryDirectory() as d:
     # `climb`: K up from 0 until no grid reaches it.
     for engine in hybrid_finder.ENGINES:
         out = Path(d) / f"climb {engine}"
-        r = run_cli("climb", *BOARD, "--engine", engine, "--out", out)
+        r = run_cli(FINDER, "climb", *BOARD, "--engine", engine, "--out", out)
         lines = r.stdout.splitlines()
         check(
             f"climb on {engine}: maximum {MOST}, proven, and the engine named "
@@ -182,13 +160,13 @@ with tempfile.TemporaryDirectory() as d:
         )
         check(
             f"climb on {engine}: `verify` and `render` read that directory",
-            run_cli("verify", best).returncode == 0
-            and run_cli("render", best).returncode == 0
+            run_cli(FINDER, "verify", best).returncode == 0
+            and run_cli(FINDER, "render", best).returncode == 0
             and (best / "renders" / "0.png").is_file(),
         )
 
     # A rerun into the same directory solves nothing again and says the same.
-    r2 = run_cli("climb", *BOARD, "--engine", engine, "--out", out)
+    r2 = run_cli(FINDER, "climb", *BOARD, "--engine", engine, "--out", out)
     check(
         "climb rerun into a finished directory: the same answer, no step added",
         r2.returncode == 0
@@ -196,7 +174,9 @@ with tempfile.TemporaryDirectory() as d:
         and read_jsonl(out / "climb.jsonl") == steps,
     )
 
-    r2 = run_cli("climb", "--rows", 4, "--cols", 4, "--timeout", 5, "--out", out)
+    r2 = run_cli(
+        FINDER, "climb", "--rows", 4, "--cols", 4, "--timeout", 5, "--out", out
+    )
     check(
         f"climb into a directory another time limit wrote is refused "
         f"({r2.stderr.strip()[:60]!r})",
@@ -205,7 +185,7 @@ with tempfile.TemporaryDirectory() as d:
         and read_jsonl(out / "climb.jsonl") == steps,
     )
 
-    r2 = run_cli("climb", *BOARD, "--engine", engine, "--from", 1, "--out", out)
+    r2 = run_cli(FINDER, "climb", *BOARD, "--engine", engine, "--from", 1, "--out", out)
     check(
         f"climb rerun with another --from is refused ({r2.stderr.strip()[-50:]!r})",
         r2.returncode == 2 and "--from" in r2.stderr,
@@ -214,7 +194,7 @@ with tempfile.TemporaryDirectory() as d:
     # Another climb is in the directory: this one starts nothing.
     with (out / "climb.jsonl").open("a") as held:
         fcntl.flock(held, fcntl.LOCK_EX)
-        r2 = run_cli("climb", *BOARD, "--engine", engine, "--out", out)
+        r2 = run_cli(FINDER, "climb", *BOARD, "--engine", engine, "--out", out)
     check(
         f"climb into a directory another climb holds is refused "
         f"({r2.stderr.strip()[-40:]!r})",
@@ -232,7 +212,7 @@ with tempfile.TemporaryDirectory() as d:
         (mixed / "climb.jsonl").write_text(
             "".join(json.dumps(step) + "\n" for step in [*steps[:-1], last])
         )
-        r2 = run_cli("climb", *BOARD, "--engine", engine, "--out", mixed)
+        r2 = run_cli(FINDER, "climb", *BOARD, "--engine", engine, "--out", mixed)
         check(
             f"climb on a log with {name} is refused, no maximum printed "
             f"({r2.stderr.strip()[-60:]!r})",
@@ -242,10 +222,10 @@ with tempfile.TemporaryDirectory() as d:
     # A step whose hunt directory is already finished, with no line of the
     # log for it: the answer is read back, and no solve time is made up.
     again = Path(d) / "climb read back"
-    run_cli("climb", *BOARD, "--out", again)
+    run_cli(FINDER, "climb", *BOARD, "--out", again)
     first, *_ = read_jsonl(again / "climb.jsonl")
     (again / "climb.jsonl").unlink()
-    r2 = run_cli("climb", *BOARD, "--out", again)
+    r2 = run_cli(FINDER, "climb", *BOARD, "--out", again)
     reread = read_jsonl(again / "climb.jsonl")[0]
     check(
         f"climb reading a finished step back: the same count, the time not "
@@ -259,12 +239,12 @@ with tempfile.TemporaryDirectory() as d:
     # the climb: here the seed's grid was rejected by `verify`.
     bad = Path(d) / "climb rejected"
     args = ("climb", "--rows", 4, "--cols", 4, "--timeout", 0, "--out", bad)
-    run_cli(*args)
+    run_cli(FINDER, *args)
     (bad / "climb.jsonl").unlink()
     (bad / "at-least-0" / "progress.jsonl").write_text(
         json.dumps({"event": "seed_done", "seed": 0, "outcome": "rejected"}) + "\n"
     )
-    r2 = run_cli(*args)
+    r2 = run_cli(FINDER, *args)
     check(
         f"climb on a step `verify` rejected stops with no answer "
         f"({r2.stderr.strip()[-60:]!r})",
@@ -277,7 +257,7 @@ with tempfile.TemporaryDirectory() as d:
     bad = Path(d) / "climb refused"
     (bad / "at-least-0").mkdir(parents=True)
     (bad / "at-least-0" / "summary.json").write_text("{}")
-    r2 = run_cli("climb", *BOARD, "--out", bad)
+    r2 = run_cli(FINDER, "climb", *BOARD, "--out", bad)
     check(
         f"climb on a step the driver refuses stops with no answer "
         f"({r2.stderr.strip()[-40:]!r})",
@@ -291,7 +271,7 @@ with tempfile.TemporaryDirectory() as d:
     out.mkdir()
     first = {**steps[0], "config": {**steps[0]["config"], "timeout": 0.0}}
     (out / "climb.jsonl").write_text(json.dumps(first) + "\n")
-    r = run_cli(
+    r = run_cli(FINDER,
         "climb", "--rows", 4, "--cols", 4, "--timeout", 0, "--engine", engine,
         "--out", out,
     )  # fmt: skip
@@ -311,7 +291,7 @@ with tempfile.TemporaryDirectory() as d:
 
     # The time limit reached is never a proof.
     out = Path(d) / "climb timeout"
-    r = run_cli("climb", "--rows", 4, "--cols", 4, "--timeout", 0, "--out", out)
+    r = run_cli(FINDER, "climb", "--rows", 4, "--cols", 4, "--timeout", 0, "--out", out)
     check(
         f"climb with a zero time limit: nothing found, nothing proven "
         f"({r.stdout.splitlines()[-1:]})",
@@ -320,7 +300,7 @@ with tempfile.TemporaryDirectory() as d:
         == ["no grid found: at least 0 reached the time limit on pysat-lazy"],
     )
     out = Path(d) / "climb from 3"
-    r = run_cli("climb", *BOARD, "--from", MOST + 1, "--out", out)
+    r = run_cli(FINDER, "climb", *BOARD, "--from", MOST + 1, "--out", out)
     check(
         f"climb --from {MOST + 1}: no grid there, and no maximum claimed "
         f"({r.stdout.splitlines()[-1:]})",
@@ -332,7 +312,9 @@ with tempfile.TemporaryDirectory() as d:
 # A flag refused before anything is written.
 with tempfile.TemporaryDirectory() as d:
     unused = Path(d) / "unused"
-    r = run_cli(*BOARD, "--number-circles", "-1", "--out", unused, "--seeds=0:1")
+    r = run_cli(
+        FINDER, *BOARD, "--number-circles", "-1", "--out", unused, "--seeds=0:1"
+    )
     check(
         f"--number-circles -1 is refused ({r.stderr.strip()!r})",
         r.returncode == 2 and "--number-circles" in r.stderr,
@@ -341,15 +323,15 @@ with tempfile.TemporaryDirectory() as d:
         (["--number-circles", 3], "--from"),
         (["--from", -1], "--from"),
     ):
-        r = run_cli("climb", *BOARD, *flags, "--out", unused)
+        r = run_cli(FINDER, "climb", *BOARD, *flags, "--out", unused)
         check(
             f"climb {flags[0]} {flags[1]} is refused ({r.stderr.strip()!r})",
             r.returncode == 2 and named in r.stderr and not unused.exists(),
         )
-r = run_cli("--help")
+r = run_cli(FINDER, "--help")
 check(
     "--help names the condition and the climb",
     r.returncode == 0 and "--number-circles K" in r.stdout and "climb" in r.stdout,
 )
 
-sys.exit(0 if ok else 1)
+finish()

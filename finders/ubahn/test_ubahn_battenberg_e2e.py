@@ -20,8 +20,6 @@ One CaDiCaL thread; about ten seconds.
     uv run finders/ubahn/test_ubahn_battenberg_e2e.py
 """
 
-import json
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -31,8 +29,8 @@ from PIL import Image
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
+from cli_checks import check, finish, read_jsonl, run_cli
 from penpa_decode import Decoded, battenberg_vertices
-from subprocess_env import success_env
 from verified_io import read_verified
 
 BOARD = ["--rows", "4", "--cols", "4", "--timeout", "10"]
@@ -46,31 +44,7 @@ ANSWERS = (
     (("--battenberg", "r1c1"), "infeasible"),
 )
 
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
-
-def run_script(script, *args):
-    return subprocess.run(
-        [sys.executable, str(HERE / script), *args],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
-
-
-def read_jsonl(path):
-    return [json.loads(line) for line in path.read_text().splitlines() if line]
-
-
-r = run_script("brute.py", "4", "4", "--battenberg", "r1c3")
+r = run_cli(HERE / "brute.py", "4", "4", "--battenberg", "r1c3")
 check(
     f"the enumeration: 18 valid 4x4 grids, one with a marking at r1c3 "
     f"({r.stdout.splitlines()[1:]})",
@@ -81,8 +55,7 @@ check(
 
 with tempfile.TemporaryDirectory() as d:
     out = Path(d) / "hunt"
-    r = run_script(
-        "hybrid_finder.py", *BOARD, "--battenberg", "r1c3",
+    r = run_cli(HERE / "hybrid_finder.py", *BOARD, "--battenberg", "r1c3",
         "--out", str(out), "--seeds=0:6", "--workers", "1",
     )  # fmt: skip
     examples = read_jsonl(out / "examples.jsonl") if r.returncode == 0 else []
@@ -100,7 +73,7 @@ with tempfile.TemporaryDirectory() as d:
         and examples[0]["checkerboard_windows"] == ["r1:turn", "r1c3", "r2:turn"],
     )
 
-    r = run_script("hybrid_finder.py", "verify", str(out))
+    r = run_cli(HERE / "hybrid_finder.py", "verify", str(out))
     stamp, verdicts = read_verified(out / "verified.jsonl")
     check(
         "verify, the solver-free reader, passes the hunt's example",
@@ -110,13 +83,13 @@ with tempfile.TemporaryDirectory() as d:
     )
 
     for flags, word in ANSWERS:
-        r = run_script("hybrid_finder.py", "classify", *BOARD, *flags)
+        r = run_cli(HERE / "hybrid_finder.py", "classify", *BOARD, *flags)
         check(
             f"classify, {' '.join(flags)}: {word}",
             r.returncode == 0 and r.stdout.startswith(f"{word}:"),
         )
 
-    r = run_script("hybrid_finder.py", "render", str(out))
+    r = run_cli(HERE / "hybrid_finder.py", "render", str(out))
     pictures = sorted((out / "renders").glob("*.png"))
     decodes = False
     if len(pictures) == 1:
@@ -128,8 +101,8 @@ with tempfile.TemporaryDirectory() as d:
         r.returncode == 0 and decodes,
     )
 
-    r = run_script(
-        "hybrid_finder.py", "--battenberg", "r1c3 r1:turn", "links", str(out)
+    r = run_cli(
+        HERE / "hybrid_finder.py", "--battenberg", "r1c3 r1:turn", "links", str(out)
     )
     links = sorted((out / "links").glob("*.txt"))
     check(
@@ -145,10 +118,12 @@ with tempfile.TemporaryDirectory() as d:
         )
 
 for flags in (("--battenberg", "r1c3"), ("--battenberg-only",)):
-    r = run_script("hybrid_finder.py", "classify", *BOARD, "--engine", "cpsat", *flags)
+    r = run_cli(
+        HERE / "hybrid_finder.py", "classify", *BOARD, "--engine", "cpsat", *flags
+    )
     check(
         f"classify on cpsat with {flags[0]} is refused by name, exit 2",
         r.returncode == 2 and f"{flags[0]} is on the PySAT engines only" in r.stderr,
     )
 
-sys.exit(0 if ok else 1)
+finish()

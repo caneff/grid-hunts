@@ -12,7 +12,6 @@ One CaDiCaL thread; about eight seconds an engine.
 """
 
 import json
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -25,36 +24,13 @@ import hybrid
 import hybrid_finder
 import hybrid_sat
 import network
-from subprocess_env import success_env
+from cli_checks import check, finish, read_jsonl, run_cli
 
 FINDER = HERE / "hybrid_finder.py"
 BOARD = ["--rows", "4", "--cols", "4", "--timeout", "10"]
 ENGINES = ("pysat-lazy", "pysat-propagator")
 # A record carries its own board and conditions.
 READER = hybrid_finder.HybridFinder(hybrid.Conditions(4, 4))
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
-
-def run_cli(*args):
-    return subprocess.run(
-        [sys.executable, str(FINDER), *args],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
-
-
-def read_jsonl(path):
-    return [json.loads(line) for line in path.read_text().splitlines() if line]
 
 
 def meeting(names, exactly=None):
@@ -74,6 +50,7 @@ def hunt(d, engine, name, *flags, seeds=40):
     records, their networks, the `empty` reasons, run.json's config)."""
     out = Path(d) / f"{engine} {name}"
     r = run_cli(
+        FINDER,
         *BOARD,
         "--engine",
         engine,
@@ -174,14 +151,14 @@ for engine in ENGINES:
         (["--exactly", "2:cross:r2", "--circles", "r2c4"], "infeasible", "no grid"),
     ):
         label = f"{engine}, classify {' '.join(flags) or 'no condition'}"
-        r = run_cli("classify", *BOARD, "--engine", engine, *flags)
+        r = run_cli(FINDER, "classify", *BOARD, "--engine", engine, *flags)
         first = r.stdout.splitlines()[:1]
         check(
             f"{label}: {word}, {said} ({first}, stderr: {r.stderr[-300:]})",
             r.returncode == 0 and first == [f"{word}: {said}"],
         )
         # A time limit reached is a timeout whatever the true answer is.
-        r = run_cli(
+        r = run_cli(FINDER,
             "classify", "--rows", "4", "--cols", "4", "--engine", engine, *flags,
             "--timeout", "0",
         )  # fmt: skip
@@ -192,7 +169,9 @@ for engine in ENGINES:
         )
 
     # The one grid of a unique condition is drawn under the answer.
-    r = run_cli("classify", *BOARD, "--engine", engine, "--circles", "c1:turn r2c4")
+    r = run_cli(
+        FINDER, "classify", *BOARD, "--engine", engine, "--circles", "c1:turn r2c4"
+    )
     (only,) = meeting(["c1:turn", "r2c4"])
     check(
         f"{engine}, classify draws the one grid of a unique condition",
@@ -208,10 +187,10 @@ check(
     hybrid_finder.ENGINES.get("pysat-propagator")
     == hybrid_sat.Engine(hybrid_sat.PROPAGATOR),
 )
-r = run_cli("--help")
+r = run_cli(FINDER, "--help")
 check(
     f"--help names every engine ({', '.join(ENGINES)})",
     r.returncode == 0 and all(engine in r.stdout for engine in ENGINES),
 )
 
-sys.exit(0 if ok else 1)
+finish()

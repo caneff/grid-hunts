@@ -15,7 +15,6 @@ on the centre of each named window, a vertex of the table, and on no other.
 """
 
 import json
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -25,33 +24,10 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import hybrid
 import penpa
+from cli_checks import check, finish, read_jsonl, run_cli
 from penpa_decode import Decoded, battenberg_vertices, edges_of, parameter
-from subprocess_env import success_env
 
 FINDER = HERE / "hybrid_finder.py"
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
-
-def run_cli(*args):
-    return subprocess.run(
-        [sys.executable, str(FINDER), *args],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
-
-
-def read_jsonl(path):
-    return [json.loads(line) for line in path.read_text().splitlines() if line]
 
 
 def network_of(rec):
@@ -75,6 +51,7 @@ def table_index(decoded, strips, cell):
 def hunt(tmp, name, *flags):
     out = Path(tmp) / name
     r = run_cli(
+        FINDER,
         *("--rows", "4", "--cols", "4", "--timeout", "10", "--engine", "cpsat"),
         *flags,
         *("--out", str(out), "--seeds=0:6", "--workers", "1"),
@@ -134,7 +111,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
     # One flag set names the same cells for every example, so the circles
     # are checked on a hunt directory holding the one example they are valid on.
-    r = run_cli("links", str(out))
+    r = run_cli(FINDER, "links", str(out))
     names = sorted(p.name for p in (out / "links").glob("*.txt"))
     check(
         "with no flags, one link file per example, named by seed, no link printed",
@@ -150,6 +127,7 @@ with tempfile.TemporaryDirectory() as tmp:
         json.dumps({"seed": seed, "outcome": "example"}) + "\n"
     )
     r = run_cli(
+        FINDER,
         "--circles",
         " ".join(wanted_circles),
         "--numbers",
@@ -212,6 +190,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # A given number that is also circled: both drawn.
     both = circle_number
     r = run_cli(
+        FINDER,
         "--circles",
         hybrid.cell_name(both),
         "--numbers",
@@ -229,7 +208,7 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
     # Default: nothing given, nothing circled.
-    r = run_cli("links", str(out))
+    r = run_cli(FINDER, "links", str(out))
     d = Decoded((out / "links" / f"{seed}.txt").read_text().strip())
     check(
         "with no flags no circle and no number is drawn",
@@ -242,7 +221,7 @@ with tempfile.TemporaryDirectory() as tmp:
     invalid = next(c for c in board if c not in valid)
     before = (out / "links" / f"{seed}.txt").read_text()
     (out / "links" / "999.txt").write_text("stale\n")
-    r = run_cli("--circles", hybrid.cell_name(invalid), "links", str(out))
+    r = run_cli(FINDER, "--circles", hybrid.cell_name(invalid), "links", str(out))
     check(
         "an invalid circle exits 2 and names the cell and its value",
         r.returncode == 2
@@ -255,36 +234,38 @@ with tempfile.TemporaryDirectory() as tmp:
         (out / "links" / "999.txt").exists()
         and (out / "links" / f"{seed}.txt").read_text() == before,
     )
-    r = run_cli("links", str(out))
+    r = run_cli(FINDER, "links", str(out))
     check(
         "a rerun replaces the link set",
         r.returncode == 0 and not (out / "links" / "999.txt").exists(),
     )
 
     # A circle off the board is refused by its name, not as a raw tuple.
-    r = run_cli("--circles", "r9c9", "links", str(out))
+    r = run_cli(FINDER, "--circles", "r9c9", "links", str(out))
     check(
         "a circle off the board is refused by name",
         r.returncode == 2 and "circle r9c9 is off the 4x4 board" in r.stderr,
     )
-    r = run_cli("--numbers", "r1:turn", "classify", "--rows", "4", "--cols", "4")
+    r = run_cli(
+        FINDER, "--numbers", "r1:turn", "classify", "--rows", "4", "--cols", "4"
+    )
     check(
         "--numbers outside `links` is refused, not ignored",
         r.returncode == 2 and "--numbers is for `links` only" in r.stderr,
     )
     # A given number must be a number cell.
-    r = run_cli("--numbers", "r1c1", "links", str(out))
+    r = run_cli(FINDER, "--numbers", "r1c1", "links", str(out))
     check(
         "a grid cell as a given number is refused by name",
         r.returncode == 2 and "r1c1" in r.stderr,
     )
     # No blank strip on this board: a blank number cell is off it.
-    r = run_cli("--numbers", "r1:blank", "links", str(out))
+    r = run_cli(FINDER, "--numbers", "r1:blank", "links", str(out))
     check(
         "a blank number cell on a four-strip board is refused",
         r.returncode == 2 and "r1:blank" in r.stderr,
     )
-    r = run_cli("links", str(Path(tmp) / "nowhere"))
+    r = run_cli(FINDER, "links", str(Path(tmp) / "nowhere"))
     check(
         "a missing directory exits 2 as not a hunt directory",
         r.returncode == 2 and "not a hunt directory" in r.stderr,
@@ -301,7 +282,7 @@ with tempfile.TemporaryDirectory() as tmp:
         )
         net_k = network_of(rec_k)
         why = hybrid.why_not_hybrid(net_k, 4, 4, (), True)
-        r = run_cli("--blank-strip", "links", str(one_k))
+        r = run_cli(FINDER, "--blank-strip", "links", str(one_k))
         if why:
             good = r.returncode == 2 and why in r.stderr
             good = good and not (one_k / "links").exists()
@@ -312,7 +293,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
     # --blank-strip: the fifth strip is drawn, and a hunt's own strip is kept.
     five = hunt(tmp, "five", "--blank-strip")
-    r = run_cli("--numbers", "r1:blank", "links", str(five))
+    r = run_cli(FINDER, "--numbers", "r1:blank", "links", str(five))
     seed5 = next(
         e["seed"]
         for e in read_jsonl(five / "progress.jsonl")
@@ -372,7 +353,7 @@ with tempfile.TemporaryDirectory() as tmp:
         rec["checkerboard_windows"] == ["r1:turn", "r1c3", "r2:turn"],
     )
     shown = ["--circles", "c1:turn", "--numbers", "c1:turn r2:cross"]
-    r = run_cli(*shown, "links", str(out))
+    r = run_cli(FINDER, *shown, "links", str(out))
     without = link_of(out, seed)
     d0 = Decoded(without)
     check(
@@ -389,7 +370,7 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
     # A window on the grid and one across the turn strip and the grid.
-    r = run_cli(*shown, "--battenberg", "r1c3 r1:turn", "links", str(out))
+    r = run_cli(FINDER, *shown, "--battenberg", "r1c3 r1:turn", "links", str(out))
     check(f"`links --battenberg` exits 0 ({r.stderr[-300:]})", r.returncode == 0)
     text = link_of(out, seed)
     d = Decoded(text)
@@ -428,7 +409,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # The negative constraint: every checkerboard window of the grid is
     # marked, and the rules text says so in a second sentence.
     every = "r1:turn r1c3 r2:turn"
-    r = run_cli("--battenberg", every, "--battenberg-only", "links", str(out))
+    r = run_cli(FINDER, "--battenberg", every, "--battenberg-only", "links", str(out))
     d = Decoded(link_of(out, seed))
     check(
         f"`links --battenberg-only` with every checkerboard window marked "
@@ -458,7 +439,7 @@ with tempfile.TemporaryDirectory() as tmp:
         ),
         ("a name that is no cell", ["--battenberg", "r1"], "--battenberg: a cell is"),
     ):
-        r = run_cli(*flags, "links", str(out))
+        r = run_cli(FINDER, *flags, "links", str(out))
         check(
             f"links refuses {name}, exit 2, naming it ({r.stderr.strip()[-160:]!r})",
             r.returncode == 2 and reason in r.stderr and link_of(out, seed) == before,
@@ -479,7 +460,7 @@ check(
     refused == "Battenberg marking at (3, 3): cell (3, 4) is off the board",
 )
 
-r = run_cli("--help")
+r = run_cli(FINDER, "--help")
 check(
     "--help describes `links --battenberg` and `--battenberg-only`",
     r.returncode == 0
@@ -487,4 +468,4 @@ check(
     and "[--battenberg-only]" in r.stdout,
 )
 
-sys.exit(0 if ok else 1)
+finish()

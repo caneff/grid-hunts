@@ -18,19 +18,11 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE.parent / "hunt"))
 import hybrid
 import time_engines
+from cli_checks import check, finish
 from hybrid_finder import ENGINES
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
 
 
 def circled(*names):
@@ -519,4 +511,4 @@ with tempfile.TemporaryDirectory() as tmp:
         code == 2 and "| 8x8 |" not in text,
     )
 
-sys.exit(0 if ok else 1)
+finish()
