@@ -117,3 +117,36 @@ The halvers left are in boxes 1, 2, 3, 6 and 9. Every unique finish keeps all
   - a body cell holds the halved 1 or a normal 9 in T;
   - its circles are equal in value in T;
   - a one-house body breaks the k − 1 bound in §2.
+
+## 6. Line economy: space, not speed, is the binding limit
+
+Measured on the current board (L1–L6): 28 body cells and 9 circles are taken,
+so **44 cells are left that can become bodies**. Per box: 9 each in boxes 2, 3
+and 6, 5 in box 1, 4 in box 9, 3 in boxes 4 and 8, 2 in box 7, and 0 in box 5.
+
+- **A fresh circle costs a body cell too.** A cell that is a circle can never
+  be a body cell, so each new circle permanently removes one cell from the 44.
+  Reusing an existing circle (r4c3, r6c3, r8c3, r6c1, r9c4, r4c1, r4c2, r7c7,
+  r7c9, or a new line's circle) is free. Rank candidates by
+  **solutions killed per new cell consumed**, counting fresh circles and
+  bodies, not by solutions killed alone.
+- **Rough budget.** Boxes 2, 3 and 6 are empty of lines, and the halvers of
+  boxes 1, 2, 3, 6 and 9 are unpinned. A body cell inside a window of a few
+  values carries about one to two bits. The 44 cells give a few tens of bits
+  at best, which is the same order as what has to be fixed. A greedy
+  separator that spends cells on one-solution kills can run out of space
+  with solutions left. That is the most likely way a seed ends `Empty`, and
+  the report should say so when it happens.
+- **Two phases.** While the pool of sampled solutions is large, pick lines by
+  the share of the pool they kill per cell. Tight windows (circles a few
+  values apart) are informative, and wide windows with extreme circles (a
+  halved 1 or normal 9 end) carry little. Once every pool sample equals the
+  target, switch to the check's second solution. Late second solutions tend
+  to differ in a small swap set: aim one line through a cell of that set
+  whose window splits the two values, ideally reusing a circle.
+- **Grow lines from the target; don't enumerate paths.** Unbounded king paths
+  explode. Start at a circle, extend through neighbours whose target value
+  stays inside the window, and stop when the gain per cell drops.
+- **Dead seeds early.** If no free cell lies where the target and the second
+  solution differ, or every such cell is boxed in by the crossing rule, end
+  the seed with `Empty("no space: …")` at once rather than searching.
