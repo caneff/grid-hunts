@@ -134,4 +134,79 @@ hunt of record.
 
 ## Hunt of record
 
-Recorded after the run, below.
+No 3-process run of record happened. Its launch under `job-run` was refused
+by the driver's load gate:
+
+> hunt: refusing to run -- 1-minute load 46.97705078125 is above 24 (use --force-load to run anyway)
+
+The controller ruled that the pilots stand as this slice's hunt result,
+since they went through the driver, and that a longer hunt is decided at the
+spec's integration step. The pilots' result: **3 hits in 6 seeds** (seeds
+0:3 twice), each written by the driver only after `verify`'s backtracking
+check found exactly one solution, the hit's own. This shows that the board
+can be finished with between lines alone. It is no count of how many
+finishes exist, and the three Empty seeds prove nothing.
+
+Empty reasons, verbatim:
+
+- First pilot (per-cell ranking), seed 1: `no space: after 8 added lines the target and the second solution differ only on body cells of drawn lines`
+- First pilot, seed 2: `no line of at most 8 cells separates the target from the second solution after 7 added lines`
+- Second pilot (pool reuse), seed 2: `no space: after 9 added lines the target and the second solution differ only on body cells of drawn lines`
+
+**First pilot, seed 0, 14 added lines.**
+
+https://sudokumaker.app/?puzzle=N4IgZg9gTgtghgFwGoFMoGcCWEB2IBcABCAIwB0AbGQAwgA0xADgK4BerANigYaDnDG5EQ9YnGYIAFtB4gAwpMw4AygihxGokAGMUHDuh4BtYAF8GZi+d7XLNqw-tO7L228euP75988+vAf5BfiG+YYGhEeHB0ZExUQnxSaEAugw6uOhqcEoIhkQmIAgAnoxChNS2RaXlJOlQKADm2Dj5hEbUDJ0VDHWEfX0ATAzDhKPdE71T-SOzY10LPTPLQ3OjAMwMm4TbACwM+4SHAKwMp4Tn21cHN0dn9xdbTzu3hycP5xQMX4Q-AOwMAGEIEADgYYMIEJ+0MBsOB4IRkO+yN+cKBoMRIJSVXQEA4ADc0ABJRo4aAoAAmPDUzBQ6RKZR4u2o2xAHCUKDaRiMgwAnFtuut+UdBX11qNdn1jt1dsLdhDdn80u0KOdjj9dhrjsqjLs1YcKNsKIc-ts-ibtQweUCSBDhSRuiRhYMsVaKKM-n0-t0KMKKNQdX9zn9-kCKBDjhGw5b2rttsdRv6dYMgesgXqdSRRoNui7kxD1gqlVbdhs3utM9mhrydecSNss7XeocSDGjJ9em31udduXM+dBi2KJn-r1i+0e71BpWRtmK8qQFlilweKB2ThOauioptABrDfoNrUMh9DIcGTCADEcBvt5A1hAKBwFIAChBcm1QFhWOVjxDwJg+iyJeYCgWBIK0OkWRQBAu7lKAUiYHuB5HjQoxnhexDXreN73qY+HYqYQA
+
+| # | Circle A | Body | Circle B |
+|---|---|---|---|
+| L7 | r5c8 | r6c8 | r7c7 |
+| L8 | r4c1 | r5c2 | r6c1 |
+| L9 | r2c4 | r3c3 | r4c2 |
+| L10 | r4c2 | r5c3 | r6c3 |
+| L11 | r5c7 | r4c8 | r5c8 |
+| L12 | r2c4 | r3c4 | r4c3 |
+| L13 | r1c6 | r2c5 | r2c4 |
+| L14 | r1c6 | r2c6 | r2c7 |
+| L15 | r1c6 | r1c7 | r2c7 |
+| L16 | r4c9 | r5c9 | r5c8 |
+| L17 | r2c7 | r3c7 | r2c8 |
+| L18 | r2c8 | r1c8 | r2c9 |
+| L19 | r1c6 | r1c5 | r2c4 |
+| L20 | r2c4 | r3c5 | r3c6 |
+
+**Second pilot, seed 0, 12 added lines.**
+
+https://sudokumaker.app/?puzzle=N4IgZg9gTgtghgFwGoFMoGcCWEB2IBcABCAIwB0AbGQAwgA0xADgK4BerANigYaDnDG5EQ9YnGYIAFtB4gAwpMw4AygihxGokAGMUHDuh4BtYAF8GZi+d7XLNqw-tO7L228euP75988+vAf5BfiG+YYGhEeHB0ZExUQnxSaEAugw6uOhqcEoIhkQmIAgAnoxChNS2RaXlJOlQKADm2Dj5hEbUDJ0VDHWEfX0ATAzDhKPdE71T-SOzY10LPTPLQ3OjAMwMm4TbACwM+4SHAKwMp4Tn21cHN0dn9xdbTzu3hycP5xQMX4Q-AOwMAGEIEADgYYMIEJ+0MBsOB4IRkO+yN+cKBoMRIJSVXQEA4ADc0ABJRo4aAoAAmPDUzBQ6RKZR4u2o2xAHCUKDaRiMgwAnFtuut+UdBX11qNdn1jt1dsLdhDdn80u0KOdjj9dhrjsqjLs1YcKNsKIc-ts-ibtQweUCSBDhSRuiRhYMsVaKKM-n0-t0KMKKNQdX9zn9-kCKBDjhGw5b2rttsdRv6dYMgesgS6dedDiR1jqcyMht0M1b1pc3rmS1ny3ntiRDoNdpneucG8nDus9oMdf9ekqS70Bl23VKjV3lSAssUuDxQOycJyZ0VFNoANbz9BtahkPoZDgyYQAYjgx5PIGsIBQOApAAUILk2qAsKxyluIeBMPpZAewD-fyDaOkWRQBAK7lKAUiYKu66bjQoy7vuxBHiex5nqYaHYqYQA
+
+| # | Circle A | Body | Circle B |
+|---|---|---|---|
+| L7 | r5c8 | r6c8 | r7c7 |
+| L8 | r4c1 | r5c2 | r4c2 |
+| L9 | r1c6 | r1c5 | r2c5 |
+| L10 | r2c5 | r3c4 r3c3 | r4c2 |
+| L11 | r4c9 | r4c8 | r5c8 |
+| L12 | r4c9 | r5c9 | r5c8 |
+| L13 | r2c5 | r2c6 | r3c7 |
+| L14 | r1c6 | r2c7 | r3c7 |
+| L15 | r3c7 | r4c7 | r5c7 |
+| L16 | r1c7 | r1c8 | r2c9 |
+| L17 | r1c4 | r2c3 | r2c4 |
+| L18 | r7c8 | r6c9 | r7c9 |
+
+**Second pilot, seed 1, 11 added lines.**
+
+https://sudokumaker.app/?puzzle=N4IgZg9gTgtghgFwGoFMoGcCWEB2IBcABCAIwB0AbGQAwgA0xADgK4BerANigYaDnDG5EQ9YnGYIAFtB4gAwpMw4AygihxGokAGMUHDuh4BtYAF8GZi+d7XLNqw-tO7L228euP75988+vAf5BfiG+YYGhEeHB0ZExUQnxSaEAugw6uOhqcEoIhkQmIAgAnoxChNS2RaXlJOlQKADm2Dj5hEbUDJ0VDHWEfX0ATAzDhKPdE71T-SOzY10LPTPLQ3OjAMwMm4TbACwM+4SHAKwMp4Tn21cHN0dn9xdbTzu3hycP5xQMX4Q-AOwMAGEIEADgYYMIEJ+0MBsOB4IRkO+yN+cKBoMRIJSVXQEA4ADc0ABJRo4aAoAAmPDUzBQ6RKZR4u2o2xAHCUKDaRiMgwAnFtuut+UdBX11qNdn1jt1dsLdhDdn80u0KOdjj9dhrjsqjLs1YcKNsKIc-ts-ibtQweUCSBDhSRuiRhYMsVaKKM-n0-t0KMKKNQdX9zn9-kCKBDjhGw5b2oMgesgYqdYMfus3oMdbtRsdRv7k5c9hmrSQbT8U8nHaNBkNeZneicdf7vn13cmIesIXydcdhccWwGrRsDillSAssUuDxQOycJyp0VFNoANaz9BtahkPoZDgyYQAYjgh6PIGsIBQOApAAUILk2qAsKxyhuIeBMPpZHuwF-vyDaOkslAEBLuUoBSJgy6ruuNCjNuu7EAeR6HiepgodiphAA
+
+| # | Circle A | Body | Circle B |
+|---|---|---|---|
+| L7 | r4c1 | r5c2 | r6c3 |
+| L8 | r3c9 | r4c8 | r5c7 |
+| L9 | r5c7 | r6c8 | r7c7 |
+| L10 | r3c8 | r4c7 | r5c7 |
+| L11 | r2c9 | r2c8 | r3c9 |
+| L12 | r3c3 | r2c4 r3c4 | r4c3 |
+| L13 | r1c5 | r2c6 | r1c6 |
+| L14 | r7c7 | r7c8 | r7c9 |
+| L15 | r4c2 | r5c3 | r4c3 |
+| L16 | r7c6 | r6c7 | r7c7 |
+| L17 | r1c3 | r1c4 | r1c5 |
