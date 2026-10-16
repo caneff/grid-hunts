@@ -4,16 +4,23 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: "17 3 * * *"
 
 jobs:
-  # The whole gate is `just check`: ruff and the finder tests. uv is the only
-  # tool installed; it fetches Python, ruff and just itself. tests/all.sh takes
-  # its suite count from GATE_JOBS: the Actions VM has 4 vCPUs and every suite
-  # is one process, so 4 suites at once.
+  # The gate is `just check`: ruff and the finder tests. A pull request and a
+  # push to main run the narrowed gate (`tests/all.sh --changed`); the schedule
+  # runs the full `just check` nightly as the backstop. uv is the only tool
+  # installed; it fetches Python, ruff and just itself. tests/all.sh takes its
+  # suite count from GATE_JOBS: the Actions VM has 4 vCPUs and every suite is
+  # one process, so 4 suites at once.
   check:
     runs-on: ubuntu-latest
     steps:
+      # Full history: --changed diffs against a base commit.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -26,4 +33,16 @@ jobs:
       - name: Gate (check)
         env:
           GATE_JOBS: 4
-        run: uvx --from rust-just just check
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          full() { echo "widened: $1"; uvx --from rust-just just check; }
+          case $EVENT in
+            pull_request) bash tests/all.sh --changed "origin/$BASE_REF" ;;
+            push)
+              if [[ $BEFORE =~ ^0+$ ]]; then full "no base commit (new branch)"
+              elif ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then full "base $BEFORE is not in the clone (force-push)"
+              else bash tests/all.sh --changed "$BEFORE"; fi ;;
+            *) uvx --from rust-just just check ;;
+          esac
