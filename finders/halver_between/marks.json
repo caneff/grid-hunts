@@ -1,0 +1,20 @@
+[
+  {"kind": "digit", "cell": "r1c1", "digit": 1},
+  {"kind": "digit", "cell": "r1c2", "digit": 9},
+  {"kind": "digit", "cell": "r4c1", "digit": 2},
+  {"kind": "digit", "cell": "r4c2", "digit": 8},
+  {"kind": "digit", "cell": "r6c1", "digit": 6},
+  {"kind": "digit", "cell": "r6c2", "digit": 7},
+  {"kind": "digit", "cell": "r7c3", "digit": 7},
+  {"kind": "digit", "cell": "r8c2", "digit": 6},
+  {"kind": "digit", "cell": "r8c3", "digit": 8},
+  {"kind": "digit", "cell": "r9c4", "digit": 3},
+  {"kind": "halver", "cell": "r8c2"},
+  {"kind": "halver", "cell": "r9c4"},
+  {"kind": "halver_digit_in", "cells": ["r5c5", "r5c6"], "digit": 9},
+  {"kind": "halver_digit_in", "cells": ["r2c1", "r3c1"], "digit": 8},
+  {"kind": "candidates", "cell": "r4c3", "digits": [1, 9]},
+  {"kind": "candidates", "cell": "r6c3", "digits": [1, 9]},
+  {"kind": "candidates", "cell": "r7c2", "digits": [1, 9]},
+  {"kind": "candidates", "cell": "r9c1", "digits": [1, 9]}
+]
