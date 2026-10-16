@@ -276,13 +276,17 @@ with tempfile.TemporaryDirectory() as d:
         "--out", out,
     )  # fmt: skip
     held, k = first["count"], first["count"] + 1
+    tail = r.stdout.splitlines()[-3:]
+    # The step line also prints the elapsed seconds, which a slow runner makes
+    # 0.1 and not 0.0: match it up to the comma after "time limit reached".
     check(
         f"climb stopped by the time limit above a found grid: best found "
-        f"{held}, not proven ({r.stdout.splitlines()[-2:]})",
+        f"{held}, not proven ({tail})",
         r.returncode == 0
-        and r.stdout.splitlines()[-3:]
+        and len(tail) == 3
+        and tail[0].startswith(f"at least {k}: timeout, time limit reached, ")
+        and tail[1:]
         == [
-            f"at least {k}: timeout, time limit reached, 0.0 s",
             f"best found {held}: not proven, at least {k} reached the time "
             f"limit on {engine}",
             f"best grid: {out / first['dir']} (seed 0)",

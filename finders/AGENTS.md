@@ -9,26 +9,13 @@ the opener link, its decoded JSON and the notes that classify its marks,
 because the checker reads them and nothing under `docs/research/` does
 (owner ruling on #595, S1).
 
-## Renbanana chocolate facts are precalculated (always on)
+## Archived finders
 
-- **Never re-derive a chocolate rectangle fact the catalogue already holds.**
-  `docs/research/renbanana/rectangle-catalogue.json` enumerates, per shape and
-  per box offset, which placements can be filled at all, the per-cell digit
-  domains, and which cells can carry a circle. Every generator question about
-  a chocolate rectangle is answered from it, in stage 1 and stage 3 alike —
-  not left for the solver to search out on each shading.
-- It is layer B (the rectangle plus the boxes, nothing outside), so a real grid
-  only narrows its answers. That is what makes reading it sound.
-- `finders/renbanana/tools/test_catalogue_is_used.py` fails if a call site
-  drops it. Run it after touching `renbanana_cpsat.py`.
-- The catalogue is rebuilt by `finders/renbanana/tools/build_rectangle_catalogue.py
-  --difference <n>`; difference 5 reproduces the file above byte for byte, and
-  other differences write `rectangle-catalogue-d<n>.json` beside it (#760).
-  At difference 4 the biggest layers hit the builder's count cap (`truncated`:
-  the count is a floor, the support is exact from CP-SAT).
-- The Banabner finder (`finders/banabner/`) reads `rectangle-catalogue-d4.json`
-  the same way, at both call sites; `finders/banabner/test_catalogue_is_used.py`
-  fails if one drops it.
+`archive/finders/` holds the retired finders (renbanana, banabner,
+galaxy-copycat, copycat-scan, lmd-hybrid-scan), each with a README saying where
+its results live. They are untested; the renbanana chocolate-catalogue rule
+(`docs/research/renbanana/rectangle-catalogue.json`) went with them. Read the
+README before reusing anything there.
 
 ## Pointers
 
@@ -160,10 +147,10 @@ because the checker reads them and nothing under `docs/research/` does
   slow (`just test-slow`); `test_spec_39_e2e.py` is spec #39 end to end in
   the gate, on one recorded hit (`hit_fixture.py`). Preflight, choices
   and runs: `docs/research/2026-10-16-halver-between-hunt-decision-log.md`.
-- `finders/galaxy-copycat/`'s write-ups live in `docs/research/2026-09-14-copycat-scan.md`
+- `archive/finders/galaxy-copycat/`'s write-ups live in `docs/research/2026-09-14-copycat-scan.md`
   and `docs/research/2026-09-14-galaxy-copycat-design.md`; its boards are
   `docs/research/2026-09-14-galaxy-copycat/boards/`.
-- `finders/galaxy-copycat/human_solver.py` is the candidate-carrying human
+- `archive/finders/galaxy-copycat/human_solver.py` is the candidate-carrying human
   solver for copycat + paired region-sum lines — the acceptance test for
   whether a board is human-solvable (design doc, "Ruling (2026-09-17)").
 - **Before starting a hunt, answer the preflight** at the top of
