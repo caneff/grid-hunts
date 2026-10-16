@@ -18,6 +18,7 @@ has equal circles in the only answer, so adding it leaves no solution.
     uv run finders/halver_between/test_brute.py
 """
 
+import json
 import random
 import sys
 import time
@@ -103,13 +104,28 @@ for _ in range(150):
     statuses.add(status)
 assert statuses == {"infeasible", "unique", "not_unique"}, statuses
 
-# Chris's 9x9 board: more than one solution, found well inside the gate's time.
-board = rules.load_lines(Path(__file__).resolve().parent / "board.json")
+# Chris's 9x9 board: more than one solution, found in well under a second.
+HERE = Path(__file__).resolve().parent
+board = rules.load_lines(HERE / "board.json")
 started = time.monotonic()
 found = brute.solutions(board, 9, (3, 3), limit=2)
 assert len(found) == 2, found
 for f in found:
     assert all(rules.line_holds(as_solution(f), ln) for ln in board)
-assert time.monotonic() - started < 30, time.monotonic() - started
+assert time.monotonic() - started < 10, time.monotonic() - started
+
+# A unique 9x9: L1-L5 plus 14 lines, each chosen to hold in one CP-SAT
+# solution and break the next. A test case only, not a hit: its lines were
+# never checked against #39's shape rules. The backtracking check must
+# exhaust the tree to call it unique, in seconds, and agree with CP-SAT.
+unique_lines = [
+    line(*names) for names in json.loads((HERE / "unique_9x9.json").read_text())
+]
+expected = rules.RuleModel(unique_lines).check(time_limit=60)
+assert expected.status == "unique", expected.status
+started = time.monotonic()
+found = brute.solutions(unique_lines, 9, (3, 3), limit=2)
+assert [as_solution(f) for f in found] == [expected.first], found
+assert time.monotonic() - started < 60, time.monotonic() - started
 
 print("ok")

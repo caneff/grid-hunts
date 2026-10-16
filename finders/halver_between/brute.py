@@ -12,7 +12,7 @@ plain d, bit n+d-1 for a halved d. Values are compared doubled: a halver's
 digit, twice a plain cell's. Before each branch the masks are narrowed to a
 fixpoint:
 
-- a cell down to one choice takes its digit from its houses' other cells,
+- a cell down to one choice (once per branch) takes its digit from its houses' other cells,
   and, as a halver, takes the halver from its houses' other cells and its
   halved digit from every other cell;
 - a digit with one place left in a house goes there;
@@ -86,51 +86,63 @@ def solutions(lines, n, box, limit):
                 bits |= 1 << d
         return bits
 
+    def room(body):
+        """room[lo][hi]: whether the open interval (lo, hi) of doubled values
+        holds, for every house, as many distinct digits as the body has
+        cells in that house, at most one of them halved."""
+        crowd = max(sum(1 for p in body if p in house) for house in houses)
+        table = [[False] * (2 * n + 2) for _ in range(2 * n + 2)]
+        for lo in range(1, 2 * n + 1):
+            for hi in range(lo + 1, 2 * n + 1):
+                plain = {d for d in range(1, n + 1) if lo < 2 * d < hi}
+                halved = {d for d in range(1, n + 1) if lo < d < hi}
+                table[lo][hi] = len(plain) >= crowd or (
+                    halved and len(plain) >= crowd - 1 and len(plain | halved) >= crowd
+                )
+        return table
+
+    lines = [(a, body, b, room(body), {}) for a, body, b in lines]
+    spans = {
+        (lo, hi): ((1 << hi) - 1) & ~((1 << (lo + 1)) - 1)
+        for lo in range(1, 2 * n + 1)
+        for hi in range(lo + 1, 2 * n + 1)
+    }
+
+    def line_bounds(table, end_a, end_b, bodies):
+        """(choices kept at a, at b, in the body) given the circles' and
+        body cells' value masks, or None when no pair of circle values fits."""
+        keep_a = keep_b = between = 0
+        for x in _bits(end_a):
+            for y in _bits(end_b):
+                if x == y:
+                    continue
+                lo, hi = (x, y) if x < y else (y, x)
+                span = spans[lo, hi]
+                if table[lo][hi] and all(v & span for v in bodies):
+                    keep_a |= 1 << x
+                    keep_b |= 1 << y
+                    between |= span
+        if not keep_a:
+            return None
+        return (
+            choices_with_values(keep_a),
+            choices_with_values(keep_b),
+            choices_with_values(between),
+        )
+
     def narrow_line(cells, line):
-        a, body, b = line
-        bodies = [values(cells[p]) for p in body]
-        lows, highs = [], []
-
-        def supported(ends, others):
-            kept = 0
-            for x in _bits(ends):
-                # x as the low circle: every body cell needs a value above x,
-                # and the other circle a value above all of those.
-                need = x
-                for v in bodies:
-                    above = v >> (x + 1)
-                    if not above:
-                        need = None
-                        break
-                    need = max(need, x + (above & -above).bit_length())
-                if need is not None and others >> (need + 1):
-                    kept |= 1 << x
-                    lows.append(x)
-                    highs.append(others.bit_length() - 1)
-                # x as the high circle, the mirror image.
-                need = x
-                for v in bodies:
-                    below = v & ((1 << x) - 1)
-                    if not below:
-                        need = None
-                        break
-                    need = min(need, below.bit_length() - 1)
-                if need is not None and others & ((1 << need) - 1):
-                    kept |= 1 << x
-                    highs.append(x)
-                    lows.append((others & -others).bit_length() - 1)
-            return kept
-
-        values_a, values_b = values(cells[a]), values(cells[b])
-        keep_a = supported(values_a, values_b)
-        keep_b = supported(values_b, values_a)
-        if not keep_a or not keep_b:
+        # The bounds depend only on the line's value masks, which recur
+        # across branches, so each line keeps its answers.
+        a, body, b, table, memo = line
+        key = (values(cells[a]), values(cells[b]), *(values(cells[p]) for p in body))
+        if key not in memo:
+            memo[key] = line_bounds(table, key[0], key[1], key[2:])
+        kept = memo[key]
+        if kept is None:
             raise _Contradiction
-        lo, hi = min(lows), max(highs)
-        between = ((1 << hi) - 1) & ~((1 << (lo + 1)) - 1)
-        changed = restrict(cells, a, choices_with_values(keep_a))
-        changed |= restrict(cells, b, choices_with_values(keep_b))
-        body_bits = choices_with_values(between)
+        bits_a, bits_b, body_bits = kept
+        changed = restrict(cells, a, bits_a)
+        changed |= restrict(cells, b, bits_b)
         for p in body:
             changed |= restrict(cells, p, body_bits)
         return changed
@@ -145,14 +157,15 @@ def solutions(lines, n, box, limit):
             return True
         return False
 
-    def propagate(cells):
+    def propagate(cells, settled):
         changed = True
         while changed:
             changed = False
             for i in range(size):
                 mask = cells[i]
-                if mask & (mask - 1):
+                if settled[i] or mask & (mask - 1):
                     continue
+                settled[i] = True
                 digit = (mask | mask >> n) & digit_bits
                 clear = ~(digit | digit << n)
                 if mask & halver_bits:
@@ -204,9 +217,9 @@ def solutions(lines, n, box, limit):
 
     found = []
 
-    def search(cells):
+    def search(cells, settled):
         try:
-            propagate(cells)
+            propagate(cells, settled)
         except _Contradiction:
             return False
         best = None  # (option count, children)
@@ -236,9 +249,9 @@ def solutions(lines, n, box, limit):
         for i, keep in best[1]:
             child = list(cells)
             child[i] &= keep
-            if search(child):
+            if search(child, list(settled)):
                 return True
         return False
 
-    search([(1 << (2 * n)) - 1] * size)
+    search([(1 << (2 * n)) - 1] * size, [False] * size)
     return found
