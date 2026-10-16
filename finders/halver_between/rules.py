@@ -90,8 +90,15 @@ def line_holds(solution, line):
 
 
 def load_lines(path):
+    """The between lines of a decoded SudokuMaker document file, in its order."""
+    try:
+        return lines_from_doc(json.loads(path.read_text()))
+    except ValueError as error:
+        raise ValueError(f"{path}: {error}") from error
+
+
+def lines_from_doc(doc):
     """The between lines of a decoded SudokuMaker document, in its order."""
-    doc = json.loads(path.read_text())
     n = round(len(doc["puzzle"]["cells"]) ** 0.5)
     groups = [
         c["lines"]
@@ -99,7 +106,7 @@ def load_lines(path):
         if c.get("type") == BETWEEN_LINE
     ]
     if not groups:
-        raise ValueError(f"{path}: no between lines (constraint type {BETWEEN_LINE})")
+        raise ValueError(f"no between lines (constraint type {BETWEEN_LINE})")
     lines = []
     for group in groups:
         for path_cells in group:
