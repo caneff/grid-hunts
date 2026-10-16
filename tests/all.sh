@@ -28,6 +28,7 @@
 #   - a data directory a finder reads (`data_map` below) selects that finder;
 #   - any other non-`.md` file under `docs/`, and any path nothing above names
 #     (a top-level dotfile, a `conftest.py`), widens the run too;
+#   - a path under `archive/` changes nothing (retired finders are not suites);
 #   - a `.md` file elsewhere changes nothing, so a docs-only diff runs lint
 #     and the runner's test, a `.md` inside a finder folder included.
 # `--list --changed <base>` prints that selection. With no `--changed`, the run
@@ -134,7 +135,7 @@ if [ -n "$base" ]; then
     done
     [ -z "$mapped" ] || continue
     case $f in
-      '' | *.md) ;;
+      '' | *.md | archive/*) ;; # archived finders are never suites
       docs/*) widened=${widened:-$f} ;;
       finders/hunt/* | pyproject.toml | uv.lock | tests/* | justfile | .github/*) widened=${widened:-$f} ;;
       finders/*/*) name=${f#finders/}; folders="$folders${name%%/*} " ;;

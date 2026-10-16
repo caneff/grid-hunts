@@ -394,6 +394,13 @@ with tempfile.TemporaryDirectory() as d:
         ),
     )
 
+    touch_on_branch(root, "archive/finders/old/test_o.py")
+    got = listing(script)
+    check(
+        f"a change under archive/ selects only lint and the runner's test ({got})",
+        got == (0, [*LINT, RUNNER]),
+    )
+
     touch_on_branch(root, "docs/research/other/data.csv")
     got = count_line(script)
     check(
