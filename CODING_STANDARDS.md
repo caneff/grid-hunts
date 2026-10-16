@@ -19,7 +19,7 @@ agent reads them off the diff. Thin on purpose: the detail lives in
   `finders/hunt/` or `sudoku-kit` already does the job, call it; when it almost
   does, extend it.
 - **A fact a catalogue already holds is read from it, never re-derived.**
-  See `finders/AGENTS.md` for the renbanana rectangle catalogue.
+  The renbanana rectangle catalogue is `docs/research/renbanana/rectangle-catalogue.json`.
 
 ## Fail loud, never silently no-op
 

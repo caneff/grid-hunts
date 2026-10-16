@@ -28,6 +28,7 @@
 #   - a data directory a finder reads (`data_map` below) selects that finder;
 #   - any other non-`.md` file under `docs/`, and any path nothing above names
 #     (a top-level dotfile, a `conftest.py`), widens the run too;
+#   - a path under `archive/` changes nothing (retired finders are not suites);
 #   - a `.md` file elsewhere changes nothing, so a docs-only diff runs lint
 #     and the runner's test, a `.md` inside a finder folder included.
 # `--list --changed <base>` prints that selection. With no `--changed`, the run
@@ -47,23 +48,19 @@ root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd) || exit 1
 cd "$root" || exit 1
 
 # Finder tests that do not run as a plain `uv run <file>`:
-#   finder_slow:   the `slow` group only (a CP-SAT solve per known grid,
-#                  minutes overall; the Banabner hunt, one 1-worker solve of
-#                  about three to four minutes).
-#   finder_cover:  run with `--cover` (a subset, one grid per shape) in the
-#                  gate, and in full in the `slow` group.
+#   finder_slow:   the `slow` group only.
 #   finder_pytest: the pytest suites, run as `uv run pytest <file> -q`.
-finder_slow="finders/renbanana/tools/test_prove_two_stage_slow.py finders/banabner/test_hunt.py"
-finder_cover="finders/renbanana/tools/test_probe_circle_pattern_accepts_known_grids.py finders/renbanana/tools/test_probe_finds_known_grids.py"
+finder_slow=""
 finder_pytest="finders/counting_shaded/test_counting_shaded.py"
 
 # The runner's own test, which every --changed selection keeps.
 runner_test="uv run tests/test_all_sh.py"
 # Data a finder reads from outside its own folder: <directory prefix>=<finder
-# folder>. A change under one selects that finder, a `.md` included. Any other
-# non-`.md` file under `docs/` widens the run, so a data directory added later
-# and never mapped costs a full run and never a skipped suite.
-data_map="docs/research/renbanana/=renbanana docs/research/banabner/=banabner docs/research/2026-09-14-galaxy-copycat/=galaxy-copycat"
+# folder>. A change under a mapped directory selects that finder, a `.md`
+# included. Any other non-`.md` file under `docs/` widens the run, so a data
+# directory added later and never mapped costs a full run and never a skipped
+# suite.
+data_map=""
 
 listed() { case " $1 " in *" $2 "*) return 0 ;; esac; return 1; } # <list> <file>
 
@@ -76,10 +73,9 @@ suites() {
   for f in finders/**/test_*.py; do
     if listed "$finder_slow" "$f"; then continue
     elif listed "$finder_pytest" "$f"; then printf 'test\tuv run pytest %s -q\n' "$f"
-    elif listed "$finder_cover" "$f"; then printf 'test\tuv run %s --cover\n' "$f"
     else printf 'test\tuv run %s\n' "$f"; fi
   done
-  for f in $finder_cover $finder_slow; do printf 'slow\tuv run %s\n' "$f"; done
+  for f in $finder_slow; do printf 'slow\tuv run %s\n' "$f"; done
 }
 
 usage() { # <what is wrong>
@@ -134,7 +130,7 @@ if [ -n "$base" ]; then
     done
     [ -z "$mapped" ] || continue
     case $f in
-      '' | *.md) ;;
+      '' | *.md | archive/*) ;; # archived finders are never suites
       docs/*) widened=${widened:-$f} ;;
       finders/hunt/* | pyproject.toml | uv.lock | tests/* | justfile | .github/*) widened=${widened:-$f} ;;
       finders/*/*) name=${f#finders/}; folders="$folders${name%%/*} " ;;

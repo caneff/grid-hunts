@@ -10,6 +10,9 @@
 # ty cannot follow.
 line-length = 88
 
+# Retired finders are untested and unlinted from the move (archive/finders/).
+extend-exclude = ["archive"]
+
 [lint]
 select = ["F", "I", "B", "UP", "SIM", "C4", "PIE", "PERF", "RET", "PTH", "RUF"]
 
