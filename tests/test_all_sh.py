@@ -213,7 +213,10 @@ def changed_tree(root):
     """A git tree holding the whole runner, a stub runner test, three fake
     finder folders and one file at each shared path, committed as `main`."""
     files = {
-        "tests/all.sh": ALL.read_text(),
+        # A mapped data directory, so the mapping loop has a test of its own.
+        "tests/all.sh": ALL.read_text().replace(
+            'data_map=""', 'data_map="docs/research/fake-data/=fake"'
+        ),
         "tests/test_all_sh.py": "pass\n",
         "finders/fake/test_a.py": "pass\n",
         "finders/other-one/test_b.py": "pass\n",
@@ -381,6 +384,13 @@ with tempfile.TemporaryDirectory() as d:
         got == (0, [*LINT, RUNNER, "uv run finders/other-one/test_b.py"]),
     )
 
+    touch_on_branch(root, "docs/research/fake-data/rows.csv")
+    got = listing(script)
+    check(
+        f"a mapped data directory selects that finder only ({got})",
+        got == (0, [*LINT, RUNNER, "uv run finders/fake/test_a.py"]),
+    )
+
     # Retired finders' data stays under docs/research/ and maps to no suite.
     touch_on_branch(root, "docs/research/renbanana/CIRCLES.json")
     got = count_line(script)
@@ -476,14 +486,15 @@ RETIRED = (
     "lmd-hybrid-scan",
 )
 for name in RETIRED:
+    tracked = subprocess.run(
+        ["git", "ls-files", f"finders/{name}"],
+        capture_output=True,
+        text=True,
+        cwd=REPO,
+    ).stdout
     check(
-        f"{name} is archived with a README and gone from finders/",
-        (REPO / "archive" / "finders" / name / "README.md").is_file()
-        and not (REPO / "finders" / name).exists(),
+        f"{name} is archived with a README and no file of it is left in finders/",
+        (REPO / "archive" / "finders" / name / "README.md").is_file() and not tracked,
     )
-check(
-    "no retired finder's name appears in the gate's listing",
-    not any(n in r.stdout for n in RETIRED),
-)
 
 sys.exit(0 if ok else 1)

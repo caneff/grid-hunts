@@ -48,22 +48,18 @@ root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd) || exit 1
 cd "$root" || exit 1
 
 # Finder tests that do not run as a plain `uv run <file>`:
-#   finder_slow:   the `slow` group only (empty since renbanana and banabner
-#                  were archived).
-#   finder_cover:  run with `--cover` (a subset) in the gate, and in full in
-#                  the `slow` group (empty for the same reason).
+#   finder_slow:   the `slow` group only.
 #   finder_pytest: the pytest suites, run as `uv run pytest <file> -q`.
 finder_slow=""
-finder_cover=""
 finder_pytest="finders/counting_shaded/test_counting_shaded.py"
 
 # The runner's own test, which every --changed selection keeps.
 runner_test="uv run tests/test_all_sh.py"
 # Data a finder reads from outside its own folder: <directory prefix>=<finder
-# folder>. Empty now: the finders that read such data are archived, and
-# nothing under `archive/` is a suite. A change under one selects that finder, a `.md` included. Any other
-# non-`.md` file under `docs/` widens the run, so a data directory added later
-# and never mapped costs a full run and never a skipped suite.
+# folder>. A change under a mapped directory selects that finder, a `.md`
+# included. Any other non-`.md` file under `docs/` widens the run, so a data
+# directory added later and never mapped costs a full run and never a skipped
+# suite.
 data_map=""
 
 listed() { case " $1 " in *" $2 "*) return 0 ;; esac; return 1; } # <list> <file>
@@ -77,10 +73,9 @@ suites() {
   for f in finders/**/test_*.py; do
     if listed "$finder_slow" "$f"; then continue
     elif listed "$finder_pytest" "$f"; then printf 'test\tuv run pytest %s -q\n' "$f"
-    elif listed "$finder_cover" "$f"; then printf 'test\tuv run %s --cover\n' "$f"
     else printf 'test\tuv run %s\n' "$f"; fi
   done
-  for f in $finder_cover $finder_slow; do printf 'slow\tuv run %s\n' "$f"; done
+  for f in $finder_slow; do printf 'slow\tuv run %s\n' "$f"; done
 }
 
 usage() { # <what is wrong>

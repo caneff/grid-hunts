@@ -23,9 +23,7 @@ fmt:
 test:
     bash tests/all.sh --group test
 
-# The slow group: empty since the renbanana and banabner finders were archived
-# (archive/finders/); a revived finder with slow tests lists them in
-# tests/all.sh's finder_slow.
-[doc("Slow finder tests, by hand (the group is empty while nothing is slow).")]
+# The slow group: the suites listed in tests/all.sh's finder_slow, run by hand.
+[doc("Slow finder tests, by hand.")]
 test-slow:
     bash tests/all.sh --group slow
