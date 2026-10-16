@@ -6,6 +6,10 @@ time; `--jobs 2` and `GATE_JOBS=2` run two at once; a failure is named with
 its output, starts no further suite and still lets the running one finish
 before the count line; a suite whose shell is killed fails the run; an empty
 selection is `0 of 0`; a `--jobs` that is not a positive integer is refused.
+`--changed <base>` narrows to the diff `<base>...HEAD`: one finder folder
+selects that folder plus lint and the runner's test; each shared path widens
+the run to every suite and the count line names it; a docs-only diff selects
+lint and the runner's test; `--list --changed` prints the selection.
 
     uv run tests/test_all_sh.py
 """
@@ -78,7 +82,11 @@ def tree(root, suites):
     (root / "tests").mkdir(parents=True)
     lines = ALL.read_text().splitlines(keepends=True)
     (root / "tests" / "all.sh").write_text(
-        "".join(line for line in lines if "tests/test_all_sh.py" not in line)
+        "".join(
+            line
+            for line in lines
+            if "printf 'test\\t%s\\n' \"$runner_test\"" not in line
+        )
     )
     (root / "finders" / "fake").mkdir(parents=True)
     for name, body in suites.items():
@@ -182,5 +190,273 @@ with tempfile.TemporaryDirectory() as d:
             f"--jobs {value} is refused, exit 2, naming the value",
             r.returncode == 2 and f"not '{value}'" in r.stderr and not r.stdout,
         )
+
+BASE_ENV = {
+    k: v for k, v in os.environ.items() if k != "GATE_JOBS" and not k.startswith("GIT_")
+}
+GIT_ENV = {
+    **BASE_ENV,
+    "GIT_AUTHOR_NAME": "t",
+    "GIT_AUTHOR_EMAIL": "t@example.invalid",
+    "GIT_COMMITTER_NAME": "t",
+    "GIT_COMMITTER_EMAIL": "t@example.invalid",
+}
+
+
+def git(root, *args):
+    subprocess.run(
+        ["git", *args], cwd=root, env=GIT_ENV, check=True, capture_output=True
+    )
+
+
+def changed_tree(root):
+    """A git tree holding the whole runner, a stub runner test, three fake
+    finder folders and one file at each shared path, committed as `main`."""
+    files = {
+        "tests/all.sh": ALL.read_text(),
+        "tests/test_all_sh.py": "pass\n",
+        "finders/fake/test_a.py": "pass\n",
+        "finders/other-one/test_b.py": "pass\n",
+        "finders/hunt/test_h.py": "pass\n",
+        "finders/loose.py": "",
+        "pyproject.toml": "",
+        "uv.lock": "",
+        "justfile": "",
+        ".github/workflows/ci.yml": "",
+        "docs/note.md": "",
+        "AGENTS.md": "",
+        "finders/fake/README.md": "",
+        "finders/fake-two/test_f.py": "pass\n",
+        "finders/renbanana/test_r.py": "pass\n",
+        "finders/banabner/test_n.py": "pass\n",
+        "finders/galaxy-copycat/test_g.py": "pass\n",
+    }
+    for name, body in files.items():
+        (root / name).parent.mkdir(parents=True, exist_ok=True)
+        (root / name).write_text(body)
+    git(root, "init", "-q", "-b", "main")
+    git(root, "add", "-A")
+    git(root, "commit", "-q", "-m", "base")
+    return root / "tests" / "all.sh"
+
+
+def touch_on_branch(root, *names):
+    git(root, "checkout", "-q", "-B", "work", "main")
+    for name in names:
+        (root / name).parent.mkdir(parents=True, exist_ok=True)
+        with (root / name).open("a") as f:
+            f.write("# change\n")
+    git(root, "add", "-A")
+    git(root, "commit", "-q", "-m", "change")
+
+
+def changed(script, *args):
+    return subprocess.run(
+        ["bash", str(script), "--changed", "main", *args],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        # The fake tree's pyproject.toml and uv.lock are empty files.
+        env={**BASE_ENV, "UV_NO_PROJECT": "1"},
+    )
+
+
+LINT = [
+    "uvx ruff check finders tests",
+    "uvx ruff format --check finders tests",
+    "uv lock --check",
+]
+RUNNER = "uv run tests/test_all_sh.py"
+ALL_TESTS = [
+    "uv run finders/banabner/test_n.py",
+    "uv run finders/fake-two/test_f.py",
+    "uv run finders/fake/test_a.py",
+    "uv run finders/galaxy-copycat/test_g.py",
+    "uv run finders/hunt/test_h.py",
+    "uv run finders/other-one/test_b.py",
+    "uv run finders/renbanana/test_r.py",
+]
+
+
+def listing(script, *args):
+    r = changed(script, "--list", *args)
+    return r.returncode, r.stdout.splitlines()
+
+
+def count_line(script, *args):
+    r = changed(script, "--group", "test", *args)
+    return r.returncode, r.stdout.splitlines()[-1]
+
+
+with tempfile.TemporaryDirectory() as d:
+    root = Path(d) / "changed"
+    root.mkdir()
+    script = changed_tree(root)
+
+    touch_on_branch(root, "finders/other-one/test_b.py")
+    got = listing(script)
+    check(
+        "--list --changed, one finder folder: lint, the runner's test and "
+        f"that folder only ({got})",
+        got == (0, [*LINT, RUNNER, "uv run finders/other-one/test_b.py"]),
+    )
+    got = count_line(script)
+    check(
+        "--changed run, one finder folder: counts the narrowed suites, no "
+        f"widened note ({got})",
+        got == (0, "2 of 2 suites passed (group: test)"),
+    )
+
+    touch_on_branch(root, "finders/fake/test_a.py")
+    got = listing(script)
+    check(
+        f"--list --changed, finders/fake does not select finders/fake-two ({got})",
+        got == (0, [*LINT, RUNNER, "uv run finders/fake/test_a.py"]),
+    )
+
+    for path in (
+        "finders/hunt/test_h.py",
+        "finders/loose.py",
+        "pyproject.toml",
+        "uv.lock",
+        "tests/new_helper.py",
+        "justfile",
+        ".github/workflows/ci.yml",
+        ".python-version",
+        "conftest.py",
+        "finders/loose.txt",
+    ):
+        touch_on_branch(root, "finders/other-one/test_b.py", path)
+        rc, lines = listing(script)
+        check(
+            f"--list --changed, {path}: widens to every suite ({lines})",
+            rc == 0 and sorted(lines) == sorted([*LINT, RUNNER, *ALL_TESTS]),
+        )
+        got = count_line(script)
+        check(
+            f"--changed run, {path}: the count line names the path ({got})",
+            got == (0, f"8 of 8 suites passed (group: test) (widened: {path})"),
+        )
+
+    touch_on_branch(root, "pyproject.toml", "justfile")
+    got = count_line(script)
+    check(
+        f"two shared paths: the note names the first one in diff order ({got})",
+        got == (0, "8 of 8 suites passed (group: test) (widened: justfile)"),
+    )
+
+    # A path git quotes when core.quotepath is on must still be seen.
+    touch_on_branch(root, "docs/research/other/donn\u00e9e.csv")
+    got = count_line(script)
+    check(
+        f"a non-ASCII unmapped docs/ file widens, naming it unquoted ({got})",
+        got
+        == (
+            0,
+            "8 of 8 suites passed (group: test) "
+            "(widened: docs/research/other/donn\u00e9e.csv)",
+        ),
+    )
+
+    # A file moved out of shared code is both a deletion and an addition.
+    git(root, "checkout", "-q", "-B", "work", "main")
+    git(root, "mv", "finders/hunt/test_h.py", "finders/fake/test_h.py")
+    git(root, "commit", "-q", "-m", "move")
+    got = count_line(script)
+    check(
+        f"a rename out of finders/hunt/ widens, naming the old path ({got})",
+        got
+        == (
+            0,
+            "8 of 8 suites passed (group: test) (widened: finders/hunt/test_h.py)",
+        ),
+    )
+
+    # `main` moving on after the branch was cut is not the branch's change.
+    touch_on_branch(root, "finders/other-one/test_b.py")
+    git(root, "checkout", "-q", "main")
+    (root / "justfile").write_text("# main moved\n")
+    git(root, "commit", "-q", "-am", "main moves")
+    git(root, "checkout", "-q", "work")
+    got = listing(script)
+    git(root, "checkout", "-q", "main")
+    git(root, "reset", "-q", "--hard", "HEAD~1")
+    check(
+        f"a commit on the base after the branch was cut does not widen it ({got})",
+        got == (0, [*LINT, RUNNER, "uv run finders/other-one/test_b.py"]),
+    )
+
+    for data, folder in (
+        ("docs/research/renbanana/CIRCLES.md", "uv run finders/renbanana/test_r.py"),
+        ("docs/research/banabner/lineup.json", "uv run finders/banabner/test_n.py"),
+        (
+            "docs/research/2026-09-14-galaxy-copycat/boards/b1.txt",
+            "uv run finders/galaxy-copycat/test_g.py",
+        ),
+    ):
+        touch_on_branch(root, data)
+        got = listing(script)
+        check(
+            f"--list --changed, {data}: that finder only, with lint and the "
+            f"runner's test ({got})",
+            got == (0, [*LINT, RUNNER, folder]),
+        )
+
+    touch_on_branch(root, "docs/research/other/data.csv")
+    got = count_line(script)
+    check(
+        f"an unmapped non-.md file under docs/ widens, naming the file ({got})",
+        got
+        == (
+            0,
+            "8 of 8 suites passed (group: test) "
+            "(widened: docs/research/other/data.csv)",
+        ),
+    )
+
+    touch_on_branch(root, "docs/research/other/notes.md")
+    got = listing(script)
+    check(
+        f"a .md outside the data map is docs only ({got})",
+        got == (0, [*LINT, RUNNER]),
+    )
+
+    touch_on_branch(root, "docs/note.md", "AGENTS.md", "finders/fake/README.md")
+    got = listing(script)
+    check(
+        "--list --changed, docs only (even a .md inside a finder folder): "
+        f"lint and the runner's test ({got})",
+        got == (0, [*LINT, RUNNER]),
+    )
+
+    touch_on_branch(root, "finders/fake/test_a.py", "docs/note.md")
+    got = listing(script)
+    check(
+        f"--list --changed, a finder folder plus a doc: the folder runs ({got})",
+        got == (0, [*LINT, RUNNER, "uv run finders/fake/test_a.py"]),
+    )
+
+    git(root, "checkout", "-q", "main")
+    got = listing(script)
+    check(
+        f"--changed with an empty diff: lint and the runner's test ({got})",
+        got == (0, [*LINT, RUNNER]),
+    )
+    r = subprocess.run(
+        ["bash", str(script), "--changed", "no-such-ref", "--list"],
+        capture_output=True,
+        text=True,
+    )
+    check(
+        "--changed with an unknown base is refused, exit 2, naming it",
+        r.returncode == 2 and "no-such-ref" in r.stderr and not r.stdout,
+    )
+    r = subprocess.run(
+        ["bash", str(script), "--changed"], capture_output=True, text=True
+    )
+    check(
+        "--changed with no value is refused, exit 2",
+        r.returncode == 2 and "--changed needs a value" in r.stderr,
+    )
 
 sys.exit(0 if ok else 1)

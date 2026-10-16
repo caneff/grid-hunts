@@ -30,6 +30,7 @@ the U-Bahn finder's engines and flags. Read it before touching `finders/`.
 ## End-to-end seam
 
 - **Seam**: `just check`
+- **Narrowed**: `bash tests/all.sh --changed origin/main` — lint, the runner's test, and the suites under each `finders/<name>/` folder the diff touches (plus the finder a changed data directory feeds); shared code, a `docs/` file that is not `.md` and not mapped, or any path nothing names widens the run to every non-slow suite, and the last line ends `(widened: <path>)`; a diff of unmapped `.md` files runs lint and the runner's test; the rules and the data map are in the header of `tests/all.sh`
 - **Blind to**: the slow renbanana tests (`just test-slow`), a hunt's own
   output, and how a found grid reads once it is built into a puzzle link
 
@@ -38,15 +39,20 @@ the U-Bahn finder's engines and flags. Read it before touching `finders/`.
 - **Gate — run before each commit and before opening a PR:** `just check` —
   ruff on `finders/` and `tests/`, `uv lock --check`, every
   `finders/**/test_*.py` except the slow ones, and `tests/test_all_sh.py`
-  (the runner's own test). CI runs it on every pull request and on pushes to
-  main, installing only uv.
+  (the runner's own test). It is the full seam: CI runs it nightly, on a cron
+  line in `.github/workflows/ci.yml`, installing only uv. A pull request and a
+  push to main run the narrowed gate, `bash tests/all.sh --changed
+  origin/main` (a push uses the pushed range's base; a new branch or a
+  force-push runs `just check` and says it widened). `--list --changed
+  <base>` prints the selection; `tests/all.sh`'s header states the rules.
 - Suites run one at a time. `GATE_JOBS=<n>` (or `bash tests/all.sh --jobs <n>`)
   runs n at once; CI sets 4 on its 4-vCPU runner, and a local run leaves it
   unset because the box is shared.
 - CI gate wall clock, the `Gate (check)` step: **before** 15 min 15 s, one
   suite at a time (run 38341110336, push to main, 2026-10-13). **After:**
   6 min 22 s, 4 suites at once (run 38724587608, pull request, 2026-10-15,
-  the same 64 test suites plus the runner's own test).
+  the same 64 test suites plus the runner's own test). Those are full-seam
+  times; a narrowed run costs the selected suites only.
 - Lint + auto-fix: `just fmt`
 - Tests alone: `just test` — slow tests, by hand: `just test-slow`
 - Most tests are standalone scripts run by name (`uv run <file>`).
