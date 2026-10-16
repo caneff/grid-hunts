@@ -17,7 +17,7 @@ breaks:
 most `max_cells` cells that `shape_violation` accepts, that holds in `target`
 and that fails in `second`, shortest first, each line once (a path and its
 reverse are one line). It walks out from each circle and keeps a body only
-while its target values all sit on one side of that circle, so it never
+while its target doubled values all sit on one side of that circle, so it never
 builds a path the target already breaks.
 
 `new_cells`, `free_cell_count` and `no_space` count the space a line takes
@@ -30,7 +30,7 @@ import itertools
 import rules
 
 STEPS = [(dr, dc) for dr in (-1, 0, 1) for dc in (-1, 0, 1) if (dr, dc) != (0, 0)]
-MIN_VALUE, MAX_VALUE = 1, 18  # doubled: a halved 1, a normal 9
+MIN_DOUBLED, MAX_DOUBLED = 1, 18  # a halved 1, a normal 9
 
 
 def path_of(line):
@@ -108,7 +108,7 @@ def new_cells(path, lines):
     return len(path) - 2 + sum(c not in on_line for c in (path[0], path[-1]))
 
 
-def free_cell_count(lines, n=9):
+def free_cell_count(lines, n):
     """How many cells of an n x n board are on no line, so could still be a
     body cell."""
     return n * n - len(_occupied(lines)[0])
@@ -132,26 +132,30 @@ def separating_paths(target, second, lines, max_cells):
     on_line, bodies, diagonals = _occupied(lines)
     n = len(target.digits)
     cells = [(r, c) for r in range(n) for c in range(n)]
-    value = {cell: target.doubled(cell) for cell in cells}
+    doubled = {cell: target.doubled(cell) for cell in cells}
     found = []
 
-    def step_ok(p, q, own):
+    def step_ok(p, q, own_diagonals):
         cross = _crossing(p, q)
-        return cross is None or (cross not in diagonals and cross not in own)
+        return cross is None or (cross not in diagonals and cross not in own_diagonals)
 
-    def walk(path, low, high, own):
+    def walk(path, low, high, own_diagonals):
         """Extend `path` (circle first, body after) whose body's target
-        values span [low, high]; `own` holds its diagonal steps."""
+        doubled values span [low, high]; `own_diagonals` holds its diagonal
+        steps."""
         last = path[-1]
-        start = value[path[0]]
+        start = doubled[path[0]]
         for dr, dc in STEPS:
             q = (last[0] + dr, last[1] + dc)
             if not (0 <= q[0] < n and 0 <= q[1] < n) or q in path:
                 continue
-            if not step_ok(last, q, own):
+            if not step_ok(last, q, own_diagonals):
                 continue
-            mine = own | {frozenset((last, q))} if _crossing(last, q) else own
-            v = value[q]
+            step = frozenset((last, q))
+            diagonals_after = (
+                own_diagonals | {step} if _crossing(last, q) else own_diagonals
+            )
+            v = doubled[q]
             # q as the closing circle.
             if (
                 len(path) >= 2
@@ -168,13 +172,13 @@ def separating_paths(target, second, lines, max_cells):
                 continue
             new_low, new_high = min(low, v), max(high, v)
             if not (new_high < start or new_low > start):
-                continue  # body values straddle the first circle
-            if new_low <= MIN_VALUE or new_high >= MAX_VALUE:
-                continue  # no circle value lies beyond this body
-            walk((*path, q), new_low, new_high, mine)
+                continue  # body doubled values straddle the first circle
+            if new_low <= MIN_DOUBLED or new_high >= MAX_DOUBLED:
+                continue  # no circle's doubled value lies beyond this body
+            walk((*path, q), new_low, new_high, diagonals_after)
 
     for a in cells:
         if a not in bodies:
-            walk((a,), MAX_VALUE + 1, MIN_VALUE - 1, frozenset())
+            walk((a,), MAX_DOUBLED + 1, MIN_DOUBLED - 1, frozenset())
     found.sort(key=len)
     return found

@@ -49,11 +49,12 @@ cd "$root" || exit 1
 # Finder tests that do not run as a plain `uv run <file>`:
 #   finder_slow:   the `slow` group only (a CP-SAT solve per known grid,
 #                  minutes overall; the Banabner hunt, one 1-worker solve of
-#                  about three to four minutes).
+#                  about three to four minutes; the halver/between hunt, a
+#                  9x9 hunt plus its backtracking verify).
 #   finder_cover:  run with `--cover` (a subset, one grid per shape) in the
 #                  gate, and in full in the `slow` group.
 #   finder_pytest: the pytest suites, run as `uv run pytest <file> -q`.
-finder_slow="finders/renbanana/tools/test_prove_two_stage_slow.py finders/banabner/test_hunt.py"
+finder_slow="finders/renbanana/tools/test_prove_two_stage_slow.py finders/banabner/test_hunt.py finders/halver_between/test_hunt.py"
 finder_cover="finders/renbanana/tools/test_probe_circle_pattern_accepts_known_grids.py finders/renbanana/tools/test_probe_finds_known_grids.py"
 finder_pytest="finders/counting_shaded/test_counting_shaded.py"
 

@@ -1,5 +1,6 @@
 """The backtracking check and the CP-SAT rule check agree, on a hand-built
-4x4 case with a known answer and on random small line sets.
+4x4 case with a known answer and on random small line sets. A search past
+its deadline raises `OutOfTime` and returns no count.
 
 The known case (boxes 2x2) has two lines, A and B, and one answer:
 
@@ -68,6 +69,15 @@ assert rules.RuleModel([A, B, E], n=4, box=(2, 2)).check().status == "infeasible
 assert brute.solutions([A, B, E], 4, (2, 2), limit=2) == []
 assert rules.RuleModel([E], n=4, box=(2, 2)).check().status == "not_unique"
 assert len(brute.solutions([E], 4, (2, 2), limit=2)) == 2
+
+# A deadline already past stops the search before its first node: no count,
+# never a short one read as a count.
+try:
+    brute.solutions([E], 4, (2, 2), limit=2, deadline=time.monotonic() - 1)
+except brute.OutOfTime:
+    pass
+else:
+    raise AssertionError("a search past its deadline returned a count")
 
 # Random 4x4 king-step line sets: both checks give the same status, and the
 # same answer when it is unique.

@@ -5,7 +5,9 @@ deduction.
 `RuleModel(lines)` builds the board once: digits, one halver boolean per cell
 and a doubled value per cell, with each line's between rule on top.
 `add_line` puts one more line on the same model, so a caller that adds lines
-one at a time never rebuilds the board. `check` decides uniqueness over the
+one at a time never rebuilds the board. `sample` draws one solution, steered
+by random digit hints, and `hint` makes a given solution the one a later
+`check` tries first. `check` decides uniqueness over the
 digits and the halvers together and leaves the model alone; `mark_holds`
 solves once with the mark negated, so a mark holds exactly when that solve is
 infeasible. Neither ever reads a timeout as unique or as held.
@@ -55,10 +57,6 @@ class RuleCheck(NamedTuple):
     status: str
     first: Solution | None = None
     second: Solution | None = None
-
-    @property
-    def unique(self):
-        return self.status == "unique"
 
 
 class MarkCheck(NamedTuple):
@@ -187,6 +185,30 @@ class RuleModel:
         )
         grid = tuple(tuple(digits[r, c] for c in range(n)) for r in range(n))
         return Solution(grid, halvers)
+
+    def sample(self, rng, time_limit):
+        """One solution, steered by a random digit hint per cell, on one
+        worker; None when the solve reached its time limit first. Any other
+        status without a solution raises: the lines a caller samples always
+        have one."""
+        m = self.model.clone()
+        m.ClearHints()
+        for var in self.x.values():
+            m.AddHint(m.GetIntVarFromProtoIndex(var.Index()), rng.randint(1, self.n))
+        solver = cpsat.solver(time_limit)
+        status = solver.Solve(m)
+        if status in cpsat.SOLVED:
+            return self._solution([solver.Value(v) for v in self._variables()])
+        if status == cpsat.UNKNOWN:
+            return None
+        raise ValueError(f"sampling got solver status {solver.StatusName(status)}")
+
+    def hint(self, solution):
+        """Give the model `solution` as its hint, so a check finds it first."""
+        self.model.ClearHints()
+        for cell, var in self.x.items():
+            self.model.AddHint(var, solution.digits[cell[0]][cell[1]])
+            self.model.AddHint(self.h[cell], cell in solution.halvers)
 
     def check(self, time_limit=10.0):
         """The five-status uniqueness of digits and halvers together, on one

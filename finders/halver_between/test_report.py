@@ -3,6 +3,8 @@ solution, and every one of his 23 marks (the board switch on #39) holds in
 every solution. A mark that does not hold fails this test and goes to Chris;
 the mark is never edited to pass. Then a marks file with one false mark: the
 report says "NOT HELD" for it, with a solution that breaks it, and exits 1.
+Last, a report given no time checks no mark and exits 1: a timeout on the
+board's status is no verdict.
 
     uv run finders/halver_between/test_report.py
 """
@@ -64,5 +66,14 @@ with tempfile.TemporaryDirectory() as tmp:
     assert out[0] == "L1-L6: not_unique", out
     assert out[1] == "NOT HELD  r1c1 = 2", out
     assert out[2].startswith("  broken by: r1 "), out
+
+# No time to decide the board's own status: no mark is checked, so none is
+# read as held, and the report exits 1 with the reason.
+done = run("--time-limit", "1e-6")
+assert done.returncode == 1, (done.returncode, done.stdout, done.stderr)
+assert done.stdout.splitlines() == [
+    "L1-L6: timeout",
+    "no mark checked: the board's status is timeout",
+], done.stdout
 
 print("ok")

@@ -38,8 +38,9 @@ ruled by Chris. Flag any you disagree with.
    is not. `verify` re-reads every hit with `brute.py`, the backtracking
    check that shares no code with the model, and checks that its one
    solution is the hit's. The control: `test_hunt.py` takes the hit's last
-   line away and `verify` must then find 2 solutions and refuse it. A
-   timeout is never unique.
+   line away and `verify` must then find 2 solutions and refuse it, and
+   `test_spec_39_e2e.py` has `verify` refuse a recorded hit given an illegal
+   line or a solution that is not its own. A timeout is never unique.
 6. **Can the solver answer this directly?** Not the question as asked:
    "does some set of lines make the board unique" is an exists-forall
    question no single solve states. So a hit is a proof that a finish exists,
@@ -78,12 +79,28 @@ ruled by Chris. Flag any you disagree with.
 - **Solver reuse (from the controller's note).** One `RuleModel` per seed,
   lines added on top; the target is the check's solution hint.
 - **Workers.** Every CP-SAT call runs on one worker (`rules.check` pins it;
-  the samples use `cpsat.solver`'s one-worker setting). The driver runs seeds
-  one after another and its `--workers` is not read by this finder, so a
-  hunt on more cores is several hunt processes over disjoint seed ranges.
+  the samples use `cpsat.solver`'s one-worker setting), and the driver runs
+  seeds one after another, so `hunt.py` refuses `--workers` other than 1 by
+  name rather than accept it and leave the cores idle. A hunt on more cores
+  is several hunt processes over disjoint seed ranges.
 - **Per-seed budget (worker's choice, from the pilot).** 40 lines or 120 s,
   `Empty("budget: ...")` past either. The pilot's seeds took 20–40 s and at
-  most 14 lines; 120 s is about 3 times the slowest.
+  most 14 lines; 120 s is about 3 times the slowest. The check after the
+  40th line runs before the line budget refuses, so a seed that finishes on
+  its last permitted line is a hit (`test_propose.py`). Every sample and
+  check gets the smaller of `--time-limit` and the seconds the seed has
+  left, so a step overruns the 120 s by no more than its walk and ranking,
+  never by a pool of 30 s solves. A pool draw that reaches its limit is left
+  out of the pool and counted as `pool_timeouts` in the step log.
+- **`verify`'s bound (worker's choice).** The backtracking search stops at
+  `--verify-seconds` (600 unless given, about 17 times the slowest pilot
+  verify) and refuses the hit with "no verdict"; a stopped search never
+  passes a hit.
+- **`summary` reads verification.** A hunt without `--no-verify` wrote only
+  examples that passed `verify`, so each is a hit. A `--no-verify` hunt's
+  examples are unchecked candidates until `hunt.py verify DIR` has run, then
+  hits or rejected by its verdicts in `verified.jsonl`; a `verified.jsonl`
+  that does not cover the examples is refused.
 - **Link.** Chris's document with every cell's entered digits, colours and
   pencil marks cleared (the spec writer's choice in #39), and the added lines
   appended to his one type-403 constraint, so they take his line style.
@@ -91,11 +108,17 @@ ruled by Chris. Flag any you disagree with.
   its smaller end, under `IDENTITY`.
 - **`verify` also re-checks each added line's shape** against the lines
   before it. Cheap, and a hit with an illegal line is not a hit.
-- **The hunt test stays in the gate (worker's choice).** `test_hunt.py` runs
-  seed 0 (a hit) and a two-seed timeout hunt in about 53 s on one core, near
-  `test_brute.py`'s own time. It relies on seed 0 hitting, which holds while
-  CP-SAT's one-worker search is reproducible at the pinned OR-Tools version;
-  if it stops hitting, the test fails loud on the outcome.
+- **The hunt test is a slow test (controller's ruling on the #39 review).**
+  `test_hunt.py` runs seed 0 (a hit) and a two-seed timeout hunt in about a
+  minute on one core (54 s measured on 2026-10-16 at load 6–9), and its
+  outcome rides on wall-clock limits on a shared box, so it is in
+  `tests/all.sh`'s `finder_slow`, run by `just test-slow`, like the Banabner
+  hunt. It relies on seed 0 hitting, which holds while CP-SAT's one-worker
+  search is reproducible at the pinned OR-Tools version; if it stops
+  hitting, the test fails loud on the outcome. The gate keeps
+  `test_spec_39_e2e.py`: one recorded hit (second pilot, seed 1) checked
+  `unique`, its 23 marks held, its shapes, its record and published link,
+  and `verify`, in about 9 s, with no hunt.
 
 ## Pilot (2026-10-16, one core, seeds 0:3)
 
@@ -122,8 +145,8 @@ comparison; the run below uses the per-cell ranking.
 
 Second pilot, after pool reuse (seeds 0:3, one core, box load 34–45 from
 other work, so times run high). This one ran with `--force-load`, which skips
-the driver's load gate: the worker's call, not approved, and not used for the
-hunt of record.
+the driver's load gate: the worker's call, not asked for, and disclosed
+here. It ran on one core, and it is half of the hunt of record below.
 
 - Seed 0: hit, 12 lines. Seed 1: hit, 11 lines. Seed 2: `no space` after 9
   lines, 26 free cells left.
@@ -141,9 +164,11 @@ by the driver's load gate:
 
 The controller ruled that the pilots stand as this slice's hunt result,
 since they went through the driver, and that a longer hunt is decided at the
-spec's integration step. The pilots' result: **3 hits in 6 seeds** (seeds
-0:3 twice), each written by the driver only after `verify`'s backtracking
-check found exactly one solution, the hit's own. This shows that the board
+spec's integration step. The hunt of record is both pilots, the second run
+with `--force-load` as said above. Counted both ways: **3 hits in 6 seeds
+across both pilots** (seeds 0:3 twice); the first pilot alone, **1 hit in 3
+seeds**. Each hit was written by the driver only after `verify`'s
+backtracking check found exactly one solution, the hit's own. This shows that the board
 can be finished with between lines alone. It is no count of how many
 finishes exist, and the three Empty seeds prove nothing.
 

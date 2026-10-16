@@ -6,9 +6,11 @@ example that failed it). `verify` refuses the same hit with its last line
 taken away. A hunt whose seed finds nothing records its `Empty` reason and
 is summarised as "none found", never as a proof.
 
-Seed 0 finds a hit in about half a minute and `verify`'s backtracking check
-takes about as long again, so this suite runs in about a minute and a half
-on one core.
+A slow test, outside the gate: `just test-slow` runs it (tests/all.sh's
+`finder_slow`), since a full 9x9 hunt and its backtracking verify depend on
+the box's load. Its time on one core is in the decision log. The gate's
+`test_spec_39_e2e.py` covers the same hit's record, link and `verify` on a
+recorded hit, without a hunt.
 
     uv run finders/halver_between/test_hunt.py
 """
@@ -52,7 +54,14 @@ with tempfile.TemporaryDirectory() as tmp:
     (record,) = [json.loads(line) for line in (out / "examples.jsonl").open()]
 
     # The link holds Chris's six lines, then the hit's, and nothing entered.
-    finder = hunt.HalverBetweenFinder(8, 20, 30.0, 40, 600.0)
+    finder = hunt.HalverBetweenFinder(
+        max_cells=8,
+        pool=20,
+        time_limit=30.0,
+        max_lines=40,
+        max_seconds=120.0,
+        verify_seconds=600.0,
+    )
     hit = finder.candidate_from_record(record)
     assert hit.added, record
     doc = decode_puzzle(record["link"])

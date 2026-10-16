@@ -3,13 +3,16 @@ that counts the solutions of a halver + between-line board up to a limit. It
 shares no code with the CP-SAT model in `rules.py`, so a modelling bug in one
 shows up as a disagreement with the other.
 
-`solutions(lines, n, box, limit)` returns up to `limit` solutions, each a
-(digits row by row, frozenset of halver cells) pair, in search order. A line
+`solutions(lines, n, box, limit, deadline)` returns up to `limit` solutions,
+each a (digits row by row, frozenset of halver cells) pair, in search order.
+Given a `deadline` (a `time.monotonic()` reading), it raises `OutOfTime` at
+the first search node past it, so a caller gets no count rather than a short
+one. A line
 is any (circle a, body cells, circle b) triple of (row, column) cells from 0.
 
 Every cell keeps a 2n-bit mask of the choices still open: bit d-1 for a
-plain d, bit n+d-1 for a halved d. Values are compared doubled: a halver's
-digit, twice a plain cell's. Before each branch the masks are narrowed to a
+plain d, bit n+d-1 for a halved d. Cells are compared by doubled value: a
+halver's digit, twice a plain cell's. Before each branch the masks are narrowed to a
 fixpoint:
 
 - a cell down to one choice (once per branch) takes its digit from its houses' other cells,
@@ -19,15 +22,21 @@ fixpoint:
 - a house with one cell left that can be its halver gets it, and a house
   with a cell that can only be a halver clears the halver from the rest;
 - a halved digit with one cell left gets it;
-- a line keeps a circle value only when the other circle has a value that
-  leaves every body cell a value strictly between the two, and keeps only
-  body values strictly between the lowest such low end and the highest such
-  high end.
+- a line keeps a circle's doubled value only when the other circle has one
+  that leaves every body cell a doubled value strictly between the two, and
+  keeps only body doubled values strictly between the lowest such low end
+  and the highest such high end.
 
 An empty mask, or a digit or halver with no place left, ends the branch. The
 search then branches on whichever has the fewest options: one cell's
 choices, or the cells left that can be one house's halver.
 """
+
+import time
+
+
+class OutOfTime(Exception):
+    """The search passed its deadline before it could count to `limit`."""
 
 
 def _houses(n, box):
@@ -53,7 +62,7 @@ def _bits(mask):
         mask ^= low
 
 
-def solutions(lines, n, box, limit):
+def solutions(lines, n, box, limit, deadline=None):
     houses = [[r * n + c for r, c in house] for house in _houses(n, box)]
     size = n * n
     digit_bits = (1 << n) - 1
@@ -70,16 +79,17 @@ def solutions(lines, n, box, limit):
         for (a, ac), body, (b, bc) in lines
     ]
 
-    # Value masks: bit v set when the doubled value v is still possible.
-    plain_values = [
+    # Doubled-value masks: bit v set when the doubled value v is possible.
+    plain_doubled = [
         sum(1 << (2 * (d + 1)) for d in range(n) if m >> d & 1) for m in range(1 << n)
     ]
 
-    def values(mask):
-        return plain_values[mask & digit_bits] | ((mask >> n) << 1)
+    def doubled_values(mask):
+        return plain_doubled[mask & digit_bits] | ((mask >> n) << 1)
 
-    def choices_with_values(keep):
-        """The choice bits whose doubled value is in the value mask `keep`."""
+    def choices_with_doubled(keep):
+        """The choice bits whose doubled value is in the doubled-value mask
+        `keep`."""
         bits = ((keep >> 1) & digit_bits) << n
         for d in range(n):
             if keep >> (2 * (d + 1)) & 1:
@@ -110,7 +120,8 @@ def solutions(lines, n, box, limit):
 
     def line_bounds(table, end_a, end_b, bodies):
         """(choices kept at a, at b, in the body) given the circles' and
-        body cells' value masks, or None when no pair of circle values fits."""
+        body cells' doubled-value masks, or None when no pair of circle
+        doubled values fits."""
         keep_a = keep_b = between = 0
         for x in _bits(end_a):
             for y in _bits(end_b):
@@ -125,16 +136,20 @@ def solutions(lines, n, box, limit):
         if not keep_a:
             return None
         return (
-            choices_with_values(keep_a),
-            choices_with_values(keep_b),
-            choices_with_values(between),
+            choices_with_doubled(keep_a),
+            choices_with_doubled(keep_b),
+            choices_with_doubled(between),
         )
 
     def narrow_line(cells, line):
-        # The bounds depend only on the line's value masks, which recur
-        # across branches, so each line keeps its answers.
+        # The bounds depend only on the line's doubled-value masks, which
+        # recur across branches, so each line keeps its answers.
         a, body, b, table, memo = line
-        key = (values(cells[a]), values(cells[b]), *(values(cells[p]) for p in body))
+        key = (
+            doubled_values(cells[a]),
+            doubled_values(cells[b]),
+            *(doubled_values(cells[p]) for p in body),
+        )
         if key not in memo:
             memo[key] = line_bounds(table, key[0], key[1], key[2:])
         kept = memo[key]
@@ -218,6 +233,8 @@ def solutions(lines, n, box, limit):
     found = []
 
     def search(cells, settled):
+        if deadline is not None and time.monotonic() > deadline:
+            raise OutOfTime
         try:
             propagate(cells, settled)
         except _Contradiction:

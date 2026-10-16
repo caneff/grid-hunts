@@ -26,7 +26,8 @@ test:
 # The renbanana tests the gate runs as a subset (--cover) in full, plus the
 # slow two-stage proof: a CP-SAT solve per known grid, minutes overall. Run by
 # hand after touching probe_inverted.py, probe_circle_pattern.py or
-# prove_two_stage.py.
+# prove_two_stage.py. The Banabner and halver/between hunt tests run here too
+# (tests/all.sh's finder_slow).
 [doc("Slow finder tests (a CP-SAT solve per known grid), by hand, minutes overall.")]
 test-slow:
     bash tests/all.sh --group slow
