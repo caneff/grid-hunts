@@ -148,6 +148,10 @@ because the checker reads them and nothing under `docs/research/` does
   (the success dialog, the Line tool, the icons'
   order, the centre point); it needs Chromium and the live page, so
   it stays out of both gates.
+- `finders/halver_between/` is the halver + between-line rule check (spec #39):
+  `rules.py` the CP-SAT model and per-mark check, `brute.py` the independent
+  backtracking check, `report.py` the status of Chris's board and his marks;
+  facts to build on: `docs/research/2026-10-16-halver-between-truths.md`.
 - `finders/galaxy-copycat/`'s write-ups live in `docs/research/2026-09-14-copycat-scan.md`
   and `docs/research/2026-09-14-galaxy-copycat-design.md`; its boards are
   `docs/research/2026-09-14-galaxy-copycat/boards/`.
