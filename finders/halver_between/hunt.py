@@ -338,7 +338,16 @@ def summary(out):
 
 def main(argv):
     if argv and argv[0] == "summary":
-        print("\n".join(summary(Path(argv[1]))))
+        if len(argv) != 2:
+            print("usage: hunt.py summary DIR", file=sys.stderr)
+            return 2
+        out = Path(argv[1])
+        if not (out / "run.json").exists():
+            print(
+                f"hunt.py summary: {out} holds no hunt (no run.json)", file=sys.stderr
+            )
+            return 2
+        print("\n".join(summary(out)))
         return 0
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--max-cells", type=int, default=8)

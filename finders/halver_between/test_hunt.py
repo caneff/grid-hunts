@@ -101,4 +101,9 @@ with tempfile.TemporaryDirectory() as tmp:
     assert "not a proof" in first, first
     assert "seed 1: timeout" in summary.stdout, summary.stdout
 
+    # A directory with no hunt in it is refused by name, not read as empty.
+    missing = run("summary", str(Path(tmp) / "nothing"))
+    assert missing.returncode == 2, missing
+    assert "holds no hunt" in missing.stderr, missing.stderr
+
 print("ok")
