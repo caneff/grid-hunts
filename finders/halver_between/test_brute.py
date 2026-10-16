@@ -114,7 +114,8 @@ for f in found:
     assert all(rules.line_holds(as_solution(f), ln) for ln in board)
 assert time.monotonic() - started < 10, time.monotonic() - started
 
-# A unique 9x9: L1-L5 plus 14 lines, each chosen to hold in one CP-SAT
+# A unique 9x9: the five lines of Chris's first board (BGHKnjgkHd, before the
+# switch on #39) plus 14 lines, each chosen to hold in one CP-SAT
 # solution and break the next. A test case only, not a hit: its lines were
 # never checked against #39's shape rules. The backtracking check must
 # exhaust the tree to call it unique, in seconds, and agree with CP-SAT.

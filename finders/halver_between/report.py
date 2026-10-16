@@ -3,7 +3,7 @@ each of his marks holds in every solution.
 
     uv run finders/halver_between/report.py [--marks FILE]
 
-The lines are `board.json`'s (L1-L5, decoded from BOARD_LINK.txt). The marks
+The lines are `board.json`'s, decoded from BOARD_LINK.txt. The marks
 are `marks.json`'s unless `--marks` names another file: deductions to check,
 never constraints on the board. The first line is `L1-L<k>: <status>`, then
 one line per mark, `held` or `NOT HELD` (with a solution that breaks it) or

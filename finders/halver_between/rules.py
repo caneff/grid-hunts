@@ -205,6 +205,9 @@ class RuleModel:
         elif kind == "candidates":
             for digit in mark["digits"]:
                 m.Add(x[parse_cell(mark["cell"])] != digit)
+        elif kind == "digit_in":
+            for cell in map(parse_cell, mark["cells"]):
+                m.Add(x[cell] != mark["digit"])
         elif kind == "halver":
             m.Add(h[parse_cell(mark["cell"])] == 0)
         elif kind == "halver_digit_in":
@@ -236,6 +239,8 @@ def mark_name(mark):
         return f"{mark['cell']} = {mark['digit']}"
     if kind == "candidates":
         return f"{mark['cell']} in {{{','.join(map(str, mark['digits']))}}}"
+    if kind == "digit_in":
+        return f"{mark['digit']} in {' or '.join(mark['cells'])}"
     if kind == "halver":
         return f"{mark['cell']} is a halver"
     if kind == "halver_digit_in":
