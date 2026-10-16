@@ -48,9 +48,10 @@ root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd) || exit 1
 cd "$root" || exit 1
 
 # Finder tests that do not run as a plain `uv run <file>`:
-#   finder_slow:   the `slow` group only.
+#   finder_slow:   the `slow` group only (the halver/between hunt, a 9x9
+#                  hunt plus its backtracking verify, about a minute).
 #   finder_pytest: the pytest suites, run as `uv run pytest <file> -q`.
-finder_slow=""
+finder_slow="finders/halver_between/test_hunt.py"
 finder_pytest="finders/counting_shaded/test_counting_shaded.py"
 
 # The runner's own test, which every --changed selection keeps.

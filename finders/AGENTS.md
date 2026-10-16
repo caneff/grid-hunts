@@ -135,6 +135,18 @@ README before reusing anything there.
   (the success dialog, the Line tool, the icons'
   order, the centre point); it needs Chromium and the live page, so
   it stays out of both gates.
+- `finders/halver_between/` is the halver + between-line rule check (spec #39):
+  `rules.py` the CP-SAT model and per-mark check, `brute.py` the independent
+  backtracking check, `report.py` the status of Chris's board and his marks;
+  facts to build on: `docs/research/2026-10-16-halver-between-truths.md`.
+  `hunt.py` is its hunt on the hunt protocol (#41): the target-grid loop adds
+  lines from `candidates.py` (Chris's shape rules and the separating-line
+  walk) until the board is unique, `verify` re-reads each hit with `brute.py`,
+  and `hunt.py summary DIR` reports verified hits or "none found", and a
+  `--no-verify` hunt's candidates as unchecked or rejected. Its hunt test is
+  slow (`just test-slow`); `test_spec_39_e2e.py` is spec #39 end to end in
+  the gate, on one recorded hit (`hit_fixture.py`). Preflight, choices
+  and runs: `docs/research/2026-10-16-halver-between-hunt-decision-log.md`.
 - `archive/finders/galaxy-copycat/`'s write-ups live in `docs/research/2026-09-14-copycat-scan.md`
   and `docs/research/2026-09-14-galaxy-copycat-design.md`; its boards are
   `docs/research/2026-09-14-galaxy-copycat/boards/`.
