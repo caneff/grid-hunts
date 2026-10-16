@@ -12,10 +12,10 @@
   that is not the backtracking check's, and when its search has no time.
 
 What this seam is blind to. Seam: `just check`. Blind to: the slow
-renbanana tests (`just test-slow`), a hunt's own output, and how a found grid
-reads once it is built into a puzzle link. Also blind to whether the hunt
-still finds hits: that is `test_hunt.py`'s job, a full hunt run in
-`just test-slow`.
+halver/between hunt test (`just test-slow`), a hunt's own output, and how a
+found grid reads once it is built into a puzzle link. So it is blind to
+whether the hunt still finds hits: that is `test_hunt.py`'s job, a full hunt
+run in `just test-slow`.
 
     uv run finders/halver_between/test_spec_39_e2e.py
 """
