@@ -2,8 +2,7 @@
 
 Spec #39. Facts about the halver + between-line rules that the rule check
 (#40), the hunt (#41) and the setter can use. Sections 1–3 follow from the rules
-alone. Section 4 also assumes Chris's marks on the board, which #40's report
-checks. Treat section 4 as provisional until that report says every mark held.
+alone. Section 4 applies them to the board, using only what L1–L5 force.
 
 Values are written in real form here (a halved 5 is 2.5). The model doubles
 them, so a real gap of 0.5 is a doubled gap of 1.
@@ -64,37 +63,28 @@ them, so a real gap of 0.5 is a doubled gap of 1.
 - **Search space:** there are 46,656 (6^6) ways to place nine cells one per
   row, column and box. Each takes 9! digit orders, cut down by the digit grid.
 
-## 4. The board (assumes Chris's marks hold; #40 checks them)
+## 4. The board, from L1–L5 alone
+
+Corrected 2026-10-16. The first version of this section assumed all of Chris's
+marks. #40's report then found that 8 of the 18 marks are not forced by
+L1–L5: r1c1=1, r1c2=9, r4c1=2, r8c2=6, r9c4=3, r8c2 and r9c4 as halvers, and
+"box 5's halver in r5c5 or r5c6". Each has a counterexample solution, two of
+which were re-checked by a separate checker. This section now uses only what
+holds.
 
 - **L1's body is all of box 5.** All nine box-5 digits must sit strictly
   between two circles of at most 9, so box 5's 9 cannot be a normal 9. Box 5's
-  halver is its 9 (4.5). The rest of box 5 is normal 1–8, values 1–8, so the
-  circles must be 0.5 and 9. **{r4c3, r6c3} = {halved 1, normal 9}**, which
-  matches Chris's {1,9} marks.
+  halver is its 9 (4.5), which can be in any box-5 cell. The rest of box 5 is
+  normal 1–8, values 1–8, so the circles must be 0.5 and 9.
+  **{r4c3, r6c3} = {halved 1, normal 9}**.
   - In general, a body that holds a whole house forces that house's halver to
     be its 9, and the line's circles to be the halved 1 and a normal 9.
-- **So box 4's halver is the 1, in column 3.** With Chris's marks, five
-  halvers are placed or narrowed:
-
-  | box | halver | cell |
-  |---|---|---|
-  | 1 | 8 | r2c1 or r3c1 |
-  | 4 | 1 | r4c3 or r6c3 |
-  | 5 | 9 | r5c5 or r5c6 |
-  | 7 | 6 | r8c2 |
-  | 8 | 3 | r9c4 |
-
-- **The four halvers left are boxes 2, 3, 6 and 9, with digits {2, 4, 5, 7}.**
-  Rows and columns follow from the house rules:
-  - Box 9's halver is in r7, columns 7–9.
-  - Box 6's halver is in r4 or r6, whichever box 4 does not use, in columns 7–9.
-  - Box 2's halver is in c5 or c6, whichever box 5 does not use, in rows 1–3.
-  - Box 3's halver is in rows 1–3, columns 7–9.
-  - Boxes 2 and 3 take r1 and whichever of r2/r3 box 1 does not use.
-- **What the new lines have to do.** They must pin the halved 5 and halved 7
-  (the one-apart circles in §3 are the direct tool). They must place the
-  halved 2 and 4, by line or by elimination. They must also settle the five
-  two-way choices above, and fill the empty top-right digits.
+- **Forced halvers.** Box 4's halver is the 1, at r4c3 or r6c3. Box 5's is the
+  9, somewhere in box 5. Box 1's is the 8, at r2c1 or r3c1 (a mark that held).
+- **The six halvers left are boxes 2, 3, 6, 7, 8 and 9, with digits
+  {2, 3, 4, 5, 6, 7}.** The new lines must pin them, or leave them forced by
+  elimination. The marks that held: r4c2=8, r6c1=6, r6c2=7, r7c3=7, r8c3=8,
+  and {1,9} at r4c3, r6c3, r7c2 and r9c1.
 - **The halved-1 cell is a hub.** Lines may share circles, and every body with
   a value-1 cell must end on the halved 1 at r4c3 or r6c3. A new line
   starting there can reach far into the grid. The same goes for any normal 9
