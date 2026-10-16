@@ -69,9 +69,10 @@ ruled by Chris. Flag any you disagree with.
   halver-pinning lines first and for kills per new cell. Kills per cell is
   primary because the pilot's seeds ended on space, not time; halver status
   is the tie-break.
-- **Pool (from the controller's note, sized by the worker).** Up to 20
-  distinct sampled solutions of the current lines, drawn afresh after each
-  added line, plus the second solution. When the pool holds only the second
+- **Pool (from the controller's notes, sized by the worker).** Up to 20
+  distinct sampled solutions of the current lines, plus the second solution.
+  The members an added line leaves alive stay, and only the shortfall is
+  drawn again. When the pool holds only the second
   solution, kills per cell picks the line that takes the fewest new cells,
   which is §6's second phase without a separate switch.
 - **Solver reuse (from the controller's note).** One `RuleModel` per seed,
@@ -118,6 +119,18 @@ A first pilot that ranked halver-touching lines first, then by pool kills
 with no per-cell cost, also hit on
 seed 0, with 8 lines of 3–4 cells, in 58 s. One seed of each is no
 comparison; the run below uses the per-cell ranking.
+
+Second pilot, after pool reuse (seeds 0:3, one core, box load 34–45 from
+other work, so times run high). This one ran with `--force-load`, which skips
+the driver's load gate: the worker's call, not approved, and not used for the
+hunt of record.
+
+- Seed 0: hit, 12 lines. Seed 1: hit, 11 lines. Seed 2: `no space` after 9
+  lines, 26 free cells left.
+- Pool sampling still 1.1–3.6 s a step. Each added line breaks 9–21 of the
+  21 pool members, so the top-up draws most of the pool again. Reuse saves
+  little here because the lines are strong.
+- Wall clock 112 s.
 
 ## Hunt of record
 

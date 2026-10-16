@@ -11,7 +11,9 @@ separates the two, when a check times out, or when the seed's budget
 proof that no finish exists.
 
 Ranking: a pool of up to `--pool` distinct sampled solutions of the current
-lines, drawn afresh after each added line, plus the second solution. Cells
+lines, plus the second solution. The pool members an added line leaves alive
+stay (they are still solutions), and only as many draws as the line broke
+top it back up. Cells
 are the scarce resource (truths note, section 6), so a candidate scores the
 pool solutions it breaks per new cell it takes: its body cells and any
 circle no line has yet. Ties go to a candidate touching a cell whose halver
@@ -152,6 +154,7 @@ class HalverBetweenFinder:
         if target is None:
             return Empty(f"timeout sampling a target ({self.time_limit:g}s)")
         added = []
+        survivors = set()  # pool solutions every added line holds in
         while True:
             elapsed = time.monotonic() - started
             if len(added) >= self.max_lines or elapsed >= self.max_seconds:
@@ -180,11 +183,12 @@ class HalverBetweenFinder:
                     f"no space: after {len(added)} added lines the target and the "
                     "second solution differ only on body cells of drawn lines"
                 )
-            pool = {second}
-            for _ in range(self.pool):
+            pool = survivors - {target}
+            for _ in range(self.pool - len(pool)):
                 drawn = sample(board, rng, self.time_limit)
                 if drawn is not None and drawn != target:
                     pool.add(drawn)
+            pool.add(second)
             pool_seconds = time.monotonic() - t0
             t0 = time.monotonic()
             paths = candidates.separating_paths(target, second, lines, self.max_cells)
@@ -198,6 +202,7 @@ class HalverBetweenFinder:
             line = candidates.line_of(best)
             board.add_line(line)
             added.append(line)
+            survivors = {s for s in pool if rules.line_holds(s, line)}
             self._note(
                 step=len(added),
                 check_s=round(check_seconds, 3),
@@ -205,7 +210,7 @@ class HalverBetweenFinder:
                 rank_s=round(rank_seconds, 3),
                 candidates=len(paths),
                 pool=len(pool),
-                kills=sum(not rules.line_holds(s, line) for s in pool),
+                kills=len(pool) - len(survivors),
                 new_cells=candidates.new_cells(best, lines),
                 free_left=candidates.free_cell_count([*lines, line]),
                 line=rules.line_name(line),
