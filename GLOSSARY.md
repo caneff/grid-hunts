@@ -128,3 +128,32 @@ U-Bahn hybrid's; here they mean the following.
 - **circle score** — the number a lineup ranks its grids by. On the Banabner
   Lineup it is the number of groups holding a circle, forced circles left
   out.
+
+### Halver + between-line terms (`finders/halver_between/`)
+
+A classic 9x9 sudoku with hidden halvers and between lines (spec #39).
+**Line** and **circle** already mean other things above; in this section,
+and only here, they mean the following.
+
+- **halver** — one of nine cells, one per row, column and box, whose digits
+  are 1 to 9 once each. The solver is not told which cells they are, so their
+  places are part of the answer. Unique means one digit grid and one halver
+  placement.
+- **value** — a halver's digit / 2, exactly (a halved 7 is 3.5, a halved 1
+  is 0.5); any other cell's digit. A halved 2k and a plain k share a value.
+- **doubled value** — twice the value: a halver's digit, twice any other
+  cell's digit. The code compares doubled values so every comparison is an
+  integer one.
+- **between line** (**line** here) — a king-step path with a circle at each
+  end, whose body cells' values lie strictly between the two circles'
+  values, whichever circle is larger. Circles of equal value leave no body
+  value possible.
+- **circle** — one end cell of a between line. Lines may share a circle.
+- **body** — the cells of a between line other than its two circles. No
+  body cell is ever the halved 1 (0.5) or a plain 9, the board's smallest
+  and largest values.
+- **mark** — a deduction Chris pencilled on the board (`marks.json`), checked
+  against every solution and never posted as a constraint.
+- **target grid** — one full solution of the current lines, picked by a hunt
+  seed; the lines it adds hold in the target and rule out the current second
+  solution.
