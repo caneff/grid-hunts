@@ -1,0 +1,370 @@
+{
+  "formatVersion": "1.6.0",
+  "puzzle": {
+    "name": "",
+    "author": "ChinStrap",
+    "cells": [
+      {
+        "value": 1,
+        "colors": 16
+      },
+      {
+        "value": 9,
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {},
+      {},
+      {},
+      {},
+      {},
+      {
+        "value": 2,
+        "colors": 16
+      },
+      {
+        "value": 8,
+        "colors": 16
+      },
+      {
+        "candidates": 514
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {},
+      {},
+      {},
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "cornerPencilMarks": 512,
+        "colors": 3
+      },
+      {
+        "cornerPencilMarks": 512,
+        "colors": 3
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "value": 6,
+        "colors": 16
+      },
+      {
+        "value": 7,
+        "colors": 16
+      },
+      {
+        "candidates": 514
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {},
+      {},
+      {},
+      {
+        "colors": 16
+      },
+      {
+        "candidates": 514,
+        "colors": 16
+      },
+      {
+        "value": 7,
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {},
+      {},
+      {},
+      {
+        "colors": 16
+      },
+      {
+        "value": 6,
+        "colors": 2
+      },
+      {
+        "value": 8,
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "candidates": 514,
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "value": 3,
+        "colors": 2
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      },
+      {
+        "colors": 16
+      }
+    ],
+    "constraints": [
+      {
+        "type": 0
+      },
+      {
+        "type": 1,
+        "regions": [
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          2,
+          2,
+          2,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          2,
+          2,
+          2,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          2,
+          2,
+          2,
+          3,
+          3,
+          3,
+          4,
+          4,
+          4,
+          5,
+          5,
+          5,
+          3,
+          3,
+          3,
+          4,
+          4,
+          4,
+          5,
+          5,
+          5,
+          3,
+          3,
+          3,
+          4,
+          4,
+          4,
+          5,
+          5,
+          5,
+          6,
+          6,
+          6,
+          7,
+          7,
+          7,
+          8,
+          8,
+          8,
+          6,
+          6,
+          6,
+          7,
+          7,
+          7,
+          8,
+          8,
+          8,
+          6,
+          6,
+          6,
+          7,
+          7,
+          7,
+          8,
+          8,
+          8
+        ]
+      },
+      {
+        "solverIgnored": true,
+        "type": 403,
+        "lines": [
+          [
+            29,
+            30,
+            39,
+            40,
+            31,
+            32,
+            41,
+            50,
+            49,
+            48,
+            47
+          ],
+          [
+            65,
+            56,
+            46,
+            45
+          ],
+          [
+            45,
+            54,
+            63,
+            64,
+            73,
+            74,
+            75
+          ],
+          [
+            27,
+            18,
+            9,
+            10,
+            19,
+            28
+          ],
+          [
+            65,
+            66,
+            58,
+            68,
+            77,
+            76,
+            75
+          ]
+        ],
+        "style": {
+          "lines": {
+            "thickness": 0.1,
+            "color": "#aaaaaa"
+          },
+          "endPoints": {
+            "size": 0.8,
+            "fill": "#ffffff80",
+            "stroke": {
+              "thickness": 0.02,
+              "color": "#aaaaaa"
+            }
+          }
+        }
+      }
+    ]
+  }
+}
