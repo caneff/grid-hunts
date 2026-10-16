@@ -157,3 +157,10 @@ and only here, they mean the following.
 - **target grid** — one full solution of the current lines, picked by a hunt
   seed; the lines it adds hold in the target and rule out the current second
   solution.
+- **second solution** — the solution other than the target that the rule
+  check returns while the current lines are not unique.
+- **separating line** — a line of a legal shape that holds in the target
+  and fails in the second solution (`candidates.separating_paths`).
+- **free cell** — a cell on no line, so still able to be a body cell. A new
+  line takes its body cells and any circle not already on a line; cells,
+  not solver time, are what a hunt seed runs out of.

@@ -152,6 +152,11 @@ because the checker reads them and nothing under `docs/research/` does
   `rules.py` the CP-SAT model and per-mark check, `brute.py` the independent
   backtracking check, `report.py` the status of Chris's board and his marks;
   facts to build on: `docs/research/2026-10-16-halver-between-truths.md`.
+  `hunt.py` is its hunt on the hunt protocol (#41): the target-grid loop adds
+  lines from `candidates.py` (Chris's shape rules and the separating-line
+  walk) until the board is unique, `verify` re-reads each hit with `brute.py`,
+  and `hunt.py summary DIR` reports hits or "none found". Preflight, choices
+  and runs: `docs/research/2026-10-16-halver-between-hunt-decision-log.md`.
 - `finders/galaxy-copycat/`'s write-ups live in `docs/research/2026-09-14-copycat-scan.md`
   and `docs/research/2026-09-14-galaxy-copycat-design.md`; its boards are
   `docs/research/2026-09-14-galaxy-copycat/boards/`.
