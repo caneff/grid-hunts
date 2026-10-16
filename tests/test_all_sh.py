@@ -227,9 +227,7 @@ def changed_tree(root):
         "AGENTS.md": "",
         "finders/fake/README.md": "",
         "finders/fake-two/test_f.py": "pass\n",
-        "finders/renbanana/test_r.py": "pass\n",
-        "finders/banabner/test_n.py": "pass\n",
-        "finders/galaxy-copycat/test_g.py": "pass\n",
+        "archive/finders/old/test_o.py": "pass\n",
     }
     for name, body in files.items():
         (root / name).parent.mkdir(parents=True, exist_ok=True)
@@ -268,13 +266,10 @@ LINT = [
 ]
 RUNNER = "uv run tests/test_all_sh.py"
 ALL_TESTS = [
-    "uv run finders/banabner/test_n.py",
     "uv run finders/fake-two/test_f.py",
     "uv run finders/fake/test_a.py",
-    "uv run finders/galaxy-copycat/test_g.py",
     "uv run finders/hunt/test_h.py",
     "uv run finders/other-one/test_b.py",
-    "uv run finders/renbanana/test_r.py",
 ]
 
 
@@ -335,14 +330,14 @@ with tempfile.TemporaryDirectory() as d:
         got = count_line(script)
         check(
             f"--changed run, {path}: the count line names the path ({got})",
-            got == (0, f"8 of 8 suites passed (group: test) (widened: {path})"),
+            got == (0, f"5 of 5 suites passed (group: test) (widened: {path})"),
         )
 
     touch_on_branch(root, "pyproject.toml", "justfile")
     got = count_line(script)
     check(
         f"two shared paths: the note names the first one in diff order ({got})",
-        got == (0, "8 of 8 suites passed (group: test) (widened: justfile)"),
+        got == (0, "5 of 5 suites passed (group: test) (widened: justfile)"),
     )
 
     # A path git quotes when core.quotepath is on must still be seen.
@@ -353,7 +348,7 @@ with tempfile.TemporaryDirectory() as d:
         got
         == (
             0,
-            "8 of 8 suites passed (group: test) "
+            "5 of 5 suites passed (group: test) "
             "(widened: docs/research/other/donn\u00e9e.csv)",
         ),
     )
@@ -368,7 +363,7 @@ with tempfile.TemporaryDirectory() as d:
         got
         == (
             0,
-            "8 of 8 suites passed (group: test) (widened: finders/hunt/test_h.py)",
+            "5 of 5 suites passed (group: test) (widened: finders/hunt/test_h.py)",
         ),
     )
 
@@ -386,21 +381,18 @@ with tempfile.TemporaryDirectory() as d:
         got == (0, [*LINT, RUNNER, "uv run finders/other-one/test_b.py"]),
     )
 
-    for data, folder in (
-        ("docs/research/renbanana/CIRCLES.md", "uv run finders/renbanana/test_r.py"),
-        ("docs/research/banabner/lineup.json", "uv run finders/banabner/test_n.py"),
-        (
-            "docs/research/2026-09-14-galaxy-copycat/boards/b1.txt",
-            "uv run finders/galaxy-copycat/test_g.py",
+    # Retired finders' data stays under docs/research/ and maps to no suite.
+    touch_on_branch(root, "docs/research/renbanana/CIRCLES.json")
+    got = count_line(script)
+    check(
+        f"data of a retired finder maps to no suite, so it widens ({got})",
+        got
+        == (
+            0,
+            "5 of 5 suites passed (group: test) "
+            "(widened: docs/research/renbanana/CIRCLES.json)",
         ),
-    ):
-        touch_on_branch(root, data)
-        got = listing(script)
-        check(
-            f"--list --changed, {data}: that finder only, with lint and the "
-            f"runner's test ({got})",
-            got == (0, [*LINT, RUNNER, folder]),
-        )
+    )
 
     touch_on_branch(root, "docs/research/other/data.csv")
     got = count_line(script)
@@ -409,7 +401,7 @@ with tempfile.TemporaryDirectory() as d:
         got
         == (
             0,
-            "8 of 8 suites passed (group: test) "
+            "5 of 5 suites passed (group: test) "
             "(widened: docs/research/other/data.csv)",
         ),
     )
@@ -458,5 +450,33 @@ with tempfile.TemporaryDirectory() as d:
         "--changed with no value is refused, exit 2",
         r.returncode == 2 and "--changed needs a value" in r.stderr,
     )
+
+# The real tree: retired finders live under archive/finders/ with a README and
+# no suite under archive/ is in the gate.
+REPO = ALL.parent.parent
+r = subprocess.run(
+    ["bash", str(ALL), "--list"], capture_output=True, text=True, cwd=REPO
+)
+check(
+    "the real gate lists no suite under archive/",
+    r.returncode == 0 and r.stdout and "archive/" not in r.stdout,
+)
+RETIRED = (
+    "renbanana",
+    "banabner",
+    "galaxy-copycat",
+    "copycat-scan",
+    "lmd-hybrid-scan",
+)
+for name in RETIRED:
+    check(
+        f"{name} is archived with a README and gone from finders/",
+        (REPO / "archive" / "finders" / name / "README.md").is_file()
+        and not (REPO / "finders" / name).exists(),
+    )
+check(
+    "no retired finder's name appears in the gate's listing",
+    not any(n in r.stdout for n in RETIRED),
+)
 
 sys.exit(0 if ok else 1)

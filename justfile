@@ -23,10 +23,9 @@ fmt:
 test:
     bash tests/all.sh --group test
 
-# The renbanana tests the gate runs as a subset (--cover) in full, plus the
-# slow two-stage proof: a CP-SAT solve per known grid, minutes overall. Run by
-# hand after touching probe_inverted.py, probe_circle_pattern.py or
-# prove_two_stage.py.
-[doc("Slow finder tests (a CP-SAT solve per known grid), by hand, minutes overall.")]
+# The slow group: empty since the renbanana and banabner finders were archived
+# (archive/finders/); a revived finder with slow tests lists them in
+# tests/all.sh's finder_slow.
+[doc("Slow finder tests, by hand (the group is empty while nothing is slow).")]
 test-slow:
     bash tests/all.sh --group slow

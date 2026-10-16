@@ -47,23 +47,23 @@ root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd) || exit 1
 cd "$root" || exit 1
 
 # Finder tests that do not run as a plain `uv run <file>`:
-#   finder_slow:   the `slow` group only (a CP-SAT solve per known grid,
-#                  minutes overall; the Banabner hunt, one 1-worker solve of
-#                  about three to four minutes).
-#   finder_cover:  run with `--cover` (a subset, one grid per shape) in the
-#                  gate, and in full in the `slow` group.
+#   finder_slow:   the `slow` group only (empty since renbanana and banabner
+#                  were archived).
+#   finder_cover:  run with `--cover` (a subset) in the gate, and in full in
+#                  the `slow` group (empty for the same reason).
 #   finder_pytest: the pytest suites, run as `uv run pytest <file> -q`.
-finder_slow="finders/renbanana/tools/test_prove_two_stage_slow.py finders/banabner/test_hunt.py"
-finder_cover="finders/renbanana/tools/test_probe_circle_pattern_accepts_known_grids.py finders/renbanana/tools/test_probe_finds_known_grids.py"
+finder_slow=""
+finder_cover=""
 finder_pytest="finders/counting_shaded/test_counting_shaded.py"
 
 # The runner's own test, which every --changed selection keeps.
 runner_test="uv run tests/test_all_sh.py"
 # Data a finder reads from outside its own folder: <directory prefix>=<finder
-# folder>. A change under one selects that finder, a `.md` included. Any other
+# folder>. Empty now: the finders that read such data are archived, and
+# nothing under `archive/` is a suite. A change under one selects that finder, a `.md` included. Any other
 # non-`.md` file under `docs/` widens the run, so a data directory added later
 # and never mapped costs a full run and never a skipped suite.
-data_map="docs/research/renbanana/=renbanana docs/research/banabner/=banabner docs/research/2026-09-14-galaxy-copycat/=galaxy-copycat"
+data_map=""
 
 listed() { case " $1 " in *" $2 "*) return 0 ;; esac; return 1; } # <list> <file>
 

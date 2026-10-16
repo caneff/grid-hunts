@@ -11,7 +11,7 @@ two halves fit together, a ring on the circle that is a condition and none
 on the grid's other valid circles in the picture of a `fewest-markings`
 example.
 
-Blind to: the slow renbanana tests, a hunt's own output on a board above
+Blind to: a hunt's own output on a board above
 4x4 (the 7x7 run of record is made by hand), and how a found grid reads once
 it is built into a puzzle link. The link is decoded here, not opened:
 whether Penpa+ draws the symbols and the circle where they belong is seen

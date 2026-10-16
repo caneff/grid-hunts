@@ -102,10 +102,10 @@ digit.
   goes on. Not the region-building **cut** in the glossary of
   `caneff/sudokumaker-custom-constraints`.
 
-### Banabner terms (`finders/banabner/`)
+### Banabner terms (`archive/finders/banabner/`)
 
 Dutch Chocolate Banabner is a sudoku with a chocolate and banana shading
-(spec #758; rules read by `finders/renbanana_verify.py` at difference 4 with
+(spec #758; rules read by `archive/finders/renbanana_verify.py` at difference 4 with
 the nabner rule). **Chocolate**, **banana** and **circle** above are the
 U-Bahn hybrid's; here they mean the following.
 
@@ -123,8 +123,8 @@ U-Bahn hybrid's; here they mean the following.
 - **forced circle** — the circle on the 5 of a 5-cell banana group. Every
   such group has one whatever the shading, so it tells the solver nothing.
 - **lineup** — the page that shows every checked grid of a puzzle type as a
-  card, with filters and sorts: `finders/banabner/build_lineup.py` builds the
-  Banabner Lineup, `finders/renbanana/tools/build_lineup.py` Renbanana's.
+  card, with filters and sorts: `archive/finders/banabner/build_lineup.py` builds the
+  Banabner Lineup, `archive/finders/renbanana/tools/build_lineup.py` Renbanana's.
 - **circle score** — the number a lineup ranks its grids by. On the Banabner
   Lineup it is the number of groups holding a circle, forced circles left
   out.

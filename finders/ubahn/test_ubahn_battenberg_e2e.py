@@ -7,7 +7,7 @@ One chain on the 4x4 board, each step reading the files the step before
 wrote. The other Battenberg tests each take one command against the brute
 force or the rule reader; this one is that the commands fit together.
 
-Blind to: the slow renbanana tests, a hunt's own output on a board above
+Blind to: a hunt's own output on a board above
 4x4, and how a found grid reads once it is built into a puzzle link. The
 link is decoded here, not opened: whether Penpa+ draws the checkerboard
 symbol on the right corner and the rules text reads right is seen only in a

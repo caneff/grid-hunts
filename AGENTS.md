@@ -24,14 +24,16 @@ issue number in a commit message from before the cut is that repo's.
 ## Finder rules
 
 `finders/AGENTS.md` holds the rules and the guide to each finder: the
-renbanana catalogue rule, the hunt protocol to start a new finder from, and
-the U-Bahn finder's engines and flags. Read it before touching `finders/`.
+hunt protocol to start a new finder from, and the U-Bahn finder's engines and
+flags. Read it before touching `finders/`.
+
+Retiring a finder is `git mv` to `archive/finders/` plus its README; reviving one is a ticket that moves it back and makes its suites pass.
 
 ## End-to-end seam
 
 - **Seam**: `just check`
-- **Narrowed**: `bash tests/all.sh --changed origin/main` — lint, the runner's test, and the suites under each `finders/<name>/` folder the diff touches (plus the finder a changed data directory feeds); shared code, a `docs/` file that is not `.md` and not mapped, or any path nothing names widens the run to every non-slow suite, and the last line ends `(widened: <path>)`; a diff of unmapped `.md` files runs lint and the runner's test; the rules and the data map are in the header of `tests/all.sh`
-- **Blind to**: the slow renbanana tests (`just test-slow`), a hunt's own
+- **Narrowed**: `bash tests/all.sh --changed origin/main` — lint, the runner's test, and the suites under each `finders/<name>/` folder the diff touches (plus the finder a changed data directory feeds; the map is empty while no kept finder reads outside its folder); shared code, a `docs/` file that is not `.md` and not mapped, or any path nothing names widens the run to every non-slow suite, and the last line ends `(widened: <path>)`; a diff of unmapped `.md` files runs lint and the runner's test; the rules and the data map are in the header of `tests/all.sh`
+- **Blind to**: a hunt's own
   output, and how a found grid reads once it is built into a puzzle link
 
 ## Commands
