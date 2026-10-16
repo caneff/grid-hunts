@@ -34,21 +34,27 @@ assert violation("r1c4", "r1c5", "r1c6") is None
 assert violation("r4c3", "r3c4", "r2c5") is None
 assert violation("r8c3", "r8c4", "r9c4") is None
 
+
 # Rejected, one rule each, with the reason naming it.
-assert "king step" in violation("r1c4", "r1c6", "r1c7")
-assert "revisits" in violation("r1c4", "r1c5", "r2c4", "r1c5", "r1c6")
-assert "no body" in violation("r1c4", "r1c5")
+def rejects(reason, *names):
+    got = violation(*names)
+    assert got is not None and reason in got, (names, got)
+
+
+rejects("king step", "r1c4", "r1c6", "r1c7")
+rejects("revisits", "r1c4", "r1c5", "r2c4", "r1c5", "r1c6")
+rejects("no body", "r1c4", "r1c5")
 # A body cell already in L1's body.
-assert "r4c4 is already on a line" in violation("r3c3", "r4c4", "r3c5")
+rejects("r4c4 is already on a line", "r3c3", "r4c4", "r3c5")
 # A body cell that is L1's circle.
-assert "r4c3 is already on a line" in violation("r3c3", "r4c3", "r5c3")
+rejects("r4c3 is already on a line", "r3c3", "r4c3", "r5c3")
 # A circle on L1's body.
-assert "circle r4c4" in violation("r4c4", "r3c4", "r2c4")
+rejects("circle r4c4", "r4c4", "r3c4", "r2c4")
 # Crossing L2's r7c3 -> r6c2 step diagonally.
-assert "crosses line r8c3 | r7c3 r6c2 | r6c1" in violation("r6c3", "r7c2", "r8c3")
+rejects("crosses line r8c3 | r7c3 r6c2 | r6c1", "r6c3", "r7c2", "r8c3")
 # Crossing itself: r1c5 -> r2c6 and r2c5 -> r1c6 are the two diagonals of
 # one 2x2.
-assert "crosses itself" in violation("r1c5", "r2c6", "r2c5", "r1c6")
+rejects("crosses itself", "r1c5", "r2c6", "r2c5", "r1c6")
 
 # The enumeration, on the board's own two witnesses.
 check = rules.RuleModel(BOARD).check(time_limit=60)
@@ -73,9 +79,8 @@ assert len({frozenset((p, p[::-1])) for p in found}) == len(found)
 # Short first.
 assert [len(p) for p in found] == sorted(len(p) for p in found)
 
-# Up to four cells (two body cells, so a body that straddles its first
-# circle is reachable), the pruned walk finds exactly the lines a naive walk
-# over every king path does.
+# Up to four cells (so bodies of one and two cells), the pruned walk finds
+# exactly the lines a naive walk over every king path does.
 cells = [(r, c) for r in range(9) for c in range(9)]
 
 
