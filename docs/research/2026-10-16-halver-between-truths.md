@@ -63,7 +63,7 @@ them, so a real gap of 0.5 is a doubled gap of 1.
 - **Search space:** there are 46,656 (6^6) ways to place nine cells one per
   row, column and box. Each takes 9! digit orders, cut down by the digit grid.
 
-## 4. The board, from L1–L5 alone
+## 4. The first board (BGHKnjgkHd), from L1–L5 alone
 
 Corrected 2026-10-16. The first version of this section assumed all of Chris's
 marks. #40's report then found that 8 of the 18 marks are not forced by
@@ -89,6 +89,24 @@ holds.
   a value-1 cell must end on the halved 1 at r4c3 or r6c3. A new line
   starting there can reach far into the grid. The same goes for any normal 9
   as a high circle.
+
+## 4b. The current board (DFRTLJqBKt, Chris's switch on 2026-10-16)
+
+L1–L4 are unchanged, so §4's box-5 facts still hold. Box 5's halver is its 9,
+and {r4c3, r6c3} = {halved 1, normal 9}. The new L5 is r7c9 [r8c9 r8c8 r8c7]
+r7c7, and L6 is r9c4 [r9c5 r9c6 r8c6 r7c5 r7c4] r8c3. All 23 of Chris's marks
+on this board hold in every solution of L1–L6 (#39 comment, checked with
+#40's rule model). The halvers fixed so far:
+
+| box | halver | cell |
+|---|---|---|
+| 4 | 1 | r4c3 or r6c3 |
+| 5 | 9 | r5c5 or r5c6 |
+| 7 | 6 | r8c2 |
+| 8 | 2 or 3 | r9c4 |
+
+The halvers left are in boxes 1, 2, 3, 6 and 9. Every unique finish keeps all
+23 marks, since adding lines only removes solutions.
 
 ## 5. Use in the hunt (#41)
 
