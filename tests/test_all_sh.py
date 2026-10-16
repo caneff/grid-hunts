@@ -191,8 +191,11 @@ with tempfile.TemporaryDirectory() as d:
             r.returncode == 2 and f"not '{value}'" in r.stderr and not r.stdout,
         )
 
+BASE_ENV = {
+    k: v for k, v in os.environ.items() if k != "GATE_JOBS" and not k.startswith("GIT_")
+}
 GIT_ENV = {
-    **{k: v for k, v in os.environ.items() if not k.startswith("GIT_")},
+    **BASE_ENV,
     "GIT_AUTHOR_NAME": "t",
     "GIT_AUTHOR_EMAIL": "t@example.invalid",
     "GIT_COMMITTER_NAME": "t",
@@ -223,6 +226,7 @@ def changed_tree(root):
         "docs/note.md": "",
         "AGENTS.md": "",
         "finders/fake/README.md": "",
+        "finders/fake-two/test_f.py": "pass\n",
         "finders/renbanana/test_r.py": "pass\n",
         "finders/banabner/test_n.py": "pass\n",
         "finders/galaxy-copycat/test_g.py": "pass\n",
@@ -253,10 +257,7 @@ def changed(script, *args):
         text=True,
         timeout=120,
         # The fake tree's pyproject.toml and uv.lock are empty files.
-        env={
-            **{k: v for k, v in os.environ.items() if k != "GATE_JOBS"},
-            "UV_NO_PROJECT": "1",
-        },
+        env={**BASE_ENV, "UV_NO_PROJECT": "1"},
     )
 
 
@@ -268,6 +269,7 @@ LINT = [
 RUNNER = "uv run tests/test_all_sh.py"
 ALL_TESTS = [
     "uv run finders/banabner/test_n.py",
+    "uv run finders/fake-two/test_f.py",
     "uv run finders/fake/test_a.py",
     "uv run finders/galaxy-copycat/test_g.py",
     "uv run finders/hunt/test_h.py",
@@ -275,26 +277,41 @@ ALL_TESTS = [
     "uv run finders/renbanana/test_r.py",
 ]
 
+
+def listing(script, *args):
+    r = changed(script, "--list", *args)
+    return r.returncode, r.stdout.splitlines()
+
+
+def count_line(script, *args):
+    r = changed(script, "--group", "test", *args)
+    return r.returncode, r.stdout.splitlines()[-1]
+
+
 with tempfile.TemporaryDirectory() as d:
     root = Path(d) / "changed"
     root.mkdir()
     script = changed_tree(root)
 
     touch_on_branch(root, "finders/other-one/test_b.py")
-    r = changed(script, "--list")
+    got = listing(script)
     check(
         "--list --changed, one finder folder: lint, the runner's test and "
-        f"that folder only ({r.stdout.splitlines()})",
-        r.returncode == 0
-        and r.stdout.splitlines()
-        == [*LINT, RUNNER, "uv run finders/other-one/test_b.py"],
+        f"that folder only ({got})",
+        got == (0, [*LINT, RUNNER, "uv run finders/other-one/test_b.py"]),
     )
-    r = changed(script, "--group", "test")
+    got = count_line(script)
     check(
         "--changed run, one finder folder: counts the narrowed suites, no "
-        f"widened note ({r.stdout.splitlines()[-1:]})",
-        r.returncode == 0
-        and r.stdout.splitlines()[-1] == "2 of 2 suites passed (group: test)",
+        f"widened note ({got})",
+        got == (0, "2 of 2 suites passed (group: test)"),
+    )
+
+    touch_on_branch(root, "finders/fake/test_a.py")
+    got = listing(script)
+    check(
+        f"--list --changed, finders/fake does not select finders/fake-two ({got})",
+        got == (0, [*LINT, RUNNER, "uv run finders/fake/test_a.py"]),
     )
 
     for path in (
@@ -305,29 +322,68 @@ with tempfile.TemporaryDirectory() as d:
         "tests/new_helper.py",
         "justfile",
         ".github/workflows/ci.yml",
+        ".python-version",
+        "conftest.py",
+        "finders/loose.txt",
     ):
         touch_on_branch(root, "finders/other-one/test_b.py", path)
-        r = changed(script, "--list")
+        rc, lines = listing(script)
         check(
-            f"--list --changed, {path}: widens to every suite "
-            f"({r.stdout.splitlines()})",
-            r.returncode == 0 and r.stdout.splitlines() == [*LINT, RUNNER, *ALL_TESTS],
+            f"--list --changed, {path}: widens to every suite ({lines})",
+            rc == 0 and sorted(lines) == sorted([*LINT, RUNNER, *ALL_TESTS]),
         )
-        r = changed(script, "--group", "test")
+        got = count_line(script)
         check(
-            f"--changed run, {path}: the count line names the path "
-            f"({r.stdout.splitlines()[-1:]})",
-            r.returncode == 0
-            and r.stdout.splitlines()[-1]
-            == f"7 of 7 suites passed (group: test) (widened: {path})",
+            f"--changed run, {path}: the count line names the path ({got})",
+            got == (0, f"8 of 8 suites passed (group: test) (widened: {path})"),
         )
 
-    touch_on_branch(root, "docs/note.md", "AGENTS.md", "finders/fake/README.md")
-    r = changed(script, "--list")
+    touch_on_branch(root, "pyproject.toml", "justfile")
+    got = count_line(script)
     check(
-        "--list --changed, docs only (even a .md inside a finder folder): "
-        f"lint and the runner's test ({r.stdout.splitlines()})",
-        r.returncode == 0 and r.stdout.splitlines() == [*LINT, RUNNER],
+        f"two shared paths: the note names the first one in diff order ({got})",
+        got == (0, "8 of 8 suites passed (group: test) (widened: justfile)"),
+    )
+
+    # A path git quotes when core.quotepath is on must still be seen.
+    touch_on_branch(root, "docs/research/other/donn\u00e9e.csv")
+    got = count_line(script)
+    check(
+        f"a non-ASCII unmapped docs/ file widens, naming it unquoted ({got})",
+        got
+        == (
+            0,
+            "8 of 8 suites passed (group: test) "
+            "(widened: docs/research/other/donn\u00e9e.csv)",
+        ),
+    )
+
+    # A file moved out of shared code is both a deletion and an addition.
+    git(root, "checkout", "-q", "-B", "work", "main")
+    git(root, "mv", "finders/hunt/test_h.py", "finders/fake/test_h.py")
+    git(root, "commit", "-q", "-m", "move")
+    got = count_line(script)
+    check(
+        f"a rename out of finders/hunt/ widens, naming the old path ({got})",
+        got
+        == (
+            0,
+            "8 of 8 suites passed (group: test) (widened: finders/hunt/test_h.py)",
+        ),
+    )
+
+    # `main` moving on after the branch was cut is not the branch's change.
+    touch_on_branch(root, "finders/other-one/test_b.py")
+    git(root, "checkout", "-q", "main")
+    (root / "justfile").write_text("# main moved\n")
+    git(root, "commit", "-q", "-am", "main moves")
+    git(root, "checkout", "-q", "work")
+    got = listing(script)
+    git(root, "checkout", "-q", "main")
+    git(root, "reset", "-q", "--hard", "HEAD~1")
+    check(
+        f"a commit on the base after the branch was cut does not widen it ({got})",
+        got == (0, [*LINT, RUNNER, "uv run finders/other-one/test_b.py"]),
     )
 
     for data, folder in (
@@ -339,42 +395,52 @@ with tempfile.TemporaryDirectory() as d:
         ),
     ):
         touch_on_branch(root, data)
-        r = changed(script, "--list")
+        got = listing(script)
         check(
             f"--list --changed, {data}: that finder only, with lint and the "
-            f"runner's test ({r.stdout.splitlines()})",
-            r.stdout.splitlines() == [*LINT, RUNNER, folder],
+            f"runner's test ({got})",
+            got == (0, [*LINT, RUNNER, folder]),
         )
 
     touch_on_branch(root, "docs/research/other/data.csv")
-    r = changed(script, "--group", "test")
+    got = count_line(script)
     check(
-        "an unmapped non-.md file under docs/ widens, naming the file "
-        f"({r.stdout.splitlines()[-1:]})",
-        r.stdout.splitlines()[-1] == "7 of 7 suites passed (group: test) "
-        "(widened: docs/research/other/data.csv)",
+        f"an unmapped non-.md file under docs/ widens, naming the file ({got})",
+        got
+        == (
+            0,
+            "8 of 8 suites passed (group: test) "
+            "(widened: docs/research/other/data.csv)",
+        ),
     )
 
     touch_on_branch(root, "docs/research/other/notes.md")
-    r = changed(script, "--list")
+    got = listing(script)
     check(
-        f"a .md outside the data map is docs only ({r.stdout.splitlines()})",
-        r.stdout.splitlines() == [*LINT, RUNNER],
+        f"a .md outside the data map is docs only ({got})",
+        got == (0, [*LINT, RUNNER]),
+    )
+
+    touch_on_branch(root, "docs/note.md", "AGENTS.md", "finders/fake/README.md")
+    got = listing(script)
+    check(
+        "--list --changed, docs only (even a .md inside a finder folder): "
+        f"lint and the runner's test ({got})",
+        got == (0, [*LINT, RUNNER]),
     )
 
     touch_on_branch(root, "finders/fake/test_a.py", "docs/note.md")
-    r = changed(script, "--list")
+    got = listing(script)
     check(
-        "--list --changed, a finder folder plus a doc: the folder runs "
-        f"({r.stdout.splitlines()})",
-        r.stdout.splitlines() == [*LINT, RUNNER, "uv run finders/fake/test_a.py"],
+        f"--list --changed, a finder folder plus a doc: the folder runs ({got})",
+        got == (0, [*LINT, RUNNER, "uv run finders/fake/test_a.py"]),
     )
 
     git(root, "checkout", "-q", "main")
-    r = changed(script, "--list")
+    got = listing(script)
     check(
-        f"--changed with an empty diff: lint and the runner's test ({r.stdout.splitlines()})",
-        r.stdout.splitlines() == [*LINT, RUNNER],
+        f"--changed with an empty diff: lint and the runner's test ({got})",
+        got == (0, [*LINT, RUNNER]),
     )
     r = subprocess.run(
         ["bash", str(script), "--changed", "no-such-ref", "--list"],

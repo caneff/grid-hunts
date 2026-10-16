@@ -26,7 +26,8 @@
 #     `uv.lock`, `tests/`, `justfile` and `.github/`. The count line then ends
 #     `(widened: <first such path>)`;
 #   - a data directory a finder reads (`data_map` below) selects that finder;
-#   - any other non-`.md` file under `docs/` widens the run too;
+#   - any other non-`.md` file under `docs/`, and any path nothing above names
+#     (a top-level dotfile, a `conftest.py`), widens the run too;
 #   - a `.md` file elsewhere changes nothing, so a docs-only diff runs lint
 #     and the runner's test, a `.md` inside a finder folder included.
 # `--list --changed <base>` prints that selection. With no `--changed`, the run
@@ -56,11 +57,12 @@ finder_slow="finders/renbanana/tools/test_prove_two_stage_slow.py finders/banabn
 finder_cover="finders/renbanana/tools/test_probe_circle_pattern_accepts_known_grids.py finders/renbanana/tools/test_probe_finds_known_grids.py"
 finder_pytest="finders/counting_shaded/test_counting_shaded.py"
 
+# The runner's own test, which every --changed selection keeps.
+runner_test="uv run tests/test_all_sh.py"
 # Data a finder reads from outside its own folder: <directory prefix>=<finder
 # folder>. A change under one selects that finder, a `.md` included. Any other
 # non-`.md` file under `docs/` widens the run, so a data directory added later
 # and never mapped costs a full run and never a skipped suite.
-runner_test="uv run tests/test_all_sh.py"
 data_map="docs/research/renbanana/=renbanana docs/research/banabner/=banabner docs/research/2026-09-14-galaxy-copycat/=galaxy-copycat"
 
 listed() { case " $1 " in *" $2 "*) return 0 ;; esac; return 1; } # <list> <file>
@@ -123,7 +125,7 @@ fi
 # --changed: keep lint, the runner's test, and the suites under a touched
 # finder folder; a shared path keeps every suite and names itself in $note.
 if [ -n "$base" ]; then
-  files=$(git diff --name-only "$base...HEAD" 2>&1) || usage "git cannot diff $base...HEAD: $files"
+  files=$(git -c core.quotepath=off diff --name-only --no-renames "$base...HEAD" 2>&1) || usage "git cannot diff $base...HEAD: $files"
   widened="" folders=" "
   while IFS= read -r f; do
     mapped=""
@@ -136,7 +138,7 @@ if [ -n "$base" ]; then
       docs/*) widened=${widened:-$f} ;;
       finders/hunt/* | pyproject.toml | uv.lock | tests/* | justfile | .github/*) widened=${widened:-$f} ;;
       finders/*/*) name=${f#finders/}; folders="$folders${name%%/*} " ;;
-      finders/*.py) widened=${widened:-$f} ;;
+      *) widened=${widened:-$f} ;; # a loose finders/*.py, or a path nothing names
     esac
   done <<<"$files"
   if [ -z "$widened" ]; then

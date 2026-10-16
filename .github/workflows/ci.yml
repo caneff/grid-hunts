@@ -37,12 +37,19 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
           BEFORE: ${{ github.event.before }}
         run: |
-          full() { echo "widened: $1"; uvx --from rust-just just check; }
+          # A full run the CI chose itself ends with the widened note, as
+          # tests/all.sh does for the widenings it chooses.
+          full() {
+            uvx --from rust-just just check; rc=$?
+            echo "widened: $1"; return $rc
+          }
           case $EVENT in
             pull_request) bash tests/all.sh --changed "origin/$BASE_REF" ;;
             push)
-              if [[ $BEFORE =~ ^0+$ ]]; then full "no base commit (new branch)"
-              elif ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then full "base $BEFORE is not in the clone (force-push)"
-              else bash tests/all.sh --changed "$BEFORE"; fi ;;
+              # An all-zeros BEFORE (a new branch) and a BEFORE a force-push
+              # left out of the clone both fail this check.
+              if git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+                bash tests/all.sh --changed "$BEFORE"
+              else full "no base commit $BEFORE in the clone"; fi ;;
             *) uvx --from rust-just just check ;;
           esac

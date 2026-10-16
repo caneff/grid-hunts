@@ -30,7 +30,7 @@ the U-Bahn finder's engines and flags. Read it before touching `finders/`.
 ## End-to-end seam
 
 - **Seam**: `just check`
-- **Narrowed**: `bash tests/all.sh --changed origin/main` — lint, the runner's test, and the suites under each `finders/<name>/` folder the diff touches, plus the finder a changed data directory feeds (`docs/research/renbanana/`, `docs/research/banabner/`, `docs/research/2026-09-14-galaxy-copycat/`); a change to `finders/hunt/`, a loose `finders/*.py`, `pyproject.toml`, `uv.lock`, `tests/`, `justfile`, `.github/` or an unmapped non-`.md` file under `docs/` widens the run to every non-slow suite, and the last line then ends `(widened: <path>)`; a diff of only `.md` files runs lint and the runner's test; selection is by directory, not import graph; `tests/all.sh` with no flag runs the full seam
+- **Narrowed**: `bash tests/all.sh --changed origin/main` — lint, the runner's test, and the suites under each `finders/<name>/` folder the diff touches (plus the finder a changed data directory feeds); shared code, a `docs/` file that is not `.md` and not mapped, or any path nothing names widens the run to every non-slow suite, and the last line ends `(widened: <path>)`; a diff of unmapped `.md` files runs lint and the runner's test; the rules and the data map are in the header of `tests/all.sh`
 - **Blind to**: the slow renbanana tests (`just test-slow`), a hunt's own
   output, and how a found grid reads once it is built into a puzzle link
 
