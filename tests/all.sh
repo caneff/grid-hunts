@@ -6,7 +6,7 @@
 # the runner's own test (`tests/test_all_sh.py`, in `suites`) are the
 # exceptions.
 #
-#   bash tests/all.sh [--list] [--group <group>] [--jobs <n>]
+#   bash tests/all.sh [--list] [--group <group>] [--jobs <n>] [--changed <base>]
 #
 # `--list` prints the suites the run would cover, one per line, and runs none.
 # `--group <group>` runs one group: `lint`, `test`, or `slow` (outside the
@@ -16,6 +16,22 @@
 # sets the variable, so a local run stays one suite at a time on the shared
 # box). The suites are independent processes, each with its own temp
 # directories.
+#
+# `--changed <base>` narrows the run to what the diff `<base>...HEAD` could
+# affect, by directory and not by import graph:
+#   - lint and the runner's own test always run;
+#   - the suites under each `finders/<name>/` folder the diff touches run;
+#   - a change to shared code widens the run to every suite of the selected
+#     group: `finders/hunt/`, any loose `finders/*.py`, `pyproject.toml`,
+#     `uv.lock`, `tests/`, `justfile` and `.github/`. The count line then ends
+#     `(widened: <first such path>)`;
+#   - a data directory a finder reads (`data_map` below) selects that finder;
+#   - any other non-`.md` file under `docs/`, and any path nothing above names
+#     (a top-level dotfile, a `conftest.py`), widens the run too;
+#   - a `.md` file elsewhere changes nothing, so a docs-only diff runs lint
+#     and the runner's test, a `.md` inside a finder folder included.
+# `--list --changed <base>` prints that selection. With no `--changed`, the run
+# is the full seam.
 #
 # One line per suite as it finishes (`PASS <suite>`); a failing suite prints
 # `FAIL <suite>` and its whole output, no further suite starts, the suites
@@ -41,6 +57,14 @@ finder_slow="finders/renbanana/tools/test_prove_two_stage_slow.py finders/banabn
 finder_cover="finders/renbanana/tools/test_probe_circle_pattern_accepts_known_grids.py finders/renbanana/tools/test_probe_finds_known_grids.py"
 finder_pytest="finders/counting_shaded/test_counting_shaded.py"
 
+# The runner's own test, which every --changed selection keeps.
+runner_test="uv run tests/test_all_sh.py"
+# Data a finder reads from outside its own folder: <directory prefix>=<finder
+# folder>. A change under one selects that finder, a `.md` included. Any other
+# non-`.md` file under `docs/` widens the run, so a data directory added later
+# and never mapped costs a full run and never a skipped suite.
+data_map="docs/research/renbanana/=renbanana docs/research/banabner/=banabner docs/research/2026-09-14-galaxy-copycat/=galaxy-copycat"
+
 listed() { case " $1 " in *" $2 "*) return 0 ;; esac; return 1; } # <list> <file>
 
 # Prints "<group>\t<command>" per suite, in run order.
@@ -48,7 +72,7 @@ suites() {
   local f
   printf 'lint\t%s\n' \
     "uvx ruff check finders tests" "uvx ruff format --check finders tests" "uv lock --check"
-  printf 'test\tuv run tests/test_all_sh.py\n'
+  printf 'test\t%s\n' "$runner_test"
   for f in finders/**/test_*.py; do
     if listed "$finder_slow" "$f"; then continue
     elif listed "$finder_pytest" "$f"; then printf 'test\tuv run pytest %s -q\n' "$f"
@@ -60,11 +84,11 @@ suites() {
 
 usage() { # <what is wrong>
   echo "tests/all.sh: $1" >&2
-  echo "usage: tests/all.sh [--list] [--group <group>] [--jobs <n>]" >&2
+  echo "usage: tests/all.sh [--list] [--group <group>] [--jobs <n>] [--changed <base>]" >&2
   exit 2
 }
 
-list_only=0 group="" jobs=${GATE_JOBS:-1}
+list_only=0 group="" jobs=${GATE_JOBS:-1} base=""
 while [ $# -gt 0 ]; do
   case $1 in
     --list) list_only=1; shift ;;
@@ -74,6 +98,9 @@ while [ $# -gt 0 ]; do
     --jobs)
       [ $# -ge 2 ] || usage "$1 needs a value"
       jobs=$2; shift 2 ;;
+    --changed)
+      [ $# -ge 2 ] || usage "$1 needs a value"
+      base=$2; shift 2 ;;
     *) usage "no flag named $1" ;;
   esac
 done
@@ -93,6 +120,44 @@ if [ -n "$group" ]; then
 else
   all=$(awk -F'\t' '$1 != "slow"' <<<"$all")
   note=""
+fi
+
+# --changed: keep lint, the runner's test, and the suites under a touched
+# finder folder; a shared path keeps every suite and names itself in $note.
+if [ -n "$base" ]; then
+  files=$(git -c core.quotepath=off diff --name-only --no-renames "$base...HEAD" 2>&1) || usage "git cannot diff $base...HEAD: $files"
+  widened="" folders=" "
+  while IFS= read -r f; do
+    mapped=""
+    for pair in $data_map; do
+      case $f in "${pair%%=*}"*) mapped=${pair#*=}; folders="$folders$mapped " ;; esac
+    done
+    [ -z "$mapped" ] || continue
+    case $f in
+      '' | *.md) ;;
+      docs/*) widened=${widened:-$f} ;;
+      finders/hunt/* | pyproject.toml | uv.lock | tests/* | justfile | .github/*) widened=${widened:-$f} ;;
+      finders/*/*) name=${f#finders/}; folders="$folders${name%%/*} " ;;
+      *) widened=${widened:-$f} ;; # a loose finders/*.py, or a path nothing names
+    esac
+  done <<<"$files"
+  if [ -z "$widened" ]; then
+    narrowed=""
+    while IFS=$'\t' read -r g c; do
+      [ -n "$c" ] || continue
+      keep=0
+      if [ "$g" = lint ] || [ "$c" = "$runner_test" ]; then keep=1
+      else
+        for name in $folders; do
+          case $c in *" finders/$name/"*) keep=1 ;; esac
+        done
+      fi
+      [ "$keep" = 1 ] && narrowed="$narrowed$g"$'\t'"$c"$'\n'
+    done <<<"$all"
+    all=${narrowed%$'\n'}
+  else
+    note="$note (widened: $widened)"
+  fi
 fi
 selected=$(cut -f2 <<<"$all")
 
