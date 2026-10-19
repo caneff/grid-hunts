@@ -142,7 +142,10 @@ README before reusing anything there.
   backtracking search, which shares no code with the model, and
   `halver_brute_c.py` the same search in C (`halver_brute.c`, built with
   the system gcc into a git-ignored `target/`), which the lockout check
-  runs on (#59). A line type plugs
+  runs on (#59); `halver_shapes.py` the drawing rules every line type
+  shares and the cell counts a hunt ranks lines by, which each finder's
+  `candidates.py` re-exports beside its own separating-line walk. A line
+  type plugs
   in through three pieces: a `post` that puts one line on the model, a plain
   `line_holds` reading of one line on a solution, and a `narrowing` step for
   the search. `halver_report.py` prints a board's status and its marks'
@@ -166,7 +169,9 @@ README before reusing anything there.
   lockout pieces of the CP-SAT model (diamonds at least 4 apart in value,
   each body cell below the smaller or above the larger) and the reader of
   SudokuMaker's type-407 lines, `brute.py` the lockout narrowing of the
-  backtracking check. `check.py BOARD [--marks FILE]` prints a lockout
+  backtracking check, `candidates.py` the separating-line walk (#55): every
+  legal line that holds in a target and fails in a second solution.
+  `check.py BOARD [--marks FILE]` prints a lockout
   board's status and each mark's verdict in `halver_between`'s report
   format. `fixtures/` holds the 9x9 test boards (infeasible, unique, not
   unique, the four-diamond board, and the 23-line board that
