@@ -21,15 +21,6 @@ TABLE = [
 ]
 
 
-def line(row):
-    a, body, b = (part.split() for part in row.split("|"))
-    return rules.Line(
-        rules.parse_cell(a[0]),
-        tuple(map(rules.parse_cell, body)),
-        rules.parse_cell(b[0]),
-    )
-
-
-ADDED = tuple(line(row) for row in TABLE)
+ADDED = tuple(map(rules.parse_line, TABLE))
 
 LINK = "https://sudokumaker.app/?puzzle=N4IgZg9gTgtghgFwGoFMoGcCWEB2IBcABCAIwB0AbGQAwgA0xADgK4BerANigYaDnDG5EQ9YnGYIAFtB4gAwpMw4AygihxGokAGMUHDuh4BtYAF8GZi+d7XLNqw-tO7L228euP75988+vAf5BfiG+YYGhEeHB0ZExUQnxSaEAugw6uOhqcEoIhkQmIAgAnoxChNS2RaXlJOlQKADm2Dj5hEbUDJ0VDHWEfX0ATAzDhKPdE71T-SOzY10LPTPLQ3OjAMwMm4TbACwM+4SHAKwMp4Tn21cHN0dn9xdbTzu3hycP5xQMX4Q-AOwMAGEIEADgYYMIEJ+0MBsOB4IRkO+yN+cKBoMRIJSVXQEA4ADc0ABJRo4aAoAAmPDUzBQ6RKZR4u2o2xAHCUKDaRiMgwAnFtuut+UdBX11qNdn1jt1dsLdhDdn80u0KOdjj9dhrjsqjLs1YcKNsKIc-ts-ibtQweUCSBDhSRuiRhYMsVaKKM-n0-t0KMKKNQdX9zn9-kCKBDjhGw5b2oMgesgYqdYMfus3oMdbtRsdRv7k5c9hmrSQbT8U8nHaNBkNeZneicdf7vn13cmIesIXydcdhccWwGrRsDillSAssUuDxQOycJyp0VFNoANaz9BtahkPoZDgyYQAYjgh6PIGsIBQOApAAUILk2qAsKxyhuIeBMPpZHuwF-vyDaOkslAEBLuUoBSJgy6ruuNCjNuu7EAeR6HiepgodiphAA"

@@ -15,6 +15,7 @@ lint and the runner's test; `--list --changed` prints the selection.
 """
 
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -209,14 +210,25 @@ def git(root, *args):
     )
 
 
+def fake_map(runner):
+    """The runner with its data map swapped for one mapped data directory,
+    whatever the real map holds."""
+    swapped, count = re.subn(
+        r'^data_map=".*"$',
+        'data_map="docs/research/fake-data/=fake"',
+        runner,
+        flags=re.MULTILINE,
+    )
+    assert count == 1, f"{count} data_map lines in tests/all.sh"
+    return swapped
+
+
 def changed_tree(root):
     """A git tree holding the whole runner, a stub runner test, three fake
     finder folders and one file at each shared path, committed as `main`."""
     files = {
         # A mapped data directory, so the mapping loop has a test of its own.
-        "tests/all.sh": ALL.read_text().replace(
-            'data_map=""', 'data_map="docs/research/fake-data/=fake"'
-        ),
+        "tests/all.sh": fake_map(ALL.read_text()),
         "tests/test_all_sh.py": "pass\n",
         "finders/fake/test_a.py": "pass\n",
         "finders/other-one/test_b.py": "pass\n",
@@ -495,6 +507,41 @@ for name in RETIRED:
     check(
         f"{name} is archived with a README and no file of it is left in finders/",
         (REPO / "archive" / "finders" / name / "README.md").is_file() and not tracked,
+    )
+
+# The real data map, not a fake one: a change to the shared halver layer,
+# which holds no suite of its own, selects both finders that run on it and
+# nothing else.
+with tempfile.TemporaryDirectory() as d:
+    root = Path(d)
+    for name, body in {
+        "tests/all.sh": ALL.read_text(),
+        "tests/test_all_sh.py": "pass\n",
+        "finders/halver/halver_rules.py": "",
+        "finders/halver_between/test_rules.py": "pass\n",
+        "finders/halver_lockout/test_rules.py": "pass\n",
+        "finders/fake/test_a.py": "pass\n",
+    }.items():
+        (root / name).parent.mkdir(parents=True, exist_ok=True)
+        (root / name).write_text(body)
+    git(root, "init", "-q", "-b", "main")
+    git(root, "add", "-A")
+    git(root, "commit", "-q", "-m", "base")
+    touch_on_branch(root, "finders/halver/halver_rules.py")
+    got = listing(root / "tests" / "all.sh")
+    check(
+        "--list --changed, the real data map: finders/halver/ selects "
+        f"halver_between's and halver_lockout's suites ({got})",
+        got
+        == (
+            0,
+            [
+                *LINT,
+                RUNNER,
+                "uv run finders/halver_between/test_rules.py",
+                "uv run finders/halver_lockout/test_rules.py",
+            ],
+        ),
     )
 
 sys.exit(0 if ok else 1)

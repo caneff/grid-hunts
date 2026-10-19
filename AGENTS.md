@@ -32,10 +32,10 @@ Retiring a finder is `git mv` to `archive/finders/` plus its README; reviving on
 ## End-to-end seam
 
 - **Seam**: `just check`
-- **Narrowed**: `bash tests/all.sh --changed origin/main` — lint, the runner's test, and the suites under each `finders/<name>/` folder the diff touches (plus the finder a changed data directory feeds; the map is empty while no kept finder reads outside its folder); shared code, a `docs/` file that is not `.md` and not mapped, or any path nothing names widens the run to every non-slow suite, and the last line ends `(widened: <path>)`; a diff of unmapped `.md` files runs lint and the runner's test; the rules and the data map are in the header of `tests/all.sh`
-- **Blind to**: the slow halver/between hunt test (`just test-slow`), a
-  hunt's own output, and how a found grid reads once it is built into a
-  puzzle link
+- **Narrowed**: `bash tests/all.sh --changed origin/main` — lint, the runner's test, and the suites under each `finders/<name>/` folder the diff touches (plus the finder a changed data or code directory feeds: `finders/halver/`, the shared halver layer, feeds `halver_between` and `halver_lockout`); shared code, a `docs/` file that is not `.md` and not mapped, or any path nothing names widens the run to every non-slow suite, and the last line ends `(widened: <path>)`; a diff of unmapped `.md` files runs lint and the runner's test; the rules and the data map are in the header of `tests/all.sh`
+- **Blind to**: the slow tests (`just test-slow`: the halver/between and
+  halver/lockout hunts and the lockout 23-line board), a hunt's own output,
+  and how a found grid reads once it is built into a puzzle link
 
 ## Commands
 
