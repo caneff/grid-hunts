@@ -12,7 +12,7 @@ because the checker reads them and nothing under `docs/research/` does
 ## Archived finders
 
 `archive/finders/` holds the retired finders (renbanana, banabner,
-galaxy-copycat, copycat-scan, lmd-hybrid-scan), each with a README saying where
+zombo-brainanas, galaxy-copycat, copycat-scan, lmd-hybrid-scan), each with a README saying where
 its results live. They are untested; the renbanana chocolate-catalogue rule
 (`docs/research/renbanana/rectangle-catalogue.json`) went with them. Read the
 README before reusing anything there.

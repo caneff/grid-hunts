@@ -2,8 +2,8 @@
 that has gone quiet instead of letting it run to its full time limit. Half
 of zombo-brainanas's sampling budget went to proving optimality after the
 real answer was already found (seed 701: feasible at 178s, OPTIMAL at 489s).
-See `finders/zombo_brainanas_cpsat.py`'s `FirstSolution`/`solve_with_watchdog`
-for the circle-hunt version this generalizes.
+See `archive/finders/zombo-brainanas/zombo_brainanas_cpsat.py`'s
+`FirstSolution`/`solve_with_watchdog` for the circle-hunt version this generalizes.
 """
 
 import threading

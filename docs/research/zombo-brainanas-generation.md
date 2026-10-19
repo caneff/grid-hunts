@@ -3,7 +3,8 @@
 **Question.** Can a Sudoku + gdc Infections + Choco Banana puzzle be generated
 with several *clued brainanas* (uninfected, non-rectangular pockets holding a
 circle whose digit is the pocket size), and what does the ruleset force?
-Tooling: `zombo_brainanas_cpsat.py` (generator), `zombo_brainanas_render.py`
+Tooling (in `archive/finders/zombo-brainanas/`): `zombo_brainanas_cpsat.py`
+(generator), `zombo_brainanas_render.py`
 (picture). Claims are `[verified]` (we ran it) or `[unsure]`.
 
 ## Rules under test
@@ -93,8 +94,8 @@ size). Pockets of 4 (top right), 5 (bottom left) and 6 (the elbow at r6c6).
 ![seed 200](zombo-brainanas/seed200.png)
 
 ```
-uv run --with ortools finders/zombo_brainanas_cpsat.py hunt 200 240 900 out 1 3
-python3 finders/zombo_brainanas_render.py out/full_200.json seed200.png
+uv run --with ortools archive/finders/zombo-brainanas/zombo_brainanas_cpsat.py hunt 200 240 900 out 1 3
+python3 archive/finders/zombo-brainanas/zombo_brainanas_render.py out/full_200.json seed200.png
 ```
 
 ## gdc's clue kit across the series
