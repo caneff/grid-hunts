@@ -166,4 +166,14 @@ except brute.OutOfTime:
 else:
     raise AssertionError("a search past its deadline returned a count")
 
+# A deadline that passes mid-search stops it too: the 23-line board takes
+# minutes, so a tenth of a second is never enough.
+board_23 = rules.load_lines(HERE / "fixtures" / "unique_23.json")
+try:
+    brute.solutions(board_23, 9, (3, 3), limit=2, deadline=time.monotonic() + 0.1)
+except brute.OutOfTime:
+    pass
+else:
+    raise AssertionError("a search past its deadline returned a count")
+
 print("ok", json.dumps(statuses, sort_keys=True))
