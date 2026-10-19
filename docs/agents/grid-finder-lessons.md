@@ -106,7 +106,7 @@ what it cost.
   (`finders/counting_shaded/recheck_ceiling.py`, `--exactly 27` INFEASIBLE).
 - **`UNKNOWN` is a timeout, never a proof.** Only `INFEASIBLE` proves a band
   empty. Never let a timeout print as exhaustion, and never let one count as
-  "this clue can be dropped" — `minimal.py` and `zombo_brainanas_cpsat.py`
+  "this clue can be dropped" — `minimal.py` and `archive/finders/zombo-brainanas/zombo_brainanas_cpsat.py`
   both keep the clue on a timeout.
 - **Check a geometric encoding against a direct implementation.** Flow
   connectivity and spanning-tree connectivity were each checked against flood
