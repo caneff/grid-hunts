@@ -19,7 +19,8 @@ or as held.
 
 A line is a `Line`: two ends and its body cells in path order. Cells are
 (row, column) from 0; `cell_name` and `parse_cell` convert to and from the
-rNcM form the specs and the reports use.
+rNcM form the specs and the reports use. `lines_from_doc` reads one line
+type's lines from a decoded SudokuMaker document.
 """
 
 from typing import NamedTuple
@@ -79,6 +80,26 @@ def parse_cell(name):
 def line_name(line):
     body = " ".join(cell_name(cell) for cell in line.body)
     return f"{cell_name(line.a)} | {body} | {cell_name(line.b)}"
+
+
+def lines_from_doc(doc, constraint_type, kind):
+    """The lines of one SudokuMaker constraint type in a decoded document, in
+    its order: each path's first and last cells are the ends. Raises a
+    ValueError naming `kind` and the type when the document has none."""
+    n = round(len(doc["puzzle"]["cells"]) ** 0.5)
+    groups = [
+        c["lines"]
+        for c in doc["puzzle"]["constraints"]
+        if c.get("type") == constraint_type
+    ]
+    if not groups:
+        raise ValueError(f"no {kind} lines (constraint type {constraint_type})")
+    lines = []
+    for group in groups:
+        for path_cells in group:
+            cells = [divmod(i, n) for i in path_cells]
+            lines.append(Line(cells[0], tuple(cells[1:-1]), cells[-1]))
+    return lines
 
 
 def _houses(n, box):

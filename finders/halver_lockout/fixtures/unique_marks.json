@@ -1,0 +1,7 @@
+[
+  {"kind": "digit", "cell": "r1c3", "digit": 8},
+  {"kind": "candidates", "cell": "r2c1", "digits": [7, 9]},
+  {"kind": "halver", "cell": "r1c1"},
+  {"kind": "halver_digit_in", "cells": ["r2c5", "r2c6"], "digit": 4},
+  {"kind": "digit_in", "cells": ["r9c1", "r9c2"], "digit": 8}
+]
