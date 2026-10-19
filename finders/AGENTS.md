@@ -142,8 +142,9 @@ README before reusing anything there.
   backtracking search, which shares no code with the model. A line type plugs
   in through three pieces: a `post` that puts one line on the model, a plain
   `line_holds` reading of one line on a solution, and a `narrowing` step for
-  the search. A change here runs `halver_between`'s suites (`tests/all.sh`'s
-  `data_map`).
+  the search. `halver_report.py` prints a board's status and its marks'
+  verdicts. A change here runs the suites of both finders on it
+  (`tests/all.sh`'s `data_map`).
 - `finders/halver_between/` is the halver + between-line rule check (spec #39),
   the between line type on `finders/halver/`:
   `rules.py` the between pieces of the CP-SAT model, `brute.py` the between
@@ -157,6 +158,15 @@ README before reusing anything there.
   slow (`just test-slow`); `test_spec_39_e2e.py` is spec #39 end to end in
   the gate, on one recorded hit (`hit_fixture.py`). Preflight, choices
   and runs: `docs/research/2026-10-16-halver-between-hunt-decision-log.md`.
+- `finders/halver_lockout/` is the halver + lockout-line rule check (spec
+  #52, #54), the lockout line type on `finders/halver/`: `rules.py` the
+  lockout pieces of the CP-SAT model (diamonds at least 4 apart in value,
+  each body cell below the smaller or above the larger) and the reader of
+  SudokuMaker's type-407 lines, `brute.py` the lockout narrowing of the
+  backtracking check. `check.py BOARD [--marks FILE]` prints a lockout
+  board's status and each mark's verdict in `halver_between`'s report
+  format. `fixtures/` holds the 9x9 test boards (infeasible, unique, not
+  unique), test cases and not hits.
 - `archive/finders/galaxy-copycat/`'s write-ups live in `docs/research/2026-09-14-copycat-scan.md`
   and `docs/research/2026-09-14-galaxy-copycat-design.md`; its boards are
   `docs/research/2026-09-14-galaxy-copycat/boards/`.

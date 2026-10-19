@@ -9,6 +9,14 @@ leaves every lockout line there with no solution, and both checks say so.
 The 4x4 comparison runs at a gap of 2, SudokuMaker's own gap for four digits
 (half the digit count, rounded down), so its bodies have values to take.
 
+The 9x9 fixtures are test cases, not hits. The unique one is 23 lines found
+by the target-grid loop, which left one solution, plus 30 three-cell lines
+its answer keeps, which make the backtracking check exhaust it in about a
+second (on the 23 lines alone it found no verdict in 20 minutes). Those 30
+were never checked against the drawing rules. The infeasible one is the
+unique one plus r5c5 | r5c6 | r5c7, which its answer breaks, and the not
+unique one is the loop's first 3 lines.
+
     uv run finders/halver_lockout/test_brute.py
 """
 

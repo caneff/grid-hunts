@@ -36,7 +36,7 @@ def run(*args):
 done = run(UNIQUE, "--marks", FIXTURES / "unique_marks.json")
 assert done.returncode == 0, (done.returncode, done.stdout, done.stderr)
 assert done.stdout.splitlines() == [
-    "L1-L23: unique",
+    "L1-L53: unique",
     "held      r1c3 = 8",
     "held      r2c1 in {7,9}",
     "held      r1c1 is a halver",
@@ -50,7 +50,7 @@ with tempfile.TemporaryDirectory() as tmp:
     done = run(UNIQUE, "--marks", wrong)
     assert done.returncode == 1, (done.returncode, done.stdout, done.stderr)
     assert done.stdout.splitlines() == [
-        "L1-L23: unique",
+        "L1-L53: unique",
         "NOT HELD  r1c1 = 2",
         "  broken by: r1 518369247 r2 729514638 r3 634278951 r4 941826573"
         " r5 873945126 r6 265137894 r7 456782319 r8 397651482 r9 182493765;"
@@ -72,14 +72,14 @@ with tempfile.TemporaryDirectory() as tmp:
 done = run(FIXTURES / "infeasible.json", "--marks", FIXTURES / "unique_marks.json")
 assert done.returncode == 1, (done.returncode, done.stdout, done.stderr)
 assert done.stdout.splitlines() == [
-    "L1-L6: infeasible",
+    "L1-L54: infeasible",
     "no mark checked: the board's status is infeasible",
 ], done.stdout
 
 done = run(UNIQUE, "--marks", FIXTURES / "unique_marks.json", "--time-limit", "1e-6")
 assert done.returncode == 1, (done.returncode, done.stdout, done.stderr)
 assert done.stdout.splitlines() == [
-    "L1-L23: timeout",
+    "L1-L53: timeout",
     "no mark checked: the board's status is timeout",
 ], done.stdout
 
