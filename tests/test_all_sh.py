@@ -44,7 +44,6 @@ with log.open("a") as f:
 # itself. Nothing at or above the runner is touched.
 KILLER = """\
 import os
-import re
 import signal
 
 
@@ -508,6 +507,41 @@ for name in RETIRED:
     check(
         f"{name} is archived with a README and no file of it is left in finders/",
         (REPO / "archive" / "finders" / name / "README.md").is_file() and not tracked,
+    )
+
+# The real data map, not a fake one: a change to the shared halver layer,
+# which holds no suite of its own, selects both finders that run on it and
+# nothing else.
+with tempfile.TemporaryDirectory() as d:
+    root = Path(d)
+    for name, body in {
+        "tests/all.sh": ALL.read_text(),
+        "tests/test_all_sh.py": "pass\n",
+        "finders/halver/halver_rules.py": "",
+        "finders/halver_between/test_rules.py": "pass\n",
+        "finders/halver_lockout/test_rules.py": "pass\n",
+        "finders/fake/test_a.py": "pass\n",
+    }.items():
+        (root / name).parent.mkdir(parents=True, exist_ok=True)
+        (root / name).write_text(body)
+    git(root, "init", "-q", "-b", "main")
+    git(root, "add", "-A")
+    git(root, "commit", "-q", "-m", "base")
+    touch_on_branch(root, "finders/halver/halver_rules.py")
+    got = listing(root / "tests" / "all.sh")
+    check(
+        "--list --changed, the real data map: finders/halver/ selects "
+        f"halver_between's and halver_lockout's suites ({got})",
+        got
+        == (
+            0,
+            [
+                *LINT,
+                RUNNER,
+                "uv run finders/halver_between/test_rules.py",
+                "uv run finders/halver_lockout/test_rules.py",
+            ],
+        ),
     )
 
 sys.exit(0 if ok else 1)

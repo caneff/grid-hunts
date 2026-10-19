@@ -10,6 +10,8 @@ diamonds; `end` names them in a refusal. `shape_violation(path, lines, end)`
 reads one path against the lines already drawn and returns None when it may
 be drawn, or the first rule it breaks:
 
+- every cell is on the n x n board (9 unless given), so a cell named off it,
+  such as r7c13, never aliases a cell on it;
 - every step is a king step, and no cell is visited twice;
 - there is at least one body cell;
 - a body cell is on no other line, as body or end;
@@ -63,7 +65,10 @@ def _king(p, q):
     return p != q and abs(p[0] - q[0]) <= 1 and abs(p[1] - q[1]) <= 1
 
 
-def shape_violation(path, lines, end):
+def shape_violation(path, lines, end, n=9):
+    for cell in path:
+        if not (0 <= cell[0] < n and 0 <= cell[1] < n):
+            return f"{cell_name(cell)} is off the {n}x{n} board"
     seen = set()
     for cell in path:
         if cell in seen:

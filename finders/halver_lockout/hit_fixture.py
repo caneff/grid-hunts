@@ -35,16 +35,7 @@ TABLE = [
 ]
 
 
-def line(row):
-    a, body, b = (part.split() for part in row.split("|"))
-    return rules.Line(
-        rules.parse_cell(a[0]),
-        tuple(map(rules.parse_cell, body)),
-        rules.parse_cell(b[0]),
-    )
-
-
-ADDED = tuple(line(row) for row in TABLE)
+ADDED = tuple(map(rules.parse_line, TABLE))
 
 DIGITS = [
     "927835641",

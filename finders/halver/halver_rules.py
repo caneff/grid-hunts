@@ -82,6 +82,12 @@ def line_name(line):
     return f"{cell_name(line.a)} | {body} | {cell_name(line.b)}"
 
 
+def parse_line(row):
+    """The line `line_name` printed as `row`."""
+    a, body, b = (part.split() for part in row.split("|"))
+    return Line(parse_cell(a[0]), tuple(map(parse_cell, body)), parse_cell(b[0]))
+
+
 def lines_from_doc(doc, constraint_type, kind):
     """The lines of one SudokuMaker constraint type in a decoded document, in
     its order: each path's first and last cells are the ends. Raises a

@@ -37,6 +37,7 @@ from halver_rules import (
     line_name,
     mark_name,
     parse_cell,
+    parse_line,
 )
 
 __all__ = [
@@ -54,6 +55,7 @@ __all__ = [
     "load_lines",
     "mark_name",
     "parse_cell",
+    "parse_line",
     "post_lockout",
 ]
 

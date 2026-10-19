@@ -28,7 +28,7 @@ import brute
 import candidates
 import halver_hunt
 import rules
-from halver_hunt import Hit, N, TargetLoopFinder, best_line, summary
+from halver_hunt import Hit, N, TargetLoopFinder
 from protocol import Empty, Verdict
 
 __all__ = [
@@ -39,10 +39,8 @@ __all__ = [
     "HalverBetweenFinder",
     "Hit",
     "Verdict",
-    "best_line",
     "link_doc",
     "main",
-    "summary",
 ]
 
 BOARD_DOC = json.loads((HERE / "board.json").read_text())
@@ -77,8 +75,7 @@ class HalverBetweenFinder(TargetLoopFinder):
     board = tuple(BOARD)
     end = "circle"
 
-    def link_doc(self, added):
-        return link_doc(added)
+    link_doc = staticmethod(link_doc)
 
 
 def main(argv):

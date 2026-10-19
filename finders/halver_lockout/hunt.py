@@ -29,18 +29,16 @@ import brute
 import candidates
 import halver_hunt
 import rules
-from halver_hunt import BOX, Hit, N, TargetLoopFinder, summary
-from protocol import Empty, Verdict
+from halver_hunt import BOX, Hit, N, TargetLoopFinder
+from protocol import Verdict
 
 __all__ = [
     "DEFAULTS",
-    "Empty",
     "HalverLockoutFinder",
     "Hit",
     "Verdict",
     "link_doc",
     "main",
-    "summary",
 ]
 
 DEFAULTS = {
@@ -80,8 +78,7 @@ class HalverLockoutFinder(TargetLoopFinder):
     rules, candidates, brute = rules, candidates, brute
     end = "diamond"
 
-    def link_doc(self, added):
-        return link_doc(added)
+    link_doc = staticmethod(link_doc)
 
 
 def main(argv):

@@ -20,8 +20,9 @@ lines, plus the second solution. The pool members an added line leaves alive
 stay (they are still solutions), and only as many draws as the line broke
 top it back up. A draw that reaches its time limit is left out of the pool
 and counted in the step log as `pool_timeouts`; a smaller pool ranks less
-well and is never wrong. Cells are the scarce resource (halver_between
-truths note, section 6), so a candidate scores the pool solutions it breaks
+well and is never wrong. On between lines cells were the scarce resource
+(halver_between truths note, section 6); the lockout hunt of record did not
+run out of them (its decision log). A candidate scores the pool solutions it breaks
 per new cell it takes: its body cells and any end no line has yet. Ties go
 to a candidate touching a cell whose halver status differs between the
 target and the second solution, then the shortest, then the seed's rng. Once
@@ -36,7 +37,9 @@ and every added line a legal shape. The backtracking search stops at
 `--verify-seconds` and then refuses the hit with no verdict, never passes
 it. `record` writes the line table, the solution and the finder's
 SudokuMaker link. `summary DIR` prints the verified hits, or "none found"
-with the seeds, the wall clock and each seed's reason; a `--no-verify`
+with the seeds, the wall clock (run.json's start to the end a returning
+hunt records in `ended.json`; "not recorded" without one) and each seed's
+reason; a `--no-verify`
 hunt's candidates are counted as unchecked until `hunt.py verify DIR` has
 run, and then as hits or as rejected by its verdicts.
 
@@ -55,7 +58,7 @@ import json
 import sys
 import time
 from collections import Counter
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import NamedTuple
 
@@ -71,6 +74,10 @@ from sudoku_kit.link_codec import encode_link
 from verified_io import read_verified
 
 N, BOX = 9, (3, 3)
+# The hunt's end, written when a hunt run returns 0; `summary` reads its
+# wall clock from run.json's start and this, never a file's modification
+# time, which git does not keep.
+ENDED = "ended.json"
 KNOBS = (
     "max_cells",
     "pool",
@@ -365,22 +372,22 @@ def summary(out):
         for r, v in zip(examples, verdicts, strict=True)
         if v not in ("hit", "unchecked")
     ]
-    started = datetime.fromisoformat(run_json["start_time"])
-    last = datetime.fromtimestamp(
-        (out / "progress.jsonl").stat().st_mtime, started.tzinfo
-    )
-    wall = (last - started).total_seconds()
+    clock = "wall clock not recorded"
+    if (out / ENDED).exists():
+        started = datetime.fromisoformat(run_json["start_time"])
+        ended = datetime.fromisoformat(json.loads((out / ENDED).read_text())["end"])
+        clock = f"wall clock {(ended - started).total_seconds():.0f} s"
     seeds = sorted(e["seed"] for e in events)
     span = f"{len(seeds)} seeds" + (f" ({seeds[0]}..{seeds[-1]})" if seeds else "")
     outcomes = Counter(e["outcome"] for e in events)
     text = []
     if hits:
-        text.append(f"{len(hits)} hits in {span}, wall clock {wall:.0f} s")
+        text.append(f"{len(hits)} hits in {span}, {clock}")
     elif unchecked or rejected:
-        text.append(f"no verified hit in {span}, wall clock {wall:.0f} s")
+        text.append(f"no verified hit in {span}, {clock}")
     else:
         text.append(
-            f"none found in {span}, wall clock {wall:.0f} s: a search result, "
+            f"none found in {span}, {clock}: a search result, "
             "not a proof that no finish exists"
         )
     if unchecked:
@@ -451,4 +458,11 @@ def main(finder_class, argv, defaults):
         return 2
     log = own.step_log.open("a") if own.step_log else None
     finder = finder_class(**{knob: getattr(own, knob) for knob in KNOBS}, log=log)
-    return run(finder, rest)
+    code = run(finder, rest)
+    hunt = argparse.ArgumentParser(add_help=False)
+    hunt.add_argument("--out", type=Path)
+    out = hunt.parse_known_args(rest)[0].out
+    if code == 0 and rest[:1] != ["verify"] and out and (out / "run.json").exists():
+        stamp = {"end": datetime.now(UTC).isoformat()}
+        (out / ENDED).write_text(json.dumps(stamp) + "\n")
+    return code

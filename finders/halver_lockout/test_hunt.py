@@ -14,6 +14,7 @@ minutes and depend on the box's load. Its time is in the decision log.
 """
 
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -76,7 +77,9 @@ with tempfile.TemporaryDirectory() as tmp:
     summary = run("summary", str(none))
     assert summary.returncode == 0, summary.stderr
     first = summary.stdout.splitlines()[0]
-    assert first.startswith("none found in 2 seeds (0..1), wall clock"), first
+    assert re.match(r"none found in 2 seeds \(0\.\.1\), wall clock \d+ s: ", first), (
+        first
+    )
     assert "not a proof" in first, first
     assert "seed 1: timeout" in summary.stdout, summary.stdout
 
