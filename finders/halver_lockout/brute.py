@@ -8,11 +8,14 @@ other.
 `solutions(lines, n, box, limit, deadline, gap, search)` returns up to `limit`
 solutions, each a (digits row by row, frozenset of halver cells) pair, in
 search order. Given a `deadline` (a `time.monotonic()` reading), it raises
-`OutOfTime` at the first search node past it, so a caller gets no count
-rather than a short one. A line is any (diamond a, body cells, diamond b)
+`OutOfTime` once the search is past it (the C search reads the clock every
+256 nodes, at each end it probes, and before it returns a count), so a
+caller gets no count rather than a short one. A line is any (diamond a, body cells, diamond b)
 triple of (row, column) cells from 0. `gap` is the least difference between
 the diamonds' values, 4 unless given. `search` is the C search unless given;
 `halver_brute.solutions`, the Python search, returns the same solutions.
+`GAP` is defined here and in `rules.py` on purpose: this check shares no code
+with the CP-SAT model.
 
 A lockout line keeps a diamond's doubled value only when the other diamond
 has one at least 2 * gap away that leaves every body cell a doubled value
@@ -29,7 +32,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "halver"))
 
 # isort: split
 import halver_brute_c
-from halver_brute import OutOfTime
+from halver_brute import OutOfTime, bits
 
 __all__ = ["OutOfTime", "lockout_narrowing", "solutions"]
 
@@ -43,13 +46,6 @@ def solutions(
         return lockout_narrowing(body, houses, n, gap)
 
     return search(narrowing, lines, n, box, limit, deadline, probe_ends=True)
-
-
-def _bits(mask):
-    while mask:
-        low = mask & -mask
-        yield low.bit_length() - 1
-        mask ^= low
 
 
 def lockout_narrowing(body, houses, n, gap=GAP):
@@ -72,8 +68,8 @@ def lockout_narrowing(body, houses, n, gap=GAP):
 
     def narrow(end_a, end_b, bodies):
         keep_a = keep_b = kept = 0
-        for x in _bits(end_a):
-            for y in _bits(end_b):
+        for x in bits(end_a):
+            for y in bits(end_b):
                 span = outside.get((x, y) if x < y else (y, x))
                 if span is not None and all(v & span for v in bodies):
                     keep_a |= 1 << x

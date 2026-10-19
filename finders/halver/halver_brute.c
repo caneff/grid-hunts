@@ -136,10 +136,18 @@ static int propagate(m_t *cells, uint8_t *settled) {
     return 1;
 }
 
+static int past_deadline(void) {
+    if (has_deadline && now() > deadline) timed_out = 1;
+    return timed_out;
+}
+
 static int probe(m_t *cells, uint8_t *settled) {
     for (;;) {
         int pruned = 0;
         for (int e = 0; e < NE; e++) {
+            /* One end's probe is a propagation per value, so the clock is read
+               here too, not only every 256 search nodes. */
+            if (past_deadline()) return 1;
             int i = ends[e];
             m_t snap = cells[i];
             if (!(snap & (snap - 1))) continue;
@@ -163,10 +171,11 @@ static int probe(m_t *cells, uint8_t *settled) {
 }
 
 static int search(m_t *cells, uint8_t *settled) {
-    if ((nodes++ & 255) == 0 && has_deadline && now() > deadline) timed_out = 1;
+    if ((nodes++ & 255) == 0) past_deadline();
     if (timed_out) return 1;
     if (!propagate(cells, settled)) return 0;
     if (!probe(cells, settled)) return 0;
+    if (timed_out) return 1;
     int best_i = -1, best_n = 99, best_house = -1;
     for (int e = 0; e < NE; e++) {
         int c = __builtin_popcount(cells[ends[e]]);
@@ -267,5 +276,7 @@ int hb_solutions(int n, int nh, const int *houses, int nl, const int *lines,
     uint8_t settled[MAXC];
     for (int i = 0; i < SIZE; i++) { cells[i] = (1u << (2 * n)) - 1; settled[i] = 0; }
     search(cells, settled);
-    return timed_out ? -1 : found;
+    /* A search that ends between two clock reads may still have run past
+       its deadline: a count is returned only when it did not. */
+    return past_deadline() ? -1 : found;
 }

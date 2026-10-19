@@ -5,15 +5,19 @@ ctypes. It shares no code with the CP-SAT model in `halver_rules.py`.
 `solutions(narrowing, lines, n, box, limit, deadline, probe_ends)` takes the
 arguments of `halver_brute.solutions` and returns the same solutions in the
 same order. A deadline passed raises `halver_brute.OutOfTime`, never a short
-count. Boards up to 9x9 and up to 256 lines.
+count, even for a search that finished between two clock reads. Boards up
+to 9x9 and up to 256 lines; a larger one raises `ValueError` before the C
+search, whose arrays are sized for those limits, is called. `probe_ends` is
+kept so either search can be passed as a line type's `search`.
 
 A line type's narrowing step runs here once per line and end pair, never in
 the search: `narrow(1 << x, 1 << y, every)` gives the doubled values the body
 may take when the ends are x and y, or None when the pair fails. The C
 search keeps an end pair while every body cell has a value in its body mask.
 That reads a narrowing exactly when the narrowing has this form, as the
-lockout and between narrowings do; `finders/halver_lockout/test_c_search.py`
-checks the lockout one against the Python search.
+lockout narrowing does; `finders/halver_lockout/test_brute.py` checks the C
+search against the Python search on lockout boards. No test runs the
+between narrowing on the C search, and `halver_between` does not use it.
 
 The library is built with the system `gcc` on first import, or when
 `halver_brute.c` is newer, into the git-ignored `target/` beside this file.
@@ -127,7 +131,7 @@ def solutions(narrowing, lines, n, box, limit, deadline=None, probe_ends=False):
         budget,
         out,
     )
-    if got < 0:
+    if got < 0 or (deadline is not None and time.monotonic() > deadline):
         raise OutOfTime
     found = []
     for k in range(got):

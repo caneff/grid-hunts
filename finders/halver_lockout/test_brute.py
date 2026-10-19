@@ -10,11 +10,13 @@ leaves every lockout line there with no solution, and both checks say so.
 The 4x4 comparison runs at a gap of 2, SudokuMaker's own gap for four digits
 (half the digit count, rounded down), so its bodies have values to take.
 
-The 9x9 fixtures are test cases, not hits. The unique one is 23 lines found
-by the target-grid loop, which left one solution, plus 30 three-cell lines
-its answer keeps, which make the backtracking check exhaust it in about a
-second (on the 23 lines alone it found no verdict in 20 minutes). Those 30
-were never checked against the drawing rules. The infeasible one is the
+The 9x9 fixtures are test cases, not hits. The unique one is 23 lines from
+#54's run of the target-grid loop, which left one solution, plus 30
+three-cell lines its answer keeps, which make the backtracking check exhaust
+it in about a second (the 23 lines alone take the C search about 200 s, in
+`test_unique_23.py`). That run did not apply the drawing rules: 4 of the 23
+lines cross an earlier line diagonally, and the 30 were never checked
+against them either. The infeasible one is the
 unique one plus r5c5 | r5c6 | r5c7, which its answer breaks, and the not
 unique one is the loop's first 3 lines. The four-diamond board has no
 solution and no fixture line beyond its six; the 23-line board alone, the
@@ -35,6 +37,7 @@ sys.path.insert(0, str(HERE))
 
 import brute
 import halver_brute
+import halver_brute_c
 import rules
 from rules import Line
 
@@ -175,5 +178,31 @@ except brute.OutOfTime:
     pass
 else:
     raise AssertionError("a search past its deadline returned a count")
+
+# A search that ends after its deadline, between two of the C search's clock
+# reads, returns no count either: the clock read after the call says the
+# deadline has passed.
+clock = halver_brute_c.time.monotonic
+start = clock()
+reads = iter([start, start + 10])
+halver_brute_c.time.monotonic = lambda: next(reads, start + 10)
+try:
+    brute.solutions(four, 9, (3, 3), limit=2, deadline=start + 5)
+except brute.OutOfTime:
+    pass
+else:
+    raise AssertionError("a search that ended past its deadline returned a count")
+finally:
+    halver_brute_c.time.monotonic = clock
+
+# The C search's arrays hold a 9x9 board and 256 lines: anything larger is
+# refused before the C code is called.
+for n, count in [(10, 1), (9, 257)]:
+    try:
+        brute.solutions([Line((0, 0), ((0, 1),), (0, 2))] * count, n, (3, 3), 2)
+    except ValueError as error:
+        assert "the C search takes up to 9x9 and 256 lines" in str(error), error
+    else:
+        raise AssertionError(f"a {n}x{n} board with {count} lines reached the C search")
 
 print("ok", json.dumps(statuses, sort_keys=True))

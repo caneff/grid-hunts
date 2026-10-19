@@ -26,20 +26,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "halver"))
 
 # isort: split
 import halver_brute
-from halver_brute import OutOfTime
+from halver_brute import OutOfTime, bits
 
 __all__ = ["OutOfTime", "between_narrowing", "solutions"]
 
 
 def solutions(lines, n, box, limit, deadline=None):
     return halver_brute.solutions(between_narrowing, lines, n, box, limit, deadline)
-
-
-def _bits(mask):
-    while mask:
-        low = mask & -mask
-        yield low.bit_length() - 1
-        mask ^= low
 
 
 def between_narrowing(body, houses, n):
@@ -63,8 +56,8 @@ def between_narrowing(body, houses, n):
 
     def narrow(end_a, end_b, bodies):
         keep_a = keep_b = between = 0
-        for x in _bits(end_a):
-            for y in _bits(end_b):
+        for x in bits(end_a):
+            for y in bits(end_b):
                 if x == y:
                     continue
                 lo, hi = (x, y) if x < y else (y, x)

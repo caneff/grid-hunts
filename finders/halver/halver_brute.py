@@ -72,7 +72,8 @@ class _Contradiction(Exception):
     pass
 
 
-def _bits(mask):
+def bits(mask):
+    """The set bits of `mask`, lowest first."""
     while mask:
         low = mask & -mask
         yield low.bit_length() - 1
@@ -165,7 +166,7 @@ def solutions(narrowing, lines, n, box, limit, deadline=None, probe_ends=False):
                 halver_places.append(i)
         if once != digit_bits or not halver_places:
             raise _Contradiction
-        for d in _bits(once & ~twice):
+        for d in bits(once & ~twice):
             for i in house:
                 if (cells[i] | cells[i] >> n) >> d & 1:
                     restrict(cells, i, (1 << d) | (1 << (n + d)), dirty)
@@ -209,7 +210,7 @@ def solutions(narrowing, lines, n, box, limit, deadline=None, probe_ends=False):
                 once |= h
             if once != digit_bits:
                 raise _Contradiction
-            for d in _bits(once & ~twice):
+            for d in bits(once & ~twice):
                 for i in range(size):
                     if cells[i] >> (n + d) & 1:
                         restrict(cells, i, 1 << (n + d), dirty)
@@ -224,7 +225,7 @@ def solutions(narrowing, lines, n, box, limit, deadline=None, probe_ends=False):
             dirty = set()
             for i in ends:
                 if cells[i] & (cells[i] - 1):
-                    for bit in _bits(cells[i]):
+                    for bit in bits(cells[i]):
                         trial = list(cells)
                         trial[i] = 1 << bit
                         try:
@@ -249,12 +250,12 @@ def solutions(narrowing, lines, n, box, limit, deadline=None, probe_ends=False):
         for i in ends:
             count = cells[i].bit_count()
             if count > 1 and (best is None or count < best[0]):
-                best = (count, [(i, 1 << bit) for bit in _bits(cells[i])])
+                best = (count, [(i, 1 << bit) for bit in bits(cells[i])])
         if best is None:
             for i in range(size):
                 count = cells[i].bit_count()
                 if count > 1 and (best is None or count < best[0]):
-                    best = (count, [(i, 1 << bit) for bit in _bits(cells[i])])
+                    best = (count, [(i, 1 << bit) for bit in bits(cells[i])])
             if best is None:
                 grid = tuple(
                     tuple(
