@@ -164,3 +164,26 @@ and only here, they mean the following.
 - **free cell** — a cell on no line, so still able to be a body cell. A new
   line takes its body cells and any circle not already on a line; cells,
   not solver time, are what a hunt seed runs out of.
+
+### Halver + lockout-line terms (`finders/halver_lockout/`)
+
+A classic 9x9 sudoku with hidden halvers and lockout lines, on an empty board
+(spec #52). **halver**, **value**, **doubled value**, **mark**, **target
+grid**, **second solution**, **separating line** and **free cell** mean what
+the halver + between-line section says; those are the shared halver layer's
+(`finders/halver/`). The between section's **line**, **circle** and **body**
+do not apply here; in this section, and only here, these mean the following.
+
+- **lockout line** (**line** here) — a king-step path with a diamond at each
+  end. The two diamonds' values differ by at least the gap, and every body
+  cell's value is strictly below the smaller diamond's or strictly above the
+  larger one's, never between them or equal to either. SudokuMaker's
+  constraint type 407.
+- **diamond** — one end cell of a lockout line. Lines may share a diamond.
+- **gap** — the least difference between a line's two diamonds' values: 4
+  on every line, on values (so 8 on doubled values). A halved 1 (0.5) and a
+  plain 9 are 8.5 apart but can never be a line's diamonds: no value lies
+  outside them.
+- **body** — the cells of a lockout line other than its two diamonds. A body
+  may sit on both sides of the diamonds' range, and its cells take the
+  board's extreme values (the halved 1, the plain 9) as freely as any other.

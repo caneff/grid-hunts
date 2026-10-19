@@ -24,8 +24,13 @@ ruled by Chris. Flag any you disagree with.
    below is arithmetic on the rules. The one prior run is #54's: a
    target-grid loop on the empty board that reached `unique` at 23 lines
    (`finders/halver_lockout/fixtures/unique_23.json`), whose backtracking
-   check took 202.8 s (check notes). It was a single seed, so it shows that
-   a finish exists, not how often one does.
+   check took 202.8 s (check notes). It did not apply the drawing rules (4
+   of its 23 lines cross an earlier line diagonally), and it was a single
+   seed, so it times the check; it is no evidence that the loop with the
+   drawing rules reaches a finish. The hunt of record below is that
+   evidence. (Spec #52 asks for this reasoning before any search; #54's run
+   came first, made for the rule check's fixtures, and this log was written
+   before the hunt slice's first run.)
 3. **Does the sampler cover the space or one orbit?** Targets come from the
    shared layer's `HalverModel.sample`, a one-worker CP-SAT solve steered by
    random digit hints, as in `halver_between`. That hunt measured 10 distinct
@@ -93,6 +98,14 @@ over the 14 values (31 ordered pairs have a gap of at least 4):
   body does not use the between line's one-sided window. This is the
   check notes' reason a line narrows little: one body cell keeps most of
   its 18 doubled values.
+
+**How long a body can be for a given pair, over the whole board.** No
+longer than the per-house caps above allow house by house, and no other cap:
+a king-step body can leave a house after its cap and carry on in the next,
+and its digits may repeat across houses. So a pair with a cap of 1 (the
+narrowest) still allows a long body that never puts two cells in one row,
+column or box, and the cap that binds in the hunt is `--max-cells` (8 cells,
+so 6 body cells), not the rules.
 
 What this rules out for the walk: the (0.5, 9) pair and any body of six or
 more cells in one house never reach a candidate, because the walk only keeps
@@ -194,5 +207,6 @@ https://sudokumaker.app/?puzzle=N4IgZg9gTgtghgFwGoFMoGcCWEB2IBcABCAIwB0AbGQAwgA0
 The other two hits' links and line tables are in `examples.jsonl`, and
 `uv run finders/halver_lockout/hunt.py summary
 docs/research/2026-10-19-halver-lockout-hunt` prints them. Its wall clock line
-is read off `progress.jsonl`'s modification time, which git does not keep,
-so on a fresh checkout it is wrong; the run's own 958 s is the one above.
+says "wall clock not recorded": this run predates the `ended.json` a
+returning hunt now writes, and a file's modification time, which git does
+not keep, is never read in its place. The run's own 958 s is the one above.
