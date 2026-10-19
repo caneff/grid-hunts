@@ -62,8 +62,9 @@ runner_test="uv run tests/test_all_sh.py"
 # selects that finder, a `.md` included. Any other non-`.md` file under `docs/`
 # widens the run, so a data directory added later and never mapped costs a
 # full run and never a skipped suite. `finders/halver/` is the shared halver
-# layer (spec #52), which holds no suite of its own.
-data_map="finders/halver/=halver_between"
+# layer (spec #52), which holds no suite of its own, so it selects both
+# finders built on it.
+data_map="finders/halver/=halver_between finders/halver/=halver_lockout"
 
 listed() { case " $1 " in *" $2 "*) return 0 ;; esac; return 1; } # <list> <file>
 
