@@ -25,7 +25,8 @@
 #     group: `finders/hunt/`, any loose `finders/*.py`, `pyproject.toml`,
 #     `uv.lock`, `tests/`, `justfile` and `.github/`. The count line then ends
 #     `(widened: <first such path>)`;
-#   - a data directory a finder reads (`data_map` below) selects that finder;
+#   - a data or code directory a finder reads (`data_map` below) selects
+#     that finder;
 #   - any other non-`.md` file under `docs/`, and any path nothing above names
 #     (a top-level dotfile, a `conftest.py`), widens the run too;
 #   - a path under `archive/` changes nothing (retired finders are not suites);
@@ -56,12 +57,13 @@ finder_pytest="finders/counting_shaded/test_counting_shaded.py"
 
 # The runner's own test, which every --changed selection keeps.
 runner_test="uv run tests/test_all_sh.py"
-# Data a finder reads from outside its own folder: <directory prefix>=<finder
-# folder>. A change under a mapped directory selects that finder, a `.md`
-# included. Any other non-`.md` file under `docs/` widens the run, so a data
-# directory added later and never mapped costs a full run and never a skipped
-# suite.
-data_map=""
+# Data or code a finder reads from outside its own folder: <directory
+# prefix>=<finder folder>, space-separated. A change under a mapped directory
+# selects that finder, a `.md` included. Any other non-`.md` file under `docs/`
+# widens the run, so a data directory added later and never mapped costs a
+# full run and never a skipped suite. `finders/halver/` is the shared halver
+# layer (spec #52), which holds no suite of its own.
+data_map="finders/halver/=halver_between"
 
 listed() { case " $1 " in *" $2 "*) return 0 ;; esac; return 1; } # <list> <file>
 

@@ -135,9 +135,19 @@ README before reusing anything there.
   (the success dialog, the Line tool, the icons'
   order, the centre point); it needs Chromium and the live page, so
   it stays out of both gates.
-- `finders/halver_between/` is the halver + between-line rule check (spec #39):
-  `rules.py` the CP-SAT model and per-mark check, `brute.py` the independent
-  backtracking check, `report.py` the status of Chris's board and his marks;
+- `finders/halver/` is the shared halver layer (spec #52), which holds no
+  suite of its own: `halver_rules.py` the CP-SAT board model (digits, one
+  halver per house, doubled values), the five-status check, the per-mark
+  check, `Line` and cell naming; `halver_brute.py` the independent
+  backtracking search, which shares no code with the model. A line type plugs
+  in through three pieces: a `post` that puts one line on the model, a plain
+  `line_holds` reading of one line on a solution, and a `narrowing` step for
+  the search. A change here runs `halver_between`'s suites (`tests/all.sh`'s
+  `data_map`).
+- `finders/halver_between/` is the halver + between-line rule check (spec #39),
+  the between line type on `finders/halver/`:
+  `rules.py` the between pieces of the CP-SAT model, `brute.py` the between
+  narrowing of the backtracking check, `report.py` the status of Chris's board and his marks;
   facts to build on: `docs/research/2026-10-16-halver-between-truths.md`.
   `hunt.py` is its hunt on the hunt protocol (#41): the target-grid loop adds
   lines from `candidates.py` (Chris's shape rules and the separating-line

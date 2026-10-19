@@ -15,6 +15,7 @@ lint and the runner's test; `--list --changed` prints the selection.
 """
 
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -43,6 +44,7 @@ with log.open("a") as f:
 # itself. Nothing at or above the runner is touched.
 KILLER = """\
 import os
+import re
 import signal
 
 
@@ -209,14 +211,25 @@ def git(root, *args):
     )
 
 
+def fake_map(runner):
+    """The runner with its data map swapped for one mapped data directory,
+    whatever the real map holds."""
+    swapped, count = re.subn(
+        r'^data_map=".*"$',
+        'data_map="docs/research/fake-data/=fake"',
+        runner,
+        flags=re.MULTILINE,
+    )
+    assert count == 1, f"{count} data_map lines in tests/all.sh"
+    return swapped
+
+
 def changed_tree(root):
     """A git tree holding the whole runner, a stub runner test, three fake
     finder folders and one file at each shared path, committed as `main`."""
     files = {
         # A mapped data directory, so the mapping loop has a test of its own.
-        "tests/all.sh": ALL.read_text().replace(
-            'data_map=""', 'data_map="docs/research/fake-data/=fake"'
-        ),
+        "tests/all.sh": fake_map(ALL.read_text()),
         "tests/test_all_sh.py": "pass\n",
         "finders/fake/test_a.py": "pass\n",
         "finders/other-one/test_b.py": "pass\n",
