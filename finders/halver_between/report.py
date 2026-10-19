@@ -22,15 +22,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import rules
 
+# isort: split
+from halver_report import report
+
 HERE = Path(__file__).resolve().parent
-
-
-def describe(solution):
-    rows = " ".join(
-        f"r{r + 1} {''.join(map(str, row))}" for r, row in enumerate(solution.digits)
-    )
-    halvers = " ".join(rules.cell_name(c) for c in sorted(solution.halvers))
-    return f"{rows}; halvers {halvers}"
 
 
 def main(argv):
@@ -40,28 +35,7 @@ def main(argv):
     args = parser.parse_args(argv)
     lines = rules.load_lines(HERE / "board.json")
     marks = json.loads(args.marks.read_text())
-
-    board = rules.RuleModel(lines)
-    status = board.check(time_limit=args.time_limit).status
-    print(f"L1-L{len(lines)}: {status}")
-    if status not in ("unique", "not_unique"):
-        print(f"no mark checked: the board's status is {status}")
-        return 1
-
-    all_held = True
-    for mark in marks:
-        result = board.mark_holds(mark, time_limit=args.time_limit)
-        name = rules.mark_name(mark)
-        if result.status == "held":
-            print(f"held      {name}")
-            continue
-        all_held = False
-        if result.status == "not_held":
-            print(f"NOT HELD  {name}")
-            print(f"  broken by: {describe(result.counterexample)}")
-        else:
-            print(f"TIMEOUT   {name} (no verdict in {args.time_limit:g}s)")
-    return 0 if all_held else 1
+    return report(rules.RuleModel(lines), marks, args.time_limit)
 
 
 if __name__ == "__main__":

@@ -11,6 +11,11 @@ TIMEOUT, and exit 0 only when every mark held.
   exit 1 with the reason. A timeout is never read as unique or as held.
 - A board file with no type-407 lines (halver_between's board, whose lines
   are type 403) is refused by name, exit 2.
+- So is every other input the check cannot read as a lockout-only 9x9 board
+  with readable marks: a missing file, a 4x4 board, a type-407 line with no
+  body cell or with a cell off the board, a between line or a given digit
+  beside the lockout lines, an unknown mark kind. Each exits 2 with nothing
+  on stdout, never the 1 of a verdict.
 
     uv run finders/halver_lockout/test_check.py
 """
@@ -88,5 +93,48 @@ done = run(between)
 assert done.returncode == 2, (done.returncode, done.stdout, done.stderr)
 assert done.stdout == "", done.stdout
 assert f"{between}: no lockout lines (constraint type 407)" in done.stderr, done.stderr
+
+board = json.loads(UNIQUE.read_text())
+constraints = board["puzzle"]["constraints"]
+(lockout,) = [c for c in constraints if c.get("type") == 407]
+
+
+def refused(doc, why, marks=None):
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "board.json"
+        path.write_text(json.dumps(doc))
+        extra = []
+        if marks is not None:
+            extra = ["--marks", Path(tmp) / "marks.json"]
+            extra[1].write_text(json.dumps(marks))
+        done = run(path, *extra)
+    assert done.returncode == 2, (why, done.returncode, done.stdout, done.stderr)
+    assert done.stdout == "", (why, done.stdout)
+    assert why in done.stderr, (why, done.stderr)
+
+
+def changed(**edit):
+    doc = json.loads(json.dumps(board))
+    for key, value in edit.items():
+        if key == "cells":
+            doc["puzzle"]["cells"] = value
+        elif key == "lines":
+            doc["puzzle"]["constraints"][constraints.index(lockout)]["lines"] = value
+        elif key == "extra":
+            doc["puzzle"]["constraints"].append(value)
+        elif key == "given":
+            doc["puzzle"]["cells"][value] = {"value": 5, "given": True}
+    return doc
+
+
+missing = run(FIXTURES / "no_such_board.json")
+assert missing.returncode == 2 and missing.stdout == "", missing
+assert "no_such_board.json" in missing.stderr, missing.stderr
+refused(changed(cells=[{}] * 16), "16 cells, and only 9x9 is checked")
+refused(changed(lines=[[0, 1]]), "has no body cell")
+refused(changed(lines=[[66, 57, 80 + 67]]), "has cell 147 off the board")
+refused(changed(extra={"type": 403, "lines": [[0, 1, 2]]}), "constraint type 403")
+refused(changed(given=4), "given digit in r1c5")
+refused(board, "unknown mark kind", marks=[{"kind": "parity", "cell": "r1c1"}])
 
 print("ok")

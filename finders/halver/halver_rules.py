@@ -85,7 +85,8 @@ def line_name(line):
 def lines_from_doc(doc, constraint_type, kind):
     """The lines of one SudokuMaker constraint type in a decoded document, in
     its order: each path's first and last cells are the ends. Raises a
-    ValueError naming `kind` and the type when the document has none."""
+    ValueError naming `kind` and the type when the document has none, and
+    one naming the cell when a path leaves the board."""
     n = round(len(doc["puzzle"]["cells"]) ** 0.5)
     groups = [
         c["lines"]
@@ -97,6 +98,11 @@ def lines_from_doc(doc, constraint_type, kind):
     lines = []
     for group in groups:
         for path_cells in group:
+            off = [i for i in path_cells if not 0 <= i < n * n]
+            if off:
+                raise ValueError(
+                    f"{kind} line {path_cells} has cell {off[0]} off the board"
+                )
             cells = [divmod(i, n) for i in path_cells]
             lines.append(Line(cells[0], tuple(cells[1:-1]), cells[-1]))
     return lines

@@ -18,6 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "halver"))
 
 # isort: split
+import halver_rules
 from halver_rules import (
     HalverModel,
     Line,
@@ -92,17 +93,4 @@ def load_lines(path):
 
 def lines_from_doc(doc):
     """The between lines of a decoded SudokuMaker document, in its order."""
-    n = round(len(doc["puzzle"]["cells"]) ** 0.5)
-    groups = [
-        c["lines"]
-        for c in doc["puzzle"]["constraints"]
-        if c.get("type") == BETWEEN_LINE
-    ]
-    if not groups:
-        raise ValueError(f"no between lines (constraint type {BETWEEN_LINE})")
-    lines = []
-    for group in groups:
-        for path_cells in group:
-            cells = [divmod(i, n) for i in path_cells]
-            lines.append(Line(cells[0], tuple(cells[1:-1]), cells[-1]))
-    return lines
+    return halver_rules.lines_from_doc(doc, BETWEEN_LINE, "between")
