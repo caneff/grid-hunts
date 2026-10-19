@@ -149,14 +149,18 @@ README before reusing anything there.
   in through three pieces: a `post` that puts one line on the model, a plain
   `line_holds` reading of one line on a solution, and a `narrowing` step for
   the search. `halver_report.py` prints a board's status and its marks'
-  verdicts. A change here runs the suites of both finders on it
-  (`tests/all.sh`'s `data_map`).
+  verdicts. `halver_hunt.py` is the target-grid hunt both finders run
+  (#56): the loop, its ranking, `verify` on the line type's backtracking
+  check, the record, `summary` and the CLI; a finder's `hunt.py` names its
+  line type's modules, its starting board and its link. A change here
+  runs the suites of both finders on it (`tests/all.sh`'s `data_map`).
 - `finders/halver_between/` is the halver + between-line rule check (spec #39),
   the between line type on `finders/halver/`:
   `rules.py` the between pieces of the CP-SAT model, `brute.py` the between
   narrowing of the backtracking check, `report.py` the status of Chris's board and his marks;
   facts to build on: `docs/research/2026-10-16-halver-between-truths.md`.
-  `hunt.py` is its hunt on the hunt protocol (#41): the target-grid loop adds
+  `hunt.py` is its hunt on the hunt protocol (#41), on the shared
+  `halver_hunt.py`: the target-grid loop adds
   lines from `candidates.py` (Chris's shape rules and the separating-line
   walk) until the board is unique, `verify` re-reads each hit with `brute.py`,
   and `hunt.py summary DIR` reports verified hits or "none found", and a
@@ -171,6 +175,21 @@ README before reusing anything there.
   SudokuMaker's type-407 lines, `brute.py` the lockout narrowing of the
   backtracking check, `candidates.py` the separating-line walk (#55): every
   legal line that holds in a target and fails in a second solution.
+  `hunt.py` is its hunt (#56), on the shared `halver_hunt.py`, from an
+  empty 9x9 with no givens: the target-grid loop adds lockout lines until
+  the board is unique, `verify` re-reads each hit with `brute.py` (a search
+  past `--verify-seconds` refuses the hit), `record` writes the line table,
+  the solution and a SudokuMaker link of the lines as type 407 with
+  `"solverIgnored": true`, and `hunt.py summary DIR` reports verified hits
+  or "none found" with each seed's reason:
+
+      uv run finders/halver_lockout/hunt.py --out DIR --seeds 0:3
+      uv run finders/halver_lockout/hunt.py verify DIR
+      uv run finders/halver_lockout/hunt.py summary DIR
+
+  Its full hunt test, `test_hunt.py`, is slow (`just test-slow`).
+  Preflight, choices and runs:
+  `docs/research/2026-10-19-halver-lockout-hunt-decision-log.md`.
   `check.py BOARD [--marks FILE]` prints a lockout
   board's status and each mark's verdict in `halver_between`'s report
   format. `fixtures/` holds the 9x9 test boards (infeasible, unique, not

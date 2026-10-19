@@ -1,0 +1,1 @@
+{"argv": ["--out", ".scratch/pilot", "--seeds", "0:3"], "config": {"max_cells": 8, "pool": 20, "time_limit": 30.0, "max_lines": 40, "max_seconds": 600.0, "verify_seconds": 600.0}, "git_sha": "7c4c8b679ff5c17ec61ad0d42cc884cd16b35759", "start_time": "2026-10-19T19:51:38.675165+00:00"}
