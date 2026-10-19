@@ -1,0 +1,77 @@
+{"step": 1, "check_s": 0.095, "pool_s": 1.245, "rank_s": 0.337, "candidates": 11217, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 3, "free_left": 78, "line": "r6c5 | r7c4 | r7c5"}
+{"step": 2, "check_s": 0.091, "pool_s": 1.167, "rank_s": 0.249, "candidates": 9572, "pool": 21, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 76, "line": "r4c4 | r5c5 | r6c5"}
+{"step": 3, "check_s": 0.126, "pool_s": 1.261, "rank_s": 0.12, "candidates": 4347, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 2, "free_left": 74, "line": "r4c4 | r4c5 | r5c6"}
+{"step": 4, "check_s": 0.093, "pool_s": 1.322, "rank_s": 0.092, "candidates": 2471, "pool": 21, "pool_timeouts": 0, "kills": 13, "new_cells": 1, "free_left": 73, "line": "r6c5 | r7c6 | r7c5"}
+{"step": 5, "check_s": 0.128, "pool_s": 0.755, "rank_s": 0.091, "candidates": 2805, "pool": 21, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 71, "line": "r6c3 | r6c4 | r6c5"}
+{"step": 6, "check_s": 0.092, "pool_s": 1.405, "rank_s": 0.086, "candidates": 2938, "pool": 21, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 69, "line": "r4c7 | r5c7 | r5c6"}
+{"step": 7, "check_s": 0.093, "pool_s": 1.382, "rank_s": 0.032, "candidates": 787, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 2, "free_left": 67, "line": "r2c3 | r3c4 | r4c4"}
+{"step": 8, "check_s": 0.099, "pool_s": 1.697, "rank_s": 0.031, "candidates": 835, "pool": 21, "pool_timeouts": 0, "kills": 19, "new_cells": 2, "free_left": 65, "line": "r2c2 | r3c3 | r2c3"}
+{"step": 9, "check_s": 0.124, "pool_s": 1.253, "rank_s": 0.029, "candidates": 847, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 2, "free_left": 63, "line": "r6c1 | r5c2 | r6c3"}
+{"step": 10, "check_s": 0.128, "pool_s": 1.6, "rank_s": 0.024, "candidates": 615, "pool": 21, "pool_timeouts": 0, "kills": 19, "new_cells": 2, "free_left": 61, "line": "r2c2 | r3c2 | r4c2"}
+{"step": 11, "check_s": 0.126, "pool_s": 1.44, "rank_s": 0.024, "candidates": 666, "pool": 21, "pool_timeouts": 0, "kills": 17, "new_cells": 1, "free_left": 60, "line": "r6c3 | r5c4 | r6c5"}
+{"step": 12, "check_s": 0.127, "pool_s": 1.263, "rank_s": 0.024, "candidates": 593, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 2, "free_left": 58, "line": "r3c7 | r4c8 | r4c7"}
+{"step": 13, "check_s": 0.089, "pool_s": 1.641, "rank_s": 0.013, "candidates": 216, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 3, "free_left": 55, "line": "r8c1 | r9c2 | r8c2"}
+{"step": 14, "check_s": 0.133, "pool_s": 1.714, "rank_s": 0.015, "candidates": 382, "pool": 21, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 53, "line": "r1c6 | r2c6 | r3c7"}
+{"step": 15, "check_s": 0.126, "pool_s": 1.627, "rank_s": 0.008, "candidates": 147, "pool": 21, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 51, "line": "r8c2 | r8c3 | r8c4"}
+{"step": 16, "check_s": 0.143, "pool_s": 1.682, "rank_s": 0.008, "candidates": 165, "pool": 21, "pool_timeouts": 0, "kills": 10, "new_cells": 1, "free_left": 50, "line": "r8c2 | r9c3 | r8c4"}
+{"step": 17, "check_s": 0.131, "pool_s": 1.071, "rank_s": 0.009, "candidates": 196, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 2, "free_left": 48, "line": "r8c4 | r9c4 | r8c5"}
+{"step": 18, "check_s": 0.09, "pool_s": 1.859, "rank_s": 0.004, "candidates": 22, "pool": 21, "pool_timeouts": 0, "kills": 19, "new_cells": 3, "free_left": 45, "line": "r5c8 | r4c9 | r5c9"}
+{"step": 19, "check_s": 0.14, "pool_s": 1.756, "rank_s": 0.004, "candidates": 60, "pool": 21, "pool_timeouts": 0, "kills": 19, "new_cells": 2, "free_left": 43, "line": "r8c5 | r9c6 | r8c7"}
+{"step": 20, "check_s": 0.152, "pool_s": 2.302, "rank_s": 0.004, "candidates": 75, "pool": 21, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 41, "line": "r7c7 | r8c8 | r8c7"}
+{"step": 21, "check_s": 0.146, "pool_s": 2.947, "rank_s": 0.002, "candidates": 21, "pool": 21, "pool_timeouts": 0, "kills": 19, "new_cells": 2, "free_left": 39, "line": "r2c8 | r2c7 | r3c7"}
+{"step": 22, "check_s": 0.142, "pool_s": 5.208, "rank_s": 0.002, "candidates": 4, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 2, "free_left": 37, "line": "r8c7 | r9c8 | r8c9"}
+{"step": 23, "check_s": 0.157, "pool_s": 10.064, "rank_s": 0.001, "candidates": 15, "pool": 21, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 35, "line": "r2c1 | r1c1 | r2c2"}
+{"step": 24, "check_s": 0.237, "pool_s": 30.258, "rank_s": 0.001, "candidates": 15, "pool": 17, "pool_timeouts": 0, "kills": 14, "new_cells": 2, "free_left": 33, "line": "r1c5 | r1c4 | r2c3"}
+{"step": 25, "check_s": 2.661, "pool_s": 38.943, "rank_s": 0.001, "candidates": 1, "pool": 10, "pool_timeouts": 0, "kills": 10, "new_cells": 2, "free_left": 31, "line": "r1c8 | r1c9 | r2c8"}
+{"step": 25, "check_s": 10.638844901000994, "status": "unique"}
+{"step": 1, "check_s": 0.094, "pool_s": 1.221, "rank_s": 0.246, "candidates": 7635, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 3, "free_left": 78, "line": "r6c5 | r6c6 | r7c6"}
+{"step": 2, "check_s": 0.09, "pool_s": 1.223, "rank_s": 0.128, "candidates": 3538, "pool": 21, "pool_timeouts": 0, "kills": 19, "new_cells": 2, "free_left": 76, "line": "r7c6 | r8c6 | r8c7"}
+{"step": 3, "check_s": 0.093, "pool_s": 1.254, "rank_s": 0.082, "candidates": 1473, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 2, "free_left": 74, "line": "r6c8 | r7c8 | r8c7"}
+{"step": 4, "check_s": 0.126, "pool_s": 1.465, "rank_s": 0.112, "candidates": 3818, "pool": 21, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 72, "line": "r6c5 | r7c4 | r8c4"}
+{"step": 5, "check_s": 0.128, "pool_s": 1.367, "rank_s": 0.095, "candidates": 2511, "pool": 21, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 70, "line": "r5c7 | r5c8 | r6c8"}
+{"step": 6, "check_s": 0.137, "pool_s": 1.472, "rank_s": 0.073, "candidates": 1759, "pool": 21, "pool_timeouts": 0, "kills": 19, "new_cells": 2, "free_left": 68, "line": "r8c2 | r7c3 | r8c4"}
+{"step": 7, "check_s": 0.133, "pool_s": 1.437, "rank_s": 0.088, "candidates": 2837, "pool": 21, "pool_timeouts": 0, "kills": 19, "new_cells": 1, "free_left": 67, "line": "r6c5 | r7c5 | r8c4"}
+{"step": 8, "check_s": 0.14, "pool_s": 1.386, "rank_s": 0.077, "candidates": 2099, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 2, "free_left": 65, "line": "r8c2 | r9c2 r8c3 | r8c4"}
+{"step": 9, "check_s": 0.135, "pool_s": 1.624, "rank_s": 0.081, "candidates": 1906, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 3, "free_left": 62, "line": "r4c4 | r5c4 | r5c5"}
+{"step": 10, "check_s": 0.134, "pool_s": 1.607, "rank_s": 0.025, "candidates": 32, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 2, "free_left": 60, "line": "r8c1 | r9c1 | r8c2"}
+{"step": 11, "check_s": 0.098, "pool_s": 1.65, "rank_s": 0.025, "candidates": 11, "pool": 21, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 58, "line": "r6c8 | r5c9 | r6c9"}
+{"step": 12, "check_s": 0.142, "pool_s": 1.58, "rank_s": 0.095, "candidates": 2010, "pool": 21, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 56, "line": "r4c5 | r4c6 | r5c5"}
+{"step": 13, "check_s": 0.138, "pool_s": 1.622, "rank_s": 0.064, "candidates": 1907, "pool": 21, "pool_timeouts": 0, "kills": 18, "new_cells": 2, "free_left": 54, "line": "r8c7 | r9c7 | r8c8"}
+{"step": 14, "check_s": 0.148, "pool_s": 1.446, "rank_s": 0.062, "candidates": 1880, "pool": 21, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 52, "line": "r7c6 | r8c5 | r9c6"}
+{"step": 15, "check_s": 0.148, "pool_s": 1.659, "rank_s": 0.062, "candidates": 1857, "pool": 21, "pool_timeouts": 0, "kills": 17, "new_cells": 2, "free_left": 50, "line": "r3c4 | r4c3 | r4c4"}
+{"step": 16, "check_s": 0.13, "pool_s": 1.352, "rank_s": 0.047, "candidates": 1414, "pool": 21, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 48, "line": "r2c5 | r2c4 | r3c4"}
+{"step": 17, "check_s": 0.139, "pool_s": 1.796, "rank_s": 0.015, "candidates": 387, "pool": 21, "pool_timeouts": 0, "kills": 17, "new_cells": 2, "free_left": 46, "line": "r1c4 | r1c5 | r2c5"}
+{"step": 18, "check_s": 0.14, "pool_s": 1.426, "rank_s": 0.012, "candidates": 290, "pool": 21, "pool_timeouts": 0, "kills": 18, "new_cells": 2, "free_left": 44, "line": "r3c3 | r2c3 | r3c4"}
+{"step": 19, "check_s": 0.14, "pool_s": 1.617, "rank_s": 0.011, "candidates": 252, "pool": 21, "pool_timeouts": 0, "kills": 19, "new_cells": 2, "free_left": 42, "line": "r2c2 | r3c2 | r3c3"}
+{"step": 20, "check_s": 0.14, "pool_s": 1.785, "rank_s": 0.009, "candidates": 215, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 3, "free_left": 39, "line": "r2c7 | r3c8 | r4c7"}
+{"step": 21, "check_s": 0.148, "pool_s": 2.793, "rank_s": 0.003, "candidates": 63, "pool": 21, "pool_timeouts": 0, "kills": 11, "new_cells": 1, "free_left": 38, "line": "r2c7 | r3c7 | r4c7"}
+{"step": 22, "check_s": 0.279, "pool_s": 1.75, "rank_s": 0.003, "candidates": 52, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 3, "free_left": 35, "line": "r2c7 | r2c8 r3c9 r4c8 | r4c7"}
+{"step": 23, "check_s": 0.191, "pool_s": 23.39, "rank_s": 0.002, "candidates": 49, "pool": 18, "pool_timeouts": 0, "kills": 17, "new_cells": 3, "free_left": 32, "line": "r4c1 | r5c2 | r5c1"}
+{"step": 24, "check_s": 2.92, "pool_s": 66.72, "rank_s": 0.001, "candidates": 14, "pool": 15, "pool_timeouts": 0, "kills": 14, "new_cells": 2, "free_left": 30, "line": "r5c1 | r6c2 | r5c3"}
+{"step": 25, "check_s": 3.037, "pool_s": 123.313, "rank_s": 0.001, "candidates": 4, "pool": 1, "pool_timeouts": 0, "kills": 1, "new_cells": 3, "free_left": 27, "line": "r1c1 | r2c1 r3c1 | r4c1"}
+{"step": 25, "check_s": 11.74701094899865, "status": "unique"}
+{"step": 1, "check_s": 0.133, "pool_s": 1.243, "rank_s": 0.446, "candidates": 17670, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 3, "free_left": 78, "line": "r8c4 | r7c4 | r8c5"}
+{"step": 2, "check_s": 0.094, "pool_s": 1.278, "rank_s": 0.412, "candidates": 15479, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 2, "free_left": 76, "line": "r8c2 | r7c3 | r8c4"}
+{"step": 3, "check_s": 0.095, "pool_s": 1.495, "rank_s": 0.396, "candidates": 14982, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 3, "free_left": 73, "line": "r4c6 | r5c5 | r6c5"}
+{"step": 4, "check_s": 0.097, "pool_s": 1.483, "rank_s": 0.21, "candidates": 7358, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 2, "free_left": 71, "line": "r2c7 | r3c7 | r4c6"}
+{"step": 5, "check_s": 0.087, "pool_s": 1.554, "rank_s": 0.101, "candidates": 2710, "pool": 21, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 69, "line": "r2c7 | r3c8 | r4c7"}
+{"step": 6, "check_s": 0.134, "pool_s": 1.429, "rank_s": 0.13, "candidates": 4581, "pool": 21, "pool_timeouts": 0, "kills": 16, "new_cells": 1, "free_left": 68, "line": "r8c2 | r8c3 | r8c4"}
+{"step": 7, "check_s": 0.127, "pool_s": 1.184, "rank_s": 0.13, "candidates": 4580, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 2, "free_left": 66, "line": "r4c3 | r5c4 | r6c5"}
+{"step": 8, "check_s": 0.132, "pool_s": 1.602, "rank_s": 0.107, "candidates": 3617, "pool": 21, "pool_timeouts": 0, "kills": 13, "new_cells": 1, "free_left": 65, "line": "r8c4 | r9c5 | r8c5"}
+{"step": 9, "check_s": 0.126, "pool_s": 0.966, "rank_s": 0.087, "candidates": 2765, "pool": 21, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 63, "line": "r4c7 | r4c8 | r5c7"}
+{"step": 10, "check_s": 0.126, "pool_s": 1.616, "rank_s": 0.068, "candidates": 1713, "pool": 21, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 61, "line": "r4c3 | r4c4 | r4c5"}
+{"step": 11, "check_s": 0.167, "pool_s": 1.686, "rank_s": 0.078, "candidates": 2407, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 2, "free_left": 59, "line": "r5c7 | r6c8 | r6c7"}
+{"step": 12, "check_s": 0.133, "pool_s": 1.673, "rank_s": 0.025, "candidates": 740, "pool": 21, "pool_timeouts": 0, "kills": 15, "new_cells": 1, "free_left": 58, "line": "r5c7 | r5c6 | r6c7"}
+{"step": 13, "check_s": 0.131, "pool_s": 1.162, "rank_s": 0.031, "candidates": 887, "pool": 21, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 56, "line": "r6c7 | r7c7 r8c6 | r8c5"}
+{"step": 14, "check_s": 0.131, "pool_s": 1.66, "rank_s": 0.019, "candidates": 522, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 2, "free_left": 54, "line": "r3c3 | r3c4 | r4c5"}
+{"step": 15, "check_s": 0.134, "pool_s": 1.745, "rank_s": 0.007, "candidates": 32, "pool": 21, "pool_timeouts": 0, "kills": 18, "new_cells": 2, "free_left": 52, "line": "r4c3 | r5c2 | r5c1"}
+{"step": 16, "check_s": 0.137, "pool_s": 1.483, "rank_s": 0.009, "candidates": 243, "pool": 21, "pool_timeouts": 0, "kills": 21, "new_cells": 2, "free_left": 50, "line": "r3c1 | r3c2 | r3c3"}
+{"step": 17, "check_s": 0.138, "pool_s": 1.828, "rank_s": 0.009, "candidates": 227, "pool": 21, "pool_timeouts": 0, "kills": 14, "new_cells": 1, "free_left": 49, "line": "r4c3 | r4c2 | r5c1"}
+{"step": 18, "check_s": 0.137, "pool_s": 1.235, "rank_s": 0.007, "candidates": 141, "pool": 21, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 47, "line": "r2c5 | r3c5 | r4c5"}
+{"step": 19, "check_s": 0.142, "pool_s": 1.777, "rank_s": 0.005, "candidates": 134, "pool": 21, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 45, "line": "r6c7 | r7c8 | r8c7"}
+{"step": 20, "check_s": 0.149, "pool_s": 2.083, "rank_s": 0.002, "candidates": 21, "pool": 21, "pool_timeouts": 0, "kills": 19, "new_cells": 3, "free_left": 42, "line": "r2c8 | r3c9 | r4c9"}
+{"step": 21, "check_s": 0.158, "pool_s": 2.451, "rank_s": 0.003, "candidates": 52, "pool": 21, "pool_timeouts": 0, "kills": 18, "new_cells": 1, "free_left": 41, "line": "r2c5 | r2c6 | r2c7"}
+{"step": 22, "check_s": 0.296, "pool_s": 3.176, "rank_s": 0.003, "candidates": 60, "pool": 20, "pool_timeouts": 0, "kills": 20, "new_cells": 2, "free_left": 39, "line": "r2c3 | r2c4 | r2c5"}
+{"step": 23, "check_s": 1.62, "pool_s": 7.945, "rank_s": 0.002, "candidates": 22, "pool": 17, "pool_timeouts": 0, "kills": 16, "new_cells": 2, "free_left": 37, "line": "r1c3 | r1c4 | r2c5"}
+{"step": 24, "check_s": 0.161, "pool_s": 23.16, "rank_s": 0.001, "candidates": 19, "pool": 12, "pool_timeouts": 0, "kills": 12, "new_cells": 2, "free_left": 35, "line": "r2c2 | r1c2 | r2c3"}
+{"step": 24, "check_s": 3.375172620999365, "status": "unique"}

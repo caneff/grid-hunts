@@ -51,9 +51,10 @@ cd "$root" || exit 1
 # Finder tests that do not run as a plain `uv run <file>`:
 #   finder_slow:   the `slow` group only (the halver/between hunt, a 9x9
 #                  hunt plus its backtracking verify, about a minute; the
-#                  halver/lockout 23-line board, about 200 s).
+#                  halver/lockout 23-line board, about 200 s; the
+#                  halver/lockout hunt from the empty board plus its verify).
 #   finder_pytest: the pytest suites, run as `uv run pytest <file> -q`.
-finder_slow="finders/halver_between/test_hunt.py finders/halver_lockout/test_unique_23.py"
+finder_slow="finders/halver_between/test_hunt.py finders/halver_lockout/test_unique_23.py finders/halver_lockout/test_hunt.py"
 finder_pytest="finders/counting_shaded/test_counting_shaded.py"
 
 # The runner's own test, which every --changed selection keeps.

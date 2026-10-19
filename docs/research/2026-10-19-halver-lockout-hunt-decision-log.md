@@ -105,3 +105,94 @@ extreme ones.
 
 The between hunt's line economy (truths note, section 6) found that cells,
 not solver time, run out. That is checked in the pilot below, not assumed.
+
+## Decisions
+
+- **One target-grid loop for both line types (worker's choice).** The loop,
+  its ranking, `verify`, the record, `summary` and the CLI moved out of
+  `halver_between/hunt.py` into the shared `finders/halver/halver_hunt.py`,
+  and both finders' `hunt.py` name their line type's modules, their start
+  board and their link. The spec rules the same loop and tie-breaks for
+  both; a second copy of 470 lines would drift. `halver_between`'s five
+  hunt suites pass on it unchanged, its published link included.
+- **The board is empty**, as ruled: no givens, no given halvers, no lines.
+  `record` numbers the lines from L1.
+- **Link.** An empty 9x9 document (format 1.6.0, the 3x3 regions, nothing
+  entered) with one type-407 constraint holding every line, diamonds first
+  and last, and `"solverIgnored": true`. That is the spec's convention for
+  Chris's between board (type 403 with the same flag). No line style is
+  set: SudokuMaker draws its default lockout line.
+- **Record.** The `halver_between` record with `diamond_a` / `diamond_b` in
+  place of `circle_a` / `circle_b`, plus the solution as `digits` and
+  `halvers`, both of which `halver_between` also writes.
+- **Per-seed budget (worker's choice, from the pilot).** `--max-seconds 600`,
+  where `halver_between` has 120: the pilot's slowest seed took 270 s, most
+  of it pool sampling near the finish (one step 123 s). The other knobs keep
+  `halver_between`'s defaults: 8 cells, a pool of 20, 30 s a solve, 40
+  lines, a 600 s `verify`. The pilot's seeds needed 24 and 25 lines.
+- **Workers.** Every CP-SAT call runs on one worker and the seeds run one
+  after another, as in `halver_between`, so `--workers` other than 1 is
+  refused. "The hunt driver's default workers" is read as running the hunt
+  with no `--workers` flag, which is one worker here. A hunt on more cores
+  is several `hunt.py` processes over disjoint `--seeds` ranges.
+- **The gate's hit (worker's choice).** `test_spec_52_e2e.py` runs on the
+  pilot's seed 2 (`hit_fixture.py`), whose `verify` takes 15 s against 170 s
+  and 294 s for the other two. The test runs two backtracking searches, so
+  it costs about 35 s in the gate.
+- **The full hunt test is slow.** `test_hunt.py` runs seed 0 (a hit, about
+  130 s to find and 290 s to verify on one core) and a two-seed timeout
+  hunt, so it sits in `tests/all.sh`'s `finder_slow`, run by
+  `just test-slow`. It relies on seed 0 hitting, which holds while CP-SAT's
+  one-worker search is reproducible at the pinned OR-Tools version; if seed
+  0 stops hitting, the test fails loud on the outcome.
+
+## Hunt of record (2026-10-19, one core, seeds 0:3)
+
+`job-run --name lockout-pilot-56 -- uv run finders/halver_lockout/hunt.py
+--out .scratch/pilot --seeds 0:3 --step-log .scratch/pilot-steps.jsonl`,
+at a 1-minute load of about 3. Its output directory and step log are
+`docs/research/2026-10-19-halver-lockout-hunt/`. The run's `git_sha`,
+7c4c8b6, is the preflight commit: the hunt code was still uncommitted in
+the worktree, and it is the `hunt.py` and `halver_hunt.py` of this ticket's
+PR with only import order changed since.
+
+**3 hits in 3 seeds**, wall clock 958 s. Each hit was written by the driver
+only after `verify`'s backtracking check found exactly one solution, the
+hit's own. This shows that an empty board can be finished with lockout
+lines alone; it is no count of how many finishes exist.
+
+| seed | lines | propose | verify | free cells left |
+|---|---|---|---|---|
+| 0 | 25 | 134 s | 294 s | 31 |
+| 1 | 25 | 270 s | 170 s | 27 |
+| 2 | 24 | 77 s | 15 s | 35 |
+
+Per step: the uniqueness check takes 0.09–0.3 s until the last two or three
+lines (up to 3 s); pool sampling 1–2 s a step until the last few, then 10
+to 123 s as the board nears unique; ranking under 0.5 s. No pool draw timed
+out. An added line breaks 1 to 21 of the 21 pool members, 17 or more on most steps.
+
+Read against the preflight:
+
+- **Cells did not run out.** 27 to 35 cells were still on no line at each
+  finish, so the between hunt's line economy does not carry over. Lockout
+  lines are cheap in cells here because almost every one is three cells:
+  70 of the 74 lines have one body cell, 3 have two and 1 has three. The
+  ranking's kills per new cell favours them.
+- **The preflight's guess of long bodies on extreme values was wrong.**
+  Bodies are short, and a body cell's value is extreme (2 or less, or 8 or
+  more) in 46 of 79 body cells. Middle values do sit on bodies: a value of
+  4 or 4.5 is a body cell 7 times, each time with the diamonds the counts
+  above allow.
+- **The slow step is the backtracking check**, as the check notes warned:
+  up to 294 s of the 600 s budget on a 25-line hit.
+
+**Seed 2, 24 lines** (the gate's `hit_fixture.py`):
+
+https://sudokumaker.app/?puzzle=N4IgZg9gTgtghgFwGoFMoGcCWEB2IBcABCAIwB0AbGQAwgA0xADgK4BerANigYaDnDG5EQ9YnGYIAFtB4iGIAMYoOHdDwDawAL4NtunbwN7D+0yfPHLR62au2bFh3cf3XL9889Pvbr758eAX6B-qEh4V4AuvIKuOgIUHCYOAhqRJogCACejEKE1EaZOXkk8lAoAObYOGmE6tQMDfkMpYStrQBMDF2EPU39LYNt3SO9jePNw1Odoz0AzAwLhEsALAxrhBsArAw7hHtLh+vHm7tn+4uXyycb2+d7FAyPhM8A7AzvhJ8AHAy-hP9nkCPiCvn9wQCnlCXqDPj8Id9IoVsrkeCtqJ8QOgIBwAG5oACSFRw0BQABMeAlmCh5Bxkihaup1BRnltPhRXtE6hRtkCKFz1HMeuj1gBOAUkPYdDZCiVSg5zAU8p4PfkMdQdUWLLWbcXqlkfIGc9VzQ63DoCzWLJpzEgClY9LaOu3qh3rVpbF11T1PJoUQHGuodJodVq2y06uafOZquokf4kHXBiPdf4xiVLDrzL3qH0vVoUPVx54dZ5zLYZlobSUS9o9EiK9XzFqNuNNdp2pFIrRAA
+
+The other two hits' links and line tables are in `examples.jsonl`, and
+`uv run finders/halver_lockout/hunt.py summary
+docs/research/2026-10-19-halver-lockout-hunt` prints them. Its wall clock line
+is read off `progress.jsonl`'s modification time, which git does not keep,
+so on a fresh checkout it is wrong; the run's own 958 s is the one above.
