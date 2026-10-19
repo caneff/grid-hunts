@@ -4,7 +4,7 @@ board up to a limit, for any line type. It shares no code with the CP-SAT
 model in `halver_rules.py`, so a modelling bug in one shows up as a
 disagreement with the other.
 
-`solutions(narrowing, lines, n, box, limit, deadline)` returns up to `limit`
+`solutions(narrowing, lines, n, box, limit, deadline, probe_ends)` returns up to `limit`
 solutions, each a (digits row by row, frozenset of halver cells) pair, in
 search order. Given a `deadline` (a `time.monotonic()` reading), it raises
 `OutOfTime` at the first search node past it, so a caller gets no count
@@ -34,9 +34,19 @@ narrowed to a fixpoint:
 - a halved digit with one cell left gets it;
 - each line's narrowing step keeps the doubled values it allows.
 
+Each round re-reads only the houses and lines of the cells it changed. Every
+step only removes choices, so the fixpoint, and with it the search, is the
+one a full sweep reaches.
+
 An empty mask, or a digit or halver with no place left, ends the branch. The
 search then branches on whichever has the fewest options: one cell's
 choices, or the cells left that can be one house's halver.
+
+With `probe_ends`, for a line type whose ends decide its body (#59): at
+every node each choice left at a line end is tried and narrowed to its
+fixpoint, and one that ends the branch is dropped, to a fixpoint; and the
+search branches on the open line end with the fewest choices before any
+other cell. Without it the search is as above.
 """
 
 import time
@@ -69,7 +79,7 @@ def _bits(mask):
         mask ^= low
 
 
-def solutions(narrowing, lines, n, box, limit, deadline=None):
+def solutions(narrowing, lines, n, box, limit, deadline=None, probe_ends=False):
     houses = [[r * n + c for r, c in house] for house in _houses(n, box)]
     size = n * n
     digit_bits = (1 << n) - 1
@@ -105,7 +115,16 @@ def solutions(narrowing, lines, n, box, limit, deadline=None):
 
     lines = [(a, body, b, narrowing(body, houses, n), {}) for a, body, b in lines]
 
-    def narrow_line(cells, line):
+    houses_of = [
+        [h for h, house in enumerate(houses) if i in house] for i in range(size)
+    ]
+    lines_of = [[] for _ in range(size)]
+    for k, (a, body, b, _, _) in enumerate(lines):
+        for i in {a, b, *body}:
+            lines_of[i].append(k)
+    ends = sorted({x for a, _, b, _, _ in lines for x in (a, b)}) if probe_ends else []
+
+    def narrow_line(cells, line, dirty):
         # The narrowing depends only on the line's doubled-value masks, which
         # recur across branches, so each line keeps its answers.
         a, body, b, narrow, memo = line
@@ -121,27 +140,53 @@ def solutions(narrowing, lines, n, box, limit, deadline=None):
         if kept is None:
             raise _Contradiction
         bits_a, bits_b, body_bits = kept
-        changed = restrict(cells, a, bits_a)
-        changed |= restrict(cells, b, bits_b)
+        restrict(cells, a, bits_a, dirty)
+        restrict(cells, b, bits_b, dirty)
         for p in body:
-            changed |= restrict(cells, p, body_bits)
-        return changed
+            restrict(cells, p, body_bits, dirty)
 
-    def restrict(cells, i, keep):
+    def restrict(cells, i, keep, dirty):
         before = cells[i]
         after = before & keep
         if not after:
             raise _Contradiction
         if after != before:
             cells[i] = after
-            return True
-        return False
+            dirty.add(i)
 
-    def propagate(cells, settled):
-        changed = True
-        while changed:
-            changed = False
-            for i in range(size):
+    def narrow_house(cells, house, dirty):
+        once = twice = 0
+        halver_places = []
+        for i in house:
+            d = (cells[i] | cells[i] >> n) & digit_bits
+            twice |= once & d
+            once |= d
+            if cells[i] & halver_bits:
+                halver_places.append(i)
+        if once != digit_bits or not halver_places:
+            raise _Contradiction
+        for d in _bits(once & ~twice):
+            for i in house:
+                if (cells[i] | cells[i] >> n) >> d & 1:
+                    restrict(cells, i, (1 << d) | (1 << (n + d)), dirty)
+                    break
+        if len(halver_places) == 1:
+            restrict(cells, halver_places[0], halver_bits, dirty)
+        only = [i for i in halver_places if not cells[i] & digit_bits]
+        if len(only) > 1:
+            raise _Contradiction
+        if only:
+            for i in halver_places:
+                if i != only[0]:
+                    restrict(cells, i, digit_bits, dirty)
+
+    def propagate(cells, settled, dirty):
+        """Narrow to a fixpoint, re-reading only the houses and lines of the
+        cells in `dirty`, the cells changed since the last fixpoint."""
+        while dirty:
+            changed = list(dirty)
+            dirty.clear()
+            for i in changed:
                 mask = cells[i]
                 if settled[i] or mask & (mask - 1):
                     continue
@@ -152,34 +197,11 @@ def solutions(narrowing, lines, n, box, limit, deadline=None):
                     clear &= ~halver_bits
                     for j in range(size):
                         if j != i:
-                            changed |= restrict(cells, j, ~mask)
+                            restrict(cells, j, ~mask, dirty)
                 for j in peers[i]:
-                    changed |= restrict(cells, j, clear)
-            for house in houses:
-                once = twice = 0
-                halver_places = []
-                for i in house:
-                    d = (cells[i] | cells[i] >> n) & digit_bits
-                    twice |= once & d
-                    once |= d
-                    if cells[i] & halver_bits:
-                        halver_places.append(i)
-                if once != digit_bits or not halver_places:
-                    raise _Contradiction
-                for d in _bits(once & ~twice):
-                    for i in house:
-                        if (cells[i] | cells[i] >> n) >> d & 1:
-                            changed |= restrict(cells, i, (1 << d) | (1 << (n + d)))
-                            break
-                if len(halver_places) == 1:
-                    changed |= restrict(cells, halver_places[0], halver_bits)
-                only = [i for i in halver_places if not cells[i] & digit_bits]
-                if len(only) > 1:
-                    raise _Contradiction
-                if only:
-                    for i in halver_places:
-                        if i != only[0]:
-                            changed |= restrict(cells, i, digit_bits)
+                    restrict(cells, j, clear, dirty)
+            for h in {h for i in changed for h in houses_of[i]}:
+                narrow_house(cells, houses[h], dirty)
             once = twice = 0
             for mask in cells:
                 h = mask >> n
@@ -190,50 +212,74 @@ def solutions(narrowing, lines, n, box, limit, deadline=None):
             for d in _bits(once & ~twice):
                 for i in range(size):
                     if cells[i] >> (n + d) & 1:
-                        changed |= restrict(cells, i, 1 << (n + d))
+                        restrict(cells, i, 1 << (n + d), dirty)
                         break
-            for line in lines:
-                changed |= narrow_line(cells, line)
+            for k in {k for i in changed for k in lines_of[i]}:
+                narrow_line(cells, lines[k], dirty)
+
+    def probe(cells, settled):
+        """Drop each value of an open line end whose narrowing fails, to a
+        fixpoint."""
+        while True:
+            dirty = set()
+            for i in ends:
+                if cells[i] & (cells[i] - 1):
+                    for bit in _bits(cells[i]):
+                        trial = list(cells)
+                        trial[i] = 1 << bit
+                        try:
+                            propagate(trial, list(settled), {i})
+                        except _Contradiction:
+                            restrict(cells, i, ~(1 << bit), dirty)
+            if not dirty:
+                return
+            propagate(cells, settled, dirty)
 
     found = []
 
-    def search(cells, settled):
+    def search(cells, settled, dirty):
         if deadline is not None and time.monotonic() > deadline:
             raise OutOfTime
         try:
-            propagate(cells, settled)
+            propagate(cells, settled, dirty)
+            probe(cells, settled)
         except _Contradiction:
             return False
         best = None  # (option count, children)
-        for i in range(size):
+        for i in ends:
             count = cells[i].bit_count()
             if count > 1 and (best is None or count < best[0]):
                 best = (count, [(i, 1 << bit) for bit in _bits(cells[i])])
         if best is None:
-            grid = tuple(
-                tuple(
-                    (
-                        (cells[r * n + c] | cells[r * n + c] >> n) & digit_bits
-                    ).bit_length()
-                    for c in range(n)
+            for i in range(size):
+                count = cells[i].bit_count()
+                if count > 1 and (best is None or count < best[0]):
+                    best = (count, [(i, 1 << bit) for bit in _bits(cells[i])])
+            if best is None:
+                grid = tuple(
+                    tuple(
+                        (
+                            (cells[r * n + c] | cells[r * n + c] >> n) & digit_bits
+                        ).bit_length()
+                        for c in range(n)
+                    )
+                    for r in range(n)
                 )
-                for r in range(n)
-            )
-            halvers = frozenset(
-                divmod(i, n) for i in range(size) if cells[i] & halver_bits
-            )
-            found.append((grid, halvers))
-            return len(found) >= limit
-        for house in houses:
-            places = [i for i in house if cells[i] & halver_bits]
-            if len(places) > 1 and len(places) < best[0]:
-                best = (len(places), [(i, halver_bits) for i in places])
+                halvers = frozenset(
+                    divmod(i, n) for i in range(size) if cells[i] & halver_bits
+                )
+                found.append((grid, halvers))
+                return len(found) >= limit
+            for house in houses:
+                places = [i for i in house if cells[i] & halver_bits]
+                if len(places) > 1 and len(places) < best[0]:
+                    best = (len(places), [(i, halver_bits) for i in places])
         for i, keep in best[1]:
             child = list(cells)
             child[i] &= keep
-            if search(child, list(settled)):
+            if search(child, list(settled), {i}):
                 return True
         return False
 
-    search([(1 << (2 * n)) - 1] * size, [False] * size)
+    search([(1 << (2 * n)) - 1] * size, [False] * size, set(range(size)))
     return found

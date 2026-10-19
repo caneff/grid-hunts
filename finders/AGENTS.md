@@ -139,7 +139,10 @@ README before reusing anything there.
   suite of its own: `halver_rules.py` the CP-SAT board model (digits, one
   halver per house, doubled values), the five-status check, the per-mark
   check, `Line` and cell naming; `halver_brute.py` the independent
-  backtracking search, which shares no code with the model. A line type plugs
+  backtracking search, which shares no code with the model, and
+  `halver_brute_c.py` the same search in C (`halver_brute.c`, built with
+  the system gcc into a git-ignored `target/`), which the lockout check
+  runs on (#59). A line type plugs
   in through three pieces: a `post` that puts one line on the model, a plain
   `line_holds` reading of one line on a solution, and a `narrowing` step for
   the search. `halver_report.py` prints a board's status and its marks'
@@ -166,7 +169,8 @@ README before reusing anything there.
   backtracking check. `check.py BOARD [--marks FILE]` prints a lockout
   board's status and each mark's verdict in `halver_between`'s report
   format. `fixtures/` holds the 9x9 test boards (infeasible, unique, not
-  unique), test cases and not hits.
+  unique, the four-diamond board, and the 23-line board that
+  `test_unique_23.py` checks in `just test-slow`), test cases and not hits.
 - `archive/finders/galaxy-copycat/`'s write-ups live in `docs/research/2026-09-14-copycat-scan.md`
   and `docs/research/2026-09-14-galaxy-copycat-design.md`; its boards are
   `docs/research/2026-09-14-galaxy-copycat/boards/`.

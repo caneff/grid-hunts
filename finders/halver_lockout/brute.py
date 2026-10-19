@@ -1,16 +1,18 @@
 """The independent check of a halver + lockout-line board: the shared halver
-layer's backtracking search (`finders/halver/halver_brute.py`) with the
-lockout line's narrowing step. It shares no code with the CP-SAT model in
+layer's backtracking search in C (`finders/halver/halver_brute_c.py`, #59)
+with the lockout line's narrowing step, probing and branching on the
+diamonds first. It shares no code with the CP-SAT model in
 `rules.py`, so a modelling bug in one shows up as a disagreement with the
 other.
 
-`solutions(lines, n, box, limit, deadline, gap)` returns up to `limit`
+`solutions(lines, n, box, limit, deadline, gap, search)` returns up to `limit`
 solutions, each a (digits row by row, frozenset of halver cells) pair, in
 search order. Given a `deadline` (a `time.monotonic()` reading), it raises
 `OutOfTime` at the first search node past it, so a caller gets no count
 rather than a short one. A line is any (diamond a, body cells, diamond b)
 triple of (row, column) cells from 0. `gap` is the least difference between
-the diamonds' values, 4 unless given.
+the diamonds' values, 4 unless given. `search` is the C search unless given;
+`halver_brute.solutions`, the Python search, returns the same solutions.
 
 A lockout line keeps a diamond's doubled value only when the other diamond
 has one at least 2 * gap away that leaves every body cell a doubled value
@@ -26,7 +28,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "halver"))
 
 # isort: split
-import halver_brute
+import halver_brute_c
 from halver_brute import OutOfTime
 
 __all__ = ["OutOfTime", "lockout_narrowing", "solutions"]
@@ -34,11 +36,13 @@ __all__ = ["OutOfTime", "lockout_narrowing", "solutions"]
 GAP = 4
 
 
-def solutions(lines, n, box, limit, deadline=None, gap=GAP):
+def solutions(
+    lines, n, box, limit, deadline=None, gap=GAP, search=halver_brute_c.solutions
+):
     def narrowing(body, houses, n):
         return lockout_narrowing(body, houses, n, gap)
 
-    return halver_brute.solutions(narrowing, lines, n, box, limit, deadline)
+    return search(narrowing, lines, n, box, limit, deadline, probe_ends=True)
 
 
 def _bits(mask):

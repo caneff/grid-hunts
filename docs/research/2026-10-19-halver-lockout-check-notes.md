@@ -43,3 +43,44 @@ Measured on one worker, 2026-10-19:
   23 lines will not finish in `halver_between`'s 600 s verify budget unless
   the search gets stronger: a narrowing that reasons across lines, or a
   branching order the shared layer offers per line type.
+
+## What settled it: end probing on a C search (#59)
+
+Each approach tried on the two boards #59 names, one worker, 2026-10-19.
+The 23-line board is `finders/halver_lockout/fixtures/unique_23.json`; the
+four-diamond board, `fixtures/four_diamonds.json`, is four diamonds at
+r2c2, r2c6, r6c2 and r6c6 joined pairwise by six lines that keep the
+drawing rules. It has no solution because four values each at least 4 from
+the others span 12, and values run 0.5 to 9. "Tree" is a Knuth random-probe
+estimate of the search tree's size: it ran low on this tree, so read it as
+a floor.
+
+| approach | four diamonds | 23 lines |
+| --- | --- | --- |
+| #54's search | no verdict in 60 s | no verdict in 20 min (#54) |
+| diamonds branched first, fewest choices | infeasible, 0.0 s (19 nodes) | no verdict in 300 s; tree ~4.6e7 |
+| + pattern overlay (each digit and the halvers fill one of the 46,656 one-per-house placements) | — | no verdict in 120 s; 53-line board 3707 → 3440 nodes |
+| + Hall sets on each house's digits | — | no verdict in 60 s; 53-line board 3707 → 3080 nodes |
+| diamond values split low / high | infeasible, 0.0 s | no verdict in 60 s |
+| diamonds in board order (by row, by column, by box, along lines) | — | by row: no verdict in 60 s; tree 3.9e6 (by row) to 8.5e7 |
+| event-driven narrowing (same fixpoint), alone | no verdict in 60 s | 1.65x the node rate, no verdict |
+| + every line-end choice probed at every node, diamonds first | infeasible, 0.0 s | no verdict in 590 s (64 nodes/s); tree ~1.2e5 |
+| + dom/wdeg branching | — | no verdict in 120 s |
+| probing in the top 4 levels only | — | no verdict in 590 s (9.2 M nodes) |
+| the same search in C, no probing | — | no verdict in 60 s (168,000 nodes/s) |
+| **the same search in C, end probing at every node** | **infeasible, 0.0 s** | **unique, 202.8 s** (`test_unique_23.py`; 401,745 nodes in the prototype) |
+
+- Sudoku-side reasoning was not the gap: the overlay and Hall sets barely
+  moved the node count. Probing was: trying each diamond value and dropping
+  the ones that fail cut the tree about 1500 times, but costs about 135
+  narrowings a node, which Python could not pay.
+- The C search is `finders/halver/halver_brute_c.py` (`halver_brute.c`,
+  built with the system gcc). A line type's narrowing reaches it as a table
+  of the end pairs it allows, each with its body cells' doubled values, so
+  no line code is ported. `halver_lockout`'s check runs on it;
+  `halver_between` stays on the Python search, which gains the same
+  event-driven narrowing and an opt-in `probe_ends`.
+  `finders/halver_lockout/test_brute.py` checks the two searches give the
+  same solutions in the same order on every 4x4 line and every 9x9 fixture.
+- The 23-line board's check is `finders/halver_lockout/test_unique_23.py`,
+  in `just test-slow`; the four-diamond board is in the gate.

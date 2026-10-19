@@ -1,5 +1,6 @@
 """The backtracking check and the CP-SAT rule check agree on status and on
-solution sets, up to a limit: on every 4x4 board (2x2 boxes) with one
+solution sets, up to a limit, and the backtracking check's C search gives the
+Python search's solutions in the same order (#59): on every 4x4 board (2x2 boxes) with one
 lockout line of 3 or 4 cells, and on the hand-built 9x9 fixtures, one
 infeasible, one unique and one not unique. A search past its deadline raises
 `OutOfTime` and returns no count.
@@ -15,7 +16,9 @@ its answer keeps, which make the backtracking check exhaust it in about a
 second (on the 23 lines alone it found no verdict in 20 minutes). Those 30
 were never checked against the drawing rules. The infeasible one is the
 unique one plus r5c5 | r5c6 | r5c7, which its answer breaks, and the not
-unique one is the loop's first 3 lines.
+unique one is the loop's first 3 lines. The four-diamond board has no
+solution and no fixture line beyond its six; the 23-line board alone, the
+unique fixture's first 23 lines, is in `test_unique_23.py`, which is slow.
 
     uv run finders/halver_lockout/test_brute.py
 """
@@ -31,6 +34,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 import brute
+import halver_brute
 import rules
 from rules import Line
 
@@ -69,7 +73,13 @@ def cpsat_solutions(lines, n, box, gap, limit):
 
 
 def brute_solutions(lines, n, box, gap, limit):
+    """The C search's solutions, as a set, once the Python search has given
+    the same list: the same solutions in the same order."""
     found = brute.solutions(lines, n, box, limit=limit, gap=gap)
+    python = brute.solutions(
+        lines, n, box, limit=limit, gap=gap, search=halver_brute.solutions
+    )
+    assert found == python, (lines, len(found), len(python))
     assert len(found) == len(set(found)), "the search found a solution twice"
     return {rules.Solution(digits, halvers) for digits, halvers in found}
 
@@ -128,6 +138,7 @@ for name, expected in [
     ("infeasible", "infeasible"),
     ("unique", "unique"),
     ("not_unique", "not_unique"),
+    ("four_diamonds", "infeasible"),
 ]:
     lines = rules.load_lines(HERE / "fixtures" / f"{name}.json")
     assert agree(lines, 9, (3, 3), gap=rules.GAP, limit=50) == expected, name
@@ -137,6 +148,14 @@ unique = rules.load_lines(HERE / "fixtures" / "unique.json")
 answer = rules.RuleModel(unique).check(time_limit=60)
 assert answer.status == "unique", answer.status
 assert brute_solutions(unique, 9, (3, 3), rules.GAP, 2) == {answer.first}
+
+# Four diamonds joined pairwise by six lines have no solution: four values
+# each at least 4 from the others span 12, and values run 0.5 to 9. The
+# search says so within a minute (#59).
+four = rules.load_lines(HERE / "fixtures" / "four_diamonds.json")
+assert rules.RuleModel(four).check(time_limit=60).status == "infeasible"
+found = brute.solutions(four, 9, (3, 3), limit=2, deadline=time.monotonic() + 60)
+assert found == [], found
 
 # A deadline already past stops the search before its first node: no count,
 # never a short one read as a count.
