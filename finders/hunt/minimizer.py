@@ -3,7 +3,8 @@ predicate stays true, batching removals so most drops don't cost a
 proof-per-item. Domain-agnostic -- `items` need not be sudoku clues; `test`
 usually wraps `uniqueness.check_uniqueness` on a model built from the trial
 dict, but any predicate over a dict works. See
-`archive/finders/zombo-brainanas/zombo_brainanas_cpsat.py`'s `strip()` for the same algorithm.
+`archive/finders/zombo-brainanas/zombo_brainanas_cpsat.py`'s `strip()` for the
+same algorithm.
 """
 
 
