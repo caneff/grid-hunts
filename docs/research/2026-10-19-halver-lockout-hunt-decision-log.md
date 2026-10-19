@@ -141,8 +141,8 @@ not solver time, run out. That is checked in the pilot below, not assumed.
   it costs about 35 s in the gate.
 - **The full hunt test is slow.** `test_hunt.py` runs seed 0 (a hit, about
   130 s to find and 290 s to verify on one core) and a two-seed timeout
-  hunt, so it sits in `tests/all.sh`'s `finder_slow`, run by
-  `just test-slow`. It relies on seed 0 hitting, which holds while CP-SAT's
+  hunt (7 min 43 s measured on 2026-10-19 at a load of about 3), so it
+  sits in `tests/all.sh`'s `finder_slow`, run by `just test-slow`. It relies on seed 0 hitting, which holds while CP-SAT's
   one-worker search is reproducible at the pinned OR-Tools version; if seed
   0 stops hitting, the test fails loud on the outcome.
 
