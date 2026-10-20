@@ -17,6 +17,14 @@ detail.
 - **finder rule** — a rule a finder states itself because gridfind has no layer
   for it. It stays a finder rule until it is **promoted**: turned into a
   gridfind layer with its fixtures.
+- **board question** — one question asked of one fixed board: is it
+  feasible, is it unique, list its solutions, the largest value of a named
+  quantity, which clues can be dropped one at a time, or does a mark hold in
+  every solution. Not a hunt: a hunt searches for boards, a board question
+  asks about one (#36). _Avoid_: query, board query.
+- **capped** — an answer to a board question that a time or count limit
+  stopped before it was settled. A capped answer is never read as unique,
+  held or complete. Its opposite is **complete**.
 
 ### U-Bahn terms (`finders/ubahn/`)
 
