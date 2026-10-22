@@ -10,8 +10,9 @@ on:
 jobs:
   # The gate is `just check`: ruff and the finder tests. A pull request and a
   # push to main run the narrowed gate (`tests/all.sh --changed`); the schedule
-  # runs the full `just check` nightly as the backstop. uv is the only tool
-  # installed; it fetches Python, ruff and just itself. tests/all.sh takes its
+  # runs the full `just check` nightly as the backstop. uv fetches Python,
+  # ruff and just itself; the Pants launcher is installed for the narrowed
+  # run's selection and the edge check (pants.toml, docs/pants.md). tests/all.sh takes its
   # suite count from GATE_JOBS: the Actions VM has 4 vCPUs and every suite is
   # one process, so 4 suites at once.
   check:
@@ -29,6 +30,14 @@ jobs:
 
       - name: uv sync
         run: uv sync
+
+      # The Pants launcher, cached with the Pants it downloads. pants.toml
+      # turns the result cache off.
+      - name: Install Pants
+        uses: pantsbuild/actions/init-pants@v11
+        with:
+          gha-cache-key: v0
+          named-caches-hash: ${{ hashFiles('pants.toml') }}
 
       - name: Gate (check)
         env:
