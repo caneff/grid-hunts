@@ -14,7 +14,8 @@ One CaDiCaL thread a process, two processes in the two-worker run, which
 is the only witness `--workers` has.
 
 A slow test, outside the gate: `just test-slow` runs it (tests/all.sh's
-`finder_slow`); 71 s on one core.
+`finder_slow`). Its time on one core is in
+`docs/research/2026-10-22-ubahn-suite-times.md`.
 
     uv run finders/ubahn/test_ubahn_fewest_markings.py
 """

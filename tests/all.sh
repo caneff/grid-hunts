@@ -53,8 +53,8 @@ cd "$root" || exit 1
 #                  hunt plus its backtracking verify, about a minute; the
 #                  halver/lockout 23-line board, about 200 s; the
 #                  halver/lockout hunt from the empty board plus its verify;
-#                  the five slowest U-Bahn suites, 38 to 71 s each alone on
-#                  one core, #77).
+#                  the five slowest U-Bahn suites, timed in
+#                  docs/research/2026-10-22-ubahn-suite-times.md, #77).
 #   finder_pytest: the pytest suites, run as `uv run pytest <file> -q`.
 finder_slow="finders/halver_between/test_hunt.py finders/halver_lockout/test_unique_23.py finders/halver_lockout/test_hunt.py"
 finder_slow="$finder_slow finders/ubahn/test_ubahn_fewest_markings.py finders/ubahn/test_ubahn_hybrid_bananas.py"

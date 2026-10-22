@@ -11,7 +11,8 @@ out and reads the default engine off the records; the refused runs stop
 before any engine is asked. One CP-SAT worker.
 
 A slow test, outside the gate: `just test-slow` runs it (tests/all.sh's
-`finder_slow`); 40 s on one core.
+`finder_slow`). Its time on one core is in
+`docs/research/2026-10-22-ubahn-suite-times.md`.
 
     uv run finders/ubahn/test_ubahn_hybrid_hunt.py
 """
