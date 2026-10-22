@@ -19,6 +19,9 @@ conditions. They are what each engine must match; `test_ubahn_hybrid_model.py`
 holds the CP-SAT engine to them (#783). After them, the answers under
 Battenberg markings (#21), which the PySAT engines must match.
 
+A slow test, outside the gate: `just test-slow` runs it (tests/all.sh's
+`finder_slow`); 38 s on one core.
+
     uv run finders/ubahn/test_ubahn_brute.py
 """
 

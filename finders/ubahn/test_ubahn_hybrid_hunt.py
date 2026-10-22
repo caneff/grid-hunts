@@ -8,7 +8,10 @@ grid `test_ubahn_hybrid.py` works out by hand; the `classify` command against
 the decision log's table, § Hybrid; and the flags the finder refuses. Every
 run that solves names `--engine cpsat` but the last, which leaves the flag
 out and reads the default engine off the records; the refused runs stop
-before any engine is asked. One CP-SAT worker; about twenty seconds in all.
+before any engine is asked. One CP-SAT worker.
+
+A slow test, outside the gate: `just test-slow` runs it (tests/all.sh's
+`finder_slow`); 40 s on one core.
 
     uv run finders/ubahn/test_ubahn_hybrid_hunt.py
 """

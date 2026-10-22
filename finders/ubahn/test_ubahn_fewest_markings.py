@@ -11,7 +11,10 @@ counts. Then the examples it writes, a rerun of a stopped run, a time limit
 reached, the size cap, mirror sets, the workers and the refusals.
 
 One CaDiCaL thread a process, two processes in the two-worker run, which
-is the only witness `--workers` has; about a minute.
+is the only witness `--workers` has.
+
+A slow test, outside the gate: `just test-slow` runs it (tests/all.sh's
+`finder_slow`); 71 s on one core.
 
     uv run finders/ubahn/test_ubahn_fewest_markings.py
 """

@@ -33,7 +33,10 @@ README before reusing anything there.
   the plain finder does not call. `measure_baseline.py` times a hunt's proposal
   step per seed and cause (#777; by hand, outside both gates). Conditions
   arrive one at a time as finder rules. Preflight answers and measurements:
-  `docs/research/2026-10-10-u-bahn-finder-decision-log.md`.
+  `docs/research/2026-10-10-u-bahn-finder-decision-log.md`. Five U-Bahn
+  suites are slow (`just test-slow`, #77): `test_ubahn_fewest_markings.py`,
+  `test_ubahn_hybrid_bananas.py`, `test_ubahn_hybrid_hunt.py`,
+  `test_ubahn_fewest_markings_e2e.py` and `test_ubahn_brute.py`.
   `hybrid.py` is the solver-free rule reader of the hybrid with Choco-Banana
   (spec #781): values, regions, circles, windows and Battenberg markings,
   a terminal drawing. `brute.py R C`
