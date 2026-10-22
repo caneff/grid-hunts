@@ -1,0 +1,11 @@
+{
+  "size": 4,
+  "box": [2, 2],
+  "clues": [
+    {"line": "r1", "end": "left", "rank": 1},
+    {"line": "c1", "end": "top", "rank": 1}
+  ],
+  "marks": [
+    {"kind": "digit", "cell": "r1c1", "digit": 0}
+  ]
+}
