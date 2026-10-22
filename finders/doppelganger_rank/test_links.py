@@ -3,8 +3,9 @@ Chris's layout (#66 § Links), each decoded and checked against its record:
 
 - `DIR/links/<seed>.txt` for each hit's seed, and no other file.
 - A `"custom"` canvas, `minDigit` 0 and `maxDigit` n.
-- The grid's boxes are regions, each notespace is one region, and every
-  other cell is in no region (-1).
+- The grid's boxes are regions, and so is each cell of the box notespace,
+  which the drawing borders cell by cell. The row and column notespaces,
+  which it only shades, and every other cell are in no region (-1).
 - Every rank clue, the board's and the added ones, is cosmetic text at the
   centre of the cell just past its line's end, outside the grid.
 - The solution is entered, notespaces' missing digits included, and no cell
@@ -23,7 +24,6 @@ out here from Chris's drawing
 
 import json
 import shutil
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -34,7 +34,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "hunt"))
 
 # isort: split
-from subprocess_env import success_env
+from cli_checks import read_jsonl, run_cli
 
 SCRIPT = HERE / "hunt.py"
 
@@ -55,19 +55,6 @@ LAYOUT = {
         "boxes": [(r, c) for r in range(11, 14) for c in range(11, 14)],
     },
 }
-
-
-def run(*args):
-    return subprocess.run(
-        [sys.executable, str(SCRIPT), *map(str, args)],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
-
-
-def jsonl(path):
-    return [json.loads(line) for line in path.read_text().splitlines() if line]
 
 
 def text_at(place, n):
@@ -113,11 +100,12 @@ def check(doc, record):
         "cols": [list(col) for col in zip(*grid, strict=True)],
         "boxes": boxes,
     }
-    for region, name in enumerate(("rows", "cols", "boxes"), start=n):
+    for name in ("rows", "cols", "boxes"):
         for cell, unit in zip(layout[name], units[name], strict=True):
             (missing,) = digits - set(unit)
             want_value[at(*cell)] = missing
-            want_region[at(*cell)] = region
+    for k, cell in enumerate(layout["boxes"]):
+        want_region[at(*cell)] = n + k
 
     cells = p["cells"]
     assert len(cells) == side * side, len(cells)
@@ -146,12 +134,14 @@ def check(doc, record):
 def links_of(out):
     """Each hit's seed and record, and its decoded link: `links DIR` run on
     `out`, every file under `out/links` read."""
-    result = run("links", out)
+    result = run_cli(SCRIPT, "links", out)
     assert result.returncode == 0, result.stderr
     seeds = [
-        e["seed"] for e in jsonl(out / "progress.jsonl") if e["outcome"] == "example"
+        e["seed"]
+        for e in read_jsonl(out / "progress.jsonl")
+        if e["outcome"] == "example"
     ]
-    records = jsonl(out / "examples.jsonl")
+    records = read_jsonl(out / "examples.jsonl")
     files = sorted((out / "links").iterdir())
     assert [f.name for f in files] == sorted(f"{s}.txt" for s in seeds), files
     assert result.stdout.strip() == f"wrote {len(seeds)} links to {out / 'links'}"
@@ -166,7 +156,7 @@ with tempfile.TemporaryDirectory() as tmp:
     empty = tmp / "empty_4x4.json"
     empty.write_text(json.dumps({"size": 4, "box": [2, 2], "clues": [], "marks": []}))
     out = tmp / "hits"
-    result = run("--board", empty, "--out", out, "--seeds", "0:4")
+    result = run_cli(SCRIPT, "--board", empty, "--out", out, "--seeds", "0:4")
     assert result.returncode == 0, result.stderr
     found = links_of(out)
     assert len(found) == 4, found

@@ -10,7 +10,6 @@ one CP-SAT worker; the hunt of record ran the minimiser on 8
 """
 
 import json
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -19,7 +18,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "hunt"))
 
 # isort: split
-from subprocess_env import success_env
+from cli_checks import read_jsonl, run_cli
 
 SCRIPT = HERE / "hunt.py"
 BOARD = HERE / "fixtures" / "opening_9x9.json"
@@ -27,25 +26,20 @@ fixture = json.loads((HERE / "fixtures" / "hit_9x9.json").read_text())
 
 
 def run(*args):
-    return subprocess.run(
-        [sys.executable, str(SCRIPT), *map(str, args)],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
+    return run_cli(SCRIPT, *args)
 
 
 with tempfile.TemporaryDirectory() as tmp:
     out = Path(tmp) / "hunt"
     result = run("--board", BOARD, "--out", out, "--seeds", "72:73")
     assert result.returncode == 0, result.stderr
-    (record,) = [json.loads(line) for line in (out / "examples.jsonl").open()]
+    (record,) = read_jsonl(out / "examples.jsonl")
     record.pop("__dedupe_key__")
     assert record == fixture["record"], record
 
     result = run("verify", out)
     assert result.returncode == 0, result.stderr
-    stamp, verdict = [json.loads(line) for line in (out / "verified.jsonl").open()]
+    stamp, verdict = read_jsonl(out / "verified.jsonl")
     assert verdict["ok"], verdict
 
     result = run("summary", out)

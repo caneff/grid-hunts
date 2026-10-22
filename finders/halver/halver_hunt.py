@@ -68,9 +68,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "hunt"))
 from dedupe import IDENTITY
 from driver import run
 from halver_rules import Line, Solution, cell_name, line_name, parse_cell
+from hunt_dir import read_hunt, seed_lines, summary_command
 from protocol import Empty, Verdict
 from sudoku_kit.link_codec import encode_link
-from verified_io import example_verdicts
 
 N, BOX = 9, (3, 3)
 # The hunt's end, written when a hunt run returns 0; `summary` reads its
@@ -318,25 +318,9 @@ class TargetLoopFinder:
         return Hit(added, Solution(digits, halvers))
 
 
-def _jsonl(path):
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
-
-
 def summary(out):
     """What a hunt in `out` found, as lines of text."""
-    events = [
-        e for e in _jsonl(out / "progress.jsonl") if e.get("event") == "seed_done"
-    ]
-    examples = _jsonl(out / "examples.jsonl")
-    run_json = json.loads((out / "run.json").read_text())
-    verdicts = example_verdicts(out, run_json["argv"], examples)
-    hits = [r for r, v in zip(examples, verdicts, strict=True) if v == "hit"]
-    unchecked = [r for r, v in zip(examples, verdicts, strict=True) if v == "unchecked"]
-    rejected = [
-        (r, v)
-        for r, v in zip(examples, verdicts, strict=True)
-        if v not in ("hit", "unchecked")
-    ]
+    run_json, events, hits, unchecked, rejected = read_hunt(out)
     clock = "wall clock not recorded"
     if (out / ENDED).exists():
         started = datetime.fromisoformat(run_json["start_time"])
@@ -365,12 +349,7 @@ def summary(out):
     text.append(
         "outcomes: " + ", ".join(f"{k} {v}" for k, v in sorted(outcomes.items()))
     )
-    for e in events:
-        if e["outcome"] == "empty":
-            text.append(f"seed {e['seed']}: {e.get('empty_reason', 'no reason given')}")
-        elif e["outcome"] == "rejected":
-            reason = e.get("rejected_reason", "no reason given")
-            text.append(f"seed {e['seed']}: rejected, {reason}")
+    text.extend(seed_lines(events))
     for record in hits:
         text.append(f"hit, {len(record['lines'])} added lines: {record['link']}")
         text.extend(f"  {row}" for row in record["table"])
@@ -389,22 +368,7 @@ def main(finder_class, argv, defaults):
     """The hunt CLI: `summary DIR`, or the driver's commands with the finder
     built from its own flags, each defaulting to `defaults[knob]`."""
     if argv and argv[0] == "summary":
-        if len(argv) != 2:
-            print("usage: hunt.py summary DIR", file=sys.stderr)
-            return 2
-        out = Path(argv[1])
-        if not (out / "run.json").exists():
-            print(
-                f"hunt.py summary: {out} holds no hunt (no run.json)", file=sys.stderr
-            )
-            return 2
-        try:
-            text = summary(out)
-        except ValueError as error:
-            print(f"hunt.py summary: {error}", file=sys.stderr)
-            return 2
-        print("\n".join(text))
-        return 0
+        return summary_command(argv, summary)
     parser = argparse.ArgumentParser(add_help=False)
     for knob in KNOBS:
         flag = "--" + knob.replace("_", "-")

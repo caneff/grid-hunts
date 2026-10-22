@@ -6,9 +6,11 @@ n + 4 square: 13x13 at 9x9.
 
 - The n x n grid at r1..n c1..n, its boxes as regions.
 - The row notespace at c(n+3) r1..n, row k's missing digit at its k-th
-  cell; the column notespace at r(n+3) c1..n. Each is one region.
+  cell; the column notespace at r(n+3) c1..n. Neither is a region: the
+  drawing shades them and borders nothing.
 - The box notespace in the canvas's bottom-right corner, one cell per box
-  laid out as the boxes are (r11-13 c11-13 at 9x9), one region.
+  laid out as the boxes are (r11-13 c11-13 at 9x9), each cell its own
+  region, as the drawing borders each.
 - Every other cell is in no region.
 
 Every rank clue, the board's and the added ones, is cosmetic text (type
@@ -95,10 +97,11 @@ def link_doc(record):
             cells[at(r + 1, c + 1)] = {"value": grid[r][c]}
             regions[at(r + 1, c + 1)] = k
     missing = rules.read(grid, box).missing
-    for region, (kind, places) in enumerate(notespaces(n, box).items(), start=n):
+    for kind, places in notespaces(n, box).items():
         for k, cell in enumerate(places, start=1):
             cells[at(*cell)] = {"value": missing[f"{kind}{k}"]}
-            regions[at(*cell)] = region
+            if kind == "b":
+                regions[at(*cell)] = n + k - 1
 
     clues = record["clues"]
     text = {

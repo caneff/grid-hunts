@@ -15,8 +15,19 @@
 - `summary` lists the hits, fewest added clues first, and splits the seeds
   into found, proven infeasible, timed out and capped, the capped count
   labelled as no proof, on a hunt of each.
+- The ranked pick (`--pool 16`) adds the most restricting clue, and its
+  hits are unique and minimal by the key too.
+- A solve that times out ends its seed `timeout:` in the add loop and in
+  the minimiser, and `capped:` when the seed's `--max-seconds` is what ran
+  out; none is read as unique.
 - The minimiser on two CP-SAT workers (`--proof-workers 2`) gives the
-  same hits, and `--proof-workers 0` is refused.
+  same hits, a finished hunt resumes under another `--proof-workers`, and
+  `--proof-workers 0` and `--workers 2` are refused.
+- A board file the hunt cannot read is refused by name, exit 2, and a hunt
+  does not resume on a board of another size.
+- A later `verify` that rejects a hit the hunt verified as it ran
+  overrules it: `summary` counts it rejected and `links` skips it.
+  `summary` refuses a seed that ended for a reason it does not know.
 - A hunt killed partway resumes to the same hits as the hunt that ran
   through.
 
@@ -26,6 +37,7 @@
 import json
 import random
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -39,6 +51,9 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 # isort: split
 import brute
 import hunt
+from cli_checks import read_jsonl, run_cli
+from model import RankModel, RuleCheck
+from printed import grid_of
 from subprocess_env import success_env
 
 SCRIPT = HERE / "hunt.py"
@@ -50,18 +65,12 @@ SPLIT = re.compile(
 )
 
 
-def command(*args):
-    return [sys.executable, str(SCRIPT), *map(str, args)]
-
-
 def run(*args):
-    return subprocess.run(
-        command(*args), capture_output=True, text=True, env=success_env()
-    )
+    return run_cli(SCRIPT, *args)
 
 
-def jsonl(path):
-    return [json.loads(line) for line in path.read_text().splitlines() if line]
+def finder_with(board, **knobs):
+    return hunt.DoppelgangerRankFinder(board=board, **{**hunt.DEFAULTS, **knobs})
 
 
 def split(out):
@@ -79,6 +88,43 @@ def split(out):
 
 def grid(record):
     return tuple(tuple(map(int, row)) for row in record["solution"])
+
+
+def assert_key_hits(out, board):
+    """Every hit in `out` is unique by the key, its one grid its seed's
+    target, and minimal: not unique without any one of its clues."""
+    examples = read_jsonl(out / "examples.jsonl")
+    found = [e for e in read_jsonl(out / "progress.jsonl") if e["outcome"] == "example"]
+    assert examples and len(found) == len(examples), (len(found), len(examples))
+    finder = finder_with(str(board))
+    for event, record in zip(found, examples, strict=True):
+        clues = record["clues"]
+        status, keep = brute.classify(clues)
+        assert status == "unique" and keep == [grid(record)], (status, record)
+        assert record["added"] == len(clues) and record["added"] >= 1, record
+        target = finder.target(random.Random(event["seed"]), 30.0).first
+        assert target == grid(record), (event["seed"], target, record)
+        for clue in clues:
+            rest = [c for c in clues if c is not clue]
+            assert brute.classify(rest)[0] == "not_unique", (clue, record)
+    return found, examples
+
+
+def timed_out(finder, when):
+    """`finder.propose` on seed 0 with every check `when(kwargs)` picks a
+    timeout and the rest solved as usual."""
+    real = RankModel.check
+
+    def check(self, **kwargs):
+        if when(kwargs):
+            return RuleCheck("timeout")
+        return real(self, **kwargs)
+
+    RankModel.check = check
+    try:
+        return finder.propose(random.Random(0))
+    finally:
+        RankModel.check = real
 
 
 # The ranked pick (#79) on a planted pool: c2 from the top keeps its target
@@ -124,32 +170,31 @@ with tempfile.TemporaryDirectory() as tmp:
         return place
 
     hunt.most_restricting = spy
-    ranking = {**hunt.DEFAULTS, "pool": 16}
-    seeded = hunt.DoppelgangerRankFinder(board=str(empty), **ranking)
-    hit = seeded.propose(random.Random(0))
+    hit = finder_with(str(empty), pool=16).propose(random.Random(0))
     hunt.most_restricting = ranked
     assert isinstance(hit, hunt.Hit), hit
-    assert picks and picks[0][1] >= ranking["pool_floor"], picks
+    assert picks and picks[0][1] >= hunt.DEFAULTS["pool_floor"], picks
+
+    # The ranked pick's hits, by the key.
+    ranked_out = tmp / "ranked"
+    result = run("--board", empty, "--out", ranked_out, "--seeds", "0:3", "--pool", 16)
+    assert result.returncode == 0, result.stderr
+    assert_key_hits(ranked_out, empty)
+
+    # A timed-out solve is never unique: in the add loop, in the minimiser,
+    # and capped when the seed's own budget is what ran out.
+    loop = timed_out(finder_with(str(empty)), lambda kw: "workers" not in kw)
+    assert loop == hunt.Empty("timeout: the check after 0 clues (30 s)"), loop
+    budget = timed_out(finder_with(str(empty), max_seconds=5.0), lambda kw: True)
+    assert budget.reason.startswith("capped: 5 s ran out during the check"), budget
+    minimiser = timed_out(finder_with(str(empty)), lambda kw: "workers" in kw)
+    assert minimiser == hunt.Empty("timeout: the minimiser (30 s)"), minimiser
 
     # The hunt that runs through.
     out = tmp / "hits"
     result = run("--board", empty, "--out", out, "--seeds", f"0:{SEEDS}")
     assert result.returncode == 0, result.stderr
-    examples = jsonl(out / "examples.jsonl")
-    found = [e for e in jsonl(out / "progress.jsonl") if e["outcome"] == "example"]
-    assert examples and len(found) == len(examples), (len(found), len(examples))
-
-    finder = hunt.DoppelgangerRankFinder(board=str(empty), **hunt.DEFAULTS)
-    for event, record in zip(found, examples, strict=True):
-        clues = record["clues"]
-        status, keep = brute.classify(clues)
-        assert status == "unique" and keep == [grid(record)], (status, record)
-        assert record["added"] == len(clues) and record["added"] >= 1, record
-        target = finder.target(random.Random(event["seed"]), 30.0).first
-        assert target == grid(record), (event["seed"], target, record)
-        for clue in clues:
-            rest = [c for c in clues if c is not clue]
-            assert brute.classify(rest)[0] == "not_unique", (clue, record)
+    found, examples = assert_key_hits(out, empty)
     assert any(grid(r)[0][0] != 0 for r in examples), "the mark held in every hit"
 
     # The minimiser's proofs on two workers keep every verdict, so the hits.
@@ -159,11 +204,30 @@ with tempfile.TemporaryDirectory() as tmp:
     )
     assert result.returncode == 0, result.stderr
     first = [r for e, r in zip(found, examples, strict=True) if e["seed"] < 5]
-    assert jsonl(wide / "examples.jsonl") == first
-    result = run(
-        "--board", empty, "--out", tmp / "none", "--seeds", "0:1", "--proof-workers", 0
-    )
-    assert result.returncode == 2 and "--proof-workers 0" in result.stderr, result
+    assert read_jsonl(wide / "examples.jsonl") == first
+    result = run("--board", empty, "--out", wide, "--seeds", "0:5")
+    assert result.returncode == 0, result.stderr
+    assert read_jsonl(wide / "examples.jsonl") == first
+    for flag in (("--proof-workers", 0), ("--workers", 2)):
+        result = run("--board", empty, "--out", tmp / "none", "--seeds", "0:1", *flag)
+        assert result.returncode == 2 and f"{flag[0]} {flag[1]}" in result.stderr
+        assert not (tmp / "none").exists(), flag
+
+    # A board the hunt cannot read, and a resume on a board of another size.
+    bad = tmp / "bad.json"
+    rank = {"line": "r1", "end": "left", "rank": 40}
+    bad.write_text(json.dumps({"size": 4, "box": [2, 2], "clues": [rank]}))
+    result = run("--board", bad, "--out", tmp / "bad", "--seeds", "0:1")
+    assert result.returncode == 2 and "rank 40" in result.stderr, result
+    grown = tmp / "grown.json"
+    grown.write_text(empty.read_text())
+    resized = tmp / "resized"
+    assert run("--board", grown, "--out", resized, "--seeds", "0:1").returncode == 0
+    grown.write_text(json.dumps({"size": 6, "box": [2, 3], "clues": [], "marks": []}))
+    progress = (resized / "progress.jsonl").read_text()
+    result = run("--board", grown, "--out", resized, "--seeds", "0:1")
+    assert result.returncode == 2 and "config differs" in result.stderr, result
+    assert (resized / "progress.jsonl").read_text() == progress
 
     counts, lines = split(out)
     assert counts["seeds"] == SEEDS and counts["found"] == len(examples), counts
@@ -175,7 +239,7 @@ with tempfile.TemporaryDirectory() as tmp:
     planted = tmp / "planted"
     result = run("--board", empty, "--out", planted, "--seeds", "0:1", "--no-verify")
     assert result.returncode == 0, result.stderr
-    (record,) = jsonl(planted / "examples.jsonl")
+    (record,) = read_jsonl(planted / "examples.jsonl")
     rows = list(record["solution"])
     rows[0] = rows[0][1] + rows[0][1:]  # r1c2's digit twice in r1
     broken_rule = {**record, "solution": rows}
@@ -188,23 +252,38 @@ with tempfile.TemporaryDirectory() as tmp:
             f.write(json.dumps(bad) + "\n")
     result = run("verify", planted)
     assert result.returncode == 0, result.stderr
-    stamp, *verdicts = jsonl(planted / "verified.jsonl")
+    stamp, *verdicts = read_jsonl(planted / "verified.jsonl")
     assert [v["ok"] for v in verdicts] == [True, False, False, False], verdicts
     assert "holds" in verdicts[1]["reason"], verdicts[1]
     assert f"{clue['line']} from the {clue['end']} ranks" in verdicts[2]["reason"]
     reason = verdicts[3]["reason"]
     assert reason.startswith("not unique: a second grid "), reason
-    words = reason.removeprefix("not unique: a second grid ").split()
-    second = tuple(tuple(map(int, word)) for word in words[1::2])
+    second = grid_of(reason.removeprefix("not unique: a second grid "))
     _, keep = brute.classify(loose["clues"])
     assert second in keep and second != grid(record), (second, record)
     _, lines = split(planted)
     assert "3 candidates rejected by `hunt.py verify`" in lines, lines
 
-    rushed = hunt.DoppelgangerRankFinder(None, 1e-9, 36, 300.0, 16, 4)
+    rushed = finder_with(None, time_limit=1e-9)
     verdict = rushed.verify(rushed.candidate_from_record(record))
     assert verdict == (False, "timeout: the re-proof reached 1e-09 s"), verdict
     assert any(line.startswith("hit, ") for line in lines), lines
+
+    # A later verify overrules the hunt's own: a hit with a clue dropped.
+    reverified = tmp / "reverified"
+    shutil.copytree(out, reverified)
+    records = read_jsonl(reverified / "examples.jsonl")
+    records[0] = {**records[0], "clues": records[0]["clues"][1:]}
+    (reverified / "examples.jsonl").write_text(
+        "".join(json.dumps(r) + "\n" for r in records)
+    )
+    assert run("verify", reverified).returncode == 0
+    _, lines = split(reverified)
+    assert "1 candidates rejected by `hunt.py verify`" in lines, lines
+    result = run("links", reverified)
+    assert result.returncode == 0, result.stderr
+    assert "1 candidates skipped" in result.stdout, result.stdout
+    assert len(list((reverified / "links").iterdir())) == len(records) - 1
 
     # The split on hunts that find nothing, each for its own reason.
     infeasible = tmp / "infeasible"
@@ -229,25 +308,31 @@ with tempfile.TemporaryDirectory() as tmp:
     counts, lines = split(capped)
     assert counts["capped"] == 3, counts
     assert sum(line.startswith("seed ") and "capped" in line for line in lines) == 3
+    with (capped / "progress.jsonl").open("a") as f:
+        odd = {"event": "seed_done", "seed": 3, "outcome": "empty"}
+        f.write(json.dumps({**odd, "empty_reason": "stalled: no class"}) + "\n")
+    result = run("summary", capped)
+    assert result.returncode == 2 and "no known reason" in result.stderr, result
 
     # A hunt killed partway resumes to the hits of the hunt that ran through.
     killed = tmp / "killed"
     argv = ("--board", empty, "--out", killed, "--seeds", f"0:{SEEDS}")
-    proc = subprocess.Popen(command(*argv), env=success_env())
+    command = [sys.executable, str(SCRIPT), *map(str, argv)]
+    proc = subprocess.Popen(command, env=success_env())
     progress = killed / "progress.jsonl"
     deadline = time.time() + 60
     while time.time() < deadline and proc.poll() is None:
-        if progress.exists() and jsonl(progress):
+        if progress.exists() and read_jsonl(progress):
             break
         time.sleep(0.01)
     proc.kill()
     proc.wait(timeout=10)
-    done = len(jsonl(progress))
+    done = len(read_jsonl(progress))
     assert 1 <= done < SEEDS, f"the kill left {done} of {SEEDS} seeds done"
     result = run(*argv)
     assert result.returncode == 0, result.stderr
-    seeds = sorted(e["seed"] for e in jsonl(progress))
+    seeds = sorted(e["seed"] for e in read_jsonl(progress))
     assert seeds == list(range(SEEDS)), seeds
-    assert jsonl(killed / "examples.jsonl") == examples
+    assert read_jsonl(killed / "examples.jsonl") == examples
 
 print("ok")

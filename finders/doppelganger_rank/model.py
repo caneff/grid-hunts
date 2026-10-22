@@ -137,6 +137,16 @@ class RankModel:
         m.Add(1 + sum(below) == clue["rank"])
         self.clues.append(clue)
 
+    def _copy(self, hints=None):
+        """A copy of the model and its grid variables, in `self.x`'s order,
+        with no hint but `hints`, one value per variable in that order."""
+        m = self.model.clone()
+        m.ClearHints()
+        x = [m.GetIntVarFromProtoIndex(v.Index()) for v in self.x.values()]
+        for var, value in zip(x, hints or (), strict=hints is not None):
+            m.AddHint(var, value)
+        return m, x
+
     def _grid(self, values):
         n = self.n
         return tuple(tuple(values[r * n + c] for c in range(n)) for r in range(n))
@@ -147,11 +157,7 @@ class RankModel:
         warm start that changes no verdict. Leaves the model unchanged."""
         m, x = self.model, list(self.x.values())
         if hint is not None:
-            m = self.model.clone()
-            m.ClearHints()
-            x = [m.GetIntVarFromProtoIndex(v.Index()) for v in self.x.values()]
-            for (r, c), var in zip(self.x, x, strict=True):
-                m.AddHint(var, hint[r][c])
+            m, x = self._copy([hint[r][c] for r, c in self.x])
         result = check_uniqueness(m, x, time_limit=time_limit, workers=workers)
         return RuleCheck(
             result.status,
@@ -164,11 +170,7 @@ class RankModel:
         on one worker: `RuleCheck("found", grid)`, `RuleCheck("infeasible")`
         when the clues have none, or `RuleCheck("timeout")`. Leaves the model
         unchanged."""
-        m = self.model.clone()
-        m.ClearHints()
-        x = [m.GetIntVarFromProtoIndex(v.Index()) for v in self.x.values()]
-        for var in x:
-            m.AddHint(var, rng.randint(0, self.n))
+        m, x = self._copy([rng.randint(0, self.n) for _ in self.x])
         solver = cpsat.solver(time_limit)
         # Presolve's symmetry breaking pins the grid whatever the hints say:
         # 6 grids in 40 seeds on an empty 4x4, every one with r1c1 = 0.
@@ -186,8 +188,8 @@ class RankModel:
         """Whether every solution keeps `mark`, a board file's
         `{"kind": "digit", "cell", "digit"}` or `{"kind": "missing", "unit",
         "digit"}`: one solve of a copy of the model with the mark negated."""
-        m = self.model.clone()
-        x = {c: m.GetIntVarFromProtoIndex(v.Index()) for c, v in self.x.items()}
+        m, grid = self._copy()
+        x = dict(zip(self.x, grid, strict=True))
         if mark["kind"] == "digit":
             r, c = rules.parse_cell(mark["cell"])
             m.Add(x[r, c] != mark["digit"])

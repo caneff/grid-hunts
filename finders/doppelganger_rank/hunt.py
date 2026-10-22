@@ -22,10 +22,9 @@ solutions keep the target's rank at its place, ties broken by the seed's
 rng. The sample is `--pool` draws of `RankModel.sample` on the current
 clues, the target and repeats left out. Each added clue drops the sampled
 grids it rules out, and when fewer than `--pool-floor` are left the next
-pick draws a fresh sample. `--pool 0`, the default since #72, draws none,
-so every place ties and the pick is the seed's rng alone, #69's uniform
-pick: on Chris's 9x9 opening `--pool 16` was 11 times slower on the same
-seeds and found no smaller hit (the decision log). At `unique`, the hunt
+pick draws a fresh sample. `--pool 0`, the default, draws none, so every
+place ties and the pick is the seed's rng alone, a uniform pick. At
+`unique`, the hunt
 protocol's minimiser (`finders/hunt/minimizer.py`) drops each added clue the
 board stays unique without; the board's own clues are never dropped. The
 one grid left is the target.
@@ -58,19 +57,18 @@ reason. `links DIR` writes a SudokuMaker link per verified hit
 (`links.py`). The seeds run one after another, so `--workers` other than 1
 is refused.
 
-Every check of a seed is hinted with its target (#72), a warm start that
-changes no verdict: on Chris's 9x9 opening it took the add loop's second
-grids from 2.1 s to 1.1 s each and found a target's rank twin after 3 to 6
-clues in place of 15 or 16. Every CP-SAT call runs on one worker but the
+Every check of a seed is hinted with its target, a warm start that
+changes no verdict. Every CP-SAT call runs on one worker but the
 minimiser's, which run on `--proof-workers` (1 unless given). They answer
-only unique or not, so more workers change no hit; the add loop stays on
-one, since the second grid it reads would then change from run to run.
-The measurements behind both, and behind `--pool 0`, are in the decision
-log, `docs/research/2026-10-22-doppelganger-rank-decision-log.md`.
+only unique or not, so more workers change no hit, and a hunt resumes
+under another `--proof-workers`; the add loop stays on one, since the
+second grid it reads would then change from run to run. A hunt resumes
+only on the board it started with: its size, box and clues. The
+measurements behind the defaults are in the decision log,
+`docs/research/2026-10-22-doppelganger-rank-decision-log.md`.
 """
 
 import argparse
-import json
 import sys
 import time
 from collections import Counter
@@ -86,12 +84,12 @@ import rules
 from check import one_line, read_board
 from dedupe import IDENTITY
 from driver import run
+from hunt_dir import read_hunt, seed_lines, summary_command
 from links import write_links
 from minimizer import strip
 from model import RankModel
 from protocol import Empty, Verdict
 from reprove import reprove
-from verified_io import example_verdicts
 
 __all__ = [
     "DEFAULTS",
@@ -164,7 +162,7 @@ class DoppelgangerRankFinder:
         max_seconds,
         pool,
         pool_floor,
-        proof_workers=1,
+        proof_workers,
     ):
         self.board = board
         self.time_limit = time_limit
@@ -181,13 +179,14 @@ class DoppelgangerRankFinder:
     def config(self):
         return {
             "board": self.board,
+            "size": self.n,
+            "box": self.box and list(self.box),
             "clues": self.clues,
             "time_limit": self.time_limit,
             "max_clues": self.max_clues,
             "max_seconds": self.max_seconds,
             "pool": self.pool,
             "pool_floor": self.pool_floor,
-            "proof_workers": self.proof_workers,
         }
 
     def target(self, rng, time_limit):
@@ -342,10 +341,6 @@ class DoppelgangerRankFinder:
         )
 
 
-def _jsonl(path):
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
-
-
 def _hit_line(kind, record):
     clues = ", ".join(
         f"{rules.place_name((c['line'], c['end']))} {c['rank']}"
@@ -359,19 +354,7 @@ def _hit_line(kind, record):
 
 def summary(out):
     """What a hunt in `out` found, as lines of text."""
-    events = [
-        e for e in _jsonl(out / "progress.jsonl") if e.get("event") == "seed_done"
-    ]
-    examples = _jsonl(out / "examples.jsonl")
-    run_json = json.loads((out / "run.json").read_text())
-    verdicts = example_verdicts(out, run_json["argv"], examples)
-    hits = [r for r, v in zip(examples, verdicts, strict=True) if v == "hit"]
-    unchecked = [r for r, v in zip(examples, verdicts, strict=True) if v == "unchecked"]
-    rejected = [
-        (r, v)
-        for r, v in zip(examples, verdicts, strict=True)
-        if v not in ("hit", "unchecked")
-    ]
+    _run, events, hits, unchecked, rejected = read_hunt(out)
     seeds = sorted(e["seed"] for e in events)
     span = f"{len(seeds)} seeds" + (f" ({seeds[0]}..{seeds[-1]})" if seeds else "")
 
@@ -411,12 +394,7 @@ def summary(out):
         )
     if rejected:
         text.append(f"{len(rejected)} candidates rejected by `hunt.py verify`")
-    for e in events:
-        if e["outcome"] == "empty":
-            text.append(f"seed {e['seed']}: {e['empty_reason']}")
-        elif e["outcome"] == "rejected":
-            reason = e.get("rejected_reason", "no reason given")
-            text.append(f"seed {e['seed']}: rejected, {reason}")
+    text.extend(seed_lines(events))
     text.extend(_hit_line("hit", r) for r in sorted(hits, key=lambda r: r["added"]))
     text.extend(_hit_line("unchecked candidate", r) for r in unchecked)
     for record, reason in rejected:
@@ -442,22 +420,7 @@ def main(argv):
             print(f"{skipped} candidates skipped: not verified hits (`summary {out}`)")
         return 0
     if argv and argv[0] == "summary":
-        if len(argv) != 2:
-            print("usage: hunt.py summary DIR", file=sys.stderr)
-            return 2
-        out = Path(argv[1])
-        if not (out / "run.json").exists():
-            print(
-                f"hunt.py summary: {out} holds no hunt (no run.json)", file=sys.stderr
-            )
-            return 2
-        try:
-            text = summary(out)
-        except ValueError as error:
-            print(f"hunt.py summary: {error}", file=sys.stderr)
-            return 2
-        print("\n".join(text))
-        return 0
+        return summary_command(argv, summary)
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--board")
     for knob, default in DEFAULTS.items():

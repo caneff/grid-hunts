@@ -19,14 +19,15 @@ def read_verified(path):
 
 def example_verdicts(out, run_argv, examples):
     """Per example, "hit" (passed `verify`), "unchecked", or the reason
-    `hunt.py verify` rejected it. A hunt without `--no-verify` wrote only
-    examples that passed `verify`. Raises when verified.jsonl does not cover
-    exactly this examples.jsonl."""
-    if not driver_args(run_argv).no_verify:
-        return ["hit"] * len(examples)
+    `hunt.py verify` rejected it. verified.jsonl, when there is one, is the
+    verdict, whether or not the hunt verified as it ran: a later `verify`
+    that rejects an example overrules the hunt's own. With none, a hunt
+    without `--no-verify` wrote only examples that passed `verify`. Raises
+    when verified.jsonl does not cover exactly this examples.jsonl."""
     path = out / "verified.jsonl"
     if not path.exists():
-        return ["unchecked"] * len(examples)
+        hit = not driver_args(run_argv).no_verify
+        return ["hit" if hit else "unchecked"] * len(examples)
     stamp, verdicts = read_verified(path)
     if stamp["verified_examples"] != len(examples):
         raise ValueError(

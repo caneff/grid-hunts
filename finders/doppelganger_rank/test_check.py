@@ -12,8 +12,11 @@ key (`brute.py`), which takes no part in the check.
 - A mark is `held` exactly when every key grid of the board keeps it, and a
   `NOT HELD` mark names a key grid that breaks it. Exit 0 only when every
   mark held.
-- The tie at 6x6: two places both rank 1 and a third ranked 3, which only a
-  tie can give. The check finds a solution, and the reader agrees with it.
+- The tie at 6x6: two places both rank 2 and a third ranked 4, which only a
+  tie can give. 6x6 has no brute-force key, so the second model
+  (`reprove.py`), written apart from the check's, is the key: both say
+  `not_unique`. The check finds a solution, and the reader agrees with it.
+- A mark whose solve gets no time is `timeout`, never `held`.
 - An empty 6x6 and an empty 9x9 board are not unique, and each printed
   solution keeps every rule by the reader.
 - A board given no time is a timeout and checks no mark. A board file the
@@ -34,7 +37,10 @@ sys.path.insert(0, str(HERE))
 
 import brute
 import rules
-from printed import solutions
+from check import read_board
+from model import MarkCheck, RankModel
+from printed import grid_of, solutions
+from reprove import reprove
 
 CHECK = HERE / "check.py"
 FIXTURES = HERE / "fixtures"
@@ -48,14 +54,13 @@ def run(*args):
 
 def broken_by(line):
     """The grid on a `  broken by: r1 0231 r2 ...` line."""
-    words = line.removeprefix("  broken by: ").split()
-    return tuple(tuple(map(int, word)) for word in words[1::2])
+    return grid_of(line.removeprefix("  broken by: "))
 
 
 def keeps(grid, mark):
     reading = rules.read(grid, brute.BOX)
     if mark["kind"] == "digit":
-        r, c = int(mark["cell"][1]) - 1, int(mark["cell"][3]) - 1
+        r, c = rules.parse_cell(mark["cell"])
         return grid[r][c] == mark["digit"]
     return reading.missing[mark["unit"]] == mark["digit"]
 
@@ -119,7 +124,9 @@ assert done.stdout.splitlines()[-5:] == [
 done = run(FIXTURES / "tie_6x6.json", "--time-limit", "30")
 out = done.stdout.splitlines()
 assert done.returncode == 0, (done.returncode, done.stdout, done.stderr)
-assert out[0] in ("3 rank clues: unique", "3 rank clues: not_unique"), out
+tie = json.loads((FIXTURES / "tie_6x6.json").read_text())
+assert reprove(6, (2, 3), tie["clues"], 30.0).status == "not_unique"
+assert out[0] == "3 rank clues: not_unique", out
 grid = solutions(out)[0]
 reading = rules.read(grid, (2, 3))
 assert reading.violations == [], reading.violations
@@ -129,6 +136,11 @@ assert reading.ranks["c5", "top"] == 4, reading.ranks
 assert 3 not in reading.ranks.values(), reading.ranks
 ranks = [int(w) for line in out for w in re.findall(r"(\d+) from the", line)]
 assert sorted(ranks[:24]) == sorted(reading.ranks.values()), ranks
+
+
+n, box, opening, marks = read_board(FIXTURES / "opening_9x9.json")
+rushed = RankModel(n, box, opening).mark_holds(marks[0], time_limit=1e-9)
+assert rushed == MarkCheck("timeout"), rushed
 
 
 def board_file(tmp, doc):

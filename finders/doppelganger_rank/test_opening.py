@@ -9,10 +9,10 @@ that run:
 - Every mark held: r1c1 = 8, r1c9 = 1, r5c1 = 9, r5c9 = 0, c9 misses 9.
   Each printed solution keeps each mark. Exit 0.
 
-The leading-digit buckets (#75) took the five mark proofs from 49.9 s to
-under 1 s on one worker. The test gives each solve 10 s: the model without
-them times out on three marks, so a lost speed-up fails here, and a slower
-machine still has ten times the room it needs.
+The test gives each solve 10 s. A model without the leading-digit buckets
+(#75) times out on at least one mark at that limit, so a lost speed-up
+fails here; with them all five proofs take well under a second on one
+worker (the decision log has the timings).
 
     uv run finders/doppelganger_rank/test_opening.py
 """
