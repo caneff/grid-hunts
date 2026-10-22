@@ -219,7 +219,12 @@ README before reusing anything there.
   compared digit by digit in clauses; #70), refusing a second grid or a
   time limit reached, and `hunt.py summary DIR` lists hits fewest clues
   first and splits the seeds into found, proven infeasible, timed out and
-  capped; `test_hunt.py` runs it at 4x4 in the gate. Rulings and runs:
+  capped; `test_hunt.py` runs it at 4x4 in the gate. `hunt.py links DIR`
+  writes a SudokuMaker link per verified hit to `DIR/links/<seed>.txt` in
+  Chris's opening layout (`links.py`, #71), the solution entered and the
+  rank clues as cosmetic text; `test_links.py` decodes them. The link
+  helpers shared with the U-Bahn finders are `finders/hunt/hunt_dir.py`.
+  Rulings and runs:
   `docs/research/2026-10-22-doppelganger-rank-decision-log.md`.
 - `archive/finders/galaxy-copycat/`'s write-ups live in `docs/research/2026-09-14-copycat-scan.md`
   and `docs/research/2026-09-14-galaxy-copycat-design.md`; its boards are

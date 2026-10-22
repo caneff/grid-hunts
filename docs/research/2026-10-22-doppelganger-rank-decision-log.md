@@ -276,3 +276,43 @@ boards against the answer key, `tie_6x6`, the empty 6x6 and 9x9),
 - **The leading-digit one-hot is posted for clued places only**, since only
   a clue's bucket bounds read it. Other numbers' leads enter as the cell
   variable itself.
+
+## SudokuMaker links (#71)
+
+`hunt.py links DIR` writes `DIR/links/<seed>.txt` per verified hit
+(`links.py`'s docstring states the layout). The link test decodes each
+written link against its record at 4x4 and at 9x9 (`test_links.py`).
+
+**The first 9x9 hit.** On 2026-10-22, on this box, one worker, `hunt.py
+--board fixtures/opening_9x9.json --seeds 0:2 --time-limit 120
+--max-seconds 600` took 3 min 36 s. Seed 0 ended `no separating clue`
+after 18 clues. Seed 1 found a verified hit with 14 added clues (18 in
+all). Its logs are `fixtures/links_9x9/`, the 9x9 input of the link test
+only; #72 owns the 9x9 hunt and its recorded hit.
+
+**The live-app check.** That hit's link, opened in the live app
+(v2026.10.05-a3aef4c) with `shot-scraper`, 2026-10-22:
+`2026-10-22-doppelganger-rank-first-link.png`. The 13x13 canvas shows the
+grid, the three notespaces and every clue as in Chris's drawing. The top
+and left clues sit outside the canvas, so no extra row or column was
+needed. Every digit, 0 included, shows as entered, none as a given, and
+the app marks no conflict. The five opening marks hold on this hit:
+r1c1 = 8, r1c9 = 1, r5c1 = 9, r5c9 = 0, and c9 misses 9.
+
+**Worker's choices (#71), flag if you disagree:**
+
+- **The layout grows with n**: an n + 4 canvas, the row notespace at column
+  n + 3, the column notespace at row n + 3, and the box notespace in the
+  bottom-right corner shaped as the boxes are. At 9x9 that is Chris's
+  measured layout. It lets the 4x4 hunt test reach `links` in the gate.
+- **Each notespace is one region**, so the app draws it with a heavy
+  border. Chris's drawing shades the row and column notespaces without
+  one. Their digits are all different under the Doppelganger rule, so the
+  region adds no wrong constraint. Making them no-region cells is a
+  one-line change.
+- **A clue's text is size 0.5**, twice QQRR's 0.25, to read like the
+  drawing's clue numbers.
+- **`links` writes verified hits only.** It skips an unchecked or rejected
+  candidate of a `--no-verify` hunt and says how many it skipped.
+- **The type-0 "Given digits" constraint stays** with no givens: every
+  SudokuMaker document here carries it. It checks nothing.
