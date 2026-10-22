@@ -206,3 +206,22 @@ the cells in a shuffled order, picking the random half of each domain:
   ticket names.
 - **`verified_io.example_verdicts`** is `halver_hunt`'s old `_verdicts`,
   moved into `finders/hunt/` so both hunts' `summary` read it.
+
+## The second-model re-proof in `verify` (#70)
+
+Worker choices, not rulings:
+
+- **`reprove.py` shares no code with `model.py` or `rules.py`**: it has its
+  own unit and reading-order geometry, and imports only `sudoku_kit` and
+  OR-Tools. A cell is n + 1 booleans with an order ladder (digit at least k);
+  a missing digit is a boolean per digit; two numbers compare digit by digit
+  as a chain of clauses, never as summed integers. It has no leading-digit
+  buckets, so it stays apart from #75's change to `RankModel`.
+- **`verify` runs the re-proof after the rule reader**, under the hunt's
+  `--time-limit`, and refuses `not unique: a second grid ...` or
+  `timeout: ...`. It also refuses a `unique` re-proof whose grid is not the
+  hit's solution, and any other status, naming it.
+- **Time, one worker, 2026-10-22, a single run each:** `tie_6x6.json`
+  0.2 s on `model.py`, 0.3 s on the re-proof; `opening_9x9.json` 2.9 s and
+  1.8 s. Both models said `not_unique` on both boards. So at these sizes
+  the re-proof costs about what the hunt's own check does.
