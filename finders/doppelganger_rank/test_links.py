@@ -12,7 +12,9 @@ Chris's layout (#66 § Links), each decoded and checked against its record:
 - No constraint but the givens (type 0), the regions (1) and the text
   (2002), and no answer check.
 
-The layout cells are written out here from Chris's drawing
+`fixtures/links_9x9/` is the logs of a 9x9 hunt from Chris's opening with
+one verified hit, an input to this test only. The layout cells are written
+out here from Chris's drawing
 (`docs/research/2026-10-22-doppelganger-rank-opening.png`) at 9x9, and at
 4x4 as the same drawing shrunk, not taken from `links.py`.
 
@@ -20,6 +22,7 @@ The layout cells are written out here from Chris's drawing
 """
 
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -169,5 +172,14 @@ with tempfile.TemporaryDirectory() as tmp:
     assert len(found) == 4, found
     for _seed, record, doc in found:
         check(doc, record)
+
+    # Chris's 9x9 layout, on the hit of a 9x9 hunt from his opening (seed 1
+    # of two, 14 added clues, run 2026-10-22); `links` writes into the
+    # directory, so it reads a copy.
+    nine = tmp / "links_9x9"
+    shutil.copytree(HERE / "fixtures" / "links_9x9", nine)
+    ((seed, record, doc),) = links_of(nine)
+    assert seed == 1 and len(record["clues"]) == 18, record
+    check(doc, record)
 
 print("ok")
