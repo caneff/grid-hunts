@@ -34,7 +34,12 @@ A minimiser solve that times out ends the seed `timeout:` too, since the
 hit could then keep a clue it does not need.
 
 `verify` re-reads a hit with the rule reader (`rules.py`): every
-Doppelganger rule on its solution, and every clue's rank. `record` writes the
+Doppelganger rule on its solution, and every clue's rank. Then it re-proves
+the board unique on the second model (`reprove.py`, #70), which shares no
+code with `model.py`, within `--time-limit`. It refuses a hit the re-proof
+finds a second grid for (`not unique: a second grid ...`, naming it), and
+one it reaches the time limit on (`timeout: ...`), never read as unique.
+`record` writes the
 board's size and box, every clue (the board's, then the `added` ones),
 the added-clue count and the solution, so a record is read back with no
 board file. `summary DIR` lists the verified hits, fewest added clues first,
@@ -57,12 +62,13 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 
 # isort: split
 import rules
-from check import read_board
+from check import one_line, read_board
 from dedupe import IDENTITY
 from driver import run
 from minimizer import strip
 from model import RankModel
 from protocol import Empty, Verdict
+from reprove import reprove
 from verified_io import example_verdicts
 
 __all__ = ["DEFAULTS", "DoppelgangerRankFinder", "Hit", "separating"]
@@ -214,6 +220,18 @@ class DoppelgangerRankFinder:
         broken = reading.violations + reading.broken_clues(hit.clues)
         if broken:
             return Verdict(False, "; ".join(broken))
+        proof = reprove(n, hit.box, hit.clues, self.time_limit)
+        if proof.status == "not_unique":
+            second = proof.second if proof.first == hit.solution else proof.first
+            return Verdict(False, f"not unique: a second grid {one_line(second)}")
+        if proof.status == "timeout":
+            return Verdict(
+                False, f"timeout: the re-proof reached {self.time_limit:g} s"
+            )
+        if proof.status != "unique":
+            return Verdict(False, f"the re-proof says {proof.status}")
+        if proof.first != hit.solution:
+            return Verdict(False, f"the re-proof's one grid is {one_line(proof.first)}")
         return Verdict(True)
 
     def record(self, hit):

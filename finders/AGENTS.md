@@ -212,7 +212,10 @@ README before reusing anything there.
   on the hunt protocol (#69): the halver hunt's target-grid loop adds rank
   clues from `separating`'s list until the board is unique, the protocol's
   minimiser drops each clue it stays unique without, `verify` re-reads a
-  hit with `rules.py`, and `hunt.py summary DIR` lists hits fewest clues
+  hit with `rules.py` and re-proves it unique on `reprove.py`, a second
+  CP-SAT model sharing no code with `model.py` (one-hot cells, numbers
+  compared digit by digit in clauses; #70), refusing a second grid or a
+  time limit reached, and `hunt.py summary DIR` lists hits fewest clues
   first and splits the seeds into found, proven infeasible, timed out and
   capped; `test_hunt.py` runs it at 4x4 in the gate. Rulings and runs:
   `docs/research/2026-10-22-doppelganger-rank-decision-log.md`.
