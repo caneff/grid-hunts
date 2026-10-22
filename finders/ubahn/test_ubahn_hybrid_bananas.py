@@ -9,7 +9,11 @@ force, each engine and the CLI must all say so. The condition is held to
 the rule reader with a piece count on 5x5, listed in full, and with the
 blank strip on 6x6, by seed.
 
-One worker; about fifty seconds.
+One worker.
+
+A slow test, outside the gate: `just test-slow` runs it (tests/all.sh's
+`finder_slow`). Its time on one core is in
+`docs/research/2026-10-22-ubahn-suite-times.md`.
 
     uv run finders/ubahn/test_ubahn_hybrid_bananas.py
 """

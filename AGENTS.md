@@ -34,7 +34,8 @@ Retiring a finder is `git mv` to `archive/finders/` plus its README; reviving on
 - **Seam**: `just check`
 - **Narrowed**: `bash tests/all.sh --changed origin/main` — lint, the runner's test, the Pants edge check, and the suites Pants lists among the transitive dependents of the changed files; a `.md` or `archive/` path changes nothing; `pyproject.toml`, `uv.lock`, `pants.toml`, `justfile`, `tests/`, `.github/`, a deleted file, a file Pants cannot place (no BUILD target owns it, such as a non-`.md` `docs/` file) or no answer from Pants widens the run to every non-slow suite, and the last line ends `(widened: <why>)`; the rules are in the header of `tests/all.sh`, the BUILD files in `docs/pants.md`
 - **Blind to**: the slow tests (`just test-slow`: the halver/between and
-  halver/lockout hunts and the lockout 23-line board), a hunt's own output,
+  halver/lockout hunts, the lockout 23-line board and the five slowest U-Bahn
+  suites), a hunt's own output,
   and how a found grid reads once it is built into a puzzle link
 
 ## Commands
