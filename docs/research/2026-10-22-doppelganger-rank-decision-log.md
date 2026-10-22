@@ -552,3 +552,15 @@ its test's own assertion:
   hunt of record passed 8.
 - **120 seeds**: at the timing runs' 1 hit in 4 seeds, about 30 hits in
   about 15 minutes. The run's own rate was lower, 16 in 120.
+
+## Closing check: the recorded hit opened in the live app (spec #66, P4)
+
+2026-10-22, SudokuMaker v2026.10.05-a3aef4c, `shot-scraper` at 1400x1100:
+seed 72's link (`2026-10-22-doppelganger-rank-9x9-hunt/seeds-60-120/links/72.txt`,
+after the P3 region change) opens as Chris's layout. The 9x9 grid and its
+boxes are bordered; the row and column notespaces are unbordered; each of
+the box notespace's nine cells is bordered. All 15 rank clues read past
+their lines' ends (34 19 36 27 6 above, 35 8 1 25 left, 31 4 15 right,
+32 10 28 below), and the entered solution is intact (r1 843029671 ...
+r9 634801257, missing digits in the notespaces). No screenshot is
+committed: a PNG under `docs/research/` widens every narrowed gate.
