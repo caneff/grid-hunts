@@ -59,12 +59,14 @@ cd "$root" || exit 1
 #                  halver/lockout 23-line board, about 200 s; the
 #                  halver/lockout hunt from the empty board plus its verify;
 #                  the five slowest U-Bahn suites, timed in
-#                  docs/research/2026-10-22-ubahn-suite-times.md, #77).
+#                  docs/research/2026-10-22-ubahn-suite-times.md, #77; the
+#                  Doppelganger rank 9x9 hunt, about a minute, #72).
 #   finder_pytest: the pytest suites, run as `uv run pytest <file> -q`.
 finder_slow="finders/halver_between/test_hunt.py finders/halver_lockout/test_unique_23.py finders/halver_lockout/test_hunt.py"
 finder_slow="$finder_slow finders/ubahn/test_ubahn_fewest_markings.py finders/ubahn/test_ubahn_hybrid_bananas.py"
 finder_slow="$finder_slow finders/ubahn/test_ubahn_hybrid_hunt.py finders/ubahn/test_ubahn_fewest_markings_e2e.py"
 finder_slow="$finder_slow finders/ubahn/test_ubahn_brute.py"
+finder_slow="$finder_slow finders/doppelganger_rank/test_hunt_9x9.py"
 finder_pytest="finders/counting_shaded/test_counting_shaded.py"
 
 # The suites every --changed selection keeps: the runner's own test, and the

@@ -200,6 +200,44 @@ README before reusing anything there.
   format. `fixtures/` holds the 9x9 test boards (infeasible, unique, not
   unique, the four-diamond board, and the 23-line board that
   `test_unique_23.py` checks in `just test-slow`), test cases and not hits.
+- `finders/doppelganger_rank/` is the Doppelganger + Full Rank finder (spec
+  #66; terms in `GLOSSARY.md`, rules and sources in
+  `docs/research/2026-10-22-doppelganger-full-rank-rules.md`), at 4x4, 6x6
+  and 9x9: `model.py` the CP-SAT model (digits 0..n, a missing digit per
+  unit, a clue's rank as 1 plus a count of strictly-less literals),
+  `rules.py` the solver-free rule reader (every rule, each unit's missing
+  digit, the 4n numbers and their ranks, ties sharing a rank), and
+  `brute.py` the 4x4 answer key, all 768 grids, none with a tie.
+  `check.py BOARD [--time-limit S]` prints a board file's status, one
+  solution (two for not unique) with every rank and missing digit, and each
+  mark's verdict in `halver_report`'s format; its docstring gives the board
+  file format. `fixtures/` holds the test boards, among them
+  `opening_9x9.json`, Chris's opening, which `test_opening.py` checks in the
+  gate (#68). `hunt.py --board BOARD --out DIR --seeds A:B` is its hunt
+  on the hunt protocol (#69): the halver hunt's target-grid loop adds rank
+  clues from `separating`'s list until the board is unique, each check
+  hinted with the target (#72), picked uniformly (`--pool 0`, the default
+  since #72) or the most restricting first by a sample of the board's
+  solutions (`--pool 16`, `--pool-floor`; #79), the protocol's
+  minimiser drops each clue it stays unique without, on
+  `--proof-workers K` CP-SAT workers (1 unless given), `verify` re-reads a
+  hit with `rules.py` and re-proves it unique on `reprove.py`, a second
+  CP-SAT model sharing no code with `model.py` (one-hot cells, numbers
+  compared digit by digit in clauses; #70), refusing a second grid or a
+  time limit reached, and `hunt.py summary DIR` lists hits fewest clues
+  first and splits the seeds into found, proven infeasible, timed out and
+  capped; `test_hunt.py` runs it at 4x4 in the gate. The 9x9 hunt of
+  record, 16 hits in 120 seeds, is
+  `docs/research/2026-10-22-doppelganger-rank-9x9-hunt/`; its fewest-clue
+  hit is `fixtures/hit_9x9.json`, which `test_spec_66_e2e.py` re-checks in
+  the gate and `test_hunt_9x9.py` hunts again in `just test-slow` (#72).
+  `hunt.py links DIR`
+  writes a SudokuMaker link per verified hit to `DIR/links/<seed>.txt` in
+  Chris's opening layout (`links.py`, #71), the solution entered and the
+  rank clues as cosmetic text; `test_links.py` decodes them. The link
+  helpers shared with the U-Bahn finders are `finders/hunt/hunt_dir.py`.
+  Rulings and runs:
+  `docs/research/2026-10-22-doppelganger-rank-decision-log.md`.
 - `archive/finders/galaxy-copycat/`'s write-ups live in `docs/research/2026-09-14-copycat-scan.md`
   and `docs/research/2026-09-14-galaxy-copycat-design.md`; its boards are
   `docs/research/2026-09-14-galaxy-copycat/boards/`.

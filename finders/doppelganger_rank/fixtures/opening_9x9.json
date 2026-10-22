@@ -1,0 +1,17 @@
+{
+  "size": 9,
+  "box": [3, 3],
+  "clues": [
+    {"line": "c1", "end": "top", "rank": 34},
+    {"line": "c9", "end": "top", "rank": 6},
+    {"line": "r5", "end": "left", "rank": 35},
+    {"line": "r5", "end": "right", "rank": 4}
+  ],
+  "marks": [
+    {"kind": "digit", "cell": "r1c1", "digit": 8},
+    {"kind": "digit", "cell": "r1c9", "digit": 1},
+    {"kind": "digit", "cell": "r5c1", "digit": 9},
+    {"kind": "digit", "cell": "r5c9", "digit": 0},
+    {"kind": "missing", "unit": "c9", "digit": 9}
+  ]
+}

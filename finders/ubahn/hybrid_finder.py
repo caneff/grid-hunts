@@ -219,14 +219,9 @@ import network
 import penpa
 from dedupe import IDENTITY
 from driver import run, save_render_atomic
+from hunt_dir import replace_links, seeded_examples
 from protocol import Empty, Verdict
-from ubahn_finder import (
-    DEFAULT_SIDE,
-    DEFAULT_TIMEOUT,
-    UbahnFinder,
-    replace_links,
-    seeded_examples,
-)
+from ubahn_finder import DEFAULT_SIDE, DEFAULT_TIMEOUT, UbahnFinder
 from ubahn_finder import Candidate as PlainCandidate
 
 # Each engine offers `grid(conditions, rng, *, time_limit)`, a
@@ -888,7 +883,7 @@ def fewest_markings(conditions, engine, timeout, out, max_size, workers):
 
 def write_pictures(out, blank_strip=False, seed=None, png=None):
     """Draw the examples of the hunt in `out`, each under its seed
-    (`ubahn_finder.seeded_examples`): all of them to `out/renders/<seed>.png`,
+    (`hunt_dir.seeded_examples`): all of them to `out/renders/<seed>.png`,
     or the one at `seed` to `png`. The fifth strip is drawn when
     `blank_strip` is set or the record's own is. Returns the lines to print.
     Raises ValueError, naming the seed, on a record the finder refuses or a
@@ -945,7 +940,7 @@ def write_links(
     out, circles, numbers, blank_strip, battenberg=frozenset(), battenberg_only=False
 ):
     """Write `out/links/<seed>.txt`, one Penpa+ link per example of the hunt
-    in `out` (`ubahn_finder.seeded_examples`), showing the `circles`, the
+    in `out` (`hunt_dir.seeded_examples`), showing the `circles`, the
     `numbers` and the Battenberg markings on the windows of `battenberg`, and
     no other circle, number or marking. With `battenberg_only` the rules text
     says every checkerboard window is marked. The fifth strip is drawn
