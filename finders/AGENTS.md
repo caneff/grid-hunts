@@ -206,7 +206,10 @@ README before reusing anything there.
   `check.py BOARD [--time-limit S]` prints a board file's status, one
   solution (two for not unique) with every rank and missing digit, and each
   mark's verdict in `halver_report`'s format; its docstring gives the board
-  file format. `fixtures/` holds the test boards.
+  file format. `fixtures/` holds the test boards, among them
+  `opening_9x9.json`, Chris's opening, which `test_opening.py` checks in the
+  gate (#68). Rulings and runs:
+  `docs/research/2026-10-22-doppelganger-rank-decision-log.md`.
 - `archive/finders/galaxy-copycat/`'s write-ups live in `docs/research/2026-09-14-copycat-scan.md`
   and `docs/research/2026-09-14-galaxy-copycat-design.md`; its boards are
   `docs/research/2026-09-14-galaxy-copycat/boards/`.

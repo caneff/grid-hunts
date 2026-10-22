@@ -34,27 +34,16 @@ sys.path.insert(0, str(HERE))
 
 import brute
 import rules
+from printed import solutions
 
 CHECK = HERE / "check.py"
 FIXTURES = HERE / "fixtures"
-ROW = re.compile(r"^  (r\d) (\d+) ")
 
 
 def run(*args):
     return subprocess.run(
         [sys.executable, str(CHECK), *map(str, args)], capture_output=True, text=True
     )
-
-
-def solutions(out):
-    """The grids printed after each `solution <k>` line, in order."""
-    found = []
-    for line in out:
-        if re.fullmatch(r"solution \d", line):
-            found.append([])
-        elif found and (match := ROW.match(line)):
-            found[-1].append(tuple(map(int, match.group(2))))
-    return [tuple(grid) for grid in found]
 
 
 def broken_by(line):
