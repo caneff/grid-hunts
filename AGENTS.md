@@ -43,7 +43,8 @@ Retiring a finder is `git mv` to `archive/finders/` plus its README; reviving on
   ruff on `finders/` and `tests/`, `uv lock --check`, every
   `finders/**/test_*.py` except the slow ones, `tests/test_all_sh.py`
   (the runner's own test) and `tests/test_pants_edges.py` (the Pants edges). It is the full seam: CI runs it nightly, on a cron
-  line in `.github/workflows/ci.yml`, installing uv and the Pants launcher. A pull request and a
+  line in `.github/workflows/ci.yml`, installing uv and the Pants launcher;
+  a local run needs the launcher too (`docs/pants.md`). A pull request and a
   push to main run the narrowed gate, `bash tests/all.sh --changed
   origin/main` (a push uses the pushed range's base; a new branch or a
   force-push runs `just check` and says it widened). `--list --changed

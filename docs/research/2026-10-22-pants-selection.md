@@ -14,9 +14,15 @@ time: about 15 min, per the ticket (CI's serial full seam was 15 min 15 s).
 
 ## What Pants selects
 
-On a throwaway worktree of #76's branch with #69's diff applied (branch
-`implement-69` at `1e3875a`, against `origin/main` at `a678311`) plus a
-`finders/doppelganger_rank/BUILD`:
+On a throwaway worktree of #76's branch with `git diff
+origin/main...implement-69` applied (branch `implement-69` at `1e3875a`,
+against `origin/main` at `a678311`) plus a `finders/doppelganger_rank/BUILD`.
+That range holds #67 and #68 as well as #69, since spec #66's slices had not
+landed on main: all of `finders/doppelganger_rank/` is new in it, which is
+why its four suites are selected. #69's own change to shared code is the two
+edits above.
+
+The command:
 
 ```
 bash tests/all.sh --list --changed HEAD~1
@@ -29,6 +35,10 @@ bash tests/all.sh --list --changed HEAD~1
 | `doppelganger_rank`'s own tests | 4 |
 | importers of `verified_io` or `halver_hunt`, at any distance | 15 |
 | **Selected** | **24 of 67** |
+
+So the narrowed run is wider than the ticket's "only the importers": lint,
+the two always-run tests and the new finder's own suites ride along. The
+importers are the only suites outside the changed folder that it selects.
 
 The 15 importers: `halver_between` test_cli, test_propose, test_spec_39_e2e;
 `halver_lockout` test_cli, test_spec_52_e2e; `hunt/test_hunt_verify.py`;

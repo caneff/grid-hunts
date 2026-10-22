@@ -11,8 +11,10 @@ Pants 2.33.1, as `pants.toml` pins it: no daemon, one process, no result
 cache, the same settings as `caneff/sudokumaker-custom-constraints`. Install
 the launcher once per box
 (https://www.pantsbuild.org/stable/docs/getting-started/installing-pants);
-CI installs it with `pantsbuild/actions/init-pants`. With no `pants` on the
-PATH a narrowed run widens to the whole seam and says so.
+CI installs it with `pantsbuild/actions/init-pants`. The gate needs it, a
+local `just check` included: with no `pants` on the PATH a narrowed run's
+selection widens to the whole seam and says so, and `tests/test_pants_edges.py`,
+which every run holds, fails naming the missing launcher.
 
 ## Wiring a code directory
 
@@ -46,11 +48,14 @@ code_dir(edges={"test_report.py": ["./report.py:py"]})
 `tests/test_pants_edges.py` reads every finder source for a string naming a
 `.py` file (`"hunt.py"`, `HERE / "toy_finder.py"`) and fails on each one the
 source does not reach in Pants's graph, so a missing entry is a red gate, not
-a suite skipped in silence. It also holds a short table of known edges, each
-with the suites a change must and must not select.
+a suite skipped in silence. It fails the same way on a first-party import no
+source root resolves and on a test that does not reach the `conftest.py`
+beside it (pytest loads one; nothing imports it). Its docstring states how a
+name resolves. It also holds a short table of known edges, each with the
+suites a change must and must not select.
 
 Files a suite reads under `docs/` belong to no target, so a change to one
-widens the run, as before.
+widens the run.
 
 ## What was measured
 
