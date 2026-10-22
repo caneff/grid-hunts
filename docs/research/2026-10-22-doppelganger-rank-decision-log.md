@@ -382,7 +382,8 @@ went from 23 s to 42 s on this box (one run each, load average 3.4).
 **Worker's choices (#79), flag if you disagree:**
 
 - **The defaults are ranked, `--pool 16 --pool-floor 4`**, following the
-  ruling, although they are slower at 4x4 and 6x6 (above).
+  ruling, although they are slower at 4x4 and 6x6 (above). Superseded by
+  #72: the default is now `--pool 0` (§ The 9x9 hunt).
 - **The sample is drawn at the first pick, not before the first check.**
   A board that starts unique draws none. Otherwise this is the ruling's
   "before a seed's loop".
@@ -395,3 +396,156 @@ went from 23 s to 42 s on this box (one run each, load average 3.4).
 - **A refill draws `--pool` times again with the seed's rng**, under the
   seed's `--max-seconds`. The target is drawn before any sample, so each
   seed's target is the one #69 drew.
+
+## The 9x9 hunt (#72)
+
+The hunt of record on Chris's opening, and the three speed changes measured
+before it. All on this box (WSL2, 32 shared cores), OR-Tools 9.15. The
+timing runs used a scratch script that wraps `RankModel.check` and
+`RankModel.sample` to time each call around `DoppelgangerRankFinder.propose`,
+with `--time-limit 120 --max-seconds 1200` and one run each. The script was
+never committed.
+
+### Where a seed's time goes
+
+At `--pool 0`, before any change, seeds 0..3 (load average 1 to 3): 65 of
+the add loop's checks said `not_unique` and took 135.6 s, at most 15.4 s
+each. Its one `unique` check took 0.6 s. The minimiser's 15 `not_unique`
+trials took 42.5 s and its 2 `unique` ones 2.3 s. Targets took 0.1 to 0.3 s.
+The cost is in finding second grids, not in proving a board unique.
+
+### Warm starts (Chris's added scope, 2026-10-22)
+
+`RankModel.check` takes a `hint` grid, a CP-SAT solution hint for both of
+`check_uniqueness`'s solves. The same seeds, `--pool 0`, one worker:
+
+| hint | seed 0 | seed 1 | seed 2 | seed 3 | total |
+| --- | --- | --- | --- | --- | --- |
+| none | 10.6 s, inseparable after 15 | 87.7 s, hit, 13 added | 43.0 s, inseparable after 16 | 40.9 s, inseparable after 16 | 182.2 s |
+| the target | 1.1 s, inseparable after 3 | 54.1 s, hit, 13 added | 1.9 s, inseparable after 5 | 15.4 s, inseparable after 6 | 72.5 s |
+| the last second grid | 69.9 s, inseparable after 16 | stopped | | | |
+
+"Inseparable after k" is a seed that ended `no separating clue` after k
+added clues. **Kept: every check is hinted with the target**, in the add
+loop and in the minimiser: 2.5 times faster in all. The add loop's
+`not_unique` checks fell from 2.1 s to 1.1 s each on average. The hinted
+solver finds a second grid near the target, so it reaches a rank twin
+sooner. A rank twin is a grid that ranks like the target at every free
+place, and any one is a proof that no rank clue makes that target unique.
+The last-second-grid hint was 7 times slower on seed 0 and was stopped
+there. Seed 1's hit is the same with or without the hint.
+
+### The minimiser on 8 CP-SAT workers (Chris's added scope, 2026-10-22)
+
+`--proof-workers K` runs the minimiser's checks on K workers. Seed 1,
+target hint: the minimiser's 17 checks took 34.3 s on one worker and
+8.2 s on 8 (load average 3.5), and the hit was the same. The add loop
+stays on one worker. The ruling names the uniqueness proofs, and the
+loop's last check, its one `unique` proof, took under 1 s. On more workers
+the second grid the loop reads would change from run to run, and with it
+the clue added. The minimiser reads only unique or not, so its hit does
+not depend on the worker count. `test_hunt.py` checks this at 4x4, and
+`test_hunt_9x9.py` finds seed 72's hit on one worker, the hit the hunt of
+record found on 8.
+
+### Ranked against uniform pick (the controller's note, 2026-10-22)
+
+The same seeds, target hint, one worker each, `--pool 16` (#79's ranked
+default) against `--pool 0` (#69's uniform pick), load average 1.5 to 4:
+
+| seed | `--pool 0` | `--pool 16` |
+| --- | --- | --- |
+| 0 | 1.0 s, 1 draw, inseparable after 3 | 274.8 s, 177 draws, inseparable after 11 |
+| 1 | 51.4 s, 1 draw, hit, 13 added | 464.4 s, 225 draws, hit, 14 added |
+| 2 | 1.9 s, 1 draw, inseparable after 5 | 23.1 s, 49 draws, inseparable after 3 |
+| 3 | 14.7 s, 1 draw, inseparable after 6 | 14.0 s, 65 draws, inseparable after 4 |
+| **total** | **69.0 s** | **776.3 s** |
+
+"Draws" counts `RankModel.sample` calls, the target included. **`--pool 16`
+was 11 times slower and found no smaller hit**, so **`--pool 0` is now the
+default**. That applies the controller's recommendation, and Chris may
+overrule it. 707 s of `--pool 16`'s time went to the draws. `--pool 16`
+still gives the ranked pick, and `test_hunt.py` tests it with that flag.
+`test_hunt.py` fell from 42 s to 23 s on the new default. A run with no
+target hint, stopped early, had spent over 550 s on seed 0 at `--pool 16`,
+against 10.6 s at `--pool 0`.
+
+### The hunt of record
+
+    uv run finders/doppelganger_rank/hunt.py --board finders/doppelganger_rank/fixtures/opening_9x9.json \
+      --out docs/research/2026-10-22-doppelganger-rank-9x9-hunt/seeds-0-60 --seeds 0:60 \
+      --time-limit 120 --max-seconds 600 --proof-workers 8
+
+and the same over `--seeds 60:120` into `seeds-60-120`, at 03a5b8b. Each
+process ran under `job-run`. By MACHINE-LOAD.md, two processes ran at once,
+each on one worker in its add loop and 8 in its minimiser: at most 16
+workers on 32 cores. The load average was 0.9 at launch. Every other knob
+was a default: `--pool 0`, `--max-clues 36`. Wall times were 12 min 6 s
+for seeds 0..59 and 7 min 52 s for seeds 60..119. `hunt.py verify` on each
+directory (the rule reader, then the second model's re-proof, 30 s per
+hit) took 91.8 s and 49.0 s. Every hit passed both checks.
+
+**The split, 120 seeds (0..119):** found 16, proven infeasible 0, timed
+out 0, capped 0, no separating clue 104, duplicate 0, rejected 0. No
+seed hit a time limit or a budget, so every seed ended in a hit or a
+proof about its target.
+
+**The 16 verified hits**, by added clues after minimising: 11 (seed 72),
+12 (seeds 77, 83), 13 (seeds 1, 16, 27, 40, 42, 44, 45, 47, 87, 112) and 14
+(seeds 21, 50, 92). `hunt.py summary DIR` lists each hit with its clues and
+solution. Each hit's SudokuMaker link is `DIR/links/<seed>.txt`. Chris's
+five marks hold in every hit, as the check proved they hold in every
+solution of the opening (#68).
+
+**No separating clue, 104 seeds**, by the added clues at the stop: 0 (2
+seeds), 1 (13), 2 (7), 3 (16), 4 (18), 5 (15), 6 (5), 7 (11), 8 (1), 9 (4),
+10 (7), 11 (2), 12, 13 and 17 (1 each). Each is a proof about its target
+only: some other grid ranks as it does at every free place, so no set of
+rank clues makes that target unique. Two targets had a twin before any
+clue was added.
+
+**What the run covered.** 120 target grids, one per seed, drawn by
+`RankModel.sample` from the opening's solutions. For each one the run found
+a set of rank clues that makes it unique or proved that none exists. It
+says nothing about targets it did not draw. Its fewest added clues, 11, is
+the fewest this run found, not a proven minimum (spec #66 puts the proven
+minimum out of scope). An 11-clue hit means 15 rank clues in all.
+
+**The recorded hit.** Seed 72's hit is
+`finders/doppelganger_rank/fixtures/hit_9x9.json`: the record and the link the hunt wrote. `test_spec_66_e2e.py`
+re-checks it in the gate (14.7 s here). The model says unique, with the
+hit's grid as its one grid. The marks hold, `verify` passes it, and it
+refuses the hit with its last clue dropped and with no time. The record
+and the link are rebuilt exactly. `test_hunt_9x9.py` reruns seed 72 from
+the opening in `just test-slow` (46.5 s here) and expects that record, a
+`verify` pass, the summary and the same link.
+
+**Speedups not applied** (MACHINE-LOAD.md's list):
+
+- The add loop on 8 workers: outside the ruling, and it makes runs
+  irreproducible.
+- Screening a target for a rank twin before its loop: no test cheaper than
+  the loop itself is known.
+- More processes: two kept the box at half its cores, by MACHINE-LOAD.md.
+
+**Mutations**, each in a throwaway worktree under `.scratch/`, each red on
+its test's own assertion:
+
+- **`verify` skips the re-proof**: `test_spec_66_e2e.py` sees
+  `Verdict(ok=True)` for the hit with a clue dropped.
+- **The minimiser keeps every clue**: `test_hunt_9x9.py` sees a record
+  that is not the fixture's.
+- **The `--proof-workers 0` refusal stripped**: `test_hunt.py` sees the
+  hunt run and exit 0.
+
+**Worker's choices (#72), flag if you disagree:**
+
+- **Seed 72 is the recorded hit** because it has the fewest added clues
+  of the 16.
+- **The minimiser alone runs on `--proof-workers`.** The ruling's "last
+  step of a seed" is the add loop's final check, which the loop cannot
+  tell in advance and which took under 1 s.
+- **`--proof-workers` defaults to 1**, so a bare run stays box-safe. The
+  hunt of record passed 8.
+- **120 seeds**: at the timing runs' 1 hit in 4 seeds, about 30 hits in
+  about 15 minutes. The run's own rate was lower, 16 in 120.

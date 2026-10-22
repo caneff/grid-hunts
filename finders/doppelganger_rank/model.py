@@ -141,12 +141,18 @@ class RankModel:
         n = self.n
         return tuple(tuple(values[r * n + c] for c in range(n)) for r in range(n))
 
-    def check(self, time_limit=10.0):
-        """The five-status uniqueness of the grid's digits, on one worker.
-        Leaves the model unchanged."""
-        result = check_uniqueness(
-            self.model, list(self.x.values()), time_limit=time_limit, workers=1
-        )
+    def check(self, time_limit=10.0, hint=None, workers=1):
+        """The five-status uniqueness of the grid's digits, on `workers`
+        CP-SAT workers. `hint`, a grid, is a solution hint for both solves, a
+        warm start that changes no verdict. Leaves the model unchanged."""
+        m, x = self.model, list(self.x.values())
+        if hint is not None:
+            m = self.model.clone()
+            m.ClearHints()
+            x = [m.GetIntVarFromProtoIndex(v.Index()) for v in self.x.values()]
+            for (r, c), var in zip(self.x, x, strict=True):
+                m.AddHint(var, hint[r][c])
+        result = check_uniqueness(m, x, time_limit=time_limit, workers=workers)
         return RuleCheck(
             result.status,
             self._grid(result.first) if result.first else None,

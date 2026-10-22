@@ -22,8 +22,10 @@ solutions keep the target's rank at its place, ties broken by the seed's
 rng. The sample is `--pool` draws of `RankModel.sample` on the current
 clues, the target and repeats left out. Each added clue drops the sampled
 grids it rules out, and when fewer than `--pool-floor` are left the next
-pick draws a fresh sample. `--pool 0` draws none, so every place ties and
-the pick is the seed's rng alone, #69's uniform pick. At `unique`, the hunt
+pick draws a fresh sample. `--pool 0`, the default since #72, draws none,
+so every place ties and the pick is the seed's rng alone, #69's uniform
+pick: on Chris's 9x9 opening `--pool 16` was 11 times slower on the same
+seeds and found no smaller hit (the decision log). At `unique`, the hunt
 protocol's minimiser (`finders/hunt/minimizer.py`) drops each added clue the
 board stays unique without; the board's own clues are never dropped. The
 one grid left is the target.
@@ -53,8 +55,18 @@ the added-clue count and the solution, so a record is read back with no
 board file. `summary DIR` lists the verified hits, fewest added clues first,
 or "none found"; the seed split; and each seed that found nothing with its
 reason. `links DIR` writes a SudokuMaker link per verified hit
-(`links.py`). Every CP-SAT call runs on one worker and the seeds run one after
-another, so `--workers` other than 1 is refused.
+(`links.py`). The seeds run one after another, so `--workers` other than 1
+is refused.
+
+Every check of a seed is hinted with its target (#72), a warm start that
+changes no verdict: on Chris's 9x9 opening it took the add loop's second
+grids from 2.1 s to 1.1 s each and found a target's rank twin after 3 to 6
+clues in place of 15 or 16. Every CP-SAT call runs on one worker but the
+minimiser's, which run on `--proof-workers` (1 unless given). They answer
+only unique or not, so more workers change no hit; the add loop stays on
+one, since the second grid it reads would then change from run to run.
+The measurements behind both, and behind `--pool 0`, are in the decision
+log, `docs/research/2026-10-22-doppelganger-rank-decision-log.md`.
 """
 
 import argparse
@@ -93,8 +105,9 @@ DEFAULTS = {
     "time_limit": 30.0,
     "max_clues": 36,
     "max_seconds": 300.0,
-    "pool": 16,
+    "pool": 0,
     "pool_floor": 4,
+    "proof_workers": 1,
 }
 # The Empty reason's class, as `summary` names it in the split.
 CLASSES = {
@@ -143,13 +156,23 @@ def clue_of(place, rank):
 class DoppelgangerRankFinder:
     symmetry = IDENTITY
 
-    def __init__(self, board, time_limit, max_clues, max_seconds, pool, pool_floor):
+    def __init__(
+        self,
+        board,
+        time_limit,
+        max_clues,
+        max_seconds,
+        pool,
+        pool_floor,
+        proof_workers=1,
+    ):
         self.board = board
         self.time_limit = time_limit
         self.max_clues = max_clues
         self.max_seconds = max_seconds
         self.pool = pool
         self.pool_floor = pool_floor
+        self.proof_workers = proof_workers
         self.n, self.box, self.clues = None, None, []
         if board is not None:
             self.n, self.box, self.clues, _marks = read_board(Path(board))
@@ -164,6 +187,7 @@ class DoppelgangerRankFinder:
             "max_seconds": self.max_seconds,
             "pool": self.pool,
             "pool_floor": self.pool_floor,
+            "proof_workers": self.proof_workers,
         }
 
     def target(self, rng, time_limit):
@@ -211,7 +235,7 @@ class DoppelgangerRankFinder:
             check_limit = limit()
             if check_limit <= 0:
                 return Empty(f"capped: {self.max_seconds:g} s after {added} clues")
-            check = board.check(time_limit=check_limit)
+            check = board.check(time_limit=check_limit, hint=target)
             if check.status == "unique":
                 break
             if check.status == "timeout":
@@ -246,7 +270,11 @@ class DoppelgangerRankFinder:
             board = RankModel(
                 self.n, self.box, [clue_of(p, r) for p, r in trial.items()]
             )
-            status = board.check(time_limit=max(trial_limit, 0)).status
+            status = board.check(
+                time_limit=max(trial_limit, 0),
+                hint=target,
+                workers=self.proof_workers,
+            ).status
             if status == "timeout":
                 timed_out.append(trial_limit)
             return status == "unique"
@@ -438,6 +466,13 @@ def main(argv):
         )
     parser.add_argument("--workers", type=int, default=1)
     own, rest = parser.parse_known_args(argv)
+    if own.proof_workers < 1:
+        print(
+            f"hunt.py: refusing to run -- --proof-workers {own.proof_workers}: "
+            "a proof needs at least one CP-SAT worker",
+            file=sys.stderr,
+        )
+        return 2
     if own.workers != 1:
         print(
             f"hunt.py: refusing to run -- --workers {own.workers}: every seed "
