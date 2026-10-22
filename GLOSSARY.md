@@ -195,3 +195,28 @@ do not apply here; in this section, and only here, these mean the following.
 - **body** — the cells of a lockout line other than its two diamonds. A body
   may sit on both sides of the diamonds' range, and its cells take the
   board's extreme values (the halved 1, the plain 9) as freely as any other.
+
+### Doppelganger + Full Rank terms (`finders/doppelganger_rank/`)
+
+A 9x9 Doppelganger sudoku with Full Rank clues. Rules and sources:
+`docs/research/2026-10-22-doppelganger-full-rank-rules.md`. **Clue** and
+**value** already mean other things above; in this section they mean the
+following.
+
+- **doppelganger** — the board rule: every row, column and box holds one 0
+  and eight of the digits 1 to 9. The solver is not told where the 0s are.
+- **missing digit** — the one digit of 1 to 9 that a row, column or box does
+  not hold. No two rows miss the same digit, nor two columns, nor two boxes;
+  a 0's row, column and box miss three different digits.
+- **notespace** — the cells outside the grid where the solver writes the
+  missing digits: one cell per row in a strip right of the grid, one per
+  column in a strip below it, and a 3x3 for the boxes.
+- **rank clue** (**clue** here) — a number outside the grid at one end of a
+  row or column: the rank, 1 the lowest, of the number that row or column
+  makes read away from the clue, among the 36 numbers the 9 rows and 9
+  columns make read both ways. A 0 is read as the digit 0, so every number
+  has nine digits. Equal numbers share a rank: a number's rank is 1 more
+  than how many of the 36 are strictly smaller.
+- **mark** — a digit Chris entered on the opening board as a deduction from
+  its clues, in the grid or the notespace: checked against every solution,
+  never posted as a constraint. The halver section's **mark** in this rule.
