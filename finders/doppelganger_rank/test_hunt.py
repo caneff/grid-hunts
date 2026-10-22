@@ -116,6 +116,9 @@ with tempfile.TemporaryDirectory() as tmp:
     def spy(places, target, sample, rng):
         place = ranked(places, target, sample, rng)
         picks.append((place, len(sample)))
+        # The sample keeps only grids every clue added so far holds in.
+        for earlier, _ in picks[:-1]:
+            assert all(grid[earlier] == target[earlier] for grid in sample), picks
         return place
 
     hunt.most_restricting = spy
