@@ -8,7 +8,10 @@
   of its added clues.
 - `verify` refuses a planted record whose grid breaks a rule, and one whose
   clue its grid does not keep, naming each; it passes the record they were
-  planted from.
+  planted from. It refuses one whose grid keeps every rule and clue but is
+  not the board's only grid (a clue dropped), naming a second grid that
+  the key holds, and refuses a hit as timed out, never unique, when the
+  second model's re-proof gets no time.
 - `summary` lists the hits, fewest added clues first, and splits the seeds
   into found, proven infeasible, timed out and capped, the capped count
   labelled as no proof, on a hunt of each.
@@ -122,17 +125,28 @@ with tempfile.TemporaryDirectory() as tmp:
     clue = record["clues"][0]
     wrong = {**clue, "rank": clue["rank"] % 16 + 1}
     broken_clue = {**record, "clues": [wrong, *record["clues"][1:]]}
+    loose = {**record, "clues": record["clues"][1:]}
     with (planted / "examples.jsonl").open("a") as f:
-        for bad in (broken_rule, broken_clue):
+        for bad in (broken_rule, broken_clue, loose):
             f.write(json.dumps(bad) + "\n")
     result = run("verify", planted)
     assert result.returncode == 0, result.stderr
     stamp, *verdicts = jsonl(planted / "verified.jsonl")
-    assert [v["ok"] for v in verdicts] == [True, False, False], verdicts
+    assert [v["ok"] for v in verdicts] == [True, False, False, False], verdicts
     assert "holds" in verdicts[1]["reason"], verdicts[1]
     assert f"{clue['line']} from the {clue['end']} ranks" in verdicts[2]["reason"]
+    reason = verdicts[3]["reason"]
+    assert reason.startswith("not unique: a second grid "), reason
+    words = reason.removeprefix("not unique: a second grid ").split()
+    second = tuple(tuple(map(int, word)) for word in words[1::2])
+    _, keep = brute.classify(loose["clues"])
+    assert second in keep and second != grid(record), (second, record)
     _, lines = split(planted)
-    assert "2 candidates rejected by `hunt.py verify`" in lines, lines
+    assert "3 candidates rejected by `hunt.py verify`" in lines, lines
+
+    rushed = hunt.DoppelgangerRankFinder(None, 1e-9, 36, 300.0)
+    verdict = rushed.verify(rushed.candidate_from_record(record))
+    assert verdict == (False, "timeout: the re-proof reached 1e-09 s"), verdict
     assert any(line.startswith("hit, ") for line in lines), lines
 
     # The split on hunts that find nothing, each for its own reason.
