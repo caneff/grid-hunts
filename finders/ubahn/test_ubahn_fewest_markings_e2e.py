@@ -19,8 +19,11 @@ only in a browser (`penpa-browser-check.mjs`, outside the gate). The picture
 is read by pixel for its rings and symbols; nothing but an open of the PNG
 says it reads cleanly as a puzzle.
 
-One CaDiCaL thread; about half a minute, the circle breaks the reflection
-so every set is solved.
+One CaDiCaL thread; the circle breaks the reflection so every set is solved.
+
+A slow test, outside the gate: `just test-slow` runs it (tests/all.sh's
+`finder_slow`). Its time on one core is in
+`docs/research/2026-10-22-ubahn-suite-times.md`.
 
     uv run finders/ubahn/test_ubahn_fewest_markings_e2e.py
 """
