@@ -208,7 +208,13 @@ README before reusing anything there.
   mark's verdict in `halver_report`'s format; its docstring gives the board
   file format. `fixtures/` holds the test boards, among them
   `opening_9x9.json`, Chris's opening, which `test_opening.py` checks in the
-  gate (#68). Rulings and runs:
+  gate (#68). `hunt.py --board BOARD --out DIR --seeds A:B` is its hunt
+  on the hunt protocol (#69): the halver hunt's target-grid loop adds rank
+  clues from `separating`'s list until the board is unique, the protocol's
+  minimiser drops each clue it stays unique without, `verify` re-reads a
+  hit with `rules.py`, and `hunt.py summary DIR` lists hits fewest clues
+  first and splits the seeds into found, proven infeasible, timed out and
+  capped; `test_hunt.py` runs it at 4x4 in the gate. Rulings and runs:
   `docs/research/2026-10-22-doppelganger-rank-decision-log.md`.
 - `archive/finders/galaxy-copycat/`'s write-ups live in `docs/research/2026-09-14-copycat-scan.md`
   and `docs/research/2026-09-14-galaxy-copycat-design.md`; its boards are

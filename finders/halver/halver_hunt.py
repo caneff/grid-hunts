@@ -66,12 +66,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "hunt"))
 
 # isort: split
 from dedupe import IDENTITY
-from driver import _parse_args as driver_args
 from driver import run
 from halver_rules import Line, Solution, cell_name, line_name, parse_cell
 from protocol import Empty, Verdict
 from sudoku_kit.link_codec import encode_link
-from verified_io import read_verified
+from verified_io import example_verdicts
 
 N, BOX = 9, (3, 3)
 # The hunt's end, written when a hunt run returns 0; `summary` reads its
@@ -323,40 +322,6 @@ def _jsonl(path):
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
-def _verdicts(out, run_argv, examples):
-    """Per example, "hit" (passed `verify`), "unchecked", or the reason
-    `hunt.py verify` rejected it. A hunt without `--no-verify` wrote only
-    examples that passed `verify`. Raises when verified.jsonl does not cover
-    exactly this examples.jsonl."""
-    if not driver_args(run_argv).no_verify:
-        return ["hit"] * len(examples)
-    path = out / "verified.jsonl"
-    if not path.exists():
-        return ["unchecked"] * len(examples)
-    stamp, verdicts = read_verified(path)
-    if stamp["verified_examples"] != len(examples):
-        raise ValueError(
-            f"{path} covers {stamp['verified_examples']} examples and "
-            f"examples.jsonl holds {len(examples)}: run `hunt.py verify {out}` again"
-        )
-    by_record = {
-        json.dumps(v["record"], sort_keys=True): (
-            "hit" if v["ok"] else v.get("reason", "no reason given")
-        )
-        for v in verdicts
-    }
-    found = []
-    for record in examples:
-        verdict = by_record.get(json.dumps(record, sort_keys=True))
-        if verdict is None:
-            raise ValueError(
-                f"{path} has no verdict for an example of examples.jsonl: "
-                f"run `hunt.py verify {out}` again"
-            )
-        found.append(verdict)
-    return found
-
-
 def summary(out):
     """What a hunt in `out` found, as lines of text."""
     events = [
@@ -364,7 +329,7 @@ def summary(out):
     ]
     examples = _jsonl(out / "examples.jsonl")
     run_json = json.loads((out / "run.json").read_text())
-    verdicts = _verdicts(out, run_json["argv"], examples)
+    verdicts = example_verdicts(out, run_json["argv"], examples)
     hits = [r for r, v in zip(examples, verdicts, strict=True) if v == "hit"]
     unchecked = [r for r, v in zip(examples, verdicts, strict=True) if v == "unchecked"]
     rejected = [

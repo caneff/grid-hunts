@@ -18,7 +18,8 @@ n x n board with boxes `box` tall and wide: 4x4 (2x2), 6x6 (2x3), 9x9 (3x3).
 `check` is `sudoku_kit`'s five-status uniqueness over the grid's digits
 alone, since the missing digits follow from them. `mark_holds` solves once
 with the mark negated, so a mark holds exactly when that solve is
-infeasible. Neither reads a timeout as unique or as held.
+infeasible. Neither reads a timeout as unique or as held. `sample` is one
+solve steered by a random digit hint per cell: the hunt's target grid.
 """
 
 from typing import NamedTuple
@@ -114,6 +115,29 @@ class RankModel:
             self._grid(result.first) if result.first else None,
             self._grid(result.second) if result.second else None,
         )
+
+    def sample(self, rng, time_limit=10.0):
+        """One grid of the clues, steered by a random digit hint per cell,
+        on one worker: `RuleCheck("found", grid)`, `RuleCheck("infeasible")`
+        when the clues have none, or `RuleCheck("timeout")`. Leaves the model
+        unchanged."""
+        m = self.model.clone()
+        m.ClearHints()
+        x = [m.GetIntVarFromProtoIndex(v.Index()) for v in self.x.values()]
+        for var in x:
+            m.AddHint(var, rng.randint(0, self.n))
+        solver = cpsat.solver(time_limit)
+        # Presolve's symmetry breaking pins the grid whatever the hints say:
+        # 6 grids in 40 seeds on an empty 4x4, every one with r1c1 = 0.
+        solver.parameters.symmetry_level = 0
+        status = solver.Solve(m)
+        if status in cpsat.SOLVED:
+            return RuleCheck("found", self._grid([solver.Value(v) for v in x]))
+        if status == cp_model.INFEASIBLE:
+            return RuleCheck("infeasible")
+        if status == cpsat.UNKNOWN:
+            return RuleCheck("timeout")
+        raise ValueError(f"sampling got solver status {solver.StatusName(status)}")
 
     def mark_holds(self, mark, time_limit=10.0):
         """Whether every solution keeps `mark`, a board file's
