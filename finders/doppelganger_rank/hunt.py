@@ -7,6 +7,7 @@ it the output directory, dedupe and resume.
     uv run finders/doppelganger_rank/hunt.py --board BOARD --out DIR --seeds 0:20
     uv run finders/doppelganger_rank/hunt.py verify DIR
     uv run finders/doppelganger_rank/hunt.py summary DIR
+    uv run finders/doppelganger_rank/hunt.py links DIR
 
 BOARD is a board file (`check.py`'s docstring gives the format). Its clues
 start every seed; its marks are no constraint and are not read (Q11).
@@ -44,7 +45,8 @@ board's size and box, every clue (the board's, then the `added` ones),
 the added-clue count and the solution, so a record is read back with no
 board file. `summary DIR` lists the verified hits, fewest added clues first,
 or "none found"; the seed split; and each seed that found nothing with its
-reason. Every CP-SAT call runs on one worker and the seeds run one after
+reason. `links DIR` writes a SudokuMaker link per verified hit
+(`links.py`). Every CP-SAT call runs on one worker and the seeds run one after
 another, so `--workers` other than 1 is refused.
 """
 
@@ -65,6 +67,7 @@ import rules
 from check import one_line, read_board
 from dedupe import IDENTITY
 from driver import run
+from links import write_links
 from minimizer import strip
 from model import RankModel
 from protocol import Empty, Verdict
@@ -340,8 +343,22 @@ def summary(out):
 
 
 def main(argv):
-    """`summary DIR`, or the driver's commands with the finder built from
+    """`links DIR`, `summary DIR`, or the driver's commands with the finder built from
     its own flags."""
+    if argv and argv[0] == "links":
+        if len(argv) != 2:
+            print("usage: hunt.py links DIR", file=sys.stderr)
+            return 2
+        out = Path(argv[1])
+        try:
+            written, skipped = write_links(out)
+        except (OSError, ValueError) as error:
+            print(f"hunt.py links: {error}", file=sys.stderr)
+            return 2
+        print(f"wrote {written} links to {out / 'links'}")
+        if skipped:
+            print(f"{skipped} candidates skipped: not verified hits (`summary {out}`)")
+        return 0
     if argv and argv[0] == "summary":
         if len(argv) != 2:
             print("usage: hunt.py summary DIR", file=sys.stderr)
