@@ -160,3 +160,49 @@ may print a different pair. The whole test took 63 s here.
   takes longer instead of reporting `TIMEOUT` and failing the test. A real
   regression still fails: on a timeout the test sees a `TIMEOUT` line or the
   wrong status.
+
+## The hunt at 4x4 (#69)
+
+`finders/doppelganger_rank/hunt.py`, on the hunt protocol. Its docstring
+states the loop, the minimiser, the seed classes and the record.
+`test_hunt.py` runs it from an empty 4x4 board in the gate and judges every
+hit against `brute.py`'s key.
+
+**The sampler, measured.** The first `RankModel.sample` was the halver
+hunt's: one worker, a random digit hint per cell. On an empty 4x4 it gave
+6 distinct grids in 40 seeds, and every one had r1c1 = 0. The key holds
+768 grids, and 576 of them have another digit there. Presolve's symmetry
+breaking was the cause. With `symmetry_level = 0` and nothing else changed,
+200 seeds gave 153 distinct grids, and r1c1 took every digit 0..4 (30 to 47
+times each). On Chris's 9x9 opening the same sampler took 1.0 s to 5.4 s per
+target (seeds 0..3), and 10 seeds gave 10 distinct targets.
+
+Two other samplers were measured and dropped. Both used a fixed search over
+the cells in a shuffled order, picking the random half of each domain:
+
+- With presolve on, an empty 4x4 gave 48 distinct grids in 400 seeds, all
+  with r1c1 = 0.
+- With presolve or its symmetry pass off, 4x4 coverage was good (297 of
+  400), but 3 of 4 seeds on the 9x9 opening reached the 60 s limit.
+
+**First run.** On 2026-10-22, on this box: 20 seeds from an empty 4x4 took
+12 s and found 20 hits, each with 2 or 3 added clues after minimising.
+
+**Worker's choices (#69):**
+
+- **A clue is picked uniformly by the seed's rng** from `separating`'s
+  list, with no pool ranking like the halver hunt's. The minimiser removes
+  the clues this leaves redundant.
+- **A minimiser solve that times out ends the seed as `timeout:`**. Recording
+  the hit instead could leave a clue the board does not need.
+- **`symmetry = IDENTITY`.** The board's clues break the square's symmetry,
+  and a 6x6's 2x3 boxes do not transpose.
+- **A record carries the size, the box and every clue**, so `hunt.py
+  verify DIR` reads a hit with no board file. The record's `clues` lists the
+  board's clues first, then the `added` ones.
+- **A target that ranks the same as a second grid at every free place**
+  ends the seed as `no separating clue:`. No rank clue can make that target
+  unique. `summary` counts these seeds apart from the four classes the
+  ticket names.
+- **`verified_io.example_verdicts`** is `halver_hunt`'s old `_verdicts`,
+  moved into `finders/hunt/` so both hunts' `summary` read it.
