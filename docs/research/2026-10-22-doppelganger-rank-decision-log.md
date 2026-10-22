@@ -310,6 +310,9 @@ r1c1 = 8, r1c9 = 1, r5c1 = 9, r5c9 = 0, and c9 misses 9.
   one. Their digits are all different under the Doppelganger rule, so the
   region adds no wrong constraint. Making them no-region cells is a
   one-line change.
+  Superseded in the spec-level review (finding P3): the row and column
+  notespaces are now in no region, and each box notespace cell is its own
+  region, as the drawing borders each.
 - **A clue's text is size 0.5**, twice QQRR's 0.25, to read like the
   drawing's clue numbers.
 - **`links` writes verified hits only.** It skips an unchecked or rejected
