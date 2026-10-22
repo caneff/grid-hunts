@@ -14,6 +14,15 @@ n x n board with boxes `box` tall and wide: 4x4 (2x2), 6x6 (2x3), 9x9 (3x3).
   number below, `not b` at or above, so a tie counts as not below and needs
   no equality literal. Every number takes part in a clue's count; only
   clued numbers are counted.
+- A number's leading digit is the cell at its end, so the 4n leading cells
+  are the four edge lines c1, cn, r1 and rn (#75, ISS's `FullRank`:
+  `docs/research/2026-10-22-doppelganger-rank-iss-buckets.md`). Each edge
+  line holds every digit but its missing one, so `cnt[0] = 4` numbers lead
+  with 0 and `cnt[d] = 4 - #{edge lines missing d}` with d. A clue leading
+  with d has its rank in `below(d) + 1 .. below(d) + cnt[d]`, `below(d)`
+  the sum of `cnt` over smaller digits. A clue's literal `b` is decided by
+  the leading digits when they differ (smaller is below), and the whole
+  numbers are compared only when they are equal.
 
 `check` is `sudoku_kit`'s five-status uniqueness over the grid's digits
 alone, since the missing digits follow from them. `mark_holds` solves once
@@ -81,23 +90,51 @@ class RankModel:
             )
             for place in rules.places(n)
         }
+        self.lead = {
+            place: x[rules.line_cells(n, place)[0]] for place in rules.places(n)
+        }
+        edges = ["c1", f"c{n}", "r1", f"r{n}"]
+        self.cnt = [4]
+        for d in range(1, n + 1):
+            missed = []
+            for line in edges:
+                b = m.NewBoolVar(f"miss_{line}_is_{d}")
+                m.Add(self.miss[line] == d).OnlyEnforceIf(b)
+                m.Add(self.miss[line] != d).OnlyEnforceIf(b.Not())
+                missed.append(b)
+            self.cnt.append(4 - sum(missed))
         self.clues = []
         for clue in clues:
             self.add_clue(clue)
 
     def add_clue(self, clue):
         """Post one rank clue, `{"line", "end", "rank"}`."""
+        m = self.model
         place = (clue["line"], clue["end"])
-        mine = self.numbers[place]
+        mine, lead = self.numbers[place], self.lead[place]
+        tag = len(self.clues)
+        leads_with = [m.NewBoolVar(f"lead_{tag}_is_{d}") for d in range(self.n + 1)]
+        m.AddExactlyOne(leads_with)
+        for d, is_d in enumerate(leads_with):
+            m.Add(lead == d).OnlyEnforceIf(is_d)
+            below_d = sum(self.cnt[:d])
+            m.Add(below_d + 1 <= clue["rank"]).OnlyEnforceIf(is_d)
+            m.Add(clue["rank"] <= below_d + self.cnt[d]).OnlyEnforceIf(is_d)
         below = []
         for other, number in self.numbers.items():
             if other == place:
                 continue
-            b = self.model.NewBoolVar(f"lt_{len(self.clues)}_{other[0]}_{other[1]}")
-            self.model.Add(number <= mine - 1).OnlyEnforceIf(b)
-            self.model.Add(number >= mine).OnlyEnforceIf(b.Not())
+            name = f"{tag}_{other[0]}_{other[1]}"
+            b = m.NewBoolVar(f"lt_{name}")
+            same = m.NewBoolVar(f"same_lead_{name}")
+            m.Add(self.lead[other] == lead).OnlyEnforceIf(same)
+            m.Add(self.lead[other] != lead).OnlyEnforceIf(same.Not())
+            m.Add(self.lead[other] <= lead).OnlyEnforceIf(b)
+            m.Add(self.lead[other] >= lead).OnlyEnforceIf(b.Not())
+            m.Add(number <= mine - 1).OnlyEnforceIf(b, same)
+            m.Add(number >= mine).OnlyEnforceIf(b.Not(), same)
             below.append(b)
-        self.model.Add(1 + sum(below) == clue["rank"])
+        m.Add(1 + sum(below) == clue["rank"])
         self.clues.append(clue)
 
     def _grid(self, values):
