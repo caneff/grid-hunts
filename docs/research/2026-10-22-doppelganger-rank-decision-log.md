@@ -316,3 +316,82 @@ r1c1 = 8, r1c9 = 1, r5c1 = 9, r5c9 = 0, and c9 misses 9.
   candidate of a `--no-verify` hunt and says how many it skipped.
 - **The type-0 "Given digits" constraint stays** with no givens: every
   SudokuMaker document here carries it. It checks nothing.
+
+## The most restricting clue first (#79)
+
+Chris ruled on 2026-10-22 that the hunt adds the most restricting
+separating clue, not a uniform pick. `hunt.py`'s docstring states the loop:
+a separating place scores how many grids of a sample of the board's
+solutions keep the target's rank there; the lowest is added; ties go to the
+seed's rng. The sample is `--pool` draws (16) of `RankModel.sample`, and it
+shrinks to the grids each added clue keeps. A fresh sample is drawn when
+fewer than `--pool-floor` (4) are left. `--pool 0` draws none, so every
+place ties and the pick is the rng alone, #69's uniform pick.
+
+**Random against ranked, one worker.** Measured 2026-10-22 on this box at
+load average 3 to 4, one run each. Each row is one seed set run through
+`DoppelgangerRankFinder.propose` by a scratch timing script. The script
+wraps `RankModel.check`, `RankModel.sample` and `most_restricting` to count
+calls and runs nothing of its own. Loop clues are the clues added before
+the minimiser. Loop checks are the uniqueness checks of the add loop. All
+checks adds the minimiser's checks. `ranked4` is `--pool 4 --pool-floor 1`.
+
+Empty 4x4 (`size 4, box 2x2`, no clues), seeds 0..19:
+
+| pick | hits | loop clues | added after minimising | loop checks | all checks | samples | wall s |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| random (`--pool 0`) | 20 | 64 | 57 | 84 | 154 | 20 | 4.6 |
+| ranked (16, floor 4) | 20 | 57 | 56 | 77 | 134 | 932 | 14.6 |
+| ranked4 (4, floor 1) | 20 | 61 | 58 | 81 | 144 | 264 | 7.7 |
+
+Empty 6x6 (`size 6, box 2x3`, no clues), seeds 0..4. Seed 0 ended
+`no separating clue` on every pick:
+
+| pick | hits | loop clues | added after minimising | loop checks | all checks | samples | wall s |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| random (`--pool 0`) | 4 | 42 | 26 | 46 | 89 | 5 | 15.5 |
+| ranked (16, floor 4) | 4 | 35 | 27 | 39 | 72 | 565 | 80.9 |
+| ranked4 (4, floor 1) | 4 | 42 | 27 | 46 | 87 | 173 | 36.5 |
+
+**Reading.** At the default pool, the ranked pick adds 11% fewer loop
+clues on the 4x4 and 17% fewer on the 6x6. It runs 8% and 15% fewer loop
+checks, and 13% and 19% fewer checks in all. The minimised hits are no
+smaller. It is 3.2 times slower on the
+4x4 and 5.2 times slower on the 6x6. The cost is the sample: the most
+restricting clue rules out most of the sample by design, so nearly every
+step falls under the floor and draws 16 fresh grids. At these sizes a
+draw costs about what a check does, so 16 draws per step cost far more
+than the checks saved. On the 9x9 opening a draw took 1.0 s to 5.4 s
+(#69) and a check about 0.4 s (#75), so this trade is not measured there.
+#72's 9x9 hunt is where `--pool` and `--pool-floor` get set from a
+measurement; `--pool 0` gives back #69's pick with no code change.
+
+`test_hunt.py`, which runs 20 + 1 + 2 + 2 + 3 + 20 seeds on the defaults,
+went from 23 s to 42 s on this box (one run each, load average 3.4).
+
+**Mutations**, each in a throwaway worktree under `.scratch/`, each red on
+`test_hunt.py`'s own assertion:
+
+- **Score ignores the share** (`score` returns only the rng draw): the
+  planted pool test picks r1 from the left on seed 1.
+- **Uniform pick** (`propose` calls `rng.choice(places)`): the spy sees no
+  ranked pick.
+- **No shrink** (the sample is not filtered after a clue): the spy sees a
+  sampled grid that breaks an earlier added clue.
+
+**Worker's choices (#79), flag if you disagree:**
+
+- **The defaults are ranked, `--pool 16 --pool-floor 4`**, following the
+  ruling, although they are slower at 4x4 and 6x6 (above).
+- **The sample is drawn at the first pick, not before the first check.**
+  A board that starts unique draws none. Otherwise this is the ruling's
+  "before a seed's loop".
+- **The target and repeated draws are left out of the sample.** The
+  target keeps every rank it has, so it adds the same 1 to every place's
+  count and changes no pick. A draw that reaches its time limit is left
+  out, as in the halver hunt's pool.
+- **The score is a count, not a share.** Every place is scored on the same
+  sample, so the count orders the places as the share does.
+- **A refill draws `--pool` times again with the seed's rng**, under the
+  seed's `--max-seconds`. The target is drawn before any sample, so each
+  seed's target is the one #69 drew.

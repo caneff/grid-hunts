@@ -15,8 +15,15 @@ start every seed; its marks are no constraint and are not read (Q11).
 One seed: sample a target grid of the board's clues (`RankModel.sample`).
 While the check says `not_unique`, add one clue at a free place whose rank
 differs between the target and the second solution, valued from the
-target, picked by the seed's rng from `separating`'s list; a filter on
-where a clue may go is a filter on that list. At `unique`, the hunt
+target, from `separating`'s list; a filter on where a clue may go is a
+filter on that list. The clue added is the most restricting one
+(`most_restricting`, #79): the fewest grids of a sample of the board's
+solutions keep the target's rank at its place, ties broken by the seed's
+rng. The sample is `--pool` draws of `RankModel.sample` on the current
+clues, the target and repeats left out. Each added clue drops the sampled
+grids it rules out, and when fewer than `--pool-floor` are left the next
+pick draws a fresh sample. `--pool 0` draws none, so every place ties and
+the pick is the seed's rng alone, #69's uniform pick. At `unique`, the hunt
 protocol's minimiser (`finders/hunt/minimizer.py`) drops each added clue the
 board stays unique without; the board's own clues are never dropped. The
 one grid left is the target.
@@ -74,9 +81,21 @@ from protocol import Empty, Verdict
 from reprove import reprove
 from verified_io import example_verdicts
 
-__all__ = ["DEFAULTS", "DoppelgangerRankFinder", "Hit", "separating"]
+__all__ = [
+    "DEFAULTS",
+    "DoppelgangerRankFinder",
+    "Hit",
+    "most_restricting",
+    "separating",
+]
 
-DEFAULTS = {"time_limit": 30.0, "max_clues": 36, "max_seconds": 300.0}
+DEFAULTS = {
+    "time_limit": 30.0,
+    "max_clues": 36,
+    "max_seconds": 300.0,
+    "pool": 16,
+    "pool_floor": 4,
+}
 # The Empty reason's class, as `summary` names it in the split.
 CLASSES = {
     "infeasible": "proven infeasible",
@@ -105,6 +124,18 @@ def separating(target, second, box, taken):
     return [p for p in rules.places(len(target)) if p not in taken and a[p] != b[p]]
 
 
+def most_restricting(places, target, sample, rng):
+    """The place of `places` whose rank in `target` the fewest grids of
+    `sample` share, ties broken by `rng`. `target` and each sampled grid are
+    ranks by place, as `rules.read` gives them."""
+
+    def score(place):
+        share = sum(ranks[place] == target[place] for ranks in sample)
+        return share, rng.random()
+
+    return min(places, key=score)
+
+
 def clue_of(place, rank):
     return {"line": place[0], "end": place[1], "rank": rank}
 
@@ -112,11 +143,13 @@ def clue_of(place, rank):
 class DoppelgangerRankFinder:
     symmetry = IDENTITY
 
-    def __init__(self, board, time_limit, max_clues, max_seconds):
+    def __init__(self, board, time_limit, max_clues, max_seconds, pool, pool_floor):
         self.board = board
         self.time_limit = time_limit
         self.max_clues = max_clues
         self.max_seconds = max_seconds
+        self.pool = pool
+        self.pool_floor = pool_floor
         self.n, self.box, self.clues = None, None, []
         if board is not None:
             self.n, self.box, self.clues, _marks = read_board(Path(board))
@@ -129,11 +162,27 @@ class DoppelgangerRankFinder:
             "time_limit": self.time_limit,
             "max_clues": self.max_clues,
             "max_seconds": self.max_seconds,
+            "pool": self.pool,
+            "pool_floor": self.pool_floor,
         }
 
     def target(self, rng, time_limit):
         """The seed's target: `RankModel.sample` on the board's clues."""
         return RankModel(self.n, self.box, self.clues).sample(rng, time_limit)
+
+    def _draw(self, board, rng, limit, target):
+        """`pool` draws of `board`'s solutions as ranks by place, the target
+        and repeats left out. A draw that reaches its time limit is left
+        out: a smaller sample ranks less well and is never wrong."""
+        grids = set()
+        for _ in range(self.pool):
+            draw_limit = limit()
+            if draw_limit <= 0:
+                break
+            drawn = board.sample(rng, draw_limit)
+            if drawn.status == "found" and drawn.first != target:
+                grids.add(drawn.first)
+        return [rules.read(grid, self.box).ranks for grid in sorted(grids)]
 
     def _ran_out(self, limit, what):
         if limit < self.time_limit:
@@ -153,9 +202,11 @@ class DoppelgangerRankFinder:
         if sample.status == "timeout":
             return self._ran_out(sample_limit, "sampling a target")
         target = sample.first
+        ranks = rules.read(target, self.box).ranks
         board = RankModel(self.n, self.box, self.clues)
         taken = {(c["line"], c["end"]) for c in self.clues}
         added = 0
+        pool = []
         while True:
             check_limit = limit()
             if check_limit <= 0:
@@ -178,8 +229,11 @@ class DoppelgangerRankFinder:
                     f"no separating clue: after {added} clues the target and a "
                     "second grid rank alike at every free place"
                 )
-            place = rng.choice(places)
-            board.add_clue(clue_of(place, rules.read(target, self.box).ranks[place]))
+            if len(pool) < self.pool_floor:
+                pool = self._draw(board, rng, limit, target)
+            place = most_restricting(places, ranks, pool, rng)
+            board.add_clue(clue_of(place, ranks[place]))
+            pool = [grid for grid in pool if grid[place] == ranks[place]]
             taken.add(place)
             added += 1
         return self._minimise(board.clues, target, limit)

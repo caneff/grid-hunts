@@ -79,6 +79,28 @@ def grid(record):
     return tuple(tuple(map(int, row)) for row in record["solution"])
 
 
+# The ranked pick (#79) on a planted pool: c2 from the top keeps its target
+# rank in one sampled grid, r1 from the left in three and r2 from the left in
+# two, so c2 from the top is the most restricting clue on every seed's rng.
+rare, common, middle = ("c2", "top"), ("r1", "left"), ("r2", "left")
+target_ranks = {rare: 5, common: 1, middle: 9}
+pool = [
+    {rare: 5, common: 1, middle: 9},
+    {rare: 6, common: 1, middle: 9},
+    {rare: 7, common: 1, middle: 2},
+]
+for seed in range(20):
+    rng = random.Random(seed)
+    place = hunt.most_restricting([common, middle, rare], target_ranks, pool, rng)
+    assert place == rare, (seed, place)
+# Ties break by the seed's rng: with no sample every place ties.
+picked = {
+    hunt.most_restricting([common, middle, rare], target_ranks, [], random.Random(s))
+    for s in range(20)
+}
+assert picked == {common, middle, rare}, picked
+
+
 with tempfile.TemporaryDirectory() as tmp:
     tmp = Path(tmp)
     empty = tmp / "empty_4x4.json"
@@ -86,6 +108,25 @@ with tempfile.TemporaryDirectory() as tmp:
     empty.write_text(
         json.dumps({"size": 4, "box": [2, 2], "clues": [], "marks": [mark]})
     )
+
+    # The hunt adds each clue by the ranked pick, from a sample of the board.
+    picks = []
+    ranked = hunt.most_restricting
+
+    def spy(places, target, sample, rng):
+        place = ranked(places, target, sample, rng)
+        picks.append((place, len(sample)))
+        # The sample keeps only grids every clue added so far holds in.
+        for earlier, _ in picks[:-1]:
+            assert all(grid[earlier] == target[earlier] for grid in sample), picks
+        return place
+
+    hunt.most_restricting = spy
+    seeded = hunt.DoppelgangerRankFinder(board=str(empty), **hunt.DEFAULTS)
+    hit = seeded.propose(random.Random(0))
+    hunt.most_restricting = ranked
+    assert isinstance(hit, hunt.Hit), hit
+    assert picks and picks[0][1] >= hunt.DEFAULTS["pool_floor"], picks
 
     # The hunt that runs through.
     out = tmp / "hits"
@@ -144,7 +185,7 @@ with tempfile.TemporaryDirectory() as tmp:
     _, lines = split(planted)
     assert "3 candidates rejected by `hunt.py verify`" in lines, lines
 
-    rushed = hunt.DoppelgangerRankFinder(None, 1e-9, 36, 300.0)
+    rushed = hunt.DoppelgangerRankFinder(None, 1e-9, 36, 300.0, 16, 4)
     verdict = rushed.verify(rushed.candidate_from_record(record))
     assert verdict == (False, "timeout: the re-proof reached 1e-09 s"), verdict
     assert any(line.startswith("hit, ") for line in lines), lines

@@ -215,7 +215,9 @@ README before reusing anything there.
   `opening_9x9.json`, Chris's opening, which `test_opening.py` checks in the
   gate (#68). `hunt.py --board BOARD --out DIR --seeds A:B` is its hunt
   on the hunt protocol (#69): the halver hunt's target-grid loop adds rank
-  clues from `separating`'s list until the board is unique, the protocol's
+  clues from `separating`'s list until the board is unique, the most
+  restricting first by a sample of the board's solutions (`--pool`,
+  `--pool-floor`; `--pool 0` is a uniform pick, #79), the protocol's
   minimiser drops each clue it stays unique without, `verify` re-reads a
   hit with `rules.py` and re-proves it unique on `reprove.py`, a second
   CP-SAT model sharing no code with `model.py` (one-hot cells, numbers
