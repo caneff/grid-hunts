@@ -2,9 +2,9 @@
 # The gate's one listing of suites. A suite is one command (`uv run <file>`,
 # one lint step), and it is its own label. With no flag this runs every suite
 # `just check` runs, one at a time unless asked. Test files are found by glob
-# from the tree on disk, so a new test needs no edit here; the lists below and
-# the runner's own test (`tests/test_all_sh.py`, in `suites`) are the
-# exceptions.
+# from the tree on disk, so a new test needs no edit here; the lists below,
+# the runner's own test (`tests/test_all_sh.py`) and the Pants edge check
+# (`tests/test_pants_edges.py`), both in `suites`, are the exceptions.
 #
 #   bash tests/all.sh [--list] [--group <group>] [--jobs <n>] [--changed <base>]
 #
@@ -69,6 +69,8 @@ edges_test="uv run tests/test_pants_edges.py"
 
 listed() { case " $1 " in *" $2 "*) return 0 ;; esac; return 1; } # <list> <file>
 suite_file() { local w; for w in $1; do case $w in *.py) echo "$w" ;; esac; done; } # <suite>
+# Whether Pants's answer holds a target of the file, `<file>:<target>`.
+placed() { case $'\n'"$affected" in *$'\n'"$1:"*) return 0 ;; esac; return 1; } # <file>
 
 # Prints "<group>\t<command>" per suite, in run order.
 suites() {
@@ -131,22 +133,18 @@ fi
 # depends on one, at any distance. Sets `affected`, one address per line, or
 # `widened` when Pants is missing, fails, gives an answer that is not a list of
 # addresses, or holds no target of a changed file: no target owns that file.
-ask_pants() { # <changed files, one per line>
-  local specs=() f
-  while IFS= read -r f; do [ -z "$f" ] || specs+=("$f"); done <<<"$1"
+ask_pants() { # <changed file>...
+  local f
   command -v pants >/dev/null || {
     echo "tests/all.sh: no \`pants\` on the PATH, so the run is not narrowed." >&2
     widened="no \`pants\` on the PATH"; return; }
   # Pants writes its work directory into the tree it runs in unless told.
-  affected=$(PANTS_WORKDIR=$state/pants pants dependents --transitive --closed "${specs[@]}" </dev/null) || {
+  affected=$(PANTS_WORKDIR=$state/pants pants dependents --transitive --closed "$@" </dev/null) || {
     widened="Pants gave no answer"; return; }
   while IFS= read -r f; do
     case $f in "" | *:*) ;; *) widened="Pants's answer cannot be read: $f"; return ;; esac
   done <<<"$affected"
-  # Placed: the answer holds a target of the file, `<file>:<target>`.
-  for f in "${specs[@]}"; do
-    case $'\n'"$affected" in *$'\n'"$f:"*) ;; *) widened=$f; return ;; esac
-  done
+  for f in "$@"; do placed "$f" || { widened=$f; return; }; done
 }
 
 # --changed: keep lint, the always-run suites, and the suites Pants lists among
@@ -154,21 +152,21 @@ ask_pants() { # <changed files, one per line>
 # keeps every suite and names itself in $note.
 if [ -n "$base" ]; then
   files=$(git -c core.quotepath=off diff --name-only --no-renames "$base...HEAD" 2>&1) || usage "git cannot diff $base...HEAD: $files"
-  widened="" ask="" affected=""
+  widened="" ask=() affected=""
   while IFS= read -r f; do
     case $f in
       '' | *.md | archive/*) ;; # archived finders are never suites
       pyproject.toml | uv.lock | pants.toml | justfile | tests/* | .github/*) widened=${widened:-$f} ;;
-      *) if [ -e "$f" ] || [ -L "$f" ]; then ask="$ask$f"$'\n'; else widened=${widened:-$f}; fi ;;
+      *) if [ -e "$f" ] || [ -L "$f" ]; then ask+=("$f"); else widened=${widened:-$f}; fi ;;
     esac
   done <<<"$files"
-  [ -n "$widened" ] || [ -z "$ask" ] || ask_pants "$ask"
+  [ -n "$widened" ] || [ "${#ask[@]}" = 0 ] || ask_pants "${ask[@]}"
   if [ -z "$widened" ]; then
     narrowed=""
     while IFS=$'\t' read -r g c; do
       [ -n "$c" ] || continue
       if [ "$g" = lint ] || [ "$c" = "$runner_test" ] || [ "$c" = "$edges_test" ] ||
-        case $'\n'"$affected" in *$'\n'"$(suite_file "$c"):"*) true ;; *) false ;; esac; then
+        placed "$(suite_file "$c")"; then
         narrowed="$narrowed$g"$'\t'"$c"$'\n'
       fi
     done <<<"$all"

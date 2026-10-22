@@ -50,7 +50,7 @@ any edge, failed on two: `doppelganger_rank/test_check.py` and
 it. The BUILD file #69 needs when it lands:
 
 ```python
-finder(edges={"test_check.py": ["./check.py:py"], "test_opening.py": ["./check.py:py"]})
+code_dir(edges={"test_check.py": ["./check.py:py"], "test_opening.py": ["./check.py:py"]})
 ```
 
 On the main tree the check found 22 such edges and one ambiguous import
@@ -66,7 +66,7 @@ On the main tree the check found 22 such edges and one ambiguous import
 - `unmatched_build_file_globs = "ignore"` (to quiet an empty `data` glob)
   makes an explicit file dependency such as `./report.py:py` fail with
   `ValueError: Provided description_of_origin while ignoring glob match
-  errors`. `finder()`'s `data` owns the BUILD file instead, so no glob is
+  errors`. `code_dir()`'s `data` owns the BUILD file instead, so no glob is
   empty and the option stays at its default.
 - `pants dependencies --format=json finders::` returns the whole graph, 198
   targets, in 2.3 s; the edge check makes that one call.

@@ -3,21 +3,31 @@
 `tests/all.sh --changed` runs a suite when Pants lists its file among the
 dependents of a changed file, so an edge Pants does not see is a suite a
 narrowed run skips in silence. This asks Pants for the whole graph once
-(`pants dependencies --format=json finders::`) and checks four things:
+(`pants dependencies --format=json finders::`) and checks:
 
 - every suite file of the gate is owned by a Pants target, so Pants can list it;
 - no import is ambiguous: Pants drops an import two targets could own;
+- every module a finder source imports by a name some tracked `finders/` file
+  has (`import verified_io`) reaches one file of that name: Pants also drops,
+  in silence, a first-party import no source root resolves;
 - every `.py` file a finder source names in a string (the script a test starts
   as a subprocess, a file it reads) is a dependency of that source, at any
-  distance. A name resolves to the source's sibling, else to every file of
-  that name in the same finder folder; a name no file has (a temp script the
-  test writes) is skipped;
+  distance. A name resolves as a path from the source's directory or the repo
+  root (`"../model.py"`, `"finders/hunt/driver.py"`); else to every file of
+  that name in the same finder folder, all of which must be reached; else to
+  the files of that name in other finder folders, one of which must be. A
+  name no tracked file has (a temp script the test writes) is skipped;
+- every test file beside a `conftest.py` reaches it: pytest loads it, and
+  nothing imports it;
 - the known edges below: files whose change must select some suites and must
   not select others.
+
+Pants is required: with no `pants` on the PATH this fails, naming it.
 
     uv run tests/test_pants_edges.py
 """
 
+import ast
 import json
 import os
 import re
@@ -85,14 +95,20 @@ def graph():
     """{address: [direct dependency addresses]} for every target under finders/,
     and what Pants printed on stderr."""
     with tempfile.TemporaryDirectory() as work:
-        r = subprocess.run(
-            ["pants", "dependencies", "--format=json", "finders::"],
-            capture_output=True,
-            text=True,
-            cwd=REPO,
-            stdin=subprocess.DEVNULL,
-            env={**os.environ, "PANTS_WORKDIR": work},
-        )
+        try:
+            r = subprocess.run(
+                ["pants", "dependencies", "--format=json", "finders::"],
+                capture_output=True,
+                text=True,
+                cwd=REPO,
+                stdin=subprocess.DEVNULL,
+                env={**os.environ, "PANTS_WORKDIR": work},
+            )
+        except FileNotFoundError:
+            sys.exit(
+                "test_pants_edges.py: no `pants` on the PATH. The gate needs the "
+                "Pants launcher: docs/pants.md says how to install it."
+            )
     if r.returncode != 0:
         sys.exit(f"pants dependencies failed:\n{r.stderr}")
     return json.loads(r.stdout), r.stderr
@@ -124,6 +140,28 @@ def finder_folder(path):
     return "/".join(path.split("/")[:2])
 
 
+def named(name, src, py_files):
+    """The tracked files a `.py` name in `src` may mean, and whether every one
+    must be reached (else any one): see the module docstring."""
+    for path in (os.path.normpath(f"{src.rsplit('/', 1)[0]}/{name}"), name):
+        if path in py_files:
+            return [path], True
+    same = [f for f in py_files if f.endswith(f"/{name}")]
+    here = [f for f in same if finder_folder(f) == finder_folder(src)]
+    return (here, True) if here else (same, False)
+
+
+def imported(src):
+    """The top-level module names `src` imports absolutely."""
+    names = set()
+    for node in ast.walk(ast.parse((REPO / src).read_text())):
+        if isinstance(node, ast.Import):
+            names |= {a.name.split(".")[0] for a in node.names}
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            names.add(node.module.split(".")[0])
+    return names
+
+
 if __name__ == "__main__":
     deps, stderr = graph()
 
@@ -147,25 +185,37 @@ if __name__ == "__main__":
     )
 
     py_files = tracked("finders/*.py")
-    missing = []
+    missing, dropped, unloaded = [], [], []
     for src in py_files:
         address = owner(deps, src)
         if address is None:
             continue  # the suite check above names an unowned suite
-        reach = closure(deps, address)
-        here = src.rsplit("/", 1)[0]
+        reach = closure(deps, address) - {src}
+        for module in sorted(imported(src)):
+            same = [f for f in py_files if f.endswith(f"/{module}.py") and f != src]
+            if same and not reach & set(same):
+                dropped.append(f"{src}: import {module}")
         for name in sorted(set(PY_NAME.findall((REPO / src).read_text()))):
-            sibling = f"{here}/{name}"
-            if sibling in py_files:
-                targets = [sibling]
-            else:
-                targets = [
-                    f
-                    for f in py_files
-                    if finder_folder(f) == finder_folder(src)
-                    and (f == name or f.endswith(f"/{name}"))
-                ]
-            missing += [f"{src} -> {t}" for t in targets if t != src and t not in reach]
+            targets, every = named(name, src, py_files)
+            targets = [t for t in targets if t != src]
+            if every:
+                missing += [f"{src} -> {t}" for t in targets if t not in reach]
+            elif targets and not reach & set(targets):
+                missing.append(f"{src} -> one of {targets}")
+        conftest = f"{src.rsplit('/', 1)[0]}/conftest.py"
+        is_test = src.rsplit("/", 1)[-1].startswith("test_")
+        if is_test and conftest in py_files and conftest not in reach:
+            unloaded.append(f"{src} -> {conftest}")
+    check(
+        "every first-party module a finder source imports is a dependency of "
+        f"it (a source root in pants.toml resolves it): {dropped or 'none dropped'}",
+        not dropped,
+    )
+    check(
+        "every test beside a conftest.py reaches it (an `edges` entry in its "
+        f"BUILD file): {unloaded or 'none missing'}",
+        not unloaded,
+    )
     check(
         "every .py file a finder source names in a string is a dependency of "
         f"it (an `edges` entry in its BUILD file): {missing or 'none missing'}",

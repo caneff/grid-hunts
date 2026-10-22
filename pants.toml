@@ -1,7 +1,7 @@
 # Pants chooses a narrowed run's suites (tests/all.sh --changed): the suites
 # among the dependents of the files a diff changed. It runs no suite; the
 # runner runs each from the tree. A code directory is wired by its own BUILD
-# file, one `finder(...)` call (tests/pants_prelude.py).
+# file, one `code_dir(...)` call (tests/pants_prelude.py).
 [GLOBAL]
 pants_version = "2.33.1"
 backend_packages = ["pants.backend.python"]

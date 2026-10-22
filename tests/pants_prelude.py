@@ -1,4 +1,4 @@
-# The one shape of a code directory's BUILD file: `finder(...)`, its Python
+# The one shape of a code directory's BUILD file: `code_dir(...)`, its Python
 # and its data. Pants infers the imports; what no import shows is passed here.
 #
 # Every Python file of the directory depends on the directory's data: the
@@ -13,7 +13,7 @@
 #           in a string and does not reach.
 
 
-def finder(edges=None):
+def code_dir(edges=None):
     python_sources(
         name="py",
         sources=["*.py"],

@@ -1,4 +1,4 @@
-finder(
+code_dir(
     edges={
         # It compiles every hunt script here, and checks the two files of
         # finders/qqrr the scripts reach by path.

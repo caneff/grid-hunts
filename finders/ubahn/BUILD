@@ -1,4 +1,4 @@
-finder(
+code_dir(
     edges={
         # The finders and timers each test starts as a subprocess.
         "test_penpa.py": ["./ubahn_finder.py:py"],

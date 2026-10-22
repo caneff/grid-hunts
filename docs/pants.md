@@ -17,7 +17,7 @@ PATH a narrowed run widens to the whole seam and says so.
 ## Wiring a code directory
 
 Every directory under `finders/` that holds Python has a `BUILD` file of one
-`finder(...)` call (`tests/pants_prelude.py`). `finder()` owns the
+`code_dir(...)` call (`tests/pants_prelude.py`). `code_dir()` owns the
 directory's `*.py` and, as `data`, every other file under it but `.md`, the
 `BUILD` file included; each Python file depends on that data, so a fixture or
 `BUILD` change selects the whole directory and everything that imports from it.
@@ -40,7 +40,7 @@ A test that starts a script as a subprocess does not import it, so its
 `BUILD` file names it under `edges`:
 
 ```python
-finder(edges={"test_report.py": ["./report.py:py"]})
+code_dir(edges={"test_report.py": ["./report.py:py"]})
 ```
 
 `tests/test_pants_edges.py` reads every finder source for a string naming a

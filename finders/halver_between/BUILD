@@ -1,1 +1,1 @@
-finder(edges={"test_report.py": ["./report.py:py"]})
+code_dir(edges={"test_report.py": ["./report.py:py"]})

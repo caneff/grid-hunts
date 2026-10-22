@@ -1,5 +1,5 @@
 # The toy finders each test starts as a subprocess.
-finder(
+code_dir(
     edges={
         "test_finder_config.py": ["./toy_config_finder.py:py"],
         "test_hunt_verify.py": ["./toy_finder.py:py", "./toy_stateful_finder.py:py"],

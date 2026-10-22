@@ -224,7 +224,8 @@ for spec in "$@"; do
 done | sort -u
 """
 # What the stand-in knows: each test file is its own target; the shared
-# helper, the fixture and finders/fake/BUILD reach finders/fake/test_a.py.
+# helper, the fixture and finders/fake/BUILD reach finders/fake/test_a.py; the
+# shared paths are placed too.
 ANSWER = {
     "finders/fake/test_a.py": ["finders/fake/test_a.py:py"],
     "finders/fake-two/test_f.py": ["finders/fake-two/test_f.py:py"],
@@ -239,6 +240,18 @@ ANSWER = {
         "finders/fake/test_a.py:py",
     ],
     "finders/fake/donnée.json": ["finders/fake/donnée.json:data"],
+    # Placed, so only the runner's own list of shared paths can widen them.
+    **{
+        path: [f"{path}:shared"]
+        for path in (
+            "pyproject.toml",
+            "uv.lock",
+            "tests/new_helper.py",
+            "justfile",
+            "pants.toml",
+            ".github/workflows/ci.yml",
+        )
+    },
     "finders/fake/BUILD": ["finders/fake/BUILD:data", "finders/fake/test_a.py:py"],
 }
 
@@ -413,9 +426,14 @@ with tempfile.TemporaryDirectory() as d:
     ):
         touch_on_branch(root, "finders/other-one/test_b.py", path)
         rc, lines = listing(script)
+        shared = path in ANSWER
         check(
-            f"--list --changed, {path}: widens to every suite ({lines})",
-            rc == 0 and sorted(lines) == sorted([*LINT, *ALWAYS, *ALL_TESTS]),
+            f"--list --changed, {path}: widens to every suite, "
+            f"{'without asking Pants' if shared else 'Pants placing nothing'} "
+            f"({lines})",
+            rc == 0
+            and sorted(lines) == sorted([*LINT, *ALWAYS, *ALL_TESTS])
+            and (pants_calls(root) == []) == shared,
         )
         got = count_line(script)
         check(
