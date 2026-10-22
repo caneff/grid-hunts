@@ -1,0 +1,31 @@
+# Pants chooses a narrowed run's suites (tests/all.sh --changed): the suites
+# among the dependents of the files a diff changed. It runs no suite; the
+# runner runs each from the tree. A code directory is wired by its own BUILD
+# file, one `code_dir(...)` call (tests/pants_prelude.py).
+[GLOBAL]
+pants_version = "2.33.1"
+backend_packages = ["pants.backend.python"]
+build_file_prelude_globs = ["tests/pants_prelude.py"]
+# No daemon: many worktrees share this box, and each would hold a resident one.
+pantsd = false
+# One process at a time: the box is shared.
+process_execution_local_parallelism = 1
+local_cache = false
+# No trailing slash on `/.venv`: a worktree may borrow another checkout's
+# .venv through a symlink, and Pants stops on an absolute symlink it reads.
+pants_ignore = ["/.claude/", "/.scratch/", "/.venv", "/archive/", "/_binary_shims_*"]
+
+# Every directory a script puts on sys.path. Inference does not read
+# sys.path.insert; these roots are what make `import verified_io` resolve.
+[source]
+root_patterns = ["/finders/*", "/finders/qqrr/hunt"]
+
+[python]
+interpreter_constraints = [">=3.11"]
+
+[python-infer]
+# Two finders may each have a `hunt.py` or a `model.py`: the one in the
+# importer's own source root is the one it imports.
+ambiguity_resolution = "by_source_root"
+# Third-party imports (ortools, sudoku_kit) are uv's, not Pants's.
+unowned_dependency_behavior = "ignore"

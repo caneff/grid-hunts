@@ -32,7 +32,7 @@ Retiring a finder is `git mv` to `archive/finders/` plus its README; reviving on
 ## End-to-end seam
 
 - **Seam**: `just check`
-- **Narrowed**: `bash tests/all.sh --changed origin/main` — lint, the runner's test, and the suites under each `finders/<name>/` folder the diff touches (plus the finder a changed data or code directory feeds: `finders/halver/`, the shared halver layer, feeds `halver_between` and `halver_lockout`); shared code, a `docs/` file that is not `.md` and not mapped, or any path nothing names widens the run to every non-slow suite, and the last line ends `(widened: <path>)`; a diff of unmapped `.md` files runs lint and the runner's test; the rules and the data map are in the header of `tests/all.sh`
+- **Narrowed**: `bash tests/all.sh --changed origin/main` — lint, the runner's test, the Pants edge check, and the suites Pants lists among the transitive dependents of the changed files; a `.md` or `archive/` path changes nothing; `pyproject.toml`, `uv.lock`, `pants.toml`, `justfile`, `tests/`, `.github/`, a deleted file, a file Pants cannot place (no BUILD target owns it, such as a non-`.md` `docs/` file) or no answer from Pants widens the run to every non-slow suite, and the last line ends `(widened: <why>)`; the rules are in the header of `tests/all.sh`, the BUILD files in `docs/pants.md`
 - **Blind to**: the slow tests (`just test-slow`: the halver/between and
   halver/lockout hunts, the lockout 23-line board and the five slowest U-Bahn
   suites), a hunt's own output,
@@ -42,9 +42,10 @@ Retiring a finder is `git mv` to `archive/finders/` plus its README; reviving on
 
 - **Gate — run before each commit and before opening a PR:** `just check` —
   ruff on `finders/` and `tests/`, `uv lock --check`, every
-  `finders/**/test_*.py` except the slow ones, and `tests/test_all_sh.py`
-  (the runner's own test). It is the full seam: CI runs it nightly, on a cron
-  line in `.github/workflows/ci.yml`, installing only uv. A pull request and a
+  `finders/**/test_*.py` except the slow ones, `tests/test_all_sh.py`
+  (the runner's own test) and `tests/test_pants_edges.py` (the Pants edges). It is the full seam: CI runs it nightly, on a cron
+  line in `.github/workflows/ci.yml`, installing uv and the Pants launcher;
+  a local run needs the launcher too (`docs/pants.md`). A pull request and a
   push to main run the narrowed gate, `bash tests/all.sh --changed
   origin/main` (a push uses the pushed range's base; a new branch or a
   force-push runs `just check` and says it widened). `--list --changed
@@ -72,6 +73,7 @@ Retiring a finder is `git mv` to `archive/finders/` plus its README; reviving on
 - Finder rules and the guide to each finder → `finders/AGENTS.md`
 - Coding + testing standards → `CODING_STANDARDS.md`
 - Before writing the next finder → `docs/agents/grid-finder-lessons.md`
+- Before adding a finder folder or a test that starts a script → `docs/pants.md`
 - Terms → `GLOSSARY.md`
 - Notes, hunt outputs and precomputed catalogues → `docs/research/`
 

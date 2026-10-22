@@ -25,7 +25,8 @@ README before reusing anything there.
   hunt its output directory and dedupe for free. `finders/hunt/toy_finder.py`
   is a minimal worked example; `finders/qqrr/hunt/tie_finder.py`, a new finder
   over `chan_big.py`'s model, is the first real one. Other existing finders
-  are not ported onto it.
+  are not ported onto it. A new finder folder needs a BUILD file before
+  the gate passes: `docs/pants.md`.
 - `finders/ubahn/` is the U-Bahn finder (a pencil puzzle, no sudoku), on the
   hunt protocol: `ubahn_finder.py` its docstring and flags, `model.py` the
   CP-SAT model, `network.py` the solver-free rules `verify` reads;
@@ -156,7 +157,8 @@ README before reusing anything there.
   (#56): the loop, its ranking, `verify` on the line type's backtracking
   check, the record, `summary` and the CLI; a finder's `hunt.py` names its
   line type's modules, its starting board and its link. A change here
-  runs the suites of both finders on it (`tests/all.sh`'s `data_map`).
+  runs the suites that import it, both finders' among them (Pants,
+  `docs/pants.md`).
 - `finders/halver_between/` is the halver + between-line rule check (spec #39),
   the between line type on `finders/halver/`:
   `rules.py` the between pieces of the CP-SAT model, `brute.py` the between
