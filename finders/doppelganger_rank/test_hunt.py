@@ -124,11 +124,12 @@ with tempfile.TemporaryDirectory() as tmp:
         return place
 
     hunt.most_restricting = spy
-    seeded = hunt.DoppelgangerRankFinder(board=str(empty), **hunt.DEFAULTS)
+    ranking = {**hunt.DEFAULTS, "pool": 16}
+    seeded = hunt.DoppelgangerRankFinder(board=str(empty), **ranking)
     hit = seeded.propose(random.Random(0))
     hunt.most_restricting = ranked
     assert isinstance(hit, hunt.Hit), hit
-    assert picks and picks[0][1] >= hunt.DEFAULTS["pool_floor"], picks
+    assert picks and picks[0][1] >= ranking["pool_floor"], picks
 
     # The hunt that runs through.
     out = tmp / "hits"

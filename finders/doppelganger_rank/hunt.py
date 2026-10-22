@@ -22,8 +22,10 @@ solutions keep the target's rank at its place, ties broken by the seed's
 rng. The sample is `--pool` draws of `RankModel.sample` on the current
 clues, the target and repeats left out. Each added clue drops the sampled
 grids it rules out, and when fewer than `--pool-floor` are left the next
-pick draws a fresh sample. `--pool 0` draws none, so every place ties and
-the pick is the seed's rng alone, #69's uniform pick. At `unique`, the hunt
+pick draws a fresh sample. `--pool 0`, the default since #72, draws none,
+so every place ties and the pick is the seed's rng alone, #69's uniform
+pick: on Chris's 9x9 opening `--pool 16` was 11 times slower on the same
+seeds and found no smaller hit (the decision log). At `unique`, the hunt
 protocol's minimiser (`finders/hunt/minimizer.py`) drops each added clue the
 board stays unique without; the board's own clues are never dropped. The
 one grid left is the target.
@@ -59,11 +61,12 @@ is refused.
 Every check of a seed is hinted with its target (#72), a warm start that
 changes no verdict: on Chris's 9x9 opening it took the add loop's second
 grids from 2.1 s to 1.1 s each and found a target's rank twin after 3 to 6
-clues in place of 15 or 16 (`docs/research/2026-10-22-doppelganger-rank-
-decision-log.md`). Every CP-SAT call runs on one worker but the
+clues in place of 15 or 16. Every CP-SAT call runs on one worker but the
 minimiser's, which run on `--proof-workers` (1 unless given). They answer
 only unique or not, so more workers change no hit; the add loop stays on
 one, since the second grid it reads would then change from run to run.
+The measurements behind both, and behind `--pool 0`, are in the decision
+log, `docs/research/2026-10-22-doppelganger-rank-decision-log.md`.
 """
 
 import argparse
@@ -102,7 +105,7 @@ DEFAULTS = {
     "time_limit": 30.0,
     "max_clues": 36,
     "max_seconds": 300.0,
-    "pool": 16,
+    "pool": 0,
     "pool_floor": 4,
     "proof_workers": 1,
 }
