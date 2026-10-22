@@ -21,3 +21,5 @@ select = ["F", "I", "B", "UP", "SIM", "C4", "PIE", "PERF", "RET", "PTH", "RUF"]
 # handling are waived, not the pyflakes, import, B905 or RUF059 checks.
 [lint.per-file-ignores]
 "finders/qqrr/hunt/*.py" = ["SIM115", "PTH", "PERF401", "RUF001", "RUF005"]
+# tests/pants_prelude.py: Pants runs it with its BUILD-file names in scope.
+"tests/pants_prelude.py" = ["F821"]

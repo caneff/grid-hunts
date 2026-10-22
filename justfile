@@ -2,7 +2,8 @@
 # every recipe that runs tests calls it with the group it wants.
 
 # The gate: lint and every finder test but the slow ones, plus the test of the
-# runner itself (tests/test_all_sh.py). CI runs it.
+# runner itself (tests/test_all_sh.py) and the Pants edge check
+# (tests/test_pants_edges.py). CI runs it.
 [doc("The gate: lint plus every finder test except the slow ones.")]
 check: lint test
 
