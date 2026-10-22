@@ -1,0 +1,10 @@
+{
+  "size": 6,
+  "box": [2, 3],
+  "clues": [
+    {"line": "r3", "end": "left", "rank": 2},
+    {"line": "c4", "end": "bottom", "rank": 2},
+    {"line": "c5", "end": "top", "rank": 4}
+  ],
+  "marks": []
+}

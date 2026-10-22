@@ -195,6 +195,18 @@ README before reusing anything there.
   format. `fixtures/` holds the 9x9 test boards (infeasible, unique, not
   unique, the four-diamond board, and the 23-line board that
   `test_unique_23.py` checks in `just test-slow`), test cases and not hits.
+- `finders/doppelganger_rank/` is the Doppelganger + Full Rank finder (spec
+  #66; terms in `GLOSSARY.md`, rules and sources in
+  `docs/research/2026-10-22-doppelganger-full-rank-rules.md`), at 4x4, 6x6
+  and 9x9: `model.py` the CP-SAT model (digits 0..n, a missing digit per
+  unit, a clue's rank as 1 plus a count of strictly-less literals),
+  `rules.py` the solver-free rule reader (every rule, each unit's missing
+  digit, the 4n numbers and their ranks, ties sharing a rank), and
+  `brute.py` the 4x4 answer key, all 768 grids, none with a tie.
+  `check.py BOARD [--time-limit S]` prints a board file's status, one
+  solution (two for not unique) with every rank and missing digit, and each
+  mark's verdict in `halver_report`'s format; its docstring gives the board
+  file format. `fixtures/` holds the test boards.
 - `archive/finders/galaxy-copycat/`'s write-ups live in `docs/research/2026-09-14-copycat-scan.md`
   and `docs/research/2026-09-14-galaxy-copycat-design.md`; its boards are
   `docs/research/2026-09-14-galaxy-copycat/boards/`.
