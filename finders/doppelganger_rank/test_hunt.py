@@ -159,7 +159,9 @@ with tempfile.TemporaryDirectory() as tmp:
     assert result.returncode == 0, result.stderr
     first = [r for e, r in zip(found, examples, strict=True) if e["seed"] < 5]
     assert jsonl(wide / "examples.jsonl") == first
-    result = run("--board", empty, "--out", tmp / "none", "--proof-workers", 0)
+    result = run(
+        "--board", empty, "--out", tmp / "none", "--seeds", "0:1", "--proof-workers", 0
+    )
     assert result.returncode == 2 and "--proof-workers 0" in result.stderr, result
 
     counts, lines = split(out)
