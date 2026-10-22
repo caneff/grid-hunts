@@ -382,7 +382,8 @@ went from 23 s to 42 s on this box (one run each, load average 3.4).
 **Worker's choices (#79), flag if you disagree:**
 
 - **The defaults are ranked, `--pool 16 --pool-floor 4`**, following the
-  ruling, although they are slower at 4x4 and 6x6 (above).
+  ruling, although they are slower at 4x4 and 6x6 (above). Superseded by
+  #72: the default is now `--pool 0` (§ The 9x9 hunt).
 - **The sample is drawn at the first pick, not before the first check.**
   A board that starts unique draws none. Otherwise this is the ruling's
   "before a seed's loop".
