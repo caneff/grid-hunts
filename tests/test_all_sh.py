@@ -15,7 +15,6 @@ lint and the runner's test; `--list --changed` prints the selection.
 """
 
 import os
-import re
 import subprocess
 import sys
 import tempfile
@@ -86,7 +85,7 @@ def tree(root, suites):
         "".join(
             line
             for line in lines
-            if "printf 'test\\t%s\\n' \"$runner_test\"" not in line
+            if 'printf \'test\\t%s\\n\' "$runner_test" "$edges_test"' not in line
         )
     )
     (root / "finders" / "fake").mkdir(parents=True)
@@ -210,33 +209,57 @@ def git(root, *args):
     )
 
 
-def fake_map(runner):
-    """The runner with its data map swapped for one mapped data directory,
-    whatever the real map holds."""
-    swapped, count = re.subn(
-        r'^data_map=".*"$',
-        'data_map="docs/research/fake-data/=fake"',
-        runner,
-        flags=re.MULTILINE,
-    )
-    assert count == 1, f"{count} data_map lines in tests/all.sh"
-    return swapped
+# A stand-in for Pants, put first on the PATH: it logs its arguments to
+# `pants-calls` at the tree's root and answers each spec from `pants-answer`
+# there, one `<spec>\t<address>` line per target, as `pants dependents
+# --transitive --closed` would. A `pants-fails` file makes it fail.
+STUB_PANTS = """\
+#!/usr/bin/env bash
+echo "$*" >>pants-calls
+[ ! -e pants-fails ] || { echo "stub pants: no answer" >&2; exit 1; }
+for spec in "$@"; do
+  awk -F'\\t' -v s="$spec" '$1 == s { print $2 }' pants-answer
+done | sort -u
+"""
+# What the stand-in knows: each test file is its own target; the shared
+# helper, the fixture and finders/fake/BUILD reach finders/fake/test_a.py.
+ANSWER = {
+    "finders/fake/test_a.py": ["finders/fake/test_a.py:py"],
+    "finders/fake-two/test_f.py": ["finders/fake-two/test_f.py:py"],
+    "finders/other-one/test_b.py": ["finders/other-one/test_b.py:py"],
+    "finders/hunt/test_h.py": ["finders/hunt/test_h.py:py"],
+    "finders/hunt/helper.py": [
+        "finders/hunt/helper.py:py",
+        "finders/fake/test_a.py:py",
+    ],
+    "finders/fake/fixture.json": [
+        "finders/fake/fixture.json:data",
+        "finders/fake/test_a.py:py",
+    ],
+    "finders/fake/donnée.json": ["finders/fake/donnée.json:data"],
+    "finders/fake/BUILD": ["finders/fake/BUILD:data", "finders/fake/test_a.py:py"],
+}
 
 
 def changed_tree(root):
-    """A git tree holding the whole runner, a stub runner test, three fake
-    finder folders and one file at each shared path, committed as `main`."""
+    """A git tree holding the whole runner, stub runner tests, three fake
+    finder folders and one file at each shared path, committed as `main`,
+    with the stand-in Pants in `<root>/../bin`."""
     files = {
-        # A mapped data directory, so the mapping loop has a test of its own.
-        "tests/all.sh": fake_map(ALL.read_text()),
+        "tests/all.sh": ALL.read_text(),
         "tests/test_all_sh.py": "pass\n",
+        "tests/test_pants_edges.py": "pass\n",
         "finders/fake/test_a.py": "pass\n",
+        "finders/fake/fixture.json": "",
+        "finders/fake/BUILD": "",
         "finders/other-one/test_b.py": "pass\n",
         "finders/hunt/test_h.py": "pass\n",
+        "finders/hunt/helper.py": "",
         "finders/loose.py": "",
         "pyproject.toml": "",
         "uv.lock": "",
         "justfile": "",
+        "pants.toml": "",
         ".github/workflows/ci.yml": "",
         "docs/note.md": "",
         "AGENTS.md": "",
@@ -247,6 +270,14 @@ def changed_tree(root):
     for name, body in files.items():
         (root / name).parent.mkdir(parents=True, exist_ok=True)
         (root / name).write_text(body)
+    (root / ".gitignore").write_text("pants-*\n")
+    (root / "pants-answer").write_text(
+        "".join(f"{s}\t{a}\n" for s, addrs in ANSWER.items() for a in addrs)
+    )
+    stub = root.parent / "bin" / "pants"
+    stub.parent.mkdir()
+    stub.write_text(STUB_PANTS)
+    stub.chmod(0o755)
     git(root, "init", "-q", "-b", "main")
     git(root, "add", "-A")
     git(root, "commit", "-q", "-m", "base")
@@ -261,16 +292,22 @@ def touch_on_branch(root, *names):
             f.write("# change\n")
     git(root, "add", "-A")
     git(root, "commit", "-q", "-m", "change")
+    (root / "pants-calls").unlink(missing_ok=True)
 
 
-def changed(script, *args):
+def changed(script, *args, path=None):
+    stub_dir = str(script.parents[2] / "bin")
     return subprocess.run(
         ["bash", str(script), "--changed", "main", *args],
         capture_output=True,
         text=True,
         timeout=120,
         # The fake tree's pyproject.toml and uv.lock are empty files.
-        env={**BASE_ENV, "UV_NO_PROJECT": "1"},
+        env={
+            **BASE_ENV,
+            "UV_NO_PROJECT": "1",
+            "PATH": path or f"{stub_dir}:{BASE_ENV['PATH']}",
+        },
     )
 
 
@@ -279,7 +316,7 @@ LINT = [
     "uvx ruff format --check finders tests",
     "uv lock --check",
 ]
-RUNNER = "uv run tests/test_all_sh.py"
+ALWAYS = ["uv run tests/test_all_sh.py", "uv run tests/test_pants_edges.py"]
 ALL_TESTS = [
     "uv run finders/fake-two/test_f.py",
     "uv run finders/fake/test_a.py",
@@ -288,14 +325,19 @@ ALL_TESTS = [
 ]
 
 
-def listing(script, *args):
-    r = changed(script, "--list", *args)
+def listing(script, *args, **kw):
+    r = changed(script, "--list", *args, **kw)
     return r.returncode, r.stdout.splitlines()
 
 
 def count_line(script, *args):
     r = changed(script, "--group", "test", *args)
     return r.returncode, r.stdout.splitlines()[-1]
+
+
+def pants_calls(root):
+    calls = root / "pants-calls"
+    return calls.read_text().splitlines() if calls.exists() else []
 
 
 with tempfile.TemporaryDirectory() as d:
@@ -306,31 +348,62 @@ with tempfile.TemporaryDirectory() as d:
     touch_on_branch(root, "finders/other-one/test_b.py")
     got = listing(script)
     check(
-        "--list --changed, one finder folder: lint, the runner's test and "
-        f"that folder only ({got})",
-        got == (0, [*LINT, RUNNER, "uv run finders/other-one/test_b.py"]),
+        "--list --changed, one test file: lint, the always-kept suites and "
+        f"the suites Pants lists ({got})",
+        got == (0, [*LINT, *ALWAYS, "uv run finders/other-one/test_b.py"]),
+    )
+    calls = pants_calls(root)
+    check(
+        "Pants is asked once, for the transitive dependents of the changed "
+        f"file and the file's own target ({calls})",
+        calls == ["dependents --transitive --closed finders/other-one/test_b.py"],
     )
     got = count_line(script)
     check(
-        "--changed run, one finder folder: counts the narrowed suites, no "
+        "--changed run, one test file: counts the narrowed suites, no "
         f"widened note ({got})",
-        got == (0, "2 of 2 suites passed (group: test)"),
+        got == (0, "3 of 3 suites passed (group: test)"),
     )
 
     touch_on_branch(root, "finders/fake/test_a.py")
     got = listing(script)
     check(
         f"--list --changed, finders/fake does not select finders/fake-two ({got})",
-        got == (0, [*LINT, RUNNER, "uv run finders/fake/test_a.py"]),
+        got == (0, [*LINT, *ALWAYS, "uv run finders/fake/test_a.py"]),
+    )
+
+    touch_on_branch(root, "finders/hunt/helper.py")
+    got = listing(script)
+    check(
+        "--list --changed, a shared helper: its dependents, not its folder's "
+        f"other suites and not every suite ({got})",
+        got == (0, [*LINT, *ALWAYS, "uv run finders/fake/test_a.py"]),
+    )
+
+    touch_on_branch(root, "finders/fake/fixture.json")
+    got = listing(script)
+    check(
+        f"--list --changed, a data file: the suites that depend on it ({got})",
+        got == (0, [*LINT, *ALWAYS, "uv run finders/fake/test_a.py"]),
+    )
+
+    touch_on_branch(root, "finders/fake/BUILD")
+    got = listing(script)
+    calls = pants_calls(root)
+    check(
+        "--list --changed, a BUILD file: placed like any file, its dependents "
+        f"run ({got}, {calls})",
+        got == (0, [*LINT, *ALWAYS, "uv run finders/fake/test_a.py"])
+        and calls == ["dependents --transitive --closed finders/fake/BUILD"],
     )
 
     for path in (
-        "finders/hunt/test_h.py",
         "finders/loose.py",
         "pyproject.toml",
         "uv.lock",
         "tests/new_helper.py",
         "justfile",
+        "pants.toml",
         ".github/workflows/ci.yml",
         ".python-version",
         "conftest.py",
@@ -340,45 +413,61 @@ with tempfile.TemporaryDirectory() as d:
         rc, lines = listing(script)
         check(
             f"--list --changed, {path}: widens to every suite ({lines})",
-            rc == 0 and sorted(lines) == sorted([*LINT, RUNNER, *ALL_TESTS]),
+            rc == 0 and sorted(lines) == sorted([*LINT, *ALWAYS, *ALL_TESTS]),
         )
         got = count_line(script)
         check(
             f"--changed run, {path}: the count line names the path ({got})",
-            got == (0, f"5 of 5 suites passed (group: test) (widened: {path})"),
+            got == (0, f"6 of 6 suites passed (group: test) (widened: {path})"),
         )
 
     touch_on_branch(root, "pyproject.toml", "justfile")
     got = count_line(script)
     check(
         f"two shared paths: the note names the first one in diff order ({got})",
-        got == (0, "5 of 5 suites passed (group: test) (widened: justfile)"),
+        got == (0, "6 of 6 suites passed (group: test) (widened: justfile)"),
     )
 
-    # A path git quotes when core.quotepath is on must still be seen.
-    touch_on_branch(root, "docs/research/other/donn\u00e9e.csv")
+    touch_on_branch(root, "docs/note.md", "pyproject.toml")
+    calls = pants_calls(root)
+    check(
+        f"a shared path widens without asking Pants ({calls})",
+        calls == [],
+    )
+
+    # A path git quotes when core.quotepath is on must still be seen, by the
+    # diff and by the placement check.
+    touch_on_branch(root, "finders/fake/donnée.json")
+    got = listing(script)
+    check(
+        f"a non-ASCII path Pants places narrows ({got})",
+        got == (0, [*LINT, *ALWAYS]),
+    )
+    touch_on_branch(root, "docs/research/other/donnée.csv")
     got = count_line(script)
     check(
-        f"a non-ASCII unmapped docs/ file widens, naming it unquoted ({got})",
+        f"a non-ASCII file Pants cannot place widens, naming it unquoted ({got})",
         got
         == (
             0,
-            "5 of 5 suites passed (group: test) "
-            "(widened: docs/research/other/donn\u00e9e.csv)",
+            "6 of 6 suites passed (group: test) "
+            "(widened: docs/research/other/donnée.csv)",
         ),
     )
 
-    # A file moved out of shared code is both a deletion and an addition.
+    # A file moved out of shared code is both a deletion and an addition:
+    # Pants answers from the tree as it is now, where nothing imports the old
+    # path, so its importers would go unlisted.
     git(root, "checkout", "-q", "-B", "work", "main")
-    git(root, "mv", "finders/hunt/test_h.py", "finders/fake/test_h.py")
+    git(root, "mv", "finders/hunt/helper.py", "finders/fake/helper.py")
     git(root, "commit", "-q", "-m", "move")
     got = count_line(script)
     check(
-        f"a rename out of finders/hunt/ widens, naming the old path ({got})",
+        f"a deleted or renamed-away file widens, naming the old path ({got})",
         got
         == (
             0,
-            "5 of 5 suites passed (group: test) (widened: finders/hunt/test_h.py)",
+            "6 of 6 suites passed (group: test) (widened: finders/hunt/helper.py)",
         ),
     )
 
@@ -393,25 +482,18 @@ with tempfile.TemporaryDirectory() as d:
     git(root, "reset", "-q", "--hard", "HEAD~1")
     check(
         f"a commit on the base after the branch was cut does not widen it ({got})",
-        got == (0, [*LINT, RUNNER, "uv run finders/other-one/test_b.py"]),
+        got == (0, [*LINT, *ALWAYS, "uv run finders/other-one/test_b.py"]),
     )
 
-    touch_on_branch(root, "docs/research/fake-data/rows.csv")
-    got = listing(script)
-    check(
-        f"a mapped data directory selects that finder only ({got})",
-        got == (0, [*LINT, RUNNER, "uv run finders/fake/test_a.py"]),
-    )
-
-    # Retired finders' data stays under docs/research/ and maps to no suite.
+    # Retired finders' data stays under docs/research/, which no target owns.
     touch_on_branch(root, "docs/research/renbanana/CIRCLES.json")
     got = count_line(script)
     check(
-        f"data of a retired finder maps to no suite, so it widens ({got})",
+        f"data of a retired finder is placed by no target, so it widens ({got})",
         got
         == (
             0,
-            "5 of 5 suites passed (group: test) "
+            "6 of 6 suites passed (group: test) "
             "(widened: docs/research/renbanana/CIRCLES.json)",
         ),
     )
@@ -419,49 +501,80 @@ with tempfile.TemporaryDirectory() as d:
     touch_on_branch(root, "archive/finders/old/test_o.py")
     got = listing(script)
     check(
-        f"a change under archive/ selects only lint and the runner's test ({got})",
-        got == (0, [*LINT, RUNNER]),
-    )
-
-    touch_on_branch(root, "docs/research/other/data.csv")
-    got = count_line(script)
-    check(
-        f"an unmapped non-.md file under docs/ widens, naming the file ({got})",
-        got
-        == (
-            0,
-            "5 of 5 suites passed (group: test) "
-            "(widened: docs/research/other/data.csv)",
-        ),
+        "a change under archive/ selects only lint and the always-kept "
+        f"suites, and asks Pants nothing ({got})",
+        got == (0, [*LINT, *ALWAYS]) and pants_calls(root) == [],
     )
 
     touch_on_branch(root, "docs/research/other/notes.md")
     got = listing(script)
     check(
-        f"a .md outside the data map is docs only ({got})",
-        got == (0, [*LINT, RUNNER]),
+        f"a .md file is docs only ({got})",
+        got == (0, [*LINT, *ALWAYS]),
     )
 
     touch_on_branch(root, "docs/note.md", "AGENTS.md", "finders/fake/README.md")
     got = listing(script)
     check(
         "--list --changed, docs only (even a .md inside a finder folder): "
-        f"lint and the runner's test ({got})",
-        got == (0, [*LINT, RUNNER]),
+        f"lint and the always-kept suites, Pants not asked ({got})",
+        got == (0, [*LINT, *ALWAYS]) and pants_calls(root) == [],
     )
 
     touch_on_branch(root, "finders/fake/test_a.py", "docs/note.md")
     got = listing(script)
     check(
-        f"--list --changed, a finder folder plus a doc: the folder runs ({got})",
-        got == (0, [*LINT, RUNNER, "uv run finders/fake/test_a.py"]),
+        f"--list --changed, a test file plus a doc: the test runs ({got})",
+        got == (0, [*LINT, *ALWAYS, "uv run finders/fake/test_a.py"]),
+    )
+
+    touch_on_branch(root, "finders/other-one/test_b.py")
+    (root / "pants-fails").write_text("")
+    r = changed(script, "--list")
+    (root / "pants-fails").unlink()
+    check(
+        "Pants failing widens, saying so, and its error reaches stderr "
+        f"({r.stdout.splitlines()[-1:]}, {r.stderr!r})",
+        r.returncode == 0
+        and sorted(r.stdout.splitlines()) == sorted([*LINT, *ALWAYS, *ALL_TESTS])
+        and "stub pants: no answer" in r.stderr,
+    )
+    (root / "pants-fails").write_text("")
+    r = changed(script, "--group", "test")
+    (root / "pants-fails").unlink()
+    check(
+        f"Pants failing: the count line says why it widened ({r.stdout.splitlines()[-1:]})",
+        r.stdout.splitlines()[-1]
+        == "6 of 6 suites passed (group: test) (widened: Pants gave no answer)",
+    )
+
+    answer = (root / "pants-answer").read_text()
+    (root / "pants-answer").write_text(
+        answer + "finders/other-one/test_b.py\tnot an address\n"
+    )
+    r = changed(script, "--group", "test")
+    (root / "pants-answer").write_text(answer)
+    check(
+        "an answer line that is not a target address widens "
+        f"({r.stdout.splitlines()[-1:]})",
+        r.stdout.splitlines()[-1] == "6 of 6 suites passed (group: test) "
+        "(widened: Pants's answer cannot be read: not an address)",
+    )
+
+    rc, lines = listing(script, path="/usr/bin:/bin")
+    r = changed(script, "--list", path="/usr/bin:/bin")
+    check(
+        f"no pants on the PATH widens, and stderr says so ({lines}, {r.stderr!r})",
+        rc == 0
+        and sorted(lines) == sorted([*LINT, *ALWAYS, *ALL_TESTS])
+        and "no `pants` on the PATH" in r.stderr,
     )
 
     git(root, "checkout", "-q", "main")
     got = listing(script)
     check(
-        f"--changed with an empty diff: lint and the runner's test ({got})",
-        got == (0, [*LINT, RUNNER]),
+        f"--changed with an empty diff: lint and the always-kept suites ({got})",
+        got == (0, [*LINT, *ALWAYS]),
     )
     r = subprocess.run(
         ["bash", str(script), "--changed", "no-such-ref", "--list"],
@@ -507,41 +620,6 @@ for name in RETIRED:
     check(
         f"{name} is archived with a README and no file of it is left in finders/",
         (REPO / "archive" / "finders" / name / "README.md").is_file() and not tracked,
-    )
-
-# The real data map, not a fake one: a change to the shared halver layer,
-# which holds no suite of its own, selects both finders that run on it and
-# nothing else.
-with tempfile.TemporaryDirectory() as d:
-    root = Path(d)
-    for name, body in {
-        "tests/all.sh": ALL.read_text(),
-        "tests/test_all_sh.py": "pass\n",
-        "finders/halver/halver_rules.py": "",
-        "finders/halver_between/test_rules.py": "pass\n",
-        "finders/halver_lockout/test_rules.py": "pass\n",
-        "finders/fake/test_a.py": "pass\n",
-    }.items():
-        (root / name).parent.mkdir(parents=True, exist_ok=True)
-        (root / name).write_text(body)
-    git(root, "init", "-q", "-b", "main")
-    git(root, "add", "-A")
-    git(root, "commit", "-q", "-m", "base")
-    touch_on_branch(root, "finders/halver/halver_rules.py")
-    got = listing(root / "tests" / "all.sh")
-    check(
-        "--list --changed, the real data map: finders/halver/ selects "
-        f"halver_between's and halver_lockout's suites ({got})",
-        got
-        == (
-            0,
-            [
-                *LINT,
-                RUNNER,
-                "uv run finders/halver_between/test_rules.py",
-                "uv run finders/halver_lockout/test_rules.py",
-            ],
-        ),
     )
 
 sys.exit(0 if ok else 1)

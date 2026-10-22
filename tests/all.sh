@@ -18,20 +18,25 @@
 # directories.
 #
 # `--changed <base>` narrows the run to what the diff `<base>...HEAD` could
-# affect, by directory and not by import graph:
-#   - lint and the runner's own test always run;
-#   - the suites under each `finders/<name>/` folder the diff touches run;
-#   - a change to shared code widens the run to every suite of the selected
-#     group: `finders/hunt/`, any loose `finders/*.py`, `pyproject.toml`,
-#     `uv.lock`, `tests/`, `justfile` and `.github/`. The count line then ends
-#     `(widened: <first such path>)`;
-#   - a data or code directory a finder reads (`data_map` below) selects
-#     that finder;
-#   - any other non-`.md` file under `docs/`, and any path nothing above names
-#     (a top-level dotfile, a `conftest.py`), widens the run too;
-#   - a path under `archive/` changes nothing (retired finders are not suites);
-#   - a `.md` file elsewhere changes nothing, so a docs-only diff runs lint
-#     and the runner's test, a `.md` inside a finder folder included.
+# affect, and Pants says what that is (pants.toml, docs/pants.md):
+#   - lint, the runner's own test and the edge check (`tests/test_pants_edges.py`)
+#     always run;
+#   - a test suite runs when Pants lists its file among the dependents, at any
+#     distance, of a file the diff changed: one call, `pants dependents
+#     --transitive --closed <files>`. Pants infers the imports; each code
+#     directory's BUILD file declares its data (the BUILD file among it) and
+#     the scripts a file starts;
+#   - a `.md` file and a path under `archive/` change nothing and are not
+#     asked about, so a docs-only diff runs lint and the always-run suites;
+#   - the run widens to every suite of the selected group, and the count line
+#     ends `(widened: <why>)`, on: a change to `pyproject.toml`, `uv.lock`,
+#     `pants.toml`, `justfile`, `tests/` or `.github/` (named first in diff
+#     order); a deleted or renamed-away file (Pants answers from the tree as it
+#     is now, where nothing imports it any more); a changed file Pants cannot
+#     place, which no target owns (anything under `docs/` but `.md`, a loose
+#     `finders/*.py`, a top-level dotfile); no `pants` on the PATH; and an
+#     answer from Pants that is missing or cannot be read. A path names
+#     itself as the why.
 # `--list --changed <base>` prints that selection. With no `--changed`, the run
 # is the full seam.
 #
@@ -57,25 +62,20 @@ cd "$root" || exit 1
 finder_slow="finders/halver_between/test_hunt.py finders/halver_lockout/test_unique_23.py finders/halver_lockout/test_hunt.py"
 finder_pytest="finders/counting_shaded/test_counting_shaded.py"
 
-# The runner's own test, which every --changed selection keeps.
+# The suites every --changed selection keeps: the runner's own test, and the
+# check that Pants still sees each edge a narrowed run selects by.
 runner_test="uv run tests/test_all_sh.py"
-# Data or code a finder reads from outside its own folder: <directory
-# prefix>=<finder folder>, space-separated. A change under a mapped directory
-# selects that finder, a `.md` included. Any other non-`.md` file under `docs/`
-# widens the run, so a data directory added later and never mapped costs a
-# full run and never a skipped suite. `finders/halver/` is the shared halver
-# layer (spec #52), which holds no suite of its own, so it selects both
-# finders built on it.
-data_map="finders/halver/=halver_between finders/halver/=halver_lockout"
+edges_test="uv run tests/test_pants_edges.py"
 
 listed() { case " $1 " in *" $2 "*) return 0 ;; esac; return 1; } # <list> <file>
+suite_file() { local w; for w in $1; do case $w in *.py) echo "$w" ;; esac; done; } # <suite>
 
 # Prints "<group>\t<command>" per suite, in run order.
 suites() {
   local f
   printf 'lint\t%s\n' \
     "uvx ruff check finders tests" "uvx ruff format --check finders tests" "uv lock --check"
-  printf 'test\t%s\n' "$runner_test"
+  printf 'test\t%s\n' "$runner_test" "$edges_test"
   for f in finders/**/test_*.py; do
     if listed "$finder_slow" "$f"; then continue
     elif listed "$finder_pytest" "$f"; then printf 'test\tuv run pytest %s -q\n' "$f"
@@ -109,6 +109,9 @@ done
 
 case $jobs in '' | *[!0-9]* | 0) usage "--jobs needs a positive integer, not '$jobs'" ;; esac
 
+state=$(mktemp -d) || exit 1
+trap 'rm -rf "$state"' EXIT
+
 # The tree is globbed here and nowhere else; `set -f` holds everywhere else so
 # a suite command is word-split without its path being expanded.
 set +f; shopt -s nullglob globstar
@@ -124,37 +127,50 @@ else
   note=""
 fi
 
-# --changed: keep lint, the runner's test, and the suites under a touched
-# finder folder; a shared path keeps every suite and names itself in $note.
+# Asks Pants for the targets of the changed files and every target that
+# depends on one, at any distance. Sets `affected`, one address per line, or
+# `widened` when Pants is missing, fails, gives an answer that is not a list of
+# addresses, or holds no target of a changed file: no target owns that file.
+ask_pants() { # <changed files, one per line>
+  local specs=() f
+  while IFS= read -r f; do [ -z "$f" ] || specs+=("$f"); done <<<"$1"
+  command -v pants >/dev/null || {
+    echo "tests/all.sh: no \`pants\` on the PATH, so the run is not narrowed." >&2
+    widened="no \`pants\` on the PATH"; return; }
+  # Pants writes its work directory into the tree it runs in unless told.
+  affected=$(PANTS_WORKDIR=$state/pants pants dependents --transitive --closed "${specs[@]}" </dev/null) || {
+    widened="Pants gave no answer"; return; }
+  while IFS= read -r f; do
+    case $f in "" | *:*) ;; *) widened="Pants's answer cannot be read: $f"; return ;; esac
+  done <<<"$affected"
+  # Placed: the answer holds a target of the file, `<file>:<target>`.
+  for f in "${specs[@]}"; do
+    case $'\n'"$affected" in *$'\n'"$f:"*) ;; *) widened=$f; return ;; esac
+  done
+}
+
+# --changed: keep lint, the always-run suites, and the suites Pants lists among
+# the dependents of the changed files; a path or an answer it cannot narrow on
+# keeps every suite and names itself in $note.
 if [ -n "$base" ]; then
   files=$(git -c core.quotepath=off diff --name-only --no-renames "$base...HEAD" 2>&1) || usage "git cannot diff $base...HEAD: $files"
-  widened="" folders=" "
+  widened="" ask="" affected=""
   while IFS= read -r f; do
-    mapped=""
-    for pair in $data_map; do
-      case $f in "${pair%%=*}"*) mapped=${pair#*=}; folders="$folders$mapped " ;; esac
-    done
-    [ -z "$mapped" ] || continue
     case $f in
       '' | *.md | archive/*) ;; # archived finders are never suites
-      docs/*) widened=${widened:-$f} ;;
-      finders/hunt/* | pyproject.toml | uv.lock | tests/* | justfile | .github/*) widened=${widened:-$f} ;;
-      finders/*/*) name=${f#finders/}; folders="$folders${name%%/*} " ;;
-      *) widened=${widened:-$f} ;; # a loose finders/*.py, or a path nothing names
+      pyproject.toml | uv.lock | pants.toml | justfile | tests/* | .github/*) widened=${widened:-$f} ;;
+      *) if [ -e "$f" ] || [ -L "$f" ]; then ask="$ask$f"$'\n'; else widened=${widened:-$f}; fi ;;
     esac
   done <<<"$files"
+  [ -n "$widened" ] || [ -z "$ask" ] || ask_pants "$ask"
   if [ -z "$widened" ]; then
     narrowed=""
     while IFS=$'\t' read -r g c; do
       [ -n "$c" ] || continue
-      keep=0
-      if [ "$g" = lint ] || [ "$c" = "$runner_test" ]; then keep=1
-      else
-        for name in $folders; do
-          case $c in *" finders/$name/"*) keep=1 ;; esac
-        done
+      if [ "$g" = lint ] || [ "$c" = "$runner_test" ] || [ "$c" = "$edges_test" ] ||
+        case $'\n'"$affected" in *$'\n'"$(suite_file "$c"):"*) true ;; *) false ;; esac; then
+        narrowed="$narrowed$g"$'\t'"$c"$'\n'
       fi
-      [ "$keep" = 1 ] && narrowed="$narrowed$g"$'\t'"$c"$'\n'
     done <<<"$all"
     all=${narrowed%$'\n'}
   else
@@ -182,8 +198,6 @@ run_suite() { # <suite command>
   fi
 }
 
-state=$(mktemp -d) || exit 1
-trap 'rm -rf "$state"' EXIT
 touch "$state/passed" "$state/failed"
 while IFS= read -r suite; do
   [ -n "$suite" ] || continue
