@@ -13,10 +13,14 @@
   (two places both rank 2, which only a tie gives): the re-proof finds
   grids, and the rule reader finds every rule and clue kept in each.
 - A re-proof given no time is a timeout, never unique.
+- `reprove.py` imports only the standard library, `ortools` and
+  `sudoku_kit`, read from its source: never `model`, `rules` or any other
+  module of this repo, so the independence its docstring claims holds.
 
     uv run finders/doppelganger_rank/test_reprove.py
 """
 
+import ast
 import json
 import random
 import sys
@@ -74,5 +78,15 @@ for grid in (got.first, got.second):
 
 board = json.loads((FIXTURES / "unique_4x4.json").read_text())
 assert reprove(4, brute.BOX, board["clues"], time_limit=1e-9).status == "timeout"
+
+roots = set()
+for node in ast.walk(ast.parse((HERE / "reprove.py").read_text())):
+    if isinstance(node, ast.Import):
+        roots.update(alias.name.split(".")[0] for alias in node.names)
+    elif isinstance(node, ast.ImportFrom):
+        # A relative import (`from . import x`) is this repo's code.
+        roots.add(node.module.split(".")[0] if node.level == 0 else ".")
+allowed = set(sys.stdlib_module_names) | {"ortools", "sudoku_kit"}
+assert roots <= allowed, f"reprove.py imports {sorted(roots - allowed)}"
 
 print(f"test_reprove: ok {dict(seen)}")
