@@ -9,8 +9,10 @@ that run:
 - Every mark held: r1c1 = 8, r1c9 = 1, r5c1 = 9, r5c9 = 0, c9 misses 9.
   Each printed solution keeps each mark. Exit 0.
 
-The run took 51 s on one worker, its slowest solve 22 s. The test gives each
-solve 300 s, so a slower machine is slower, not a timeout.
+The leading-digit buckets (#75) took the five mark proofs from 49.9 s to
+under 1 s on one worker. The test gives each solve 10 s: the model without
+them times out on three marks, so a lost speed-up fails here, and a slower
+machine still has ten times the room it needs.
 
     uv run finders/doppelganger_rank/test_opening.py
 """
@@ -29,7 +31,7 @@ from printed import solutions
 BOARD = HERE / "fixtures" / "opening_9x9.json"
 
 done = subprocess.run(
-    [sys.executable, str(HERE / "check.py"), str(BOARD), "--time-limit", "300"],
+    [sys.executable, str(HERE / "check.py"), str(BOARD), "--time-limit", "10"],
     capture_output=True,
     text=True,
 )

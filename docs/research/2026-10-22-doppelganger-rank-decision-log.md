@@ -225,3 +225,54 @@ Worker choices, not rulings:
   0.2 s on `model.py`, 0.3 s on the re-proof; `opening_9x9.json` 2.9 s and
   1.8 s. Both models said `not_unique` on both boards. So at these sizes
   the re-proof costs about what the hunt's own check does.
+
+## Leading-digit buckets in `RankModel` (#75)
+
+`model.py`'s docstring states the constraints: ISS's `FullRank` buckets, as
+the research note `docs/research/2026-10-22-doppelganger-rank-iss-buckets.md`
+(on `main`, a678311) describes them, plus Chris's added scope of
+2026-10-22: a clue's strictly-less literal is decided by the two leading
+digits when they differ, and the whole numbers are compared only when they
+are equal.
+
+**Times, one worker, the opening (`fixtures/opening_9x9.json`).** Measured
+2026-10-22 on this box at load average 10 to 14, a single run each, each
+solve given 300 s:
+
+| solve | before | after |
+| --- | --- | --- |
+| status (`not_unique`) | 3.1 s | 0.4 s |
+| r1c1 = 8 | 2.1 s | 0.0 s |
+| r1c9 = 1 | 17.5 s | 0.0 s |
+| r5c1 = 9 | 2.1 s | 0.0 s |
+| r5c9 = 0 | 11.1 s | 0.0 s |
+| c9 misses 9 | 24.1 s | 0.0 s |
+| **five mark proofs** | **56.9 s** | **0.1 s** |
+
+Every status and mark verdict is unchanged: `test_check.py` (the 4x4
+boards against the answer key, `tie_6x6`, the empty 6x6 and 9x9),
+`test_opening.py`, `test_hunt.py` and `test_reprove.py` all pass.
+
+**Mutations**, each in a throwaway worktree:
+
+- **Lead implications stripped** (`b` forces the other's leading digit at
+  most this one's, `not b` at least): `test_check.py` red, the check's rule
+  reader refusing a model grid where `r1 from the right ranks 11, not 8`.
+  Since the added scope, these are not redundant: with differing leads
+  they are all that decides `b`.
+- **Same-lead gate stripped** (`same` false no longer forces the leads to
+  differ): `test_check.py` red, the same refusal.
+- **Bucket bounds stripped**: every suite green. They are a pure speed-up:
+  without them the five proofs took 5.7 s (slowest 1.6 s) in place of
+  0.1 s. A test that saw this would need a per-solve limit under 1.6 s,
+  too tight for CI.
+
+**Worker's choices (#75):**
+
+- **`test_opening.py` gives each solve 10 s, not 300 s.** The model before
+  this change times out on three marks at 10 s, so a lost speed-up from the
+  lead implications and the gate fails the gate. 10 s is about 25 times the
+  slowest solve now.
+- **The leading-digit one-hot is posted for clued places only**, since only
+  a clue's bucket bounds read it. Other numbers' leads enter as the cell
+  variable itself.
