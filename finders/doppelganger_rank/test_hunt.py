@@ -15,6 +15,8 @@
 - `summary` lists the hits, fewest added clues first, and splits the seeds
   into found, proven infeasible, timed out and capped, the capped count
   labelled as no proof, on a hunt of each.
+- The minimiser on two CP-SAT workers (`--proof-workers 2`) gives the
+  same hits, and `--proof-workers 0` is refused.
 - A hunt killed partway resumes to the same hits as the hunt that ran
   through.
 
@@ -148,6 +150,17 @@ with tempfile.TemporaryDirectory() as tmp:
             rest = [c for c in clues if c is not clue]
             assert brute.classify(rest)[0] == "not_unique", (clue, record)
     assert any(grid(r)[0][0] != 0 for r in examples), "the mark held in every hit"
+
+    # The minimiser's proofs on two workers keep every verdict, so the hits.
+    wide = tmp / "wide"
+    result = run(
+        "--board", empty, "--out", wide, "--seeds", "0:5", "--proof-workers", 2
+    )
+    assert result.returncode == 0, result.stderr
+    first = [r for e, r in zip(found, examples, strict=True) if e["seed"] < 5]
+    assert jsonl(wide / "examples.jsonl") == first
+    result = run("--board", empty, "--out", tmp / "none", "--proof-workers", 0)
+    assert result.returncode == 2 and "--proof-workers 0" in result.stderr, result
 
     counts, lines = split(out)
     assert counts["seeds"] == SEEDS and counts["found"] == len(examples), counts
