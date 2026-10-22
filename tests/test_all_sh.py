@@ -6,10 +6,12 @@ time; `--jobs 2` and `GATE_JOBS=2` run two at once; a failure is named with
 its output, starts no further suite and still lets the running one finish
 before the count line; a suite whose shell is killed fails the run; an empty
 selection is `0 of 0`; a `--jobs` that is not a positive integer is refused.
-`--changed <base>` narrows to the diff `<base>...HEAD`: one finder folder
-selects that folder plus lint and the runner's test; each shared path widens
-the run to every suite and the count line names it; a docs-only diff selects
-lint and the runner's test; `--list --changed` prints the selection.
+`--changed <base>` narrows to the diff `<base>...HEAD` through a stand-in
+`pants` on the PATH: the suites it lists among the changed files' dependents
+run, with lint, this test and the edge check; a shared path, a deleted file, a
+file it does not place, a failed or unreadable answer and no `pants` at all
+widen the run to every suite and the count line names why; a docs-only diff
+asks nothing; `--list --changed` prints the selection.
 
     uv run tests/test_all_sh.py
 """
