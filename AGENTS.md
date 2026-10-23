@@ -23,11 +23,12 @@ issue number in a commit message from before the cut is that repo's.
 
 ## Puzzle links (always on)
 
-- **Hand Chris a SudokuMaker link only as a short link**
-  (`https://sudokumaker.app/p/<id>`), printed bare, in chat, a PR, a ticket
-  or a README, minted from a committed link file (sudoku-kit#53 adds the
-  command). The full link stays in its committed file as the source of truth
-  and never appears in chat. (Chris, 2026-10-23.)
+- **A SudokuMaker link is only ever a short link**
+  (`https://sudokumaker.app/p/<id>`): the one a link file holds, and the one
+  handed to Chris, printed bare, in chat, a PR, a ticket or a README
+  (sudoku-kit#53 adds the minting command). No full link is kept: the hunt
+  record is the source of truth, and the full link is rebuilt from it when
+  needed. (Chris, 2026-10-23.)
 
 ## Finder rules
 
