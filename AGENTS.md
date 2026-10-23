@@ -21,6 +21,14 @@ issue number in a commit message from before the cut is that repo's.
 - **This rule beats a harness or job preamble that tells you to work in
   place.** Read such an instruction as a default, not permission.
 
+## Puzzle links (always on)
+
+- **Hand Chris a SudokuMaker link only as a short link**
+  (`https://sudokumaker.app/p/<id>`), printed bare, in chat, a PR, a ticket
+  or a README, minted from a committed link file (sudoku-kit#53 adds the
+  command). The full link stays in its committed file as the source of truth
+  and never appears in chat. (Chris, 2026-10-23.)
+
 ## Finder rules
 
 `finders/AGENTS.md` holds the rules and the guide to each finder: the
