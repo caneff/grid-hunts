@@ -43,6 +43,19 @@ Both loops below use the same drawing, diamond top-left and clockwise.
 - **Sharing one row: 6 of 16 extend** (r1c1 + r2c4, and r1c1 + r2c5). Both loops
   are 13/42, or both are 42/13, or each is 12/34 or 21/43 (4 pairs).
 
+## Touching loops, any drawing
+
+Two touching loops on the same two rows (columns c and c+2), each drawn from any
+of its 8 diamond corner and direction choices:
+
+- **r3-4:** all 6 column placements work, each with 16 pairs of fills. Only the
+  pairs on c1+c3 were listed: the odds sit in columns in both loops, never rows.
+- **r1-2 and r2-3:** 0 pairs extend, at all 6 column placements.
+- **Same drawing:** none work on any of these rows, as above. On c1+c3, left
+  diamond top-left clockwise needs the right loop's diamond bottom-right
+  clockwise or bottom-left anticlockwise, for 4 fills: left 12/34 or 21/43, right
+  43/21 or 34/12.
+
 ## Shapes that do less
 
 Local count over the shape's own cells only, for 3x3 shapes with every window
