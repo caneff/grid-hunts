@@ -29,11 +29,17 @@ of the 10 fills extend, at r1c1, across a box border at r1c3, and at r4c4.
 
 Both loops below use the same drawing, diamond top-left and clockwise.
 
-- **Same two rows, different boxes: impossible.** The rows' other cells must
-  hold 5 to 9, and the third box's six cells in those rows cannot fit in five
-  digits. Sudoku alone rules this out. CP-SAT agreed for r1c1 + r1c4 and
-  r1c1 + r1c5: 0 of 16 pairs of the four fills extend. Those runs had
-  anti-Battenberg on.
+- **Same two rows: 2 of 16 extend, when the placement works at all.** The two
+  top rows must be disjoint, which leaves one loop 13/42 and the other 42/13,
+  in either order. Every working placement gives exactly those two pairs.
+  Tested for all 21 non-overlapping column pairs on r1-2, r2-3 and r3-4:
+  - **r3-4 (across a band border):** 15 of 21 work. The 6 that fail are the
+    side-by-side pairs (c1+c3, c2+c4, c3+c5, c4+c6, c5+c7, c6+c8): the window
+    between the loops is forced to be a Battenberg, `3 4 / 2 1` or `2 1 / 3 4`.
+  - **r1-2 and r2-3 (inside a band):** 5 of 21 work: left columns c1+c6, c2+c6,
+    c3+c6, c3+c7, c3+c8. An earlier version of this note called all such pairs
+    impossible, generalising from r1c1 + r1c4 and r1c1 + r1c5. Its counting
+    argument only applies when a third box keeps all six cells in those rows.
 - **Sharing one row: 6 of 16 extend** (r1c1 + r2c4, and r1c1 + r2c5). Both loops
   are 13/42, or both are 42/13, or each is 12/34 or 21/43 (4 pairs).
 
