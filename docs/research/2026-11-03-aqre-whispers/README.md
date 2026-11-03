@@ -80,6 +80,19 @@ the warm start or the every-box rule, ended UNKNOWN at 300 s, which proves nothi
 
 Not tested: uniqueness.
 
+## The negative rule: adjacent unshaded cells within 4
+
+Chris's ask, 2026-11-03: unshaded cells "within 5 of each other", read as a
+difference of at most 4, so a same-colour neighbour pair is tested both ways and a
+mixed pair is free. Digits 1-9, every box with a shaded cell.
+
+Found, `grid-5.json`, in 68.6 s on one worker (`aqre_negative_feasible.py DIR`);
+the separate reader found no rule broken. Box counts run from 1 to 6 in that grid.
+One box alone allows every shaded count from 0 to 7, as before: 32 of 36 layouts at
+7 and none at 8 or 9, so the new rule adds no per-box limit on the count.
+
+Not tested: how forcing it is, or uniqueness.
+
 ## Rulings
 
 All 2026-11-03.
