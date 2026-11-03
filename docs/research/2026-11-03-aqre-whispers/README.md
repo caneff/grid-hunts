@@ -156,6 +156,23 @@ is untested, and so is uniqueness.
 `aqre_jigsaw_feasible.py DIR`, three random layouts, was stopped before reporting
 when the ask moved to r1, so random jigsaw layouts are untested.
 
+## How varied regions can be with eight of nine on r5
+
+Chris's ask, 2026-11-03: geometry alone, no shading or whispers. `jigsaw_r5_diversity.py
+DIR` ran a random walk of border swaps on one core for 20 s on each of 6 seeds, 57,732
+layouts in all. This is a correlated sample, so it shows what exists and bounds
+nothing. Sampling favours typical layouts.
+
+| Measure | Share of samples |
+|---|---|
+| All 9 regions different shapes (free polyominoes) | 48,710 (84%) |
+| No straight region | 51,929 (90%) |
+| Widest region spans 3 to 9 columns | all seen |
+
+`layout-r5.json` has 9 different shapes, no straight region and every region at least
+4 columns wide, and it takes a plain sudoku fill. So r5 removes r1's push towards
+columns. Whether it also works with the shading rules is the running question.
+
 ## Rulings
 
 All 2026-11-03.
