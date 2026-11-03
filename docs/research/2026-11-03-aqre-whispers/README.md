@@ -114,7 +114,7 @@ One box alone still allows 0 to 7 shaded cells; only one layout drops, at 5 shad
 (125 of 126). The lazy-cut groups never settled: round 176 reached sizes 17, 7, 6,
 6, 5 and round 201 went back to nine groups.
 
-## Jigsaw regions with 8 circles in r1: open
+## Jigsaw regions with 8 circles in r1: found
 
 Chris's ask, 2026-11-03: irregular 9-cell regions replacing the boxes, and 8 circles
 in r1. Rules otherwise as before: digits 1-9, Aqre shading, 5-whispers on shaded
@@ -142,6 +142,16 @@ found.
 | r1c3 | found, 65.9 s | UNKNOWN |
 | r1c2 | UNKNOWN | UNKNOWN |
 | r1c1 | found, 108.4 s | UNKNOWN |
+
+The one-worker table above ended with nothing settled. With 8 workers, on Chris's
+go, the 9 in r1c5 found a grid: `grid-8-r1.json`, 438.5 s for the full solve after
+22.3 s without connectivity (`aqre_jigsaw_r1_parallel.py DIR`). The separate reader
+found no rule broken. r1 reads 2 5 7 6 9 1 8 4 3, with region counts of 1 to 8 on the
+eight circled cells, 41 shaded cells in all, and the ninth region's circle at r9c6.
+
+Weakness of this grid: 6 of its 9 regions are straight columns, which add no
+digit constraint beyond the column itself. Whether a layout with fewer columns exists
+is untested, and so is uniqueness.
 
 `aqre_jigsaw_feasible.py DIR`, three random layouts, was stopped before reporting
 when the ask moved to r1, so random jigsaw layouts are untested.

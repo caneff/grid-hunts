@@ -153,6 +153,14 @@ def attempt(n, out_dir):
     print(f"no shaded connectivity: status {rs.status_name(rstatus)} in {rs.wall_time:.1f}s", flush=True)
     if rstatus == cp_model.INFEASIBLE:
         return False
+    if rstatus in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        out = Path(out_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / f"relaxed-r1c{n + 1}.json").write_text(json.dumps({
+            "digits": [[next(v for v in DIGITS if rs.value(rd[r, c][v])) for c in range(9)] for r in range(9)],
+            "shaded": [[bool(rs.value(rg[r * 9 + c])) for c in range(9)] for r in range(9)],
+            "region": [[next(k for k in range(9) if rs.value(ry[r, c][k])) for c in range(9)] for r in range(9)],
+        }))
     m, d, y, g = build(True, n)
     if rstatus in (cp_model.OPTIMAL, cp_model.FEASIBLE):
         for cell in CELLS:
