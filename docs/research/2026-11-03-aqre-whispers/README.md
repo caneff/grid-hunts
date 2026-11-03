@@ -122,6 +122,9 @@ All 2026-11-03.
 - Chris first asked for 0-8 digits and "9 circles with different values", then
   dropped both: digits are 1-9 and values may repeat.
 - Every grid has 9 valid circles, so every box has a shaded cell.
+- Chris rejected both negative rules, unshaded-within-4 and both-shaded. Their
+  sections above are kept as a record, and the both-shaded question stays
+  unsettled because nothing more will be run on it.
 - Not tested: uniqueness.
 
 ## Rebuild
