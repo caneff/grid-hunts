@@ -22,7 +22,28 @@ No solve timed out.
 
 So nine circles with nine different values, one per box, cannot exist under
 those rules with 0-8 digits. The shading rules alone allow counts 0 to 8, so the
-digits and shaded whispers are what rule it out. No hand proof is written yet.
+digits and shaded whispers are what rule it out.
+
+## Why: no box holds 8 whisper cells
+
+Chris's proof, 2026-11-03. Take 0-8 digits and a gap of 5. A count of 8 leaves
+only the box's 4 unshaded, because 4 has no partner. The 3 pairs only with 8 and
+the 5 only with 0, so each may have one shaded neighbour at most, and each is
+shaded with at least 2 shaded neighbours in the box. The box's checkerboard
+colours show why: its 4 corners and centre cannot all be shaded (four digits per
+side), so the 4 is on that colour and every edge cell is shaded.
+
+An enumeration of one box alone agrees: at a gap of 5, 0 of 9 layouts work with
+8 whisper cells and 32 of 36 with 7. At a gap of 4, 9 of 9 work with 8 and none
+with 9. That box check is necessary only; it does not show a whole grid exists.
+
+Consequences at a gap of 5, the same in 1-9 digits by shifting:
+
+- Whispers on shaded cells: a box count is at most 7, so at most 8 different
+  values (0-7, needing 0-8 digits) and 7 with 1-9 digits.
+- Whispers on unshaded cells: at most 7 unshaded per box, so a count is at
+  least 2, and at most 8 different values (2-9).
+- Nine different values therefore need a gap below 5.
 
 The two infeasible models share no encoding: `aqre_disjoint_feasible.py` uses
 integer digits, an orientation variable, flow connectivity and a redundant total
