@@ -93,6 +93,27 @@ One box alone allows every shaded count from 0 to 7, as before: 32 of 36 layouts
 
 Not tested: how forcing it is, or uniqueness.
 
+## The both-shaded rule: open
+
+Chris's ask, 2026-11-03: "any two neighboring cells that are at least 5 apart must
+both be shaded", kept beside 5-whispers on shaded cells. Together a neighbouring
+pair is both shaded exactly when its digits are at least 5 apart, so a cell is
+shaded exactly when it has a neighbour at least 5 away, and the digits decide the
+shading.
+
+Not settled. No run proved infeasible, and none found a grid. One worker each:
+
+| Run | Result |
+|---|---|
+| No connectivity | found, 2.5 s |
+| Flow connectivity, first model | UNKNOWN at 300 s |
+| Flow connectivity, tighter model and warm start | UNKNOWN at 600 s |
+| Lazy cuts | UNKNOWN at 900 s: 207 rounds, 1372 cuts, fewest shaded groups 4 |
+
+One box alone still allows 0 to 7 shaded cells; only one layout drops, at 5 shaded
+(125 of 126). The lazy-cut groups never settled: round 176 reached sizes 17, 7, 6,
+6, 5 and round 201 went back to nine groups.
+
 ## Rulings
 
 All 2026-11-03.
