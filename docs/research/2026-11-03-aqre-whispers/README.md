@@ -171,7 +171,32 @@ nothing. Sampling favours typical layouts.
 
 `layout-r5.json` has 9 different shapes, no straight region and every region at least
 4 columns wide, and it takes a plain sudoku fill. So r5 removes r1's push towards
-columns. Whether it also works with the shading rules is the running question.
+columns. The next section tests it with the shading rules.
+
+## Jigsaw regions with 8 circles in r5: open
+
+Chris's ask, 2026-11-03: the r1 rules with the 8 circles in r5. `aqre_jigsaw_r5.py DIR`
+has the solver choose the regions, with the ninth region off r5 and r5's uncircled cell
+the 9, since no count reaches 9. 8 workers per solve; 20 minute cap on each full solve;
+the mirror image covers columns 6-9.
+
+Nothing was proved or found: all five full solves ended UNKNOWN, 100 minutes in all. That
+does not show 8 circles in r5 cannot work, and it does not show r5 is harder than r1, where
+one case found a grid in 438.5 s.
+
+| 9 in | No shaded connectivity | Full (flow connectivity, 20 minute cap) |
+|---|---|---|
+| r5c5 | found, 6.9 s | UNKNOWN |
+| r5c4 | found, 38.2 s | UNKNOWN |
+| r5c3 | found, 8.3 s | UNKNOWN |
+| r5c2 | found, 35.8 s | UNKNOWN |
+| r5c1 | found, 24.0 s | UNKNOWN |
+
+The grids without connectivity show the gap. They hold 37 to 40 shaded cells in 10 to 16
+separate groups, and the largest group has 7 to 14 cells. They do carry varied regions: 3
+of the 5 have no straight region, and the other 2 have one each. Those grids keep every
+rule but connectivity, so they do reach the 1-8 counts on r5, including a count of 8. They
+were not put through the separate reader.
 
 ## Rulings
 
