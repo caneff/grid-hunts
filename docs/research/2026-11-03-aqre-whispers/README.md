@@ -82,10 +82,13 @@ Not tested: uniqueness.
 
 ## Rulings
 
-- Circles count shaded cells in their box, and Chris wants "9 circles with
-  different values", placed anywhere (2026-11-03). Regions are the 3x3 boxes.
-- 0-8 was Chris's ask for this variant; whether digits stay 0-8 is open.
-- Not tested: uniqueness, or any variant in the table's open cases.
+All 2026-11-03.
+
+- Circles count shaded cells in their box. Regions are the 3x3 boxes.
+- Chris first asked for 0-8 digits and "9 circles with different values", then
+  dropped both: digits are 1-9 and values may repeat.
+- Every grid has 9 valid circles, so every box has a shaded cell.
+- Not tested: uniqueness.
 
 ## Rebuild
 
