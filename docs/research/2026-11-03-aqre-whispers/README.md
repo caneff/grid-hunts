@@ -66,6 +66,20 @@ By hand, and `grid-2.json` agrees:
 - Swapping `d` for its mirror digit flips the orientation only without circles:
   the swap changes a circled digit but not its box count.
 
+## Four circles in a 2x2 where four boxes meet
+
+Chris's ask, 2026-11-03: back to 1-9 digits with 5-whispers on shaded cells and
+no "all different" rule; four circles fill a 2x2 across a box crossing, and every
+box holds a valid circle because every box has a shaded cell. The four crossings
+are one case under reflection.
+
+Found, `grid-4.json`, in 8.6 s after a warm start from a solve of the four boxes
+alone (`aqre_crossing_circles.py DIR`). The circles are r3c3=4, r3c4=6, r4c3=2 and
+r4c4=4, and the separate reader found no rule broken. The first attempt, without
+the warm start or the every-box rule, ended UNKNOWN at 300 s, which proves nothing.
+
+Not tested: uniqueness.
+
 ## Rulings
 
 - Circles count shaded cells in their box, and Chris wants "9 circles with
