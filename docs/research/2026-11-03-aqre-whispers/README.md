@@ -312,6 +312,11 @@ All 2026-11-03.
   sections above are kept as a record, and the both-shaded question stays
   unsettled because nothing more will be run on it.
 - Not tested: uniqueness.
+- 2026-11-04: 5-whispers on shaded cells stay. The pasted board's note just did not mention
+  them. Circles stop at 8, since no region can count 9 under whispers.
+- 2026-11-04: the 8 circles must share one row or column. The pasted board fails that as drawn:
+  its best row touches 6 regions and its best column 5.
+- 2026-11-04: place the 8 region first; no other region may be able to count 8.
 
 ## Rebuild
 
