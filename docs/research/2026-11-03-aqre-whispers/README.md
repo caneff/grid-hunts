@@ -415,6 +415,38 @@ is small enough to finish, where CP-SAT hit 900 s on 12 workers. Its self-check 
 size table with plain enumeration on a sampled list holding one planted filling. It passes, but each of the
 four samples had only 1 filling, so it is a thin test of the memo's adding up.
 
+`aqre_r5_split_enumerate.py DIR` then enumerated all 14 placements in about 11 minutes on one worker, Chris's
+go. It found 490 layouts, and the fixed-region solve proved all 490 infeasible (232 without connectivity, 258
+with it), so no grid came out. Layouts per placement:
+
+| 8 | 9 | Layouts |
+|---|---|---|
+| r5c2 | r5c4 | 33, 129 |
+| r5c4 | r5c2 | 33, 129 |
+| r5c4 | r5c6 | 83, 83 |
+| r5c1, r5c3 or r5c5 | any | 0 in all 8 placements |
+
+On these lists (regions judged alone, colour known from the 8, forced 7, six low regions able to take 1-6),
+this shape gives no grid. CP-SAT had hit its 900 s cap on all six cases without finding any of the 490. This
+covers this 8 shape only. The enumerator's own self-check is thin: its sampled lists held just the 1 planted
+layout and no strict layouts.
+
+`aqre_r5_split_check.py DIR` is the stronger check, and it passed. All 490 layouts re-read from their grids with
+0 errors. On the 6 placements with layouts, cut to every region their known layouts use plus 15 sampled per
+column (151 to 201 regions), the join and a plain whole-board search returned the same layouts, 33 to 132 of any
+class and 33 to 129 strict, including every known layout. Limits: both searches share `usable` and the table,
+so an error in the region lists would not show. Only 3 layouts in that test were not strict, and the search
+comparison covers sampled lists, not the full ones.
+
+Chris's wording, 2026-11-04: 8 circles in r5, none of them 9, so the 9 is placed at once. Only one region can
+be the 8 by shape alone, which places the 8 and fixes the checkerboard colouring. Of the other r5 regions only
+one can be the circled 7. Each of the rest either tops out at 6 by shape, or allows 7 only shaded, on the wrong
+colour. The neighbours play no part. The enumerator differs in one way: it judged other regions' 8 with colour
+known, so a region on the 8's opposite colour was never refused for being able to be the 8. By shape alone it
+must be. `aqre_r5_ruling_recount.py DIR` reads the 490 layouts this way: 214 have no other 8-able r5 region and
+276 have 1 to 3. So the enumerator's lists are looser than the rule here, and the "no grid" holds for the
+stricter rule too. In all 490 the 7 is on the 8's colour and forced shaded, as Chris described.
+
 `aqre_r5_oriented.py DIR` rebuilds the lists with colour known, then runs the cover: first with the
 forced 7, then without it. Any layout found goes to the fixed-region solve. The hill-climb's best was 3
 shaded groups, and the forced-7 build was stopped since the same rule was proven unable to finish it.
