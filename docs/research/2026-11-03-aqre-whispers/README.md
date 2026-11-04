@@ -339,6 +339,22 @@ Chris's ruling, 2026-11-04: the 7 region's shape must force its circled 7, eithe
 `aqre_r5_build_up.py` now requires that. The version before this ruling reached 3 regions placed in
 61 s, then no further by 5 minutes, with 246 of its first 274 board checks infeasible.
 
+### Exact cover over the catalogues
+
+Chris's go, 2026-11-04, with reflection and rotation symmetry accounted for. The left-right
+mirror, top-bottom flip and 180 rotation keep r5 and the checkerboard, so one 8 region stays from
+each group: 830, 2,221, 3,470, 4,034 and 2,124 in r5c1-5. A layout whose 8 region maps to itself
+still appears in more than one version. The 90 degree turns and diagonals map r5 to c5, the same
+problem turned, so c5 needs no separate search.
+
+`aqre_r5_cover.py catalogue DIR` sorts regions by the strict rules into 8, forced-7 and top-out-at-6
+lists; r5c5's are 8,450, 12,821 and 8,919 before symmetry. Of its 8,919 low regions, 8,495 can
+take all of counts 1-6 and 424 cannot take a count of 1.
+
+`aqre_r5_cover.py estimate DIR 300` ran 101,958 random probes through the cover and none finished:
+none got past 3 of 8 circled regions, and only 55 reached 3. That estimates nothing about how many
+layouts exist, since a probe can miss rare ones. `aqre_r5_cover_exists.py` asks the solver directly.
+
 ### A board from another session
 
 Chris pasted a jigsaw board from another session's scratch run, with its plan of a circle 8
