@@ -228,8 +228,36 @@ reasons. Chris chose to restart with the fix, 2026-11-03: the first stage now ha
 on shaded cells and r5, whispers and house differences included, and classes on every cell.
 That moves it closer to the full model that timed out. `aqre_jigsaw_r5_staged.py` here is the
 fixed version. It refuses all 15 layouts in `layouts-r5.jsonl`, the ones logged before the job
-was stopped, and still accepts `grid-8-r1.json`'s layout. The restarted run's result goes here
-when it ends.
+was stopped, and still accepts `grid-8-r1.json`'s layout.
+
+That run ended with no grid: 9 layout solves, all UNKNOWN at 900 s, and no fills. The VM
+appears to have been suspended for about 4 h 20 during try 9, which logged 15,980 s; uptime
+gained 2 h 04 over 6 h 24 of clock. Its 2 hour plain solve of the 9 in r5c5 was stopped on
+Chris's word after a few minutes, with no full-solve result.
+
+### Fixed regions, digits first, and scoring layouts
+
+`aqre_r5_fixed_regions.py DIR` samples layouts with no straight region and solves digits and
+shading on each, one worker. Stopped on Chris's word at 148 cases in about 19 minutes. All 148
+were proven infeasible for that layout and that place for the 9, 51 without connectivity and
+97 with it. None timed out and none found a grid. These layouts are correlated samples. The
+per-region filter refused none, so it is not doing useful work. The solves do finish, in
+seconds, unlike every model that chooses regions.
+
+`aqre_r5_digits_first.py DIR` solves digits and shading with no regions, then looks for
+regions. A grid takes about 1 s. All of the first 679 distinct grids refused regions. On 10
+of them, connected regions exist with the straight rule off, while connected regions with no
+straight region do not exist. A Latin square's columns already form a connected partition,
+so those allowed partitions are probably just columns, though the check did not print them.
+A square solved with no regions in mind rarely has a jigsaw partition, on this evidence.
+
+Two scores for hill-climbing fixed layouts, tested on sampled failed layouts:
+
+- Circles matched, with the circles soft (`aqre_r5_hillclimb.py`): 7 of 8 layouts got no
+  score in 60 s, and the other scored 2 of 8. Dropped as too slow.
+- Fewest shaded groups, with the circles hard (`aqre_r5_groups_score.py`): all 12 got a score
+  within 30 s, from 6 to 15 groups where 1 is a valid grid, 5 of them proven best. So these
+  layouts are not near misses. `aqre_r5_climb.py DIR` climbs on this score.
 
 ## Rulings
 
