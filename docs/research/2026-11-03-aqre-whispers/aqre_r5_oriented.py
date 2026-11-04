@@ -113,7 +113,7 @@ def canonical(mask, c):
     return mask == min(mask, flip(mask), mirror(mask), flip(mirror(mask)))
 
 
-def solve_case(table, n, parity, forced, out, tally):
+def solve_case(table, n, parity, forced, out, tally, eight_only=None):
     m = cp_model.CpModel()
     by_cell = {i: [] for i in range(81)}
     columns = {c: [] for c in range(9) if c != n}
@@ -139,7 +139,7 @@ def solve_case(table, n, parity, forced, out, tally):
                 continue
             eight, shaded_7, unshaded_7, counts = e[same]
             if eight:
-                if same and c <= 4 and canonical(mask, c):
+                if same and c <= 4 and canonical(mask, c) and (eight_only is None or mask in eight_only):
                     eights.append(add(c, mask, "eight", ()))
                 continue
             if shaded_7 or unshaded_7:

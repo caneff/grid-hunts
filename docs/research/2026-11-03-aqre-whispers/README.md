@@ -383,6 +383,10 @@ columns apart. The 12 placements it printed each have just 1 filling, so the dig
 within the region; the other 20 were not printed. The r5 cell between the 8 and the 9 is in the shape's
 notch, so its own region can only leave r5 through the notch's open side.
 
+Chris's go, 2026-11-04: fix the 8 region to this shape for now. `aqre_r5_chosen_eight.py DIR` runs the
+colour-aware cover on it. The broad `aqre_r5_oriented.py` cover was stopped at about 11 minutes in its
+first case, with no result.
+
 `aqre_r5_oriented.py DIR` rebuilds the lists with colour known, then runs the cover: first with the
 forced 7, then without it. Any layout found goes to the fixed-region solve. The hill-climb's best was 3
 shaded groups, and the forced-7 build was stopped since the same rule was proven unable to finish it.
