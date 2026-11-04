@@ -245,8 +245,9 @@ per-region filter refused none, so it is not doing useful work. The solves do fi
 seconds, unlike every model that chooses regions.
 
 `aqre_r5_digits_first.py DIR` solves digits and shading with no regions, then looks for
-regions. A grid takes about 1 s. All of the first 679 distinct grids refused regions. On 10
-of them, connected regions exist with the straight rule off, while connected regions with no
+regions. A grid takes about 1 s. The 30 minute run ended with no grid: 1,519 digit grids
+were all refused regions, and the last try hit the budget with no digit grid. On 10 of the
+first 679, all distinct, connected regions exist with the straight rule off, while connected regions with no
 straight region do not exist. A Latin square's columns already form a connected partition,
 so those allowed partitions are probably just columns, though the check did not print them.
 A square solved with no regions in mind rarely has a jigsaw partition, on this evidence.
