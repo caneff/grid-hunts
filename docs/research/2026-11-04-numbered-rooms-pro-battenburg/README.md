@@ -268,6 +268,16 @@ solver and by hand, because r7c8 must be a target:
 With r7c8 pink everything else he drew holds, pencil marks included: 200 grids
 (capped), each re-read by the reader. r6c9 is then forced pink, r6c8 and r7c9 green.
 
+### Chris's sixth board (2026-11-04)
+
+The same four givens with 13 marks: r1c3, r1c5, r3c1, r4c1, r6c1, r6c4, r6c8, r7c1,
+r7c7, r7c8, r8c1, r8c7, r8c8, read from his picture (`nr_board7.py`). Without the
+negative rule, all his digits, colours and pencil marks hold, 50 grids or more
+(capped). With it, the givens and marks alone are infeasible. No single unmarked
+window is forced, but at least one extra checkerboard is needed, and r3c4 is the only
+single extra mark that works: all his entries then hold under the negative rule, 50
+grids or more (capped). A hand reason is not known.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
