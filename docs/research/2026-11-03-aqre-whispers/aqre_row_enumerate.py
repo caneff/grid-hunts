@@ -196,8 +196,11 @@ def pieces_above(free, row):
     return layer
 
 
-def fillings(free, roots, by_up, row, ninth):
-    """Count the fillings above the row, and give a generator of each as one up part per root."""
+def fillings(free, roots, by_up, row, ninth, extra=None):
+    """Count the fillings above the row, and give a generator of each as one up part per root.
+
+    `extra` maps a root column to its region's second row cell, whose upper neighbour it may also use.
+    """
     index = []
     empty = []
     anchors = []
@@ -208,7 +211,10 @@ def fillings(free, roots, by_up, row, ninth):
                 by_low.setdefault(p & -p, []).append(p)
         index.append(by_low)
         empty.append(0 in by_up[c])
-        anchors.append(above_bit(row - 1, c, row) if row else 0)
+        anchor = above_bit(row - 1, c, row) if row else 0
+        if row and extra and c in extra:
+            anchor |= above_bit(row - 1, extra[c], row)
+        anchors.append(anchor)
     nine_low = {}
     for p in ninth:
         nine_low.setdefault(p & -p, []).append(p)

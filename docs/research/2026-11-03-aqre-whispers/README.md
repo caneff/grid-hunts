@@ -527,6 +527,27 @@ distances most also fail: 4,122 of 35,128 at distance 2 and 270 of 2,436 at dist
 columns 1-5, before the mirror). A region with the 9 still needs testing as a 7 and for its counts, and the search
 needs changing, since such a region can leave the row through either of its two cells.
 
+Test on one 8 shape, `aqre_nine_shared.py`, 2026-11-04. The shape is the median of the 794 shapes that have only
+one-cell placements, with 78 live placements of the 60,208 over all shapes, rows `X..`, `X..`, `XXX`, `XX.`, `X..`,
+`X..`. Regions are judged alone, as on the other strict lists. Each placement's enumeration is capped at 10 minutes.
+
+| row | placements | proven no grid | capped | boards | layouts | relaxed infeasible | full infeasible | CPU seconds |
+|---|---|---|---|---|---|---|---|---|
+| r1 | 6 | 6 | 0 | 0 | 0 | 0 | 0 | 1 |
+| r2 | 19 | 19 | 0 | 0 | 0 | 0 | 0 | 33 |
+| r3 | 21 | 21 | 0 | 0 | 0 | 0 | 0 | 486 |
+| r4 | 20 | 19 | 1 | 59,412 | 284 | 227 | 57 | 2,982 |
+| r5 | 12 | 12 | 0 | 191,150 | 278 | 195 | 83 | 985 |
+| all | 78 | 77 | 1 | 250,562 | 562 | 422 | 140 | 4,489 |
+
+So no grid in this shape, except that one placement is open: r4, 8 in c4, stopped at 600 s after 59 cases, with 29
+boards and 0 layouts so far. Nothing is proven for it. Every layout solved to a proof, none timed out. The search
+control passed: 112 regions, the search and a plain search both give 1 layout, and the planted layout is found.
+
+Scaling up, by the test's seconds per placement in each row times the row's live one-cell placements: about 4
+million CPU seconds, near 6 days on 8 processes or 2 days on 24. That is one shape's rate applied to all, and capped
+placements would add to it, so it is rough.
+
 ### Rule dropping, stopped
 
 `aqre_row_diagnose.py DIR FILE ROW` re-solved layouts with one rule dropped at a time. Chris had it stopped at 6 of
