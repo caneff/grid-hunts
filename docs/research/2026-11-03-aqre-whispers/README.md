@@ -176,9 +176,9 @@ columns. The next section tests it with the shading rules.
 ## Jigsaw regions with 8 circles in r5: open
 
 Chris's ask, 2026-11-03: the r1 rules with the 8 circles in r5. `aqre_jigsaw_r5.py DIR`
-has the solver choose the regions, with the ninth region off r5 and r5's uncircled cell
-the 9, since no count reaches 9. 8 workers per solve; 20 minute cap on each full solve;
-the mirror image covers columns 6-9.
+has the solver choose the regions, with r5's uncircled cell the 9, since no count reaches
+9. That 9 may sit in any region, including the ninth. 8 workers per solve; 20 minute cap on
+each full solve; the mirror image covers columns 6-9.
 
 Nothing was proved or found: all five full solves ended UNKNOWN, 100 minutes in all. That
 does not show 8 circles in r5 cannot work, and it does not show r5 is harder than r1, where
