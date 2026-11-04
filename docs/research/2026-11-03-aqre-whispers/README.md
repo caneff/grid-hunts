@@ -489,6 +489,12 @@ masks as sizes and started from the r5 catalogue, so its numbers were discarded.
 - Live one-cell placements on r1 to r5: 5,170, 10,930, 14,689, 18,889, 10,530. These leave the row's 9 in
   the ninth region, which the split enumerator does not handle yet.
 
+`aqre_nine_gaps.py` counts how far apart the 8 and 9 can be when both are in the 8 region, over every region with
+two row cells on r1 to r5, with the 8 in columns 1-5 (before the mirror is removed). Only distances 2 and 4 occur: 52
+and 4 free shapes not holed. Distances 1, 3, 5 and 6 were all tried and none holds the 8. Odd distances fail
+on colour, since the shaded 8 and 9 must share a checkerboard colour. Distance 4 has 12, 42, 72, 72, 72 placements on
+r1 to r5, for example rows `8...9 / 17253 / 6..4.`, whose 3 row cells between the 8 and 9 can only leave upward.
+
 r4 took about 6 minutes on 8 processes, and its layouts all have the 8 and 9 in r4c2 and r4c4, either way
 round. An earlier r4 search with neither speedup and a cruder fill below the row was stopped at 51 minutes.
 
