@@ -198,6 +198,36 @@ of the 5 have no straight region, and the other 2 have one each. Those grids kee
 rule but connectivity, so they do reach the 1-8 counts on r5, including a count of 8. They
 were not put through the separate reader.
 
+### Two stages: why the fills fail
+
+Chris's go, 2026-11-03: `aqre_jigsaw_r5_staged.py DIR` picks regions and connected shading
+first with no digits, then fills digits. The first 10 logged layouts all failed the fill.
+Each of them failed for two independent reasons, so fixing one alone would not help. These
+are 10 layouts, so the shares below describe them and bound nothing.
+`aqre_r5_fill_diagnose.py`, `aqre_r5_fill_diagnose2.py` and `aqre_r5_class_layer.py` hold
+the checks; the same checks pass the known `grid-8-r1.json` layout.
+
+**One house's whispers cannot take its digits.** In all 10 layouts, at least one house fails
+alone, using only its own cells, shaded pairs and r5 digits. The whisper partners are
+narrow: 4 pairs only with 9, 3 with 8 and 9, 6 only with 1, 7 with 1 and 2. Two digits that
+share a house must differ, so a shaded 4 or 6 cannot have two shaded neighbours in one house.
+By hand, on two layouts:
+
+- Layout 8: r5c6 is a shaded 6 with shaded cells above and below it in its region, which
+  would both have to be 1.
+- Layout 1: the count-8 region holds all of 1-4 and 6-9 on shaded cells. Its r5 digit 8 has
+  two shaded region neighbours, which must come from 1, 2 and 3. That puts the region's 4 on
+  a cell with two shaded region neighbours.
+
+**Shaded colours run out across houses.** All 10 layouts stay infeasible with no whispers
+and no r5 digits, so the checkerboard signs fail by themselves. A layer with only low, 5 and
+high classes (4, 1 and 4 per house) refuses 7 of the 10. The other 3 need exact digits.
+
+The first stage only limited each house to 4 shaded cells per colour, which misses both
+reasons. The likely fix puts digits on shaded cells, whispers and house differences included,
+and classes on every cell, into the first stage. Not tested; it moves that stage closer to
+the full model that timed out.
+
 ## Rulings
 
 All 2026-11-03.
