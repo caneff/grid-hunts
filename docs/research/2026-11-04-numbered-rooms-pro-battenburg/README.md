@@ -167,6 +167,19 @@ clue, by solver on the marks plus `L8=9` alone:
   removes 6, and `T4=6` removes nothing. All five leave only 5.
 - No hand reason is known yet for any of these splits.
 
+### Chris's opening board (2026-11-04)
+
+`T1=7`, `L7=9`, `L9=3` and marks at r5c1, r6c1 and r7c1, read from his picture.
+Only these three marks were applied, with no rule on unmarked windows. The board
+is not yet unique.
+
+- r7c1 cannot be a target, from the three givens alone (solver, and by hand).
+  `L7=9` rules out r7c1 = 1 and r7c9 = 9. `T1=7` rules out r1c1 = 7, which would
+  repeat the 7 in c1. `L9=3` rules out r9c1 = 3, which would repeat the 3 in r9.
+- The marks then force targets at r5c2, r6c1, r7c2 and r8c1, and no targets at
+  r5c1, r6c2, r7c1 and r8c2.
+- r1c1 is 2, 3, 4, 6, 8 or 9, and r9c1 is 2, 4, 6, 7, 8 or 9.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
