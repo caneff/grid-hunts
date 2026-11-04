@@ -401,6 +401,20 @@ first shows whether this is workable. The top-bottom flip keeps r5 and the check
 share one list of parts and one filler. Their fillings differ only by the cells the 8 region takes and by
 which side holds the ninth region.
 
+`aqre_r5_split_count.py DIR` counted one placement in 16 s on one worker: 8 in r5c1, 9 in r5c3, the most
+usable regions of the 14 (31,886). Other placements were not counted.
+
+| Ninth region | Top fillings | Bottom fillings | Pairs with matching sizes |
+|---|---|---|---|
+| in top | 265,958 | 121,423 | 1,736,643 |
+| in bottom | 3,020 | 1,971,316 | 746,047 |
+
+The 2,482,690 matching pairs are an upper bound on this placement's layouts: each pair still needs every
+region's two parts to form a listed region, one forced 7 and counts 1-6 on the low regions. Checking them
+is small enough to finish, where CP-SAT hit 900 s on 12 workers. Its self-check compares the memo and the
+size table with plain enumeration on a sampled list holding one planted filling. It passes, but each of the
+four samples had only 1 filling, so it is a thin test of the memo's adding up.
+
 `aqre_r5_oriented.py DIR` rebuilds the lists with colour known, then runs the cover: first with the
 forced 7, then without it. Any layout found goes to the fixed-region solve. The hill-climb's best was 3
 shaded groups, and the forced-7 build was stopped since the same rule was proven unable to finish it.
