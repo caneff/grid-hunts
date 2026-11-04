@@ -260,6 +260,46 @@ Two scores for hill-climbing fixed layouts, tested on sampled failed layouts:
   within 30 s, from 6 to 15 groups where 1 is a valid grid, 5 of them proven best. So these
   layouts are not near misses. `aqre_r5_climb.py DIR` climbs on this score.
 
+### Placing the 8 region first
+
+Chris, 2026-11-04: place the 8 region first, then the other regions so that none of them can
+be circled 8.
+
+`aqre_r5_eight_regions.py DIR` is exhaustive over one space: connected 9-cell sets holding
+the circled cell in r5c1-5 (the mirror covers the rest), at most one other r5 cell, not
+straight, judged on the region alone. By hand, a count of 8 leaves one unshaded cell, which
+must be the region's 5, so the circled 8 is shaded and the shaded cells split 4 and 4 by colour.
+
+| Circled cell | Sets, not straight | Can be the circled 8 |
+|---|---|---|
+| r5c1 | 8,274 | 1,657 |
+| r5c2 | 20,905 | 4,436 |
+| r5c3 | 30,599 | 6,932 |
+| r5c4 | 36,134 | 8,060 |
+| r5c5 | 37,796 | 8,450 |
+
+That is 29,535 of 133,708 (22%), in 805 free shapes; 1,592 hold a second r5 cell, the 9. A solver
+cross-check on 70 of the sets agreed with this enumeration every time. So being able to hold
+the 8 is not rare, but most shapes cannot, which gives room for the other regions to rule
+themselves out. Passing means only that the region alone can do it, not that a grid exists.
+
+`aqre_r5_one_eight.py DIR` keeps sampled layouts where exactly one circled region can be the 8
+and the ninth region cannot count 8, then solves each on fixed regions.
+
+### A board from another session
+
+Chris pasted a jigsaw board from another session's scratch run, with its plan of a circle 8
+region and a circle 7 built around it. `aqre_pasted_board.py` re-checks it here, one worker.
+
+- Regions are all 9 connected cells. By no-4-in-a-line alone, the most shaded cells per region
+  are 7 for regions 1-7 and 8 for regions 8 and 9, as that note said.
+- Sudoku fills: at least 1000, the cap.
+- Whole-board shading with no whispers and free counts: found in 0.4 s, reader clean, counts
+  5 6 5 3 7 4 5 4 3.
+- With 5-whispers on shaded cells and free counts: UNKNOWN at 120 s, which proves nothing.
+- Counts equal to the printed labels 1-8: INFEASIBLE in under 0.1 s, with and without whispers.
+  That label reading was my own test, not the note's rule, so it says little about the board.
+
 ## Rulings
 
 All 2026-11-03.
