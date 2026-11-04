@@ -513,6 +513,20 @@ counts 1-6 matchable, 8 region not straight, 8 in columns 1-5 up to the mirror, 
 reach one-cell placements, where the 9 is in the ninth region. Every layout found has the 8 on an even column.
 That is still a pattern, not a proof.
 
+### The 9 in another circled region
+
+Chris's question, 2026-11-04: can the row's 9 share a region with another circle, so that region is ruled out of
+being the 8? Yes, and the rules allow it. It is a third case, beside the 9 in the 8 region and the 9 in the ninth
+region. The eight circled regions then cover the row, the 8 region holds one row cell, and the ninth is off the row.
+`aqre_row_enumerate.py` and `aqre_all_two_cell.py` do not cover it. They allow two row cells only in the 8 region.
+
+Hand argument: a count of 8 leaves one unshaded cell, which is the 5, so the circled 8 and the 9 are both shaded,
+both high, and on one checkerboard colour. So a region whose circle is an odd distance from the 9 can never be the
+8. `aqre_nine_gaps.py` agrees: 216,022, 10,856 and 310 regions at distances 1, 3 and 5, none can hold the 8. At even
+distances most also fail: 4,122 of 35,128 at distance 2 and 270 of 2,436 at distance 4 can (r1 to r5, circle in
+columns 1-5, before the mirror). A region with the 9 still needs testing as a 7 and for its counts, and the search
+needs changing, since such a region can leave the row through either of its two cells.
+
 ### Rule dropping, stopped
 
 `aqre_row_diagnose.py DIR FILE ROW` re-solved layouts with one rule dropped at a time. Chris had it stopped at 6 of
