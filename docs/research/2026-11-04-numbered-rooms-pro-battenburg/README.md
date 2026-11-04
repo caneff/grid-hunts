@@ -128,6 +128,15 @@ T and B count columns from the left. Marks, as the top-left cell of each window,
 row and column from 0: (1,6), (2,0), (2,2), (2,4), (3,4), (3,5), (3,6), (4,2),
 (5,2), (6,0), (6,7), (7,0), (7,3).
 
+### Link
+
+https://sudokumaker.app/p/j8BWkCggcK
+
+Built by `build_link.py` from `link_template.json`, with all 36 outside cells
+outlined and no solution digit entered. The marks are cosmetic text, so the app's
+solver does not read them and will not confirm uniqueness. The proof is
+`nr_verify_sat.py`. The rendered page was checked by screenshot.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
