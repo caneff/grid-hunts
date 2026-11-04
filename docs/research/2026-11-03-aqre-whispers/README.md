@@ -284,7 +284,20 @@ the 8 is not rare, but most shapes cannot, which gives room for the other region
 themselves out. Passing means only that the region alone can do it, not that a grid exists.
 
 `aqre_r5_one_eight.py DIR` keeps sampled layouts where exactly one circled region can be the 8
-and the ninth region cannot count 8, then solves each on fixed regions.
+and the ninth region cannot count 8, then solves each on fixed regions. Stopped on Chris's new
+ask at 271 cases, all proven infeasible for their own layout: 146 without connectivity and 125
+with it, no timeouts. 54% failing before connectivity against 34% for unfiltered layouts, on
+correlated samples, so this filter did not help.
+
+Chris's ruling, 2026-11-04: place a valid 8 in both shading and digits. Then place a valid 7
+that cannot itself be a valid 8 but still has digits and shading that work with the 8, and so
+on. A ninth region holding r5's uncircled cell has no circle there and may be able to count 8.
+
+`aqre_r5_build_up.py DIR` does this as a randomised depth-first search. Each placement commits
+a region's cells, shading and digits, then must pass local checks and a whole-board check with
+placed cells fixed. Only "cannot be the 8" is required of lower regions, not "cannot be any
+higher count". Its controls walk `grid-8-r1.json` through every check, region by region, and
+refuse a swapped-digit 8 region.
 
 ### A board from another session
 
