@@ -215,6 +215,20 @@ by the reader). Forced digits: r1c1 = 9, r1c8 = 6, r1c9 = 7, r4c9 = 9, r7c1 = 1,
 r9c1 = 6, r9c6 = 4, r9c8 = 9, r9c9 = 2. His colours all stay allowed except r1c8,
 which must be a target; r2c8 and r2c9 are now open.
 
+### Chris's third board (2026-11-04)
+
+The same four givens, with marks at r1c3, r1c5, r3c1, r4c1, r6c1, r6c8, r7c1, r8c1,
+r8c7 and r8c8, read from his picture. Chris asked about dropping the rule on unmarked
+windows.
+
+- Without that rule the marks are feasible. With it they are not
+  (`nr_board4.py`). At least one unmarked window must be a checkerboard
+  (`nr_board4_windows.py`).
+- His colouring fails either way. r7c9 as a target needs r1c9 = 7, which makes r1c3
+  a target, and he has r7c9 pink and r1c3 green.
+- `nr_board4_colours.py`, unmarked windows free: the fewest colour changes is 4, and
+  there are exactly two such sets. Flip the r6c8 window, or flip the r1c3 window.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
