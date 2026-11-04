@@ -251,6 +251,23 @@ checkerboard in that phase even with its mark deleted. With the mark kept and th
 window flipped: r1c2 = 6, r1c6 = 8, r1c9 = 5, r9c2 = 5, 1s at r1c4 and r9c5, and r8c9
 is 3 or 8.
 
+### Chris's fifth board (2026-11-04)
+
+The fourth board without mark r6c8, with r6c8, r6c9 and r7c9 uncoloured and r7c8
+read as green (it was selected in his picture). Unmarked windows free. **Fails**,
+solver and by hand, because r7c8 must be a target:
+
+1. r7c9 is not a target, since that needs r1c9 = 7, which targets the green r1c3.
+2. With r7c8 green, r7 has only r7c1 and r7c4 pink. So the top clue reaching r7 needs
+   r1c4 = 7, and the right clue of r7 needs r7c9 = 6, since r7c9 = 9 repeats r9c8.
+3. r1's four pink cells take all four clues into r1. The left clue takes r1c9 and the
+   bottom clue of c8 takes r1c8. So r1c4 and r1c5 take the right clue and the top
+   clue of the 1, which targets itself. r1c4 = 7 makes r1c5 = 1, and the right clue
+   needs r1c9 = 6, repeating the 6 of r7c9 in c9.
+
+With r7c8 pink everything else he drew holds, pencil marks included: 200 grids
+(capped), each re-read by the reader. r6c9 is then forced pink, r6c8 and r7c9 green.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
