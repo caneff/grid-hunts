@@ -447,6 +447,30 @@ must be. `aqre_r5_ruling_recount.py DIR` reads the 490 layouts this way: 214 hav
 276 have 1 to 3. So the enumerator's lists are looser than the rule here, and the "no grid" holds for the
 stricter rule too. In all 490 the 7 is on the 8's colour and forced shaded, as Chris described.
 
+### The same shape in other rows
+
+Chris, 2026-11-04: same protocol, same shape, all 8 circles in another row. Off r5, the top-bottom flip and
+the 180 turn change the row, so only the left-right mirror still removes duplicates: r4 has 28 placements where
+r5 has 14, and its halves are unequal, 3 rows above and 5 below. r6-r9 flip onto r4-r1. `aqre_row_enumerate.py DIR
+ROW` does any row, with Chris's 8 test (by shape alone). It fills the rows above first, then below cell by cell.
+It also has two speedups on Chris's go: the same cells with the 8 and 9 swapped are enumerated once, and the
+7's column is chosen first, so that root tries only forced 7s and the others only regions that top out at 6.
+
+Test of the search: an earlier version of this code, with neither speedup, reproduced r5's 490 layouts exactly with
+the 8 test loosened to match, on all 14 placements. The final version reproduced the 129 known layouts of one
+r5 placement, in 147 s against 691 s. The final version has not rerun all of r5.
+
+| Row | Placements | Enumerated after swaps | Layouts | Solve | Grids |
+|---|---|---|---|---|---|
+| r5 | 14 | all 14, loosened 8 test | 490, of which 214 meet the 8 test | all 490 infeasible | 0 |
+| r4 | 28 | 16 | 10 | all 10 infeasible without connectivity | 0 |
+
+r4 took about 6 minutes on 8 processes, and its layouts all have the 8 and 9 in r4c2 and r4c4, either way
+round. An earlier r4 search with neither speedup and a cruder fill below the row was stopped at 51 minutes.
+
+So far, every layout on either row has the 8 on an even column, which has only 4 cells of its colour in the
+row. No odd-column 8 has given a layout. That is a pattern, not a proof.
+
 `aqre_r5_oriented.py DIR` rebuilds the lists with colour known, then runs the cover: first with the
 forced 7, then without it. Any layout found goes to the fixed-region solve. The hill-climb's best was 3
 shaded groups, and the forced-7 build was stopped since the same rule was proven unable to finish it.
