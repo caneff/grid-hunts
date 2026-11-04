@@ -447,6 +447,146 @@ must be. `aqre_r5_ruling_recount.py DIR` reads the 490 layouts this way: 214 hav
 276 have 1 to 3. So the enumerator's lists are looser than the rule here, and the "no grid" holds for the
 stricter rule too. In all 490 the 7 is on the 8's colour and forced shaded, as Chris described.
 
+### The same shape in other rows
+
+Chris, 2026-11-04: same protocol, same shape, all 8 circles in another row. Off r5, the top-bottom flip and
+the 180 turn change the row, so only the left-right mirror still removes duplicates: r4 has 28 placements where
+r5 has 14, and its halves are unequal, 3 rows above and 5 below. r6-r9 flip onto r4-r1. `aqre_row_enumerate.py DIR
+ROW` does any row, with Chris's 8 test (by shape alone). It fills the rows above first, then below cell by cell.
+It also has two speedups on Chris's go: the same cells with the 8 and 9 swapped are enumerated once, and the
+7's column is chosen first, so that root tries only forced 7s and the others only regions that top out at 6.
+
+Test of the search: an earlier version of this code, with neither speedup, reproduced r5's 490 layouts exactly with
+the 8 test loosened to match, on all 14 placements. The final version reproduced the 129 known layouts of one
+r5 placement, in 147 s against 691 s. The final version has not rerun all of r5.
+
+| Row | Placements | Enumerated after swaps | Layouts | Solve | Grids |
+|---|---|---|---|---|---|
+| r5 | 14 | all 14, loosened 8 test | 490, of which 214 meet the 8 test | all 490 infeasible | 0 |
+| r4 | 28 | 16 | 10 | all 10 infeasible without connectivity | 0 |
+| r3 | 28 | 16 | 0 | nothing to solve | 0 |
+| r2 | 14 | 8 | 0 | nothing to solve | 0 |
+| r1 | 0 | 0 | 0 | nothing to solve | 0 |
+
+So this 8 shape gives no grid in any row on these lists, since r6-r9 flip onto r4-r1 and a column is a row
+turned 90 degrees. Only r5 and r4 have layouts at all. r1 has no placement: the 8 and 9 sit in the leg row next
+to the shape's 3-wide bar, and neither direction fits on the board. In all 14 r2 placements the legs go up and
+the bar sits below, so the r2 cell between the 8 and 9 and the r1 cell above it are walled in. Those 2 cells
+have no region at all, and `aqre_row2_zero_check.py DIR` shows 0 r1 fillings with the class rules off as well.
+That 2-cell pocket is geometry, and needs no digit or shading rule. The rule-dropping run had not finished here.
+
+### Screening the other 8 shapes
+
+`aqre_shape_screen.py DIR` grows each row's regions afresh and keeps those that can be the 8. A placement is dead
+when the free cells split into a part whose size is not a multiple of 9. Geometry only, so a live placement may
+still have no layout. Controls passed: r5 gives the catalogue's 29,535 regions, and the chosen shape gives 0, 14,
+28, 28 and 14 placements on r1 to r5. The first version of this script was wrong, because it read region
+masks as sizes and started from the r5 catalogue, so its numbers were discarded.
+
+- 796 shapes, 10 more than the sheet's 786, since tall shapes that cannot reach r5 appear on other rows.
+- 56 shapes have a live placement holding two row cells; 2 have only those. 740 have only one-cell placements.
+- Live two-cell placements on r1 to r5: 0, 368, 774, 1,050, 553.
+- Live one-cell placements on r1 to r5: 5,170, 10,930, 14,689, 18,889, 10,530. These leave the row's 9 in
+  the ninth region, which the split enumerator does not handle yet.
+
+`aqre_nine_gaps.py` counts how far apart the 8 and 9 can be when both are in the 8 region, over every region with
+two row cells on r1 to r5, with the 8 in columns 1-5 (before the mirror is removed). Only distances 2 and 4 occur: 52
+and 4 free shapes not holed. Distances 1, 3, 5 and 6 were all tried and none holds the 8. Odd distances fail
+on colour, since the shaded 8 and 9 must share a checkerboard colour. Distance 4 has 12, 42, 72, 72, 72 placements on
+r1 to r5, for example rows `8...9 / 17253 / 6..4.`, whose 3 row cells between the 8 and 9 can only leave upward.
+
+### Every placement with the 9 inside the 8 region
+
+`aqre_all_two_cell.py DIR` ran the other 55 shapes on Chris's go, with his 8 test, in 724 s on 8 processes: 1,812
+placements after joining 8 and 9 swaps (2,677 before), all enumerated, none capped.
+
+| Distance | Placements | Whole boards | Layouts | Solve |
+|---|---|---|---|---|
+| 2 | 1,675 | 325,536 | 377 | 164 infeasible without connectivity, 213 with it |
+| 4 | 137 | 0 | 0 | nothing to solve |
+
+Layouts by row, r2 to r5: 0, 0, 32, 345, across 23 shapes. r1 has no live two-cell placement.
+
+With Chris's first shape, that is all 56 shapes with a two-cell placement. So no grid has the 8 and 9 in one region,
+on these lists: regions judged alone, one 8-able region by shape alone, one forced 7, the rest topping out at 6 with
+counts 1-6 matchable, 8 region not straight, 8 in columns 1-5 up to the mirror, rows up to the flip. This does not
+reach one-cell placements, where the 9 is in the ninth region. Every layout found has the 8 on an even column.
+That is still a pattern, not a proof.
+
+### The 9 in another circled region
+
+Chris's question, 2026-11-04: can the row's 9 share a region with another circle, so that region is ruled out of
+being the 8? Yes, and the rules allow it. It is a third case, beside the 9 in the 8 region and the 9 in the ninth
+region. The eight circled regions then cover the row, the 8 region holds one row cell, and the ninth is off the row.
+`aqre_row_enumerate.py` and `aqre_all_two_cell.py` do not cover it. They allow two row cells only in the 8 region.
+
+Hand argument: a count of 8 leaves one unshaded cell, which is the 5, so the circled 8 and the 9 are both shaded,
+both high, and on one checkerboard colour. So a region whose circle is an odd distance from the 9 can never be the
+8. `aqre_nine_gaps.py` agrees: 216,022, 10,856 and 310 regions at distances 1, 3 and 5, none can hold the 8. At even
+distances most also fail: 4,122 of 35,128 at distance 2 and 270 of 2,436 at distance 4 can (r1 to r5, circle in
+columns 1-5, before the mirror). A region with the 9 still needs testing as a 7 and for its counts, and the search
+needs changing, since such a region can leave the row through either of its two cells.
+
+Test on one 8 shape, `aqre_nine_shared.py`, 2026-11-04. The shape is the median of the 794 shapes that have only
+one-cell placements, with 78 live placements of the 60,208 over all shapes, rows `X..`, `X..`, `XXX`, `XX.`, `X..`,
+`X..`. Regions are judged alone, as on the other strict lists. Each placement's enumeration is capped at 10 minutes.
+
+| row | placements | proven no grid | capped | boards | layouts | relaxed infeasible | full infeasible | CPU seconds |
+|---|---|---|---|---|---|---|---|---|
+| r1 | 6 | 6 | 0 | 0 | 0 | 0 | 0 | 1 |
+| r2 | 19 | 19 | 0 | 0 | 0 | 0 | 0 | 33 |
+| r3 | 21 | 21 | 0 | 0 | 0 | 0 | 0 | 486 |
+| r4 | 20 | 19 | 1 | 59,412 | 284 | 227 | 57 | 2,982 |
+| r5 | 12 | 12 | 0 | 191,150 | 278 | 195 | 83 | 985 |
+| all | 78 | 77 | 1 | 250,562 | 562 | 422 | 140 | 4,489 |
+
+So no grid in this shape, except that one placement is open: r4, 8 in c4, stopped at 600 s after 59 cases, with 29
+boards and 0 layouts so far. Nothing is proven for it. Every layout solved to a proof, none timed out. The search
+control passed: 112 regions, the search and a plain search both give 1 layout, and the planted layout is found.
+
+Scaling up, by the test's seconds per placement in each row times the row's live one-cell placements: about 4
+million CPU seconds, near 6 days on 8 processes or 2 days on 24. That is one shape's rate applied to all, and capped
+placements would add to it, so it is rough.
+
+Chris's sharper form, 2026-11-04: the 9 goes on the wrong checkerboard colour. That means an odd distance from the
+forced 8, which is high and sets the colours, so the 9 is unshaded. The test above allowed either colour, so this is
+a subset of it: 262 of the 562 layouts (r4 128, r5 134) have the 9 at an odd distance from the 8, and the other 300 at
+an even one. All are infeasible. The region lists already place the 9 in the shared region: of the r4 and r5 two-cell
+regions, only those with circle and 9 at distance 2 or 4 can hold the 8 (1,560 and 1,592), as the hand argument says.
+
+Does a wrong-colour 9 rule its region out as the 7? Its 9 and 5 are unshaded, so a count of 7 shades every other cell,
+the circle too. With circle and 9 at an even distance the circle is also on the wrong colour, so no 7: 0 of 18,680
+regions on r5, all columns, and likewise on r2-r4. With an odd distance the region cannot be the 8, but it can still
+be the 7: 26,164 of 119,264 on r5, about 1 in 5. A brute-force check outside the classifier confirmed all 304 sampled
+on r5. Example, with `*` shaded, circle r5c2, 9 on r5c3:
+
+```
+r5  7* 9  .  .  .
+r6  2* .  4* .  .
+r7  8* 3* 5  1* 6*
+```
+
+None of the 262 layouts uses such a region as the 7. All 262 have circle and 9 at an odd distance, and the region tops
+out at 6.
+
+Chris's setup, as he corrected it, 2026-11-04: the shared region's circle and 9 are both on the wrong colour, so an
+even distance apart and each an odd distance from the 8, and the shape stops the 8. The 7 is then out at once. The
+test allowed this case and it gave 0 layouts in that shape, over the 77 finished placements. The capped one is open.
+So the shape's 562 solved layouts say nothing about this setup.
+
+### Rule dropping, stopped
+
+`aqre_row_diagnose.py DIR FILE ROW` re-solved layouts with one rule dropped at a time. Chris had it stopped at 6 of
+r4's 10 layouts. All 6 became feasible with all whispers dropped and with region uniqueness dropped. Rows, columns
+or lines also did for some, varying by layout. 8 to 11 of each layout's 17 solves were UNKNOWN at 20 s, so they
+say nothing. The solvable cases point to several rules interacting, with no single small cause. Nothing is proven by it.
+
+r4 took about 6 minutes on 8 processes, and its layouts all have the 8 and 9 in r4c2 and r4c4, either way
+round. An earlier r4 search with neither speedup and a cruder fill below the row was stopped at 51 minutes.
+
+So far, every layout on either row has the 8 on an even column, which has only 4 cells of its colour in the
+row. No odd-column 8 has given a layout. That is a pattern, not a proof.
+
 `aqre_r5_oriented.py DIR` rebuilds the lists with colour known, then runs the cover: first with the
 forced 7, then without it. Any layout found goes to the fixed-region solve. The hill-climb's best was 3
 shaded groups, and the forced-7 build was stopped since the same rule was proven unable to finish it.
