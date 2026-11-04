@@ -465,6 +465,15 @@ r5 placement, in 147 s against 691 s. The final version has not rerun all of r5.
 | r5 | 14 | all 14, loosened 8 test | 490, of which 214 meet the 8 test | all 490 infeasible | 0 |
 | r4 | 28 | 16 | 10 | all 10 infeasible without connectivity | 0 |
 | r3 | 28 | 16 | 0 | nothing to solve | 0 |
+| r2 | 14 | 8 | 0 | nothing to solve | 0 |
+| r1 | 0 | 0 | 0 | nothing to solve | 0 |
+
+So this 8 shape gives no grid in any row on these lists, since r6-r9 flip onto r4-r1 and a column is a row
+turned 90 degrees. Only r5 and r4 have layouts at all. r1 has no placement: the 8 and 9 sit in the leg row next
+to the shape's 3-wide bar, and neither direction fits on the board. In all 14 r2 placements the legs go up and
+the bar sits below, so the r2 cell between the 8 and 9 and the r1 cell above it are walled in. Those 2 cells
+have no region at all, and `aqre_row2_zero_check.py DIR` shows 0 r1 fillings with the class rules off as well.
+That 2-cell pocket is geometry, and needs no digit or shading rule. The rule-dropping run had not finished here.
 
 r4 took about 6 minutes on 8 processes, and its layouts all have the 8 and 9 in r4c2 and r4c4, either way
 round. An earlier r4 search with neither speedup and a cruder fill below the row was stopped at 51 minutes.
