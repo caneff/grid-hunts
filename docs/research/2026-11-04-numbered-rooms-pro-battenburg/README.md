@@ -55,6 +55,9 @@ model, and nothing imports or runs them.
   disjoint marks and no ninth cell was a target. A full run of 8 overlapping marks
   across a line forces targets onto positions 2, 4, 6 and 8, since the other
   alternation needs 5.
+- **A box can hold 9 targets.** `nr_box_bounds.py` found a grid for the corner,
+  edge and centre box, each re-read by the reader, so all nine boxes reach it by
+  symmetry.
 - **The marks read only the 32 edge cells.** Targets depend only on first-cell
   digits, so two grids with equal edges have equal targets and equal marks.
 - **Goal (c) needs a grid fixed by its own edge.** A grid whose 32 edge cells
