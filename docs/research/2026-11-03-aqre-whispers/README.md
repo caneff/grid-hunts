@@ -376,6 +376,13 @@ regions that can be the 8. 19 of the 805 free shapes have a hole, which no regio
 are left out, leaving 786 shapes and 28,847 placements in 37 families. The catalogue and the 22% above
 include those 19. The cover never uses them, since its check on free cells refuses a walled-off cell.
 
+Chris likes the sheet's "3x4 run 4" shape, rows `X.X / X.X / XXX / XX.`, for the 8 region, since 8 circles
+in r5 force its other r5 cell to be the 9. `aqre_r5_shape_query.py DIR` confirms it: all 32 placements
+that can be the circled 8, with the circle in r5c1-5, hold exactly two r5 cells, the 8 and the 9, two
+columns apart. The 12 placements it printed each have just 1 filling, so the digits and the 5 are forced
+within the region; the other 20 were not printed. The r5 cell between the 8 and the 9 is in the shape's
+notch, so its own region can only leave r5 through the notch's open side.
+
 `aqre_r5_oriented.py DIR` rebuilds the lists with colour known, then runs the cover: first with the
 forced 7, then without it. Any layout found goes to the fixed-region solve. The hill-climb's best was 3
 shaded groups, and the forced-7 build was stopped since the same rule was proven unable to finish it.
