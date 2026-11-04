@@ -284,6 +284,12 @@ are forced: c1 reads 9 8 4 7 3 5 1 2 6 and c9 reads 5 4 8 9 7 1 6 3 2. r1 reads
 9 6 (2/3) 1 4 8 (2/3) 7 5, r9 reads 6 5 (7/8) 3 1 4 (7/8) 9 2, and r6c5 = 9. Not
 unique: 200 grids (capped), each re-read by the reader.
 
+More marks cannot make that board unique (`nr_board8_more_marks.py`), negative rule
+on, his digits and colours not held. Of the 50 unmarked windows, 48 singles are
+infeasible and 2 not unique. Of the 1,225 pairs, 1,222 are infeasible and 3 not
+unique. None timed out. The board allows 2 edges, each with more than 2,000
+completions (capped), and marks read nothing but the edge.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
