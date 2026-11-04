@@ -140,6 +140,24 @@ outlined and no solution digit entered. The marks are cosmetic text, so the app'
 solver does not read them and will not confirm uniqueness. The proof is
 `nr_verify_sat.py`. The rendered page was checked by screenshot.
 
+### Opening ideas
+
+`nr_opening.py` gives what the marks force before any given is used. No human
+solver has walked this path, so the puzzle's difficulty is untested.
+
+- r3 and r4 each have 4 disjoint marks over c1-8. So r3c9 and r4c9 are not
+  targets, and all 4 clues into each row land on different cells.
+- Those two non-targets remove pointers: r3c1 and r4c1 are not 9, r3c9 and r4c9
+  are not 1, r1c9 is not 3 or 4, and r9c9 is not 6 or 7.
+- r1c4 is never a target on the marks alone. No short hand reason is known yet.
+  It also removes r1c1 = 4, r1c9 = 6, r1c4 = 1 and r9c4 = 9.
+- The solver's marks-alone candidates: r3c1 12367, r3c9 234578, r1c9 125789,
+  r9c9 3589.
+- Marks at r3c1, r3c3 and r3c5 make r3 and r4 opposites across c1-6. The three
+  marks at r4c5-r4c7 make c5-8 alternate in r4 and in r5.
+- The givens read as pointers from these rows: `L5=1`, `T4=6` and `B5=8` all have
+  targets in r4 or r5 in the solution.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
