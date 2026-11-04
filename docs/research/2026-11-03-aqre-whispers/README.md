@@ -321,6 +321,19 @@ agreed in all 213 comparisons. So a region alone can never rule out holding 6: "
 cannot be a 6" does not exist on shape and its own digits. A strict ladder would have to rule
 out high counts using neighbouring regions, which this count ignores.
 
+Unlike the circled 8, the circled 7 is not forced to be shaded. `aqre_r5_seven_unshaded.py`
+splits the same regions, judged alone, among the 72,193 that can be a valid 7 but not a valid 8:
+
+| The circled 7 can be | Regions | Share |
+|---|---|---|
+| Either | 26,709 | 37% |
+| Shaded only | 23,126 | 32% |
+| Unshaded only | 22,358 | 31% |
+
+All 29,535 regions that can be a valid 8 can also be a valid 7 either way. An unshaded circled 7
+makes the two unshaded cells the 5 and the 7. A solver check agreed in all 600 comparisons on a
+sample of 300 regions.
+
 ### A board from another session
 
 Chris pasted a jigsaw board from another session's scratch run, with its plan of a circle 8
