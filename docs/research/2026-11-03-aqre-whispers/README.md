@@ -438,6 +438,15 @@ class and 33 to 129 strict, including every known layout. Limits: both searches 
 so an error in the region lists would not show. Only 3 layouts in that test were not strict, and the search
 comparison covers sampled lists, not the full ones.
 
+Chris's wording, 2026-11-04: 8 circles in r5, none of them 9, so the 9 is placed at once. Only one region can
+be the 8 by shape alone, which places the 8 and fixes the checkerboard colouring. Of the other r5 regions only
+one can be the circled 7. Each of the rest either tops out at 6 by shape, or allows 7 only shaded, on the wrong
+colour. The neighbours play no part. The enumerator differs in one way: it judged other regions' 8 with colour
+known, so a region on the 8's opposite colour was never refused for being able to be the 8. By shape alone it
+must be. `aqre_r5_ruling_recount.py DIR` reads the 490 layouts this way: 214 have no other 8-able r5 region and
+276 have 1 to 3. So the enumerator's lists are looser than the rule here, and the "no grid" holds for the
+stricter rule too. In all 490 the 7 is on the 8's colour and forced shaded, as Chris described.
+
 `aqre_r5_oriented.py DIR` rebuilds the lists with colour known, then runs the cover: first with the
 forced 7, then without it. Any layout found goes to the fixed-region solve. The hill-climb's best was 3
 shaded groups, and the forced-7 build was stopped since the same rule was proven unable to finish it.
