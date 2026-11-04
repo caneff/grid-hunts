@@ -415,6 +415,22 @@ is small enough to finish, where CP-SAT hit 900 s on 12 workers. Its self-check 
 size table with plain enumeration on a sampled list holding one planted filling. It passes, but each of the
 four samples had only 1 filling, so it is a thin test of the memo's adding up.
 
+`aqre_r5_split_enumerate.py DIR` then enumerated all 14 placements in about 11 minutes on one worker, Chris's
+go. It found 490 layouts, and the fixed-region solve proved all 490 infeasible (232 without connectivity, 258
+with it), so no grid came out. Layouts per placement:
+
+| 8 | 9 | Layouts |
+|---|---|---|
+| r5c2 | r5c4 | 33, 129 |
+| r5c4 | r5c2 | 33, 129 |
+| r5c4 | r5c6 | 83, 83 |
+| r5c1, r5c3 or r5c5 | any | 0 in all 8 placements |
+
+On these lists (regions judged alone, colour known from the 8, forced 7, six low regions able to take 1-6),
+this shape gives no grid, subject to the check below. CP-SAT had hit its 900 s cap on all six cases without
+finding any of the 490. This covers this 8 shape only. Its self-check is thin: the sampled lists held just the
+1 planted layout and no strict layouts.
+
 `aqre_r5_oriented.py DIR` rebuilds the lists with colour known, then runs the cover: first with the
 forced 7, then without it. Any layout found goes to the fixed-region solve. The hill-climb's best was 3
 shaded groups, and the forced-7 build was stopped since the same rule was proven unable to finish it.
