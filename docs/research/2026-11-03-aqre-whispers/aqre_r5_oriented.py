@@ -33,6 +33,7 @@ from ortools.sat.python import cp_model
 
 ROW = 4
 CASE_LIMIT = 900.0
+WORKERS = 1
 CELLS = [(r, c) for r in range(9) for c in range(9)]
 
 
@@ -160,7 +161,7 @@ def solve_case(table, n, parity, forced, out, tally, eight_only=None):
     layouts = 0
     while time.time() - start < CASE_LIMIT:
         s = cp_model.CpSolver()
-        s.parameters.num_workers = 1
+        s.parameters.num_workers = WORKERS
         s.parameters.max_time_in_seconds = max(1.0, CASE_LIMIT - (time.time() - start))
         status = s.solve(m)
         name = s.status_name(status)

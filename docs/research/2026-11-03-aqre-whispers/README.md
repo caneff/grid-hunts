@@ -387,6 +387,20 @@ Chris's go, 2026-11-04: fix the 8 region to this shape for now. `aqre_r5_chosen_
 colour-aware cover on it. The broad `aqre_r5_oriented.py` cover was stopped at about 11 minutes in its
 first case, with no result.
 
+Result on 12 workers, forced 7, 14 placements in 6 cases, 900 s cap per case: all 6 UNKNOWN (9 in r5c1 to
+r5c6, 57,094 to 71,326 candidates), 0 layouts, so the fixed-region solve never ran and no grid came out.
+Nothing is proven for this shape. Chris ruled out any 7, 2026-11-04: the script now runs forced 7 only, and
+the old run was stopped about 3 s into its first any-7 case with no output from it.
+
+Idea for a full enumeration of one placement, not built or measured: the 8 region holds two r5 cells, so by
+counting cells the other seven r5 cells are in seven different regions and the ninth region is off r5. Each
+of those seven is its r5 cell, a connected part going up and a connected part going down, joined only through
+that cell. So the rows above and below r5 can be filled separately from the regions' up and down parts, then
+joined where each region's two parts total 8 cells and form a listed region. Counting each half's fillings
+first shows whether this is workable. The top-bottom flip keeps r5 and the checkerboard, so both halves can
+share one list of parts and one filler. Their fillings differ only by the cells the 8 region takes and by
+which side holds the ninth region.
+
 `aqre_r5_oriented.py DIR` rebuilds the lists with colour known, then runs the cover: first with the
 forced 7, then without it. Any layout found goes to the fixed-region solve. The hill-climb's best was 3
 shaded groups, and the forced-7 build was stopped since the same rule was proven unable to finish it.
