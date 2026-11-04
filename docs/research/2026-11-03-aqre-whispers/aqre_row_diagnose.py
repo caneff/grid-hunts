@@ -20,8 +20,8 @@ from connected import add_flow_connectivity
 from ortools.sat.python import cp_model
 
 CELLS = [(r, c) for r in range(9) for c in range(9)]
-LIMIT = 60.0
-WORKERS = 12
+LIMIT = 20.0
+WORKERS = 6
 RULES = ("connect", "rows", "columns", "regions", "cross whispers", "all whispers", "lines", "all circles")
 
 
@@ -107,15 +107,19 @@ def main():
     tally = {}
     rescue = Counter()
     results = {}
+    begun = time.time()
+    saved = out / f"diagnose-r{row + 1}.jsonl"
     with multiprocessing.get_context("fork").Pool(WORKERS) as pool:
         for done, (index, result, spent) in enumerate(pool.imap_unordered(one_layout, jobs), 1):
             results[index] = result
             for rule, name in result.items():
                 tally.setdefault(rule, Counter())[name] += 1
-            rescue[tuple(sorted(r for r, v in result.items() if v in ("OPTIMAL", "FEASIBLE") and r != "all rules"))] += 1
-            if done % 50 == 0:
-                print(f"{done} of {len(jobs)} layouts", flush=True)
-    (out / f"diagnose-r{row + 1}.json").write_text(json.dumps(results))
+            drops = sorted(r for r, v in result.items() if v in ("OPTIMAL", "FEASIBLE") and r != "all rules")
+            unknown = sum(v == "UNKNOWN" for v in result.values())
+            rescue[tuple(drops)] += 1
+            with saved.open("a") as f:
+                f.write(json.dumps({"index": index, "result": result}) + "\n")
+            print(f"{done} of {len(jobs)}: layout {index}, all rules {result['all rules']}, feasible when dropped {drops or 'none'}, {unknown} unknown, {spent:.0f}s; {time.time() - begun:.0f}s in", flush=True)
     for rule in ("all rules", *RULES, *[f"circle c{c + 1}" for c in range(9)]):
         if rule in tally:
             t = tally[rule]

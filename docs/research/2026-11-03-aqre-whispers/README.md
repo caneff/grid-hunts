@@ -495,6 +495,31 @@ and 4 free shapes not holed. Distances 1, 3, 5 and 6 were all tried and none hol
 on colour, since the shaded 8 and 9 must share a checkerboard colour. Distance 4 has 12, 42, 72, 72, 72 placements on
 r1 to r5, for example rows `8...9 / 17253 / 6..4.`, whose 3 row cells between the 8 and 9 can only leave upward.
 
+### Every placement with the 9 inside the 8 region
+
+`aqre_all_two_cell.py DIR` ran the other 55 shapes on Chris's go, with his 8 test, in 724 s on 8 processes: 1,812
+placements after joining 8 and 9 swaps (2,677 before), all enumerated, none capped.
+
+| Distance | Placements | Whole boards | Layouts | Solve |
+|---|---|---|---|---|
+| 2 | 1,675 | 325,536 | 377 | 164 infeasible without connectivity, 213 with it |
+| 4 | 137 | 0 | 0 | nothing to solve |
+
+Layouts by row, r2 to r5: 0, 0, 32, 345, across 23 shapes. r1 has no live two-cell placement.
+
+With Chris's first shape, that is all 56 shapes with a two-cell placement. So no grid has the 8 and 9 in one region,
+on these lists: regions judged alone, one 8-able region by shape alone, one forced 7, the rest topping out at 6 with
+counts 1-6 matchable, 8 region not straight, 8 in columns 1-5 up to the mirror, rows up to the flip. This does not
+reach one-cell placements, where the 9 is in the ninth region. Every layout found has the 8 on an even column.
+That is still a pattern, not a proof.
+
+### Rule dropping, stopped
+
+`aqre_row_diagnose.py DIR FILE ROW` re-solved layouts with one rule dropped at a time. Chris had it stopped at 6 of
+r4's 10 layouts. All 6 became feasible with all whispers dropped and with region uniqueness dropped. Rows, columns
+or lines also did for some, varying by layout. 8 to 11 of each layout's 17 solves were UNKNOWN at 20 s, so they
+say nothing. The solvable cases point to several rules interacting, with no single small cause. Nothing is proven by it.
+
 r4 took about 6 minutes on 8 processes, and its layouts all have the 8 and 9 in r4c2 and r4c4, either way
 round. An earlier r4 search with neither speedup and a cruder fill below the row was stopped at 51 minutes.
 
