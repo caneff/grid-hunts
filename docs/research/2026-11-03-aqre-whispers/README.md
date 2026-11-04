@@ -475,6 +475,20 @@ the bar sits below, so the r2 cell between the 8 and 9 and the r1 cell above it 
 have no region at all, and `aqre_row2_zero_check.py DIR` shows 0 r1 fillings with the class rules off as well.
 That 2-cell pocket is geometry, and needs no digit or shading rule. The rule-dropping run had not finished here.
 
+### Screening the other 8 shapes
+
+`aqre_shape_screen.py DIR` grows each row's regions afresh and keeps those that can be the 8. A placement is dead
+when the free cells split into a part whose size is not a multiple of 9. Geometry only, so a live placement may
+still have no layout. Controls passed: r5 gives the catalogue's 29,535 regions, and the chosen shape gives 0, 14,
+28, 28 and 14 placements on r1 to r5. The first version of this script was wrong, because it read region
+masks as sizes and started from the r5 catalogue, so its numbers were discarded.
+
+- 796 shapes, 10 more than the sheet's 786, since tall shapes that cannot reach r5 appear on other rows.
+- 56 shapes have a live placement holding two row cells; 2 have only those. 740 have only one-cell placements.
+- Live two-cell placements on r1 to r5: 0, 368, 774, 1,050, 553.
+- Live one-cell placements on r1 to r5: 5,170, 10,930, 14,689, 18,889, 10,530. These leave the row's 9 in
+  the ninth region, which the split enumerator does not handle yet.
+
 r4 took about 6 minutes on 8 processes, and its layouts all have the 8 and 9 in r4c2 and r4c4, either way
 round. An earlier r4 search with neither speedup and a cruder fill below the row was stopped at 51 minutes.
 
