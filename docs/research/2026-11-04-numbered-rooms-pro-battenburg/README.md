@@ -158,6 +158,15 @@ solver has walked this path, so the puzzle's difficulty is untested.
 - The givens read as pointers from these rows: `L5=1`, `T4=6` and `B5=8` all have
   targets in r4 or r5 in the solution.
 
+The `L8=9` idea (Chris, 2026-11-04), read as the c1-2 marks in r7-9 with the 9
+clue, by solver on the marks plus `L8=9` alone:
+
+- r8c1 is 2 to 8. r8c1 = 2, 3, 4 or 6 forces targets at r7c1, r8c2 and r9c1.
+  r8c1 = 7 or 8 forces targets at r7c2, r8c1 and r9c2. r8c1 = 5 allows both.
+- Adding one more given: `B5=8` leaves r8c1 as 4, 5 or 7, `R7=8` removes 8, `L5=1`
+  removes 6, and `T4=6` removes nothing. All five leave only 5.
+- No hand reason is known yet for any of these splits.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
