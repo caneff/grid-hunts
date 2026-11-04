@@ -229,6 +229,11 @@ windows.
 - `nr_board4_colours.py`, unmarked windows free: the fewest colour changes is 4, and
   there are exactly two such sets. Flip the r6c8 window, or flip the r1c3 window.
 
+With mark r6c8 and the colours of r6c8, r6c9, r7c8 and r7c9 deleted, unmarked
+windows free (Chris, 2026-11-04): feasible, with every remaining colour and digit
+held, and a grid re-read by the reader. r7c9 must not be a target, r1c9 is 5 or 6,
+r7c1 = 1, r9c8 = 9 and r9c9 = 2. Uniqueness not tested.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
