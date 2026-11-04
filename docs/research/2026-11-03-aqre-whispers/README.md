@@ -427,9 +427,16 @@ with it), so no grid came out. Layouts per placement:
 | r5c1, r5c3 or r5c5 | any | 0 in all 8 placements |
 
 On these lists (regions judged alone, colour known from the 8, forced 7, six low regions able to take 1-6),
-this shape gives no grid, subject to the check below. CP-SAT had hit its 900 s cap on all six cases without
-finding any of the 490. This covers this 8 shape only. Its self-check is thin: the sampled lists held just the
-1 planted layout and no strict layouts.
+this shape gives no grid. CP-SAT had hit its 900 s cap on all six cases without finding any of the 490. This
+covers this 8 shape only. The enumerator's own self-check is thin: its sampled lists held just the 1 planted
+layout and no strict layouts.
+
+`aqre_r5_split_check.py DIR` is the stronger check, and it passed. All 490 layouts re-read from their grids with
+0 errors. On the 6 placements with layouts, cut to every region their known layouts use plus 15 sampled per
+column (151 to 201 regions), the join and a plain whole-board search returned the same layouts, 33 to 132 of any
+class and 33 to 129 strict, including every known layout. Limits: both searches share `usable` and the table,
+so an error in the region lists would not show. Only 3 layouts in that test were not strict, and the search
+comparison covers sampled lists, not the full ones.
 
 `aqre_r5_oriented.py DIR` rebuilds the lists with colour known, then runs the cover: first with the
 forced 7, then without it. Any layout found goes to the fixed-region solve. The hill-climb's best was 3
