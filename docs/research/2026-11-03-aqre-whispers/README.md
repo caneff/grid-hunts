@@ -548,6 +548,12 @@ Scaling up, by the test's seconds per placement in each row times the row's live
 million CPU seconds, near 6 days on 8 processes or 2 days on 24. That is one shape's rate applied to all, and capped
 placements would add to it, so it is rough.
 
+Chris's sharper form, 2026-11-04: the 9 goes on the wrong checkerboard colour. That means an odd distance from the
+forced 8, which is high and sets the colours, so the 9 is unshaded. The test above allowed either colour, so this is
+a subset of it: 262 of the 562 layouts (r4 128, r5 134) have the 9 at an odd distance from the 8, and the other 300 at
+an even one. All are infeasible. The region lists already place the 9 in the shared region: of the r4 and r5 two-cell
+regions, only those with circle and 9 at distance 2 or 4 can hold the 8 (1,560 and 1,592), as the hand argument says.
+
 ### Rule dropping, stopped
 
 `aqre_row_diagnose.py DIR FILE ROW` re-solved layouts with one rule dropped at a time. Chris had it stopped at 6 of
