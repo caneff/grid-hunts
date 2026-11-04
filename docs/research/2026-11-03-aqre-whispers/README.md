@@ -574,6 +574,29 @@ even distance apart and each an odd distance from the 8, and the shape stops the
 test allowed this case and it gave 0 layouts in that shape, over the 77 finished placements. The capped one is open.
 So the shape's 562 solved layouts say nothing about this setup.
 
+Every shape, `aqre_nine_wrong_colour.py`, 2026-11-04, on Chris's go: **no grid in this setup.** It ran all 60,208 live
+one-cell placements of the 794 shapes that have them, on 24 processes in 6,657 s (1.8 h). No placement hit the 30-minute
+cap, so this is a proof over the stated space. The longest took 580 s. The run also checks that no shared region here
+can be the 7, and that check never fired.
+
+| row | placements | cases | boards | layouts | relaxed infeasible | CPU seconds |
+|---|---|---|---|---|---|---|
+| r1 | 5,170 | 7,834 | 0 | 0 | 0 | 9 |
+| r2 | 10,930 | 52,032 | 0 | 0 | 0 | 1,646 |
+| r3 | 14,689 | 421,334 | 0 | 0 | 0 | 13,017 |
+| r4 | 18,889 | 637,440 | 13,278 | 0 | 0 | 95,651 |
+| r5 | 10,530 | 600,402 | 27,060 | 12 | 12 | 32,458 |
+
+24,481 placements have no case at all. The 12 layouts are all r5 with the 8 in c2, and the 9 and shared circle on c5 and
+c7 in either order: 8 from shape `X.... / XXXXX / X.XX.` and 4 from shape `X. / X. / XX / XX / X. / XX`. All 12 fail
+without connectivity. The search control passed on the first layout: 112 regions, the search and a plain search both
+give 1 layout, and the planted layout is found. The earlier test's capped placement finished here with 0 layouts.
+
+The space: 8 circles on one of r1 to r5 (r6 to r9 by flip, columns by a 90 degree turn), the 8 region holding one row
+cell and the only one able to hold an 8 by shape, the shared region's circle and 9 each an odd distance from the 8, one
+forced 7, the others topping out at 6 with counts matchable, every region judged alone. Not covered: the 9 in the
+shared region on the right colour, the 9 in the ninth region, and any region ruled out only with help from outside it.
+
 ### Rule dropping, stopped
 
 `aqre_row_diagnose.py DIR FILE ROW` re-solved layouts with one rule dropped at a time. Chris had it stopped at 6 of
