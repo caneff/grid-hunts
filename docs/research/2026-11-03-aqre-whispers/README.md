@@ -371,6 +371,11 @@ everywhere. A region on the opposite colour can never be the 8, and its 7 could 
 the infeasible result above covers only the colour-blind reading of the rule.
 
 Chris's ruling, 2026-11-04: only one r5 region can be the 8, and only one can be the 7.
+`aqre_r5_eight_sheet.py DIR` draws one shape per family (bounding box and longest straight run) of the
+regions that can be the 8. 19 of the 805 free shapes have a hole, which no region could fill, so they
+are left out, leaving 786 shapes and 28,847 placements in 37 families. The catalogue and the 22% above
+include those 19. The cover never uses them, since its check on free cells refuses a walled-off cell.
+
 `aqre_r5_oriented.py DIR` rebuilds the lists with colour known, then runs the cover: first with the
 forced 7, then without it. Any layout found goes to the fixed-region solve. The hill-climb's best was 3
 shaded groups, and the forced-7 build was stopped since the same rule was proven unable to finish it.
