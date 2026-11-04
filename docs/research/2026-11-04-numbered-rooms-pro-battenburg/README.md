@@ -240,6 +240,17 @@ is a target. r1c7, r4c9 and r7c9 are not. r1c6 is 2 or 8, r1c9 is 5 or 6, r8c1 i
 or 7, r9c2 is 5 or 7, r8c9 is 3, 4 or 8. By hand, r4c9 = 9 because a 9 in c9 at r2,
 r3, r5 or r6 would make the green c1 cell in its row a target.
 
+### Chris's fourth board (2026-11-04)
+
+The same four givens, with marks at r1c3, r1c5, r3c1, r4c1, r6c1, r6c4, r6c8, r7c1,
+r8c1, r8c7 and r8c8, read from his picture, unmarked windows free (`nr_board6.py`).
+His colours as drawn fail: r7c9 pink needs r1c9 = 7, which makes r1c3 a target.
+Flipping the r6c8 window (r6c8 green, r6c9 pink, r7c8 pink, r7c9 green) is the fewest
+changes, and every other colour, digit and pencil mark then holds. That window is a
+checkerboard in that phase even with its mark deleted. With the mark kept and the
+window flipped: r1c2 = 6, r1c6 = 8, r1c9 = 5, r9c2 = 5, 1s at r1c4 and r9c5, and r8c9
+is 3 or 8.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
