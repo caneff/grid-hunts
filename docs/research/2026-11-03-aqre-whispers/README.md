@@ -569,6 +569,11 @@ r7  8* 3* 5  1* 6*
 None of the 262 layouts uses such a region as the 7. All 262 have circle and 9 at an odd distance, and the region tops
 out at 6.
 
+Chris's setup, as he corrected it, 2026-11-04: the shared region's circle and 9 are both on the wrong colour, so an
+even distance apart and each an odd distance from the 8, and the shape stops the 8. The 7 is then out at once. The
+test allowed this case and it gave 0 layouts in that shape, over the 77 finished placements. The capped one is open.
+So the shape's 562 solved layouts say nothing about this setup.
+
 ### Rule dropping, stopped
 
 `aqre_row_diagnose.py DIR FILE ROW` re-solved layouts with one rule dropped at a time. Chris had it stopped at 6 of
