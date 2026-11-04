@@ -83,7 +83,7 @@ def build_catalogue(out):
                 checked += 1
                 any_8 = entry[True][0] or entry[False][0]
                 any_7 = any(entry[o][1] or entry[o][2] for o in (True, False))
-                disagree += any_8 != holds_eight(cells, root) or any_7 != holds(cells, root, 7, lines)
+                disagree += any_8 != bool(holds_eight(cells, root)) or any_7 != holds(cells, root, 7, lines)
                 if entry[False][0]:
                     disagree += 1
             table[c].append(entry)
