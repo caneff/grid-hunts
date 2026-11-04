@@ -180,6 +180,21 @@ is not yet unique.
   r5c1, r6c2, r7c1 and r8c2.
 - r1c1 is 2, 3, 4, 6, 8 or 9, and r9c1 is 2, 4, 6, 7, 8 or 9.
 
+### Chris's second board (2026-11-04)
+
+`T1=6`, `L6=9`, `L9=4`, `R9=9`, with marks at r1c8, r3c1, r4c1, r6c1, r6c8, r7c1,
+r8c1, r8c7 and r8c8, read from his picture. **Infeasible**, proven by CP-SAT, even
+with unmarked windows free and his colours and digits left out (`nr_board2.py`).
+
+- `nr_board2_core.py`: the minimal conflict is all four givens and the marks at
+  r1c8, r3c1, r4c1, r6c1, r7c1, r8c1 and r8c8. Marks r6c8 and r8c7 are not part of
+  it.
+- Dropping any one item of that conflict makes it feasible. Dropping r1c8 or r8c8
+  also keeps his blue digits r1c1=9, r9c1=6 and r9c6=4, with or without the rule on
+  unmarked windows. All his colours together still fail after either drop.
+- The left side's logic holds by hand: r6c1 has no route, so r9c1 is a target, which
+  forces r1c1=9 and r9c1=6, and `L9=4` then gives r9c6=4.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
