@@ -278,6 +278,12 @@ window is forced, but at least one extra checkerboard is needed, and r3c4 is the
 single extra mark that works: all his entries then hold under the negative rule, 50
 grids or more (capped). A hand reason is not known.
 
+With mark r3c4 added and the negative rule on (`nr_board8.py`, `board8-forced.json`,
+picture `board8-forced-1.png`): every target cell is determined, and all of c1 and c9
+are forced: c1 reads 9 8 4 7 3 5 1 2 6 and c9 reads 5 4 8 9 7 1 6 3 2. r1 reads
+9 6 (2/3) 1 4 8 (2/3) 7 5, r9 reads 6 5 (7/8) 3 1 4 (7/8) 9 2, and r6c5 = 9. Not
+unique: 200 grids (capped), each re-read by the reader.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
