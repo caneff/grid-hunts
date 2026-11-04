@@ -260,6 +260,10 @@ Two scores for hill-climbing fixed layouts, tested on sampled failed layouts:
   within 30 s, from 6 to 15 groups where 1 is a valid grid, 5 of them proven best. So these
   layouts are not near misses. `aqre_r5_climb.py DIR` climbs on this score.
 
+The climb was stopped on Chris's word, at about 1 h 50 of its 2 hour cap: no grid in 6 starts and
+over 500 evaluations. Its best was 3 groups, on its second start; later starts began at 8 to 11
+groups and never beat it. It never enforced the one-8, one-7 rules either.
+
 ### Placing the 8 region first
 
 Chris, 2026-11-04: place the 8 region first, then the other regions so that none of them can
