@@ -4,7 +4,8 @@ Chris, 2026-11-04: place a valid 8 region in both shading and digits. Then place
 7 that cannot itself be a valid 8 but still works with the 8, and so on. A ninth region
 that holds r5's uncircled cell has no circle there and may be able to count 8. Both the 8
 and the 7 are strict: a region counting 6 or less cannot be a valid 7 or a valid 8, judged
-on the region alone, and the 7 region cannot be a valid 8.
+on the region alone, and the 7 region cannot be a valid 8. The 7 region's shape must also
+force the circled 7, judged alone: it can be shaded or unshaded, not both.
 
 Each placement samples a region's cells, then commits the shading and digits the solver
 picks for it. The solver's whole-board model holds placed cells fixed and needs a Latin
@@ -27,6 +28,7 @@ from aqre_jigsaw_feasible import connected, neighbours
 from aqre_jigsaw_r5_staged import finish, read_back
 from aqre_r5_eight_regions import holds_eight
 from aqre_r5_region_max import holds, lines_of
+from aqre_r5_seven_unshaded import seven_ways
 from connected import add_flow_connectivity
 from ortools.sat.python import cp_model
 from sudoku_kit.cpsat import sudoku_model
@@ -392,6 +394,8 @@ class Search:
             if not holds(cells, root, count, lines):
                 continue
             if count <= 6 and holds(cells, root, 7, lines):
+                continue
+            if count == 7 and len(set(seven_ways(cells, root, lines))) == 1:
                 continue
             others = [x for x in roots if x != c]
             assign = self.child_ok(st, count, cells, root, others, rest)

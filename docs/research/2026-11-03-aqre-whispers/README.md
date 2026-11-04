@@ -334,6 +334,11 @@ All 29,535 regions that can be a valid 8 can also be a valid 7 either way. An un
 makes the two unshaded cells the 5 and the 7. A solver check agreed in all 600 comparisons on a
 sample of 300 regions.
 
+Chris's ruling, 2026-11-04: the 7 region's shape must force its circled 7, either way. So the
+7 region comes from the 45,484 shaded-only or unshaded-only regions above, and
+`aqre_r5_build_up.py` now requires that. The version before this ruling reached 3 regions placed in
+61 s, then no further by 5 minutes, with 246 of its first 274 board checks infeasible.
+
 ### A board from another session
 
 Chris pasted a jigsaw board from another session's scratch run, with its plan of a circle 8
