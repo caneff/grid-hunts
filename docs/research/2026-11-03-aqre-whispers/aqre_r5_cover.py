@@ -49,7 +49,7 @@ def mirror(mask):
 
 def catalogue(out):
     start = time.time()
-    table = {c: {"eight": [], "seven": [], "low": []} for c in range(9)}
+    table = {c: {"eight": [], "seven": [], "either": [], "low": []} for c in range(9)}
     for c in range(5):
         root = (ROW, c)
         for cells in grow(root):
@@ -63,7 +63,9 @@ def catalogue(out):
             shaded_way, unshaded_way = seven_ways(cells, root, lines)
             if shaded_way != unshaded_way:
                 table[c]["seven"].append(mask)
-            elif not shaded_way:
+            elif shaded_way:
+                table[c]["either"].append(mask)
+            else:
                 counts = tuple(v for v in range(1, 7) if holds(cells, root, v, lines))
                 table[c]["low"].append((mask, counts))
         print(f"r5c{c + 1}: 8 {len(table[c]['eight'])}, 7 {len(table[c]['seven'])}, low {len(table[c]['low'])}, {time.time() - start:.0f}s", flush=True)
@@ -71,6 +73,7 @@ def catalogue(out):
         source = table[8 - c]
         table[c]["eight"] = [mirror(m) for m in source["eight"]]
         table[c]["seven"] = [mirror(m) for m in source["seven"]]
+        table[c]["either"] = [mirror(m) for m in source["either"]]
         table[c]["low"] = [(mirror(m), v) for m, v in source["low"]]
     with (out / "cover-catalogue.tmp").open("wb") as f:
         pickle.dump(table, f)

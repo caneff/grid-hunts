@@ -355,6 +355,22 @@ take all of counts 1-6 and 424 cannot take a count of 1.
 none got past 3 of 8 circled regions, and only 55 reached 3. That estimates nothing about how many
 layouts exist, since a probe can miss rare ones. `aqre_r5_cover_exists.py` asks the solver directly.
 
+It answered INFEASIBLE for all 9 places of the 9, in 4-71 s each, with no ninth-region cuts, on these
+rules: an 8 region, a forced 7 region that cannot be 8, and six regions that top out at 6, each judged
+alone with either colour high. Its control, with looser lists, was UNKNOWN at 892 s after finding 21
+covers that failed the final checks, so it never confirmed a full layout. `aqre_r5_one_each.py check`
+tested the catalogues separately: all 1,192 regions from 149 sampled layouts sit in exactly one list.
+Of those layouts, 80 have no region topping out at 6 and 69 have one.
+
+Those lists are too strict. Chris's point, 2026-11-04: the 8 is always shaded, so its colour is high
+everywhere. A region on the opposite colour can never be the 8, and its 7 could only be unshaded. So
+the infeasible result above covers only the colour-blind reading of the rule.
+
+Chris's ruling, 2026-11-04: only one r5 region can be the 8, and only one can be the 7.
+`aqre_r5_oriented.py DIR` rebuilds the lists with colour known, then runs the cover: first with the
+forced 7, then without it. Any layout found goes to the fixed-region solve. The hill-climb's best was 3
+shaded groups, and the forced-7 build was stopped since the same rule was proven unable to finish it.
+
 ### A board from another session
 
 Chris pasted a jigsaw board from another session's scratch run, with its plan of a circle 8
