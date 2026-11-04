@@ -224,9 +224,12 @@ and no r5 digits, so the checkerboard signs fail by themselves. A layer with onl
 high classes (4, 1 and 4 per house) refuses 7 of the 10. The other 3 need exact digits.
 
 The first stage only limited each house to 4 shaded cells per colour, which misses both
-reasons. The likely fix puts digits on shaded cells, whispers and house differences included,
-and classes on every cell, into the first stage. Not tested; it moves that stage closer to
-the full model that timed out.
+reasons. Chris chose to restart with the fix, 2026-11-03: the first stage now has exact digits
+on shaded cells and r5, whispers and house differences included, and classes on every cell.
+That moves it closer to the full model that timed out. `aqre_jigsaw_r5_staged.py` here is the
+fixed version. It refuses all 15 layouts in `layouts-r5.jsonl`, the ones logged before the job
+was stopped, and still accepts `grid-8-r1.json`'s layout. The restarted run's result goes here
+when it ends.
 
 ## Rulings
 

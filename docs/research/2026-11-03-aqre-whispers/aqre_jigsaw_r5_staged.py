@@ -6,6 +6,8 @@ digits and 5-whispers on shaded cells. A failed fill rules out only that layout,
 this can find a grid and cannot prove there is none. It stops at the first grid.
 
 Stage one holds what digits would force, so fewer layouts fail the fill:
+- Exact digits on shaded cells and on r5, with whispers and house differences, and
+  low, 5 and high classes on every cell at 4, 1 and 4 per house.
 - Shaded cells alternate low (1-4) and high (6-9) by checkerboard colour, so a row,
   column or region holds at most 4 shaded cells of each colour.
 - A shaded r5 cell's digit, known from its count, must suit its colour; a 5 is
@@ -43,6 +45,72 @@ def solver(limit, seed):
     s = base_solver(limit, reproducible=False, seed=seed, randomize=True)
     s.parameters.num_workers = WORKERS
     return s
+
+
+def add_digit_layers(m, y, g, row, value, even_low):
+    """Exact digits on shaded cells and the circled row; low/5/high classes everywhere.
+
+    The first reason fills failed: one house's whispers could not take its digits. The
+    second: the low and high digits did not fit across houses.
+    """
+    digits = range(1, 10)
+    d = {cell: {v: m.new_bool_var(f"d{cell}{v}") for v in digits} for cell in CELLS}
+    t = {cell: [m.new_bool_var(f"t{cell}{kind}") for kind in range(3)] for cell in CELLS}
+    for r, c in CELLS:
+        shaded = g[r * 9 + c]
+        m.add_exactly_one(t[r, c])
+        if r == row:
+            m.add_exactly_one(d[r, c].values())
+            m.add(value[c] == sum(v * d[r, c][v] for v in digits))
+        else:
+            m.add(sum(d[r, c].values()) == shaded)
+        m.add_bool_or(shaded.Not(), d[r, c][5].Not())
+        low = even_low if (r + c) % 2 == 0 else even_low.Not()
+        for v in digits:
+            kind = 0 if v < 5 else 1 if v == 5 else 2
+            m.add_implication(d[r, c][v], t[r, c][kind])
+            if v < 5:
+                m.add_bool_or(shaded.Not(), d[r, c][v].Not(), low)
+            if v > 5:
+                m.add_bool_or(shaded.Not(), d[r, c][v].Not(), low.Not())
+        m.add_implication(t[r, c][1], shaded.Not())
+        m.add_bool_or(shaded.Not(), t[r, c][0], low.Not())
+        m.add_bool_or(shaded.Not(), t[r, c][2], low)
+        for other in neighbours((r, c)):
+            if (r, c) < other:
+                for a in digits:
+                    for b in digits:
+                        if a != 5 and b != 5 and (a < 5) != (b < 5) and abs(a - b) < 5:
+                            m.add_bool_or(
+                                shaded.Not(), g[other[0] * 9 + other[1]].Not(),
+                                d[r, c][a].Not(), d[other][b].Not(),
+                            )
+    for i in range(9):
+        for v in digits:
+            m.add_at_most_one(d[i, c][v] for c in range(9))
+            m.add_at_most_one(d[r, i][v] for r in range(9))
+        for kind, size in ((0, 4), (1, 1), (2, 4)):
+            m.add(sum(t[i, c][kind] for c in range(9)) == size)
+            m.add(sum(t[r, i][kind] for r in range(9)) == size)
+    for k in range(9):
+        for v in digits:
+            both = []
+            for cell in CELLS:
+                z = m.new_bool_var(f"z{cell}{k}{v}")
+                m.add_bool_or(z, d[cell][v].Not(), y[cell][k].Not())
+                m.add_implication(z, d[cell][v])
+                m.add_implication(z, y[cell][k])
+                both.append(z)
+            m.add_at_most_one(both)
+        for kind, size in ((0, 4), (1, 1), (2, 4)):
+            both = []
+            for cell in CELLS:
+                u = m.new_bool_var(f"u{cell}{k}{kind}")
+                m.add_bool_or(u, t[cell][kind].Not(), y[cell][k].Not())
+                m.add_implication(u, t[cell][kind])
+                m.add_implication(u, y[cell][k])
+                both.append(u)
+            m.add(sum(both) == size)
 
 
 def build_layout(row, n, straight_ok=False, flip_cut=True):
@@ -122,6 +190,8 @@ def build_layout(row, n, straight_ok=False, flip_cut=True):
         m.add(value[c + 1] - value[c] >= 5).only_enforce_if(*both, low[c])
         m.add(value[c] - value[c + 1] >= 5).only_enforce_if(*both, low[c].Not())
 
+    add_digit_layers(m, y, g, row, value, even_low)
+
     if flip_cut:
         m.add(
             sum(shaded(r, c) for r in range(row) for c in range(9))
@@ -183,7 +253,7 @@ def staged(out, budget, layout_limit):
     forbidden = {n: [] for n in (4, 3, 2, 1, 0)}
     seed = 0
     tries = fills = 0
-    log = out / "layouts-r5.jsonl"
+    log = out / "layouts-r5-digit-layers.jsonl"
     while time.time() - start < budget:
         n = (4, 3, 2, 1, 0)[seed % 5]
         seed += 1
@@ -269,6 +339,19 @@ def control(out):
     name2, _ = fill(region, bad, 0, n, 1)
     print(f"fill with a fully shaded r4: {name2}", flush=True)
     ok = first in ("OPTIMAL", "FEASIBLE") and second == "INFEASIBLE" and not broken and name2 == "INFEASIBLE"
+    refused = kept = 0
+    for line in (out / "layouts-r5.jsonl").read_text().splitlines():
+        old = json.loads(line)
+        m, y, g = build_layout(4, old["n"], flip_cut=False)
+        for r, c in CELLS:
+            m.add(g[r * 9 + c] == int(old["shaded"][r][c]))
+            m.add(y[r, c][old["region"][r][c]] == 1)
+        s = solver(120.0, 1)
+        if s.status_name(s.solve(m)) == "INFEASIBLE":
+            refused += 1
+        else:
+            kept += 1
+    print(f"failed layouts from the last run: {refused} refused, {kept} kept", flush=True)
     print("controls", "pass" if ok else "FAIL", flush=True)
     return ok
 
