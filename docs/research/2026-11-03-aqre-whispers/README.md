@@ -464,6 +464,7 @@ r5 placement, in 147 s against 691 s. The final version has not rerun all of r5.
 |---|---|---|---|---|---|
 | r5 | 14 | all 14, loosened 8 test | 490, of which 214 meet the 8 test | all 490 infeasible | 0 |
 | r4 | 28 | 16 | 10 | all 10 infeasible without connectivity | 0 |
+| r3 | 28 | 16 | 0 | nothing to solve | 0 |
 
 r4 took about 6 minutes on 8 processes, and its layouts all have the 8 and 9 in r4c2 and r4c4, either way
 round. An earlier r4 search with neither speedup and a cruder fill below the row was stopped at 51 minutes.
