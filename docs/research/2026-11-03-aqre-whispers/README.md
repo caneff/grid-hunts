@@ -554,6 +554,21 @@ a subset of it: 262 of the 562 layouts (r4 128, r5 134) have the 9 at an odd dis
 an even one. All are infeasible. The region lists already place the 9 in the shared region: of the r4 and r5 two-cell
 regions, only those with circle and 9 at distance 2 or 4 can hold the 8 (1,560 and 1,592), as the hand argument says.
 
+Does a wrong-colour 9 rule its region out as the 7? Its 9 and 5 are unshaded, so a count of 7 shades every other cell,
+the circle too. With circle and 9 at an even distance the circle is also on the wrong colour, so no 7: 0 of 18,680
+regions on r5, all columns, and likewise on r2-r4. With an odd distance the region cannot be the 8, but it can still
+be the 7: 26,164 of 119,264 on r5, about 1 in 5. A brute-force check outside the classifier confirmed all 304 sampled
+on r5. Example, with `*` shaded, circle r5c2, 9 on r5c3:
+
+```
+r5  7* 9  .  .  .
+r6  2* .  4* .  .
+r7  8* 3* 5  1* 6*
+```
+
+None of the 262 layouts uses such a region as the 7. All 262 have circle and 9 at an odd distance, and the region tops
+out at 6.
+
 ### Rule dropping, stopped
 
 `aqre_row_diagnose.py DIR FILE ROW` re-solved layouts with one rule dropped at a time. Chris had it stopped at 6 of
