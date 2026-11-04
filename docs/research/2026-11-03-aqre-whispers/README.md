@@ -299,6 +299,21 @@ placed cells fixed. Only "cannot be the 8" is required of lower regions, not "ca
 higher count". Its controls walk `grid-8-r1.json` through every check, region by region, and
 refuse a swapped-digit 8 region.
 
+`aqre_r5_region_max.py DIR 0` takes the same 133,708 regions, judged alone, and finds the highest
+count each can hold, with that count's digit on its circled cell:
+
+| Highest count | Regions | Share |
+|---|---|---|
+| 8 | 29,535 | 22% |
+| 7 | 72,193 | 54% |
+| 6 | 31,980 | 24% |
+| 5 or less | 0 | 0% |
+
+The 8 row matches the separate catalogue exactly, and a solver check on a 3,000 region sample
+agreed in all 213 comparisons. So a region alone can never rule out holding 6: "a 5 region that
+cannot be a 6" does not exist on shape and its own digits. A strict ladder would have to rule
+out high counts using neighbouring regions, which this count ignores.
+
 ### A board from another session
 
 Chris pasted a jigsaw board from another session's scratch run, with its plan of a circle 8
