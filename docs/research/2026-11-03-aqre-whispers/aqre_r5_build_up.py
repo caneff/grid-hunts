@@ -2,16 +2,15 @@
 
 Chris, 2026-11-04: place a valid 8 region in both shading and digits. Then place a valid
 7 that cannot itself be a valid 8 but still works with the 8, and so on. A ninth region
-that holds r5's uncircled cell has no circle there and may be able to count 8.
+that holds r5's uncircled cell has no circle there and may be able to count 8. Both the 8
+and the 7 are strict: a region counting 6 or less cannot be a valid 7 or a valid 8, judged
+on the region alone, and the 7 region cannot be a valid 8.
 
-Each placement commits the region's cells, shading and digits. It passes:
-- local checks: not straight, cannot be the circled 8 (below the 8), digits differ in the
-  region and from placed digits in each row and column, signs and whispers, no 4 in a line
-  among placed cells, at most 4 shaded per colour in a line, and free cells that can still
-  split into 9-cell regions;
-- a whole-board check: with placed cells fixed, a Latin square with shading, whispers and
-  connectivity must exist, with the free cells shading the remaining total. That check has
-  no regions in it, so it is necessary and not sufficient.
+Each placement samples a region's cells, then commits the shading and digits the solver
+picks for it. The solver's whole-board model holds placed cells fixed and needs a Latin
+square with shading, whispers and connectivity, with the free cells shading the remaining
+total. That model has no later regions in it, so it is necessary and not sufficient. Local
+checks run too: not straight, and free cells that can still split into 9-cell regions.
 
 The ninth region is whatever is left, solved with the regions all known. Randomised
 depth-first search with restarts. It samples, so failing says nothing about r5 as a whole.
@@ -27,6 +26,7 @@ from pathlib import Path
 from aqre_jigsaw_feasible import connected, neighbours
 from aqre_jigsaw_r5_staged import finish, read_back
 from aqre_r5_eight_regions import holds_eight
+from aqre_r5_region_max import holds, lines_of
 from connected import add_flow_connectivity
 from ortools.sat.python import cp_model
 from sudoku_kit.cpsat import sudoku_model
@@ -237,6 +237,39 @@ def completes(st, remaining):
     return s.status_name(s.solve(m))
 
 
+def solver_fill(st, count, cells, root, remaining, seed):
+    """Shading and digits for this region, chosen so the whole board can still finish.
+
+    Returns (assign, shaded) or None, with the solver status.
+    """
+    m, x = sudoku_model(9, None, latin=True)
+    g = [m.new_bool_var(f"g{i}") for i in range(81)]
+    for cell, value in st.digit.items():
+        m.add(x[cell] == value)
+        m.add(g[cell[0] * 9 + cell[1]] == int(st.shade[cell]))
+    m.add(x[st.row, st.n] == 9)
+    m.add(x[root] == count)
+    m.add_all_different(x[cell] for cell in cells)
+    m.add(sum(g[r * 9 + c] for r, c in cells) == count)
+    free = [cell for cell in st.free() if cell not in cells]
+    total = sum(g[r * 9 + c] for r, c in free)
+    m.add(total >= sum(remaining) + 1)
+    m.add(total <= sum(remaining) + 8)
+    shared(m, x, g, st)
+    s = cp_model.CpSolver()
+    s.parameters.num_workers = 1
+    s.parameters.max_time_in_seconds = CHECK_LIMIT
+    s.parameters.random_seed = seed
+    s.parameters.randomize_search = True
+    status = s.solve(m)
+    name = s.status_name(status)
+    if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        return None, name
+    assign = {cell: s.value(x[cell]) for cell in cells}
+    shaded = {cell for cell in cells if s.value(g[cell[0] * 9 + cell[1]])}
+    return (assign, shaded), name
+
+
 def shared(m, x, g, st):
     for a in range(9):
         for b in range(6):
@@ -314,17 +347,23 @@ class Search:
             }))
 
     def child_ok(self, st, count, cells, root, remaining_roots, remaining_counts):
-        got = fill_region(cells, count, root, st, self.rng)
+        for cell in cells:
+            st.region[cell] = root[1]
+        split = free_ok(st, remaining_roots)
+        for cell in cells:
+            del st.region[cell]
+        if not split:
+            return None
+        got, name = solver_fill(st, count, cells, root, remaining_counts, self.rng.randrange(1 << 30))
+        self.checks[name] = self.checks.get(name, 0) + 1
         if not got:
             return None
         assign, shaded = got
         st.apply(root[1], assign, shaded)
-        if lines_ok(st) and digits_ok(st) and free_ok(st, remaining_roots) and shaded_can_join(st):
-            name = completes(st, remaining_counts)
-            self.checks[name] = self.checks.get(name, 0) + 1
-            if name != "INFEASIBLE":
-                return assign
+        if lines_ok(st) and digits_ok(st) and shaded_can_join(st):
+            return assign
         st.undo(assign)
+        self.checks["local refused"] = self.checks.get("local refused", 0) + 1
         return None
 
     def place(self, st, counts, roots):
@@ -349,6 +388,11 @@ class Search:
                 continue
             if holds_eight(cells, root):
                 continue
+            lines = lines_of(cells)
+            if not holds(cells, root, count, lines):
+                continue
+            if count <= 6 and holds(cells, root, 7, lines):
+                continue
             others = [x for x in roots if x != c]
             assign = self.child_ok(st, count, cells, root, others, rest)
             if not assign:
@@ -368,15 +412,8 @@ class Search:
         low_even = sum(root) % 2 != 0
         st = State(low_even, n)
         roots = [c for c in columns if c != n]
-        got = fill_region(cells, 8, root, st, self.rng)
-        if not got:
-            return
-        st.apply(root[1], got[0], got[1])
-        if not (lines_ok(st) and digits_ok(st) and free_ok(st, roots) and shaded_can_join(st)):
-            return
-        name = completes(st, list(range(1, 8)))
-        self.checks[name] = self.checks.get(name, 0) + 1
-        if name == "INFEASIBLE":
+        assign = self.child_ok(st, 8, cells, root, roots, list(range(1, 8)))
+        if not assign:
             return
         self.note(st, 1)
         self.place(st, list(range(7, 0, -1)), roots)
@@ -415,12 +452,21 @@ def control(out):
     bad.apply(eight, assign, {tuple(x) for x in cells if shade[x[0]][x[1]]})
     refused = not (lines_ok(bad) and digits_ok(bad)) or completes(bad, list(range(1, 8))) == "INFEASIBLE"
     print(f"a swapped-digit 8 region refused: {refused}", flush=True)
+    first = State(sum(root) % 2 != 0, n, row=0)
+    filled, name = solver_fill(first, 8, {tuple(x) for x in cells}, root, list(range(1, 8)), 1)
+    print(f"solver fill of grid-8-r1's 8 region: {name}", flush=True)
+    results.append(filled is not None and all(first_ok(first, eight, filled)))
     print("free_ok refuses a single free cell:", not free_ok_probe(), flush=True)
     broken = read_back(digits, shade, region, 0, n)[0]
     print(f"reader: {broken or 'none'}", flush=True)
     ok = all(results) and refused and not broken
     print("controls", "pass" if ok else "FAIL", flush=True)
     return ok
+
+
+def first_ok(st, k, filled):
+    st.apply(k, filled[0], filled[1])
+    return lines_ok(st), digits_ok(st), shaded_can_join(st)
 
 
 def free_ok_probe():

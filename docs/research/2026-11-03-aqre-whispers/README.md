@@ -293,11 +293,18 @@ Chris's ruling, 2026-11-04: place a valid 8 in both shading and digits. Then pla
 that cannot itself be a valid 8 but still has digits and shading that work with the 8, and so
 on. A ninth region holding r5's uncircled cell has no circle there and may be able to count 8.
 
-`aqre_r5_build_up.py DIR` does this as a randomised depth-first search. Each placement commits
-a region's cells, shading and digits, then must pass local checks and a whole-board check with
-placed cells fixed. Only "cannot be the 8" is required of lower regions, not "cannot be any
-higher count". Its controls walk `grid-8-r1.json` through every check, region by region, and
-refuse a swapped-digit 8 region.
+Chris's ruling, 2026-11-04: both the 8 and the 7 are strict, where possible. A region counting 6
+or less cannot be a valid 7 or 8, judged alone, and the 7 region cannot be a valid 8. Only the 24%
+of regions that top out at 6 qualify for those six lower regions.
+
+`aqre_r5_build_up.py DIR` does this as a randomised depth-first search. Each placement samples a
+region's cells and commits the shading and digits the solver picks to fit the whole board with
+placed cells fixed. Its controls walk `grid-8-r1.json` through every check, region by region,
+and refuse a swapped-digit 8 region.
+
+The first version picked shading and digits at random, before the board check, and only required
+"cannot be the 8". Stopped after about 10 minutes at 3 regions placed: of 1,781 board checks,
+1,668 were infeasible, 111 passed and 1 timed out.
 
 `aqre_r5_region_max.py DIR 0` takes the same 133,708 regions, judged alone, and finds the highest
 count each can hold, with that count's digit on its circled cell:
