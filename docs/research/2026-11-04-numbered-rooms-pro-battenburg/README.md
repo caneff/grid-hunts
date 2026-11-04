@@ -195,6 +195,20 @@ with unmarked windows free and his colours and digits left out (`nr_board2.py`).
 - The left side's logic holds by hand: r6c1 has no route, so r9c1 is a target, which
   forces r1c1=9 and r9c1=6, and `L9=4` then gives r9c6=4.
 
+The conflict by hand, which uses exactly the items of the minimal conflict:
+
+1. r6c1 has no route, so the c1-2 chain makes r9c1 a target, forcing r1c1 = 9 and
+   r9c1 = 6.
+2. r9c1 = 6 sends the bottom clue of c1 to r4c1. The marks then make r3c2, r5c2,
+   r6c2 and r8c2 targets, which fills c2, so r1c2 is not a target.
+3. r1c1 = 9 sends the left clue of r1 to r1c9, so r1c8 cannot be a target (mark
+   r1c8).
+4. r9c9 has no route, so mark r8c8 makes r9c8 and r8c9 targets. r9c8 is then either
+   9 with r9c9 = 2, or 1.
+5. If r9c8 = 9, its bottom clue targets r1c8, against step 3.
+6. If r9c8 = 1, r8c9 can only be reached with r1c9 = 8. The right clue of r1 then
+   targets r1c2, against step 2.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
