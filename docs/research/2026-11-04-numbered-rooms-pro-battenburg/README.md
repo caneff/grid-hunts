@@ -209,6 +209,12 @@ The conflict by hand, which uses exactly the items of the minimal conflict:
 6. If r9c8 = 1, r8c9 can only be reached with r1c9 = 8. The right clue of r1 then
    targets r1c2, against step 2.
 
+With the box 3 mark, r1c8, deleted (Chris, 2026-11-04), `nr_board3.py`, all-marked
+rule on the 8 marks left: feasible, not unique (200 grids found, capped, each re-read
+by the reader). Forced digits: r1c1 = 9, r1c8 = 6, r1c9 = 7, r4c9 = 9, r7c1 = 1,
+r9c1 = 6, r9c6 = 4, r9c8 = 9, r9c9 = 2. His colours all stay allowed except r1c8,
+which must be a target; r2c8 and r2c9 are now open.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
