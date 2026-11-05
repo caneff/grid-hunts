@@ -178,6 +178,9 @@ r5c1 r5c2 r5c6 r6c2 r6c3 r6c6 r7c2 r7c3 r8c3. Grid 654792831/281635479/793184256
 547963182/928541763/316278594/162357948/835429617/479816325. That border has exactly
 175,079 fillings (`count_fills.c`), with r3c2 = 9 and r3c7 = 2 forced inside. So marks
 can fix a border outright, and step (c) now rests on whether a border can fix its middle.
+Link, no givens, not unique (`build_link_20.py`):
+
+https://sudokumaker.app/p/HwcDM7rcpp
 
 Inner cells: r2c2 sees at most 7 border cells and r5c5 at most 4, so no inner cell is
 forced by sight alone. Inner digits come only from hidden singles and deeper logic.
