@@ -675,6 +675,19 @@ exactly one off-centre circle, because any off-centre circle can be the 7. So th
 the two empty boxes: 2,016 placements before the board's 8 symmetries. Corners share the centres' colour, so a corner 7
 makes all six centre circles unshaded at once. An edge 7 makes them low and tells nothing about their shading.
 
+Which corner of box 1, by hand, no solve run. With a corner 7 the four edges hold the lows. The two edges beside the 7 are
+{1, 2}, since a shaded 7 allows only those, so the other two edges are {3, 4}. The 4's shaded neighbours can only be the 9,
+so its three neighbours in the box hold the 5, 6 and 9, and the far corner from the 4 is the 8. What this limits outside the
+box, for a shaded neighbour:
+
+| 7 at | The 7's neighbours | Edges with outside neighbours | Limits |
+|---|---|---|---|
+| r3c3 | r3c4, r4c3 are each exactly one digit: the 1 or 2 not in that line | r2c3, r3c2 are {1, 2}: 6 or higher, or 7 or higher | 4 |
+| r1c3 | r1c4 is exactly one digit | r2c3 is 1 or 2; r3c2 is 3 or 4: 8 or 9, or just 9 | 3 |
+| r1c1 | none, both inside the box | r2c3, r3c2 are {3, 4}: 8 or 9, and just 9 | 2 |
+
+This counts forcing only. A tighter corner may also have fewer solutions, and none of the three is known to have a grid.
+
 ```
 1.  8.  5.  3#  4.  6.  7#  2.  9.
 6.  3.o 2#  9#  7.  8#  1#  4.o 5.
