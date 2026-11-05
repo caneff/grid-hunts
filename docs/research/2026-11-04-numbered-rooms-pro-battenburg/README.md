@@ -117,6 +117,14 @@ None found, and not proven impossible. No grid fixed by its own edge turned up,
 and marks-alone uniqueness needs one. All 15 grids in `exact.jsonl` have more than
 200 grids with the same marks. Stopped here on 2026-11-04.
 
+Two more necessary conditions, by hand (2026-11-05). The mark set can have no
+left-right, up-down or rotation symmetry: the moved grid would have the same marks, and
+no sudoku grid equals its own such image, since r1 or r5 or c5 would repeat a digit.
+Diagonal symmetry is not excluded this way, because a grid can equal its own transpose.
+And 64 windows give at most 2^64, about 1.8e19, mark sets against about
+6.67e21 sudoku grids, so at most about 0.3% of grids could be unique from marks alone.
+Neither rules out one such grid.
+
 ## Best puzzle so far, step (b)
 
 13 marks, 5 given outside digits, unique:
