@@ -533,7 +533,12 @@ and mark r8c8 makes those opposite. r1c1 = 1 puts two clues on r1c1, leaving 3 c
 
 `board17.json`, 17 marks with r1c9 = 8, half-magenta taken as a target, each set of corner 9s
 as "the 9 is in one of these": holds, 200 grids (capped). New: r3c9 = 5 and r9c9 = 3, r5c1
-is a target, r9c1 is not and is 5 or 8.
+is a target, r9c1 is not and is 5 or 8. His r3c9 pencil read as 2, 4, 5 drives some of that:
+2 and 4 point at green r3c8 and r3c6. `board17b.json` drops that pencil. Then r3c9 is 5 or 6,
+r1c8 stays 2, 5, 6, 9, and r4c9 and r9c6 are no longer narrowed. Still forced: r9c9 = 3, r5c1 a
+target, r9c1 not a target and 5 or 8, r3c1 not 5, r9c7 is 1, 4, 6 or 7. Hand reasons exist for
+r9c1 and r9c7. r9c9 = 3, r5c1 and r3c1 not 5 are solver results: `nr_why.py` found no short
+chain with its simple rules and one level of case split.
 
 ## Step (a)
 
