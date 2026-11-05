@@ -698,6 +698,14 @@ one worker each with a 900 s cap, 8 at a time: **all 16 INFEASIBLE in 710 s**, t
 on r1c1**, or by symmetry on r1c9, r9c1 or r9c9, with the other six circles on box centres. One model only, no second proof.
 Together with r3c3, of the corners in boxes 1, 3, 7 and 9 only r1c3 and its images (r3c1 and so on) are left.
 
+The same split on r1c3 and r1c2, 28 boards each, 2,660 s in all (`box-seven-boards.jsonl`):
+
+- r1c3: **all 28 INFEASIBLE**, the longest 598 s. So **no forced 7 on any corner of boxes 1, 3, 7 or 9** has a grid.
+- r1c2: 26 INFEASIBLE, 2 UNKNOWN at the 900 s cap, which proves nothing: no circle in boxes 2 and 8, and no circle in boxes 4 and 6.
+
+All one model, no second proof, and only for six circles on box centres plus one off-centre 7. Not tried: r2c3 and r3c2, the box 1
+edges away from the grid's border, and off-centre cells in boxes 2, 4, 5, 6 and 8 other than r4c5's one board and r8c4, which has a grid.
+
 With box 1's 72 fills, also on r1c1 with the same split: the 7's two neighbours are 1 and 2 in 48, 2 and an unshaded 4 in 12, and
 2 and an unshaded 5 in 12.
 
