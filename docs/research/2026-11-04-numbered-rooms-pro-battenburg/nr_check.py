@@ -85,10 +85,37 @@ class Board:
                 assert grid[k[0]][k[1]] in v
 
 
+def bad_marks(board, items):
+    """Marks alone fail: the smallest clashing set, then each single removal."""
+    all_marks = board.marks
+    core = set(all_marks)
+    for k in sorted(all_marks):
+        board.marks = frozenset(core - {k})
+        if not board.solve([]):
+            core.discard(k)
+    print("minimal clashing marks:", [nm(k) for k in sorted(core)], flush=True)
+    for k in sorted(core):
+        board.marks = all_marks - {k}
+        alone = bool(board.solve([]))
+        drawn = bool(alone and board.solve(items))
+        print(f"  remove {nm(k)}: marks {alone}, with everything drawn {drawn}", flush=True)
+        if alone and not drawn:
+            rest = list(items)
+            for item in items:
+                trial = [i for i in rest if i != item]
+                if not board.solve(trial):
+                    rest = trial
+            print("    conflict:", [(kind, nm(c), v) for kind, c, v in rest], flush=True)
+
+
 def main(path):
     board = Board(json.loads(Path(path).read_text()))
     items = board.items
-    print("marks alone feasible:", bool(board.solve([])), flush=True)
+    alone = bool(board.solve([]))
+    print("marks alone feasible:", alone, flush=True)
+    if not alone:
+        bad_marks(board, items)
+        return
     grid = board.solve(items)
     print("as drawn feasible:", bool(grid), flush=True)
     if not grid:

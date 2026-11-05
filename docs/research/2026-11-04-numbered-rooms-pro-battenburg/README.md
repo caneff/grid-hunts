@@ -519,6 +519,12 @@ reads a small JSON board and reports feasibility or a minimal conflict, status a
 forced a target, r1c1 is 1, 8 or 9, r1c9 is 1 or 9, r9c9 is 4, 5 or 9. Status map and
 digits come from one run of about 22 s.
 
+`board15.json`, 16 marks with r1c9 = 5: the marks alone fail, with no negative rule. Marks
+r1c6, r2c6, r4c6, r6c6 and r8c6 clash. By hand: r1c6, r4c6, r6c6 and r8c6 are 4 disjoint
+marks on c6 and on c7, so r3c6 and r3c7 are non-targets, and r2c6 needs exactly one of them
+a target. `board15b.json` removes r1c6 and makes r1c7 green: holds, 200 grids (capped), with
+r9c9 = 1 forced and r9c9 a target.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
