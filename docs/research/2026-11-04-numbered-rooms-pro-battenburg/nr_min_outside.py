@@ -67,6 +67,12 @@ def main(path, max_k, out):
     for i in rng.integers(0, len(grids), 200):
         ring = outside(grids[i].tolist())
         assert all(ring[c] == columns[c][i] for c in CLUES)
+    # Outside digits the board file gives narrow the grids first; k counts the extra clues.
+    for name, value in data.get("outside", {}).items():
+        keep_rows = columns[(name[0], int(name[1:]) - 1)] == value
+        grids = grids[keep_rows]
+        columns = {clue: col[keep_rows] for clue, col in columns.items()}
+        print("given", name, "=", value, "leaves", len(grids), flush=True)
     seen = {}
     for clue, col in columns.items():
         if len(np.unique(col)) > 1:
@@ -93,11 +99,11 @@ def main(path, max_k, out):
                     )
                     log.flush()
                     if hits <= 20:
-                        idx = int(np.flatnonzero(np.isin(key, alone[:1]))[0])
-                        grid = grids[idx].tolist()
-                        ring = outside(grid)
-                        print(k, [f"{clue_name(names[i][0])}={ring[names[i][0]]}" for i in combo], "grids alone", len(alone),
-                              " ".join("".join(map(str, r)) for r in grid), flush=True)
+                        for idx in np.flatnonzero(np.isin(key, alone[:20])):
+                            grid = grids[int(idx)].tolist()
+                            ring = outside(grid)
+                            print(k, [f"{clue_name(names[i][0])}={ring[names[i][0]]}" for i in combo], "grids alone", len(alone),
+                                  " ".join("".join(map(str, r)) for r in grid), flush=True)
             print(f"k={k}: {sets} sets, {hits} leave some grid alone, {time.time() - start:.0f} s", flush=True)
             if hits:
                 print("minimum", k, flush=True)

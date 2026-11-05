@@ -625,6 +625,17 @@ digits on 13 marks in clues, not marks. Link:
 
 https://sudokumaker.app/p/njktNbtdJN
 
+With B9 = 8 given: exactly 4 more, 5 in total, proven the same way over its 184,900 grids (`min-outside-b9.jsonl`):
+no set of up to 3 finishes, and 2 of the 4,845 sets of 4 do, for 3 grids in all. R8 and B5 read one cell, so each
+R8 below can be B5. Each is unique by `nr_verify_sat.py`.
+
+- L2 = 6, R4 = 7, R8 = 3, T3 = 3: 364271589/527968143/891453267/413895672/258746391/976312458/139584726/742639815/
+  685127934, https://sudokumaker.app/p/F6NB6WBFTJ
+- L2 = 6, R4 = 7, R8 = 4, T3 = 3: 364271589/527968143/891354267/413895672/258736491/976412358/149583726/732649815/
+  685127934, https://sudokumaker.app/p/DD7cwjCLLh
+- R4 = 6, R8 = 3, B3 = 3, B6 = 6: 364271589/527489613/891356247/458913762/273865491/916742358/132594876/749638125/
+  685127934, https://sudokumaker.app/p/tMTjMz7rW7
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
