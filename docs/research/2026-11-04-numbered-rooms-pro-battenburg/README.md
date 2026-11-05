@@ -572,6 +572,10 @@ exact): 2 borders of 184,900 fillings each, 369,800 solutions. The c1 and c9 swa
 9 leaves 26,368. Best expected whichever digit it holds: L4, 72,048 left on average. L1, L7, L9, R1,
 R9, T1, T6, T9, B1, B4, B7 are forced (4, 1, 7, 3, 7, 8, 1, 4, 4, 1, 5) and add nothing.
 
+B9 = 8 settles his magenta/purple pair at once: B9 reads a cell of c9, r1c9 is not a target, so it
+cannot read r1c9, and if r1c9 = 8 no other c9 cell can hold 8. So r1c9 = 9 and purple are the
+targets. It also picks the border. Spec for promoting these scripts: #100.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
