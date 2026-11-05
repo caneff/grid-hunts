@@ -540,6 +540,10 @@ target, r9c1 not a target and 5 or 8, r3c1 not 5, r9c7 is 1, 4, 6 or 7. Hand rea
 r9c1 and r9c7. r9c9 = 3, r5c1 and r3c1 not 5 are solver results: `nr_why.py` found no short
 chain with its simple rules and one level of case split.
 
+`board18.json`, 19 marks with r4c1 and r6c1 added and r3c9 pencilled 2, 5, 6: holds, 200 grids
+(capped). Forced digits r1c1 = 5, r1c4 = 1, r9c1 = 8, r9c4 = 9, r9c6 = 2, r9c9 = 3, r1c8 is 2 or 6,
+r3c9 is 5 or 6, r2c1 is 3 or 6. Non-targets r4c4 r5c4 r6c4 r7c4 and r9c1.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
