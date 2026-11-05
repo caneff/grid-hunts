@@ -636,6 +636,12 @@ R8 below can be B5. Each is unique by `nr_verify_sat.py`.
 - R4 = 6, R8 = 3, B3 = 3, B6 = 6: 364271589/527489613/891356247/458913762/273865491/916742358/132594876/749638125/
   685127934, https://sudokumaker.app/p/tMTjMz7rW7
 
+A matching pair of clues at both ends of one line (Chris, 2026-11-05): two equal clues on a line read the one
+cell holding that digit, so the line has a double hit. With B9 = 8 the border is fixed, so a line's two clues
+read one cell exactly when its end digits sum to 10 (or, for a column, its r1 and r9 digits do). By hand over
+the border, only r9 qualifies: r9c1 = 6 and r9c9 = 4 both read r9c6, so L9 = R9 = 7. Both are already forced, so
+they cut no grids, only help the solver, and the minimum with them is the 5 above plus these 2, 7 in all.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
