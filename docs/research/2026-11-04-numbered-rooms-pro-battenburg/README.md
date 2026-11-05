@@ -499,6 +499,15 @@ removing one of r2c3, r2c5, r2c7, r3c8, r4c2 or r4c6 or adding r2c4 or r2c6 make
 feasible. His colours were not rechecked on those, and either addition contradicts his r2-3
 colouring.
 
+### Chris's 10-mark start (2026-11-05)
+
+Ruling for his boards from here: no negative rule for now, since he adds marks as needed,
+and hold every colour, mark and pencil mark he draws. Marks r2c1 r2c3 r2c5 r2c7 r4c2 r4c6
+r6c2 r6c6 r8c2 r8c6, nothing else (`nr_board13.py`): feasible. Forced non-targets are
+r1c2 r1c3 r1c6 r1c7 r2c9 r3c9, every other status is open. Border digits: r1c1 is 1, 4, 5, 8
+or 9; r1c9 is 1, 5, 6 or 9; r9c9 is not 7 or 8; r1c2 r1c3 r1c6 r1c7 r2c1 r3c1 r2c9 r3c9 r9c2
+r9c3 r9c6 r9c7 each lose one digit, the one pointing at a forced non-target.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
