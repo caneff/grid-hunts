@@ -582,6 +582,10 @@ r6c1 = 9, r5c9 = 1, r6c9 = 8, and r6c6 = 2 is the first forced inner digit, a hi
 since r4c9, r5c1, r1c4 and r9c5 hold the other 2s reaching it. Only inner cells are open now, and all 81
 target statuses are fixed.
 
+Adding T2 = 5 and R2 = 6 (`board21.json`, picture `board21-forced-1.png`): exactly 4,784 solutions
+(`count_fills.c` with r6c2 and r2c7 pinned). Forced inner digits r2c7 = 6, r3c8 = 4, r6c2 = 5, r6c8 = 6,
+r6c6 = 2, r7c8 = 7, and new forced outside L3 = 4, R6 = 5, T8 and B8 narrow to 1 or 2 and 7.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of

@@ -3,6 +3,8 @@
  * smallest-domain-first search. Prints "<border> <count>" per line to stdout, and to
  * stderr "<border>" plus the bitmask of digits seen in each inner cell, row by row.
  *
+ * Each argument RCD pins an inner cell, 1-based, such as 625 for r6c2 = 5.
+ *
  * Build: gcc -O2 -o OUT count_fills.c
  */
 #include <stdio.h>
@@ -60,7 +62,7 @@ static void search(int n) {
     eb[best] = b;
 }
 
-int main(void) {
+int main(int argc, char **argv) {
     char line[128];
     while (fgets(line, sizeof line, stdin)) {
         line[strcspn(line, "\r\n")] = 0;
@@ -72,11 +74,21 @@ int main(void) {
         for (int r = 0; r < 9; r++) {
             for (int c = 0; c < 9; c++) {
                 int b = r / 3 * 3 + c / 3;
+                int pin = 0;
+                for (int a = 1; a < argc; a++)
+                    if (argv[a][0] - '1' == r && argv[a][1] - '1' == c)
+                        pin = argv[a][2] - '0';
                 if (r == 0 || r == 8 || c == 0 || c == 8) {
                     int bit = 1 << (line[at++] - '0');
                     rows[r] &= ~bit;
                     cols[c] &= ~bit;
                     boxes[b] &= ~bit;
+                } else if (pin) {
+                    int bit = 1 << pin;
+                    rows[r] &= ~bit;
+                    cols[c] &= ~bit;
+                    boxes[b] &= ~bit;
+                    digit[r][c] = bit;
                 } else {
                     er[n] = r;
                     ec[n] = c;
