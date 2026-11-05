@@ -548,6 +548,9 @@ Same 19 marks with the negative rule on (`nr_check.py board18m.json negative`): 
 are feasible, 200 grids (capped), and they fix all 81 target statuses and nearly the whole border:
 r1 = 3 6 4 2 7 1 5 8 9, r9 = 6 8 5 1 2 7 9 3 4, c1 = 3 5 8 4 (2/9) (2/9) 1 7 6, c9 = 9 3 7 2 (1/8) (1/8) 6 5 4. His drawing fails:
 r1c9 = 8 alone conflicts (it is 9), and so do green r7c1 (a target) and each set of corner 9s.
+Link, no givens:
+
+https://sudokumaker.app/p/7bjhMWWNRC
 
 ## Step (a)
 

@@ -1,4 +1,4 @@
-"""SCRATCH: the SudokuMaker link of a 36-target board. No givens. Defaults to the 27-mark
+"""SCRATCH: the SudokuMaker link of a board read from a grid. No givens. Defaults to the 27-mark
 board; ROWS picks another.
 
 Reuses build_link.py's board. Not a unique puzzle. The marks are cosmetic text, so the
@@ -27,10 +27,11 @@ B.GIVENS = {}
 def main(out, rows=ROWS):
     grid = [[int(d) for d in row] for row in rows.split()]
     B.GRID = grid
-    assert is_sudoku(grid) and len(targets(grid)) == 36
+    assert is_sudoku(grid)
+    hit = len(targets(grid))
     board = marks(grid)
     doc = B.build(json.loads((HERE / "link_template.json").read_text()))
-    doc["puzzle"]["name"] = f"Numbered Rooms with Battenburg targets, {len(board)} marks, 36 targets"
+    doc["puzzle"]["name"] = f"Numbered Rooms with Battenburg targets, {len(board)} marks, {hit} targets"
     link = encode_link(doc)
     back = decode_puzzle(link)["puzzle"]
     assert not any(back["cells"])
