@@ -594,6 +594,11 @@ L4 = 7, T4 = 9, T5 = 8, B6 = 6, proven on the repo's model and by `nr_verify_sat
 
 https://sudokumaker.app/p/6hj97DBgQh
 
+Across the 124 grids that need 4 extra clues (`nr_outside_common.py`, exact), there are 424 smallest
+sets. L4 is in 370 of them, T5 in 189, R7 in 178, R8 and B5 in 169 each (they read the same cell, r8c5,
+so they are interchangeable). Commonest sets: L4 R8 T4 T5 and L4 B5 T4 T5, 24 each. Commonest clue
+digits: L4 = 8 (95), T5 = 3 (91), L4 = 6 (81), B6 = 5 (77).
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
