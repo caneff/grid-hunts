@@ -601,7 +601,12 @@ digits: L4 = 8 (95), T5 = 3 (91), L4 = 6 (81), B6 = 5 (77).
 
 With L4 = 8: 896 solutions left (`count_fills.c`). Of those 95 sets, over 28 grids, the commonest next
 clue digits are R7 = 4 (31), R7 = 9 (25), B6 = 5 (23), T5 = 3 (17), R8 or B5 = 3 (16). R7 is in 65 of them.
-r4c3 = 6 and r5c3 = 8 follow by hand, since r4c3 and r5c3 were the 6/8 pair.
+r4c3 = 6 and r5c3 = 8 follow by hand, since r4c3 and r5c3 were the 6/8 pair. Adding R7 = 4: 81 solutions
+left, and 31 smallest sets over 8 grids. Commonest next: B6 = 5 and R8 or B5 = 3, 7 each, then R8 or B5 = 6
+and T7 = 7, 5 each. B6 = 5 alone leaves 16 and R8 = 3 alone 8. Both leave 1: 19 marks with outside digits
+B9 = 8, T2 = 5, R2 = 6, L4 = 8, R7 = 4, B6 = 5, R8 = 3 are unique, proven on the repo's model and by
+`nr_verify_sat.py`. Grid 364271589/527984613/891365247/416893752/278546391/953712468/132459876/
+749638125/685127934.
 
 ## Step (a)
 
