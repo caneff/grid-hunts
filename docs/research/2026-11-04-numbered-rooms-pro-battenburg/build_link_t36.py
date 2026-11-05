@@ -24,9 +24,10 @@ B.GRID = GRID
 B.GIVENS = {}
 
 
-def main(out, rows=ROWS):
+def main(out, rows=ROWS, givens=""):
     grid = [[int(d) for d in row] for row in rows.split()]
     B.GRID = grid
+    B.GIVENS = {(g[0], int(g[1:].split("=")[0]) - 1): int(g.split("=")[1]) for g in givens.split(",") if g}
     assert is_sudoku(grid)
     hit = len(targets(grid))
     board = marks(grid)
@@ -34,11 +35,12 @@ def main(out, rows=ROWS):
     doc["puzzle"]["name"] = f"Numbered Rooms with Battenburg targets, {len(board)} marks, {hit} targets"
     link = encode_link(doc)
     back = decode_puzzle(link)["puzzle"]
-    assert not any(back["cells"])
+    given = {i: c["value"] for i, c in enumerate(back["cells"]) if c}
+    assert given == {B.outside_index(c): v for c, v in B.GIVENS.items()}
     points = next(c for c in back["constraints"] if c["type"] == 2002)["symbols"]
     assert {(y - 2, x - 2) for x, y, _ in points} == set(board)
     Path(out).write_text(link + "\n")
-    print(f"0 givens, {len(points)} marks")
+    print(f"{len(given)} givens, {len(points)} marks")
 
 
 if __name__ == "__main__":

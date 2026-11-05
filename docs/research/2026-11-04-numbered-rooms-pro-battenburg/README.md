@@ -586,6 +586,14 @@ Adding T2 = 5 and R2 = 6 (`board21.json`, picture `board21-forced-1.png`): exact
 (`count_fills.c` with r6c2 and r2c7 pinned). Forced inner digits r2c7 = 6, r3c8 = 4, r6c2 = 5, r6c8 = 6,
 r6c6 = 2, r7c8 = 7, and new forced outside L3 = 4, R6 = 5, T8 and B8 narrow to 1 or 2 and 7.
 
+Finishing with outside digits only (`nr_outside_finish.py`, exact over the 4,784 grids): 3,848 grids
+are fixed by all 36, 936 are not, in groups of up to 5. The fewest extra clues is 4, reached by 124
+grids. Unique puzzle, 19 marks with the negative rule and 7 outside digits B9 = 8, T2 = 5, R2 = 6,
+L4 = 7, T4 = 9, T5 = 8, B6 = 6, proven on the repo's model and by `nr_verify_sat.py`. Grid
+364271589/571948623/829536147/418769352/236854791/957312468/193485276/742693815/685127934. Link:
+
+https://sudokumaker.app/p/6hj97DBgQh
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
