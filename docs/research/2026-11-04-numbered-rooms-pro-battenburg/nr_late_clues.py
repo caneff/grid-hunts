@@ -6,7 +6,10 @@ given clues, then tries clue sets: first late clues only, then late and ahead cl
 many late ones as possible. A set counts when it leaves exactly one grid of the board's
 clues, and that grid agrees with every digit of the position. Exhaustive up to MAX_K.
 
-Usage: nr_late_clues.py BOARD_JSON POSITION_JSON MAX_K
+With AVOID, such as 5,6, instead searches clues that sit on none of those rows and read no
+cell in them, first any such clue, then only those that also read unsolved cells.
+
+Usage: nr_late_clues.py BOARD_JSON POSITION_JSON MAX_K [AVOID]
 """
 
 import itertools
@@ -37,7 +40,7 @@ def cell(name):
     return int(name[1]) - 1, int(name[3]) - 1
 
 
-def main(board_path, position_path, max_k):
+def main(board_path, position_path, max_k, avoid=""):
     max_k = int(max_k)
     data = json.loads(Path(board_path).read_text())
     known = {cell(k): v for k, v in json.loads(Path(position_path).read_text())["digits"].items()}
@@ -83,12 +86,9 @@ def main(board_path, position_path, max_k):
         key = np.zeros(len(grids), dtype=np.int64)
         for c in combo:
             key = key * 10 + cols[c].astype(np.int64)
-        counts = np.bincount(key, minlength=10 ** len(combo))
-        found = []
-        for i in np.flatnonzero(agree):
-            if counts[key[i]] == 1:
-                found.append(i)
-        return found
+        values, inverse, counts = np.unique(key, return_inverse=True, return_counts=True)
+        alone = counts[inverse] == 1
+        return [int(i) for i in np.flatnonzero(alone & agree)]
 
     for k in range(1, max_k + 1):
         hits = [(combo, finish(combo)) for combo in itertools.combinations(late, k)]
@@ -97,6 +97,28 @@ def main(board_path, position_path, max_k):
         for combo, found in hits:
             for i in found:
                 print("  ", [f"{clue_name(c)}={cols[c][i]}" for c in combo], " ".join("".join(map(str, r)) for r in grids[i]))
+    if avoid:
+        rows_out = {int(r) - 1 for r in avoid.split(",")}
+        agreeing = np.flatnonzero(agree)
+
+        def clear(c):
+            on_line = c[0] in "LR" and c[1] in rows_out
+            return not on_line and all(int(hit[c][i][0]) not in rows_out for i in agreeing)
+
+        free = [c for c in CLUES if c not in given and len(np.unique(cols[c])) > 1 and clear(c)]
+        print("clues clear of rows", avoid, [clue_name(c) for c in free], flush=True)
+        for label, pool in (("any such clue", free), ("also reading unsolved cells", [c for c in free if c in ahead])):
+            for k in range(1, max_k + 1):
+                found_sets = [(combo, finish(combo)) for combo in itertools.combinations(pool, k)]
+                found_sets = [(combo, f) for combo, f in found_sets if f]
+                if found_sets:
+                    print(f"{label}: fewest {k}, {len(found_sets)} sets", flush=True)
+                    for combo, found in found_sets[:20]:
+                        for i in found:
+                            print("  ", [f"{clue_name(c)}={cols[c][i]}" for c in combo], " ".join("".join(map(str, r)) for r in grids[i]))
+                    break
+                print(f"{label}: none with {k}", flush=True)
+        return
     pool = late + ahead
     for k in range(1, max_k + 1):
         best = []

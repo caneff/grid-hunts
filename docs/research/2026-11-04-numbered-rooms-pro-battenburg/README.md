@@ -706,6 +706,10 @@ is "late"; only L5, L6, R5, R6 are, and no set of them finishes, up to all four.
 cells he has not solved. The fewest is 3 clues, with at most 1 late clue, and all 11 three-clue finishes found
 before qualify, each with exactly one of L5, L6, R5, R6.
 
+Clues clear of rows 5 and 6 (Chris, 2026-11-05): no clue on r5 or r6 and none reading a cell there. 12 clues
+qualify, and no set of them finishes, all 12 included, exhaustive. Many grids come in pairs with r5 and r6
+swapped whole, such as the L5 = 3 and L6 = 3 finishes, and no clue outside those rows can tell such a pair apart.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
