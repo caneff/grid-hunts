@@ -660,6 +660,12 @@ and 45 additions, 13 removals and 2 additions stay feasible. New pair lines:
 Removing r2c1, r8c4 or r8c8, or adding r7c1, keeps only r9. Adding r3c7 leaves no pair line. Pair digits were
 read from one witness grid each and can differ by grid.
 
+Remove r2c6 (`board24.json`, picture `board24-forced-1.png`): T5 = B5 means r1c5 = 8 and both read r8c5, which
+can be 1, 3, 4, 5, 6 or 9. Remove r1c5 (`board25.json`, picture `board25-forced-1.png`): only r9c9 = 3 is a
+forced digit, and 10 statuses are open. Pair digits possible on the full model: L4 = R4, L6 = R6 and T5 = B5 only
+as 1, each an end cell holding 1 that reads itself while the other end holds 9; T6 = B6 as 1, 3, 4 or 5, which
+with r1c6 = 8 and r9c6 = 2 reads r8c6, or as 1 with r1c6 = 1 and r9c6 = 9.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
