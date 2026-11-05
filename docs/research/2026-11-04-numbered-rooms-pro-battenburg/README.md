@@ -125,6 +125,13 @@ And 64 windows give at most 2^64, about 1.8e19, mark sets against about
 6.67e21 sudoku grids, so at most about 0.3% of grids could be unique from marks alone.
 Neither rules out one such grid.
 
+## A grid with 36 targets
+
+`nr_full_targets.py`, read back by the reader: 4 targets in every row and column, 13
+marks at r1c1, r1c7, r2c1, r2c3, r3c5, r4c1, r4c2, r5c4, r5c5, r6c6, r7c2, r8c3, r8c8.
+Grid 621483759/359721684/487596321/168942537/593617248/274835916/915378462/846259173/
+732164895.
+
 ## Best puzzle so far, step (b)
 
 13 marks, 5 given outside digits, unique:
