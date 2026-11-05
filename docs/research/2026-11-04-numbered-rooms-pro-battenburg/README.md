@@ -320,6 +320,14 @@ and r3c1 give exactly one target in each of r2 and r3 within c1-2. Window r2c1 m
 be a checkerboard, so both are in one column, making r2c1 and r3c1 alike. The same
 holds across and down the block.
 
+Fewest marks to add so it holds under the negative rule, keeping T7=5 and the 12 marks
+(`nr_board9_fix.py`, all proven optimal, grids re-read by the reader): 2. There are
+exactly 5 such pairs, enumerated until infeasible: r2c8+r8c6, r1c8+r3c7, r1c8+r2c8,
+r1c7+r3c8, r2c8+r3c8. With his colours held as well, the minimum is 3 for orange = target
+and yellow = target (one set: r1c8, r3c8, r5c7), 3 for orange = not and yellow = not
+(one set: r3c8, r5c7, r8c6), and 4 for orange = target and yellow = not (one set: r4c7,
+r6c4, r8c4, r8c7). Those three sets are examples, not all of them.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
