@@ -650,6 +650,9 @@ If the highs are on the corners-and-centre colour, the four lows fill all the ed
 neighbours. If the highs are on the edges, the lows fill 4 of the other 5 cells, and the 6's 3 neighbours include at
 least 2 of them. Both fail. So the 6 is the second unshaded cell: a box counting 7 leaves exactly the 5 and 6 unshaded.
 
+An empty board of this arrangement, built by `uv run python aqre_box_seven_link.py FILE` with circles on the centres of
+boxes 1, 3, 4, 6, 7 and 9 and on r4c5: https://sudokumaker.app/p/DfGhj6JK7Q. Not known to have a solution.
+
 ### Rule dropping, stopped
 
 `aqre_row_diagnose.py DIR FILE ROW` re-solved layouts with one rule dropped at a time. Chris had it stopped at 6 of
