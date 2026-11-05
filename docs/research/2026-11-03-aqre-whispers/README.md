@@ -685,6 +685,14 @@ ranked the corners by a table of limits built on that. That covers only the 24 w
 What still holds: a shaded neighbour of the 7 is 1 or 2, and only r3c3 and r1c3 have a 7 touching cells outside the box, 2 and
 1 of them. The false edge fact also went into two solves as a constraint. Both were stopped before giving any result.
 
+`aqre_box_seven_r3c3.py`, plain rules with no added facts: **no grid with the forced 7 on r3c3**, with the other six circles on
+any six of the other box centres. Proven INFEASIBLE in 943 s on 8 CP-SAT workers, under the 1,800 s cap, one model only. By
+symmetry the same holds for the box-corner cell nearest the grid's centre in boxes 3, 7 and 9: r3c7, r7c3 and r7c7. Corner 7s on
+r1c1 and on r1c3 are untested.
+
+With box 1's 72 fills, also on r1c1 with the same split: the 7's two neighbours are 1 and 2 in 48, 2 and an unshaded 4 in 12, and
+2 and an unshaded 5 in 12.
+
 ```
 1.  8.  5.  3#  4.  6.  7#  2.  9.
 6.  3.o 2#  9#  7.  8#  1#  4.o 5.
