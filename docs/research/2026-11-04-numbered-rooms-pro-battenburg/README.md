@@ -525,6 +525,12 @@ marks on c6 and on c7, so r3c6 and r3c7 are non-targets, and r2c6 needs exactly 
 a target. `board15b.json` removes r1c6 and makes r1c7 green: holds, 200 grids (capped), with
 r9c9 = 1 forced and r9c9 a target.
 
+`board16.json`, 13 marks with r1c9 = 8: r1c1 pink conflicts with that digit. By hand: r1c1
+has three routes. r1c9 = 9 is out. r9c1 = 9 makes r9c9 a target, but r1c9 = 8 makes r8c9 one
+and mark r8c8 makes those opposite. r1c1 = 1 puts two clues on r1c1, leaving 3 clues for the
+4 targets r1c1, r1c2 (right clue), r1c4 (mark r1c3) and one of r1c5/r1c6 (mark r1c5).
+`board16b.json` makes r1c1 green: holds, 200 grids (capped), r1c1 is 2, 4 or 5.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
