@@ -608,6 +608,11 @@ B9 = 8, T2 = 5, R2 = 6, L4 = 8, R7 = 4, B6 = 5, R8 = 3 are unique, proven on the
 `nr_verify_sat.py`. Grid 364271589/527984613/891365247/416893752/278546391/953712468/132459876/
 749638125/685127934.
 
+After B9 = 8, T2 = 5, R2 = 6, L4 = 8, R7 = 4, R8 = 3 alone, 8 grids remain (`nr_one_more.py`, exact). One more
+clue finishes it seven ways: B6 = 5, R3 = 1, L8 = 1, T7 = 3, T8 = 2 or B2 = 2 all give that grid, and B6 = 6
+gives a second, 364271589/517984623/892356147/436819752/278563491/951742368/123495876/749638215/685127934.
+The other 6 grids need two or three more clues.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
