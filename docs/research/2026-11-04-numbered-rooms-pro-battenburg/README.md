@@ -42,12 +42,19 @@ model, and nothing imports or runs them.
   parity colouring, 40 or 41 cells, and 36 clues reach at most 36 cells.
 - **At most 36 targets.** `nr_target_bounds.py` found a grid with 36, so 36 is
   exact.
-- **At least 9 targets.** The left clues alone reach 9 different rows. The
-  fewest found is 11, in a 90 s run that timed out, so the minimum is 9, 10 or 11.
-- **Exactly 4 clues reach each row and each column, so each holds 1 to 4
+- **At least 10 targets.** Eight lines of one direction hold at least 1 each and
+  the middle one at least 2 (below). The fewest found is 11, in a 90 s run that
+  timed out, so the minimum is 10 or 11.
+- **Exactly 4 clues reach each row and each column, so each holds at most 4
   targets.** A row gets its own left and right clues, one top clue (the top row
   holds the row's position digit once) and one bottom clue. Columns are the same
   by symmetry. A count of 36 targets therefore means exactly 4 in every line.
+- **The fewest in a line is 1, except r5 and c5, which hold at least 2**
+  (`nr_unit_minimums.py`, all proven optimal, rows 1 to 5 covering all 18 lines by
+  symmetry). r5's top clue sits in the column where r1 = 5 and its bottom clue in
+  the column where r9 = 5. A column holds one 5, so they hit different cells.
+- **A box can hold 0 targets** (same script, proven for the corner, edge and centre
+  box, each grid re-read by the reader, so all nine boxes by symmetry).
 - **Marks use up a line's 4 targets (Chris, 2026-11-04).** A marked window has
   exactly one target in each of its two rows and two columns. So k disjoint marks
   on a line leave at most 4 - k targets in its other cells, and 4 disjoint marks
