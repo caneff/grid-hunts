@@ -691,6 +691,13 @@ is 6, not 9; so the only route left to the corner is r1c9 = 9. The checker agree
 not needed to open the board. With B9 = 8 added anyway (`board28.json`, `min-outside-pairs-b9.jsonl`) the minimum is
 still 3 more, 16 sets, not SAT-checked.
 
+Chris's solve of the pairs puzzle (2026-11-05). His earlier position (`board31.json`: the 6 pair clues, his
+digits, colours, pencils and corner marks) holds, with every colour right. His later position (`board30.json`)
+fails: in every sudoku completion of his digits the marked window r4c8 is not a checkerboard, because r5c9 has no
+route. r5c9 is a target, reached only by r5c1 = 9 or r5c9 = 1, and r6c9 likewise only by r6c1 = 9 or r6c9 = 1; he
+put both the 9 and the 1 in r6. His extra clues L4, R5, B3 were entered, not given, which is why the app counted
+several solutions; the app also does not read the marks.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
