@@ -297,6 +297,29 @@ infeasible and 2 not unique. Of the 1,225 pairs, 1,222 are infeasible and 3 not
 unique. None timed out. The board allows 2 edges, each with more than 2,000
 completions (capped), and marks read nothing but the edge.
 
+### Chris's seventh board (2026-11-05)
+
+Outside T7=5 and 12 marks at r1, r3, r6, r8 by c1, c3, c5, read from his picture
+(`nr_board9.py`, `nr_board9_negative.py`). r5c1-7 light green taken as not a target,
+r5c8-9 pink as a target, orange/green and yellow/blue as two-way pairs.
+
+Negative rule on: infeasible on the marks alone, with or without T7=5, so the layout
+is the fault and not the digit. Removing one mark makes it feasible except for r3c3,
+r3c5 and r6c3 with T7=5 (without T7=5, r3c5 also works). No single added mark helps,
+with or without T7=5. A hand reason for the conflict is not known. All solves
+finished.
+
+Negative rule off: givens, marks, r5 colours and pairs hold, with orange = target
+and yellow = target or not, or orange = not and yellow = not. Orange = not with
+yellow = target is infeasible. r5c1-6 are forced non-targets by the 4 disjoint marks.
+r5c7, r5c8 and r5c9 are each open on the givens and marks, so his r5 colours there
+are a choice.
+
+The pair pattern is what the negative rule asks of adjacent marks, by hand. Marks r1c1
+and r3c1 give exactly one target in each of r2 and r3 within c1-2. Window r2c1 may not
+be a checkerboard, so both are in one column, making r2c1 and r3c1 alike. The same
+holds across and down the block.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
