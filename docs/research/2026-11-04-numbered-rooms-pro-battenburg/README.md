@@ -616,6 +616,15 @@ The other 6 grids need two or three more clues.
 Chris's solve with T2 = 5, R2 = 6, L4 = 8, R7 = 4, R8 = 3, B2 = 2, B9 = 8 (`board22.json`): all he entered holds
 under the negative rule, and the 7 clues are unique, on the repo's model and by `nr_verify_sat.py`.
 
+**Fewest outside digits for these 19 marks, negative on: exactly 4, proven** (`nr_min_outside.py`,
+`min-outside.jsonl`): every set of up to 4 of the 24 distinct informative clues was tried over all 369,800
+grids. No set of 1, 2 or 3 leaves any grid alone. Of the 10,626 sets of 4, exactly one does, and for exactly
+one grid: L2 = 6, L4 = 3, R4 = 7, B3 = 1, grid 364271589/517968243/892534167/458319672/971642358/236785491/
+149853726/723496815/685127934. Unique on the repo's model and by `nr_verify_sat.py`. This beats step (b)'s 5
+digits on 13 marks in clues, not marks. Link:
+
+https://sudokumaker.app/p/njktNbtdJN
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
