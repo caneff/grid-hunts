@@ -613,6 +613,9 @@ clue finishes it seven ways: B6 = 5, R3 = 1, L8 = 1, T7 = 3, T8 = 2 or B2 = 2 al
 gives a second, 364271589/517984623/892356147/436819752/278563491/951742368/123495876/749638215/685127934.
 The other 6 grids need two or three more clues.
 
+Chris's solve with T2 = 5, R2 = 6, L4 = 8, R7 = 4, R8 = 3, B2 = 2, B9 = 8 (`board22.json`): all he entered holds
+under the negative rule, and the 7 clues are unique, on the repo's model and by `nr_verify_sat.py`.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
