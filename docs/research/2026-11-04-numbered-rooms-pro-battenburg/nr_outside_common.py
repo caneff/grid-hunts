@@ -3,7 +3,9 @@
 For each such grid, lists every smallest set of extra clues exactly, then tallies clues,
 clue digits and whole sets, and each inner cell's digit across those grids. One worker.
 
-Usage: nr_outside_common.py BOARD_JSON BORDER PINS SIZE
+With REQUIRED, such as L4=8 or L4=8,T5=3, only sets holding those clue digits are tallied.
+
+Usage: nr_outside_common.py BOARD_JSON BORDER PINS SIZE [REQUIRED]
 """
 
 import collections
@@ -17,8 +19,9 @@ from nr import CLUES, clue_name, outside
 from nr_outside_finish import all_grids
 
 
-def main(path, border, pin_text, size):
+def main(path, border, pin_text, size, required=""):
     size = int(size)
+    need = dict(item.split("=") for item in required.split(",") if item)
     data = json.loads(Path(path).read_text())
     pins = [(int(p[0]) - 1, int(p[1]) - 1, int(p[2])) for p in pin_text.split(",")]
     grids = all_grids(border, pins)
@@ -52,6 +55,14 @@ def main(path, border, pin_text, size):
                 sets.append(combo)
         if not sets:
             continue
+        if need:
+            sets = [
+                combo
+                for combo in sets
+                if all(any(clue_name(c) == k and str(me[c]) == v for c in combo) for k, v in need.items())
+            ]
+            if not sets:
+                continue
         winners.append(i)
         for combo in sets:
             set_tally[" ".join(sorted(clue_name(c) for c in combo))] += 1
@@ -60,7 +71,7 @@ def main(path, border, pin_text, size):
                 digit_tally[f"{clue_name(c)}={me[c]}"] += 1
     print("grids", len(winners), "smallest sets", sum(set_tally.values()), flush=True)
     print("clues:", clue_tally.most_common(12))
-    print("clue digits:", digit_tally.most_common(12))
+    print("clue digits:", digit_tally.most_common(14))
     print("sets:", set_tally.most_common(8))
     cell = collections.defaultdict(collections.Counter)
     for i in winners:

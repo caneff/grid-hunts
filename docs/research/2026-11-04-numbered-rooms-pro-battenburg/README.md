@@ -599,6 +599,10 @@ sets. L4 is in 370 of them, T5 in 189, R7 in 178, R8 and B5 in 169 each (they re
 so they are interchangeable). Commonest sets: L4 R8 T4 T5 and L4 B5 T4 T5, 24 each. Commonest clue
 digits: L4 = 8 (95), T5 = 3 (91), L4 = 6 (81), B6 = 5 (77).
 
+With L4 = 8: 896 solutions left (`count_fills.c`). Of those 95 sets, over 28 grids, the commonest next
+clue digits are R7 = 4 (31), R7 = 9 (25), B6 = 5 (23), T5 = 3 (17), R8 or B5 = 3 (16). R7 is in 65 of them.
+r4c3 = 6 and r5c3 = 8 follow by hand, since r4c3 and r5c3 were the 6/8 pair.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
