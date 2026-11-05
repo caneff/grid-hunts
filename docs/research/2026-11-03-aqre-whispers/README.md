@@ -660,6 +660,9 @@ All 2026-11-03.
 - 2026-11-04: the 8 circles must share one row or column. The pasted board fails that as drawn:
   its best row touches 6 regions and its best column 5.
 - 2026-11-04: place the 8 region first; no other region may be able to count 8.
+- 2026-11-05: Chris drops the one-row rule for now, in favour of a rule that all circles differ, with 8 circles. Circle
+  digits can only be 1 to 8, since a count of 9 is impossible and a digit is at least 1, so 8 different circles are
+  exactly 1 to 8 and one must be the 8. Two circles in one region would be equal, so the 8 circles are in 8 regions.
 
 ## Rebuild
 
