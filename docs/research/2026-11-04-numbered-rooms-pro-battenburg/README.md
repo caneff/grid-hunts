@@ -671,6 +671,10 @@ A pair whose digit is 1 is an end cell holding 1 reading itself; any other digit
 Inner-cell pairs together: remove r6c8, c5 and r9 (witness c5 = 8, r9 = 7); remove r4c8, r5 and r9 (r5 = 5,
 r9 = 7); remove r6c1, r7 and r9 (r7 = 9, r9 = 7). Remove r8c5 allows only c4 = 1 with r4 = 1. Witness digits only.
 
+Remove r6c8 (`board26.json`, `nr_pairs_detail.py`, every digit on the full model): only r9, c5 and c8 can pair.
+r9 = 7 reads r9c6. c5 = 2, 4, 5, 8 or 9 reads r7c5. c8 = 1 or 3 reads r8c8. All three can hold at once, with
+r9 = 7 and (c5, c8) any of (2,1) (2,3) (4,1) (4,3) (5,1) (5,3) (8,1) (9,1) (9,3); c5 = 8 with c8 = 3 never.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
