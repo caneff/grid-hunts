@@ -678,6 +678,13 @@ Exact solutions left with all three pairs (`nr_pair_counts.py`, `count_fills.c`)
 the fewest; then 9,3: 10,918; 5,3: 13,114; 9,1: 15,748; 4,1: 17,688; 2,3: 22,562; 8,1: 24,528; 5,1: 27,508;
 2,1: 30,926; 8,3: 0, matching the solver.
 
+Chris took c5 = 4 and c8 = 3 (`board27.json`: L9 = R9 = 7, T5 = B5 = 4, T8 = B8 = 3 on the 18 marks). Fewest extra
+outside digits: exactly 3, 9 in all (`nr_min_outside.py`, `min-outside-pairs.jsonl`, all 223,491 grids of 3
+borders, 9,148 after the pairs): no set of 1 or 2 finishes, 9 sets of 3 do, for 11 puzzles, each unique by
+`nr_verify_sat.py` (`nr_verify_hits.py`):
+L4=3 R5=5 R8=9; L4=9 R5=3 B3=7; L4=6 R5=3 B3=7; L4=3 R6=5 R8=9; L5=3 R4=5 B6=9; L6=3 R4=5 B6=9;
+R4=5 R5=3 B6=9; R4=5 R6=3 B6=9; R6=7 R8=9 T7=6; R6=3 R8=9 T7=6; R6=7 B3=3 B6=6.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
