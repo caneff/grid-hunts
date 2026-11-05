@@ -566,6 +566,12 @@ its column kills that column's r8 cell, and unmarked window r7c1 kills the other
 true both ways: r1c1 is 3, 5 or 7 and r9c9 is 2, 3 or 4. r9c2 is also never a target, which is direct
 for magenta and a longer chain for purple.
 
+Outside clue impact on these 19 marks, negative on, no givens (`nr_clue_impact.py`, `count_cells.c`,
+exact): 2 borders of 184,900 fillings each, 369,800 solutions. The c1 and c9 swaps are linked. B9
+= 1 or 8 picks the border. Fewest left by one clue: T3 = 3 leaves 14,904, R4 = 7 leaves 19,000, B6 =
+9 leaves 26,368. Best expected whichever digit it holds: L4, 72,048 left on average. L1, L7, L9, R1,
+R9, T1, T6, T9, B1, B4, B7 are forced (4, 1, 7, 3, 7, 8, 1, 4, 4, 1, 5) and add nothing.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
