@@ -640,7 +640,9 @@ A matching pair of clues at both ends of one line (Chris, 2026-11-05): two equal
 cell holding that digit, so the line has a double hit. With B9 = 8 the border is fixed, so a line's two clues
 read one cell exactly when its end digits sum to 10 (or, for a column, its r1 and r9 digits do). By hand over
 the border, only r9 qualifies: r9c1 = 6 and r9c9 = 4 both read r9c6, so L9 = R9 = 7. Both are already forced, so
-they cut no grids, only help the solver, and the minimum with them is the 5 above plus these 2, 7 in all.
+they cut no grids, only help the solver, and the minimum with them is the 5 above plus these 2, 7 in all. The
+other border (B9 = 1) differs only in r5 and r6 of c1 and c9, sums 17 and 3, so it too has only r9, L9 = R9 =
+7. Checked with the reader on one grid of each border.
 
 ## Step (a)
 
