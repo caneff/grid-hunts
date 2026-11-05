@@ -693,6 +693,11 @@ r1c3 is untested.
 `aqre_box_seven_cell.py DIR RxC` asks the same of any off-centre cell. r1c1 and r1c2 both timed out, UNKNOWN at the 1,800 s cap
 on 8 workers, which proves nothing. r1c2's box 1 has 72 fills too, 68 digit layouts, with 5 and 6 unshaded in 48 and 4 and 5 in 24.
 
+Split by empty boxes, r1c1 falls fast. `aqre_box_seven_boards.py` ran its 16 distinct boards, plain rules with no added facts,
+one worker each with a 900 s cap, 8 at a time: **all 16 INFEASIBLE in 710 s**, the longest 498 s. So **no grid with the forced 7
+on r1c1**, or by symmetry on r1c9, r9c1 or r9c9, with the other six circles on box centres. One model only, no second proof.
+Together with r3c3, of the corners in boxes 1, 3, 7 and 9 only r1c3 and its images (r3c1 and so on) are left.
+
 With box 1's 72 fills, also on r1c1 with the same split: the 7's two neighbours are 1 and 2 in 48, 2 and an unshaded 4 in 12, and
 2 and an unshaded 5 in 12.
 
