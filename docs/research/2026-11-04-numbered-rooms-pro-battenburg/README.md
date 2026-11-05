@@ -482,6 +482,23 @@ Removing any one of the 12 marks is feasible with the negative rule off, and eac
 witness grid has p in the rows of the removed mark. The negative rule was not tested
 on those removals.
 
+### Chris's 11-mark board (2026-11-05)
+
+No outside digits; r1c1 = 9, r1c9 = 1; marks r2c1 r2c3 r2c5 r2c7 r3c8 r4c2 r4c6 r6c2 r6c6
+r8c2 r8c6 (`nr_board12.py`, `nr_board12_fix.py`). Broken as drawn both ways.
+
+Negative off: marks and digits hold. His colours fail, and greens r1c4, r1c5 and r1c8
+alone conflict with the marks. By hand: 4 disjoint marks make r1c2, r1c3, r1c6, r1c7
+non-targets, so with those greens r1's only targets are in c1 and c9. The bottom clue that
+reaches r1 is the 9 of r9, so r9c9 = 9. Then T9, B9, the left clue from r1c1 = 9 and the
+right clue from r1c9 = 1 all land on r1c9, so c9 has one target, and mark r3c8 needs one in
+r3c9 or r4c9. Flipping any one of those three to a target makes all his entries hold.
+
+Negative on: the marks alone are infeasible, no hand reason known. With his two digits,
+removing one of r2c3, r2c5, r2c7, r3c8, r4c2 or r4c6 or adding r2c4 or r2c6 makes the marks
+feasible. His colours were not rechecked on those, and either addition contradicts his r2-3
+colouring.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
