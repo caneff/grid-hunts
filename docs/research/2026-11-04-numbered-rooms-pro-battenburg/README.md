@@ -183,6 +183,11 @@ r8c2 r8c3 r8c6 r8c7 r8c8. Grid 724615389/819243576/536789241/452391768/173864952
 
 https://sudokumaker.app/p/7mdPh6wG98
 
+Under the looser meaning, all the rules allowed, `nr_t36_fewer.py` (seed 3, 900 s,
+`t36-fewer.jsonl`) got down to 14 marks fixing all 36 targets, proven on the full model:
+grid 761394852/592178364/834562719/123487695/957216483/648935271/416753928/379821546/
+285649137. An upper bound from a search, not a minimum, and not the board Chris asked for.
+
 ## Digits fixed by the border alone (2026-11-05)
 
 No marks or clues, only the 32 border digits. `fill_climb.c` climbs on the exact number

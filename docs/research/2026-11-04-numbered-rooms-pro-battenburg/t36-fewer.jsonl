@@ -1,0 +1,51 @@
+{"kind": "open", "evals": 27, "limit": 26, "t": 16, "open": 46, "borders": 2000, "marks": 12}
+{"kind": "open", "evals": 41, "limit": 26, "t": 24, "open": 18, "borders": 20, "marks": 16}
+{"kind": "open", "evals": 55, "limit": 26, "t": 29, "open": 6, "borders": 2, "marks": 19}
+{"kind": "open", "evals": 69, "limit": 26, "t": 34, "open": 5, "borders": 8, "marks": 18}
+{"kind": "open", "evals": 101, "limit": 26, "t": 46, "open": 2, "borders": 3, "marks": 19}
+{"kind": "open", "evals": 106, "limit": 26, "t": 48, "open": 0, "borders": 1, "marks": 18}
+{"kind": "HIT", "evals": 106, "limit": 26, "t": 48, "count": 18, "borders": 1, "marks": [[0, 0], [0, 4], [0, 7], [1, 1], [1, 4], [1, 7], [2, 3], [2, 4], [2, 5], [3, 0], [3, 5], [4, 7], [5, 0], [5, 1], [5, 3], [6, 0], [7, 0], [7, 2]], "grid": "596874132 712563498 348912675 253146987 467289513 189357246 824795361 675431829 931628754"}
+{"kind": "open", "evals": 108, "limit": 17, "t": 49, "open": 65, "borders": 16, "marks": 16}
+{"kind": "open", "evals": 110, "limit": 17, "t": 50, "open": 50, "borders": 272, "marks": 15}
+{"kind": "open", "evals": 117, "limit": 17, "t": 54, "open": 38, "borders": 2000, "marks": 12}
+{"kind": "open", "evals": 118, "limit": 17, "t": 55, "open": 29, "borders": 83, "marks": 14}
+{"kind": "open", "evals": 127, "limit": 17, "t": 58, "open": 6, "borders": 17, "marks": 17}
+{"kind": "open", "evals": 215, "limit": 17, "t": 99, "open": 0, "borders": 4, "marks": 17}
+{"kind": "HIT", "evals": 215, "limit": 17, "t": 99, "count": 17, "borders": 4, "marks": [[0, 1], [1, 1], [2, 1], [2, 3], [2, 7], [3, 1], [3, 3], [3, 4], [3, 6], [4, 1], [4, 3], [4, 4], [4, 6], [5, 6], [6, 7], [7, 0], [7, 2]], "grid": "325941786 719386524 486725391 132654978 674298153 598137642 961872435 253469817 847513269"}
+{"kind": "open", "evals": 217, "limit": 16, "t": 101, "open": 59, "borders": 178, "marks": 15}
+{"kind": "open", "evals": 220, "limit": 16, "t": 102, "open": 54, "borders": 1572, "marks": 13}
+{"kind": "open", "evals": 223, "limit": 16, "t": 103, "open": 31, "borders": 129, "marks": 15}
+{"kind": "open", "evals": 237, "limit": 16, "t": 109, "open": 21, "borders": 77, "marks": 16}
+{"kind": "open", "evals": 270, "limit": 16, "t": 126, "open": 18, "borders": 42, "marks": 16}
+{"kind": "open", "evals": 305, "limit": 16, "t": 140, "open": 13, "borders": 24, "marks": 16}
+{"kind": "open", "evals": 336, "limit": 16, "t": 152, "open": 11, "borders": 6, "marks": 14}
+{"kind": "open", "evals": 341, "limit": 16, "t": 154, "open": 2, "borders": 7, "marks": 16}
+{"kind": "open", "evals": 451, "limit": 16, "t": 205, "open": 0, "borders": 7, "marks": 16}
+{"kind": "HIT", "evals": 451, "limit": 16, "t": 205, "count": 16, "borders": 7, "marks": [[0, 0], [0, 1], [0, 2], [0, 4], [1, 6], [2, 1], [2, 2], [2, 3], [3, 5], [4, 1], [4, 5], [5, 1], [5, 2], [6, 6], [7, 0], [7, 4]], "grid": "695328417 283147596 147596823 562834971 418279635 739651248 351982764 824763159 976415382"}
+{"kind": "open", "evals": 452, "limit": 15, "t": 207, "open": 46, "borders": 2000, "marks": 14}
+{"kind": "open", "evals": 474, "limit": 15, "t": 217, "open": 29, "borders": 46, "marks": 15}
+{"kind": "open", "evals": 480, "limit": 15, "t": 220, "open": 15, "borders": 7, "marks": 15}
+{"kind": "open", "evals": 518, "limit": 15, "t": 237, "open": 4, "borders": 22, "marks": 14}
+{"kind": "open", "evals": 572, "limit": 15, "t": 261, "open": 0, "borders": 4, "marks": 15}
+{"kind": "HIT", "evals": 572, "limit": 15, "t": 261, "count": 15, "borders": 4, "marks": [[0, 0], [0, 2], [0, 4], [0, 7], [1, 0], [1, 4], [1, 6], [2, 3], [2, 6], [4, 3], [4, 7], [5, 0], [6, 1], [6, 3], [7, 1]], "grid": "261753894 549618372 783492516 832174965 615289743 497365281 928541637 156937428 374826159"}
+{"kind": "open", "evals": 577, "limit": 14, "t": 265, "open": 64, "borders": 2000, "marks": 6}
+{"kind": "open", "evals": 579, "limit": 14, "t": 266, "open": 50, "borders": 2000, "marks": 9}
+{"kind": "open", "evals": 614, "limit": 14, "t": 286, "open": 49, "borders": 2000, "marks": 11}
+{"kind": "open", "evals": 624, "limit": 14, "t": 292, "open": 38, "borders": 2000, "marks": 12}
+{"kind": "open", "evals": 627, "limit": 14, "t": 294, "open": 37, "borders": 2000, "marks": 12}
+{"kind": "open", "evals": 635, "limit": 14, "t": 300, "open": 34, "borders": 1932, "marks": 13}
+{"kind": "open", "evals": 673, "limit": 14, "t": 323, "open": 32, "borders": 87, "marks": 14}
+{"kind": "open", "evals": 687, "limit": 14, "t": 332, "open": 21, "borders": 21, "marks": 14}
+{"kind": "open", "evals": 790, "limit": 14, "t": 394, "open": 3, "borders": 8, "marks": 14}
+{"kind": "open", "evals": 1108, "limit": 14, "t": 563, "open": 2, "borders": 6, "marks": 14}
+{"kind": "open", "evals": 1174, "limit": 14, "t": 595, "open": 0, "borders": 1, "marks": 14}
+{"kind": "HIT", "evals": 1174, "limit": 14, "t": 595, "count": 14, "borders": 1, "marks": [[0, 1], [0, 7], [1, 0], [1, 3], [3, 2], [3, 5], [4, 1], [4, 5], [5, 3], [5, 7], [6, 1], [6, 6], [7, 0], [7, 3]], "grid": "761394852 592178364 834562719 123487695 957216483 648935271 416753928 379821546 285649137"}
+{"kind": "open", "evals": 1176, "limit": 13, "t": 599, "open": 56, "borders": 2000, "marks": 12}
+{"kind": "open", "evals": 1178, "limit": 13, "t": 601, "open": 53, "borders": 2000, "marks": 11}
+{"kind": "open", "evals": 1187, "limit": 13, "t": 607, "open": 36, "borders": 2000, "marks": 13}
+{"kind": "open", "evals": 1324, "limit": 13, "t": 687, "open": 29, "borders": 161, "marks": 13}
+{"kind": "open", "evals": 1337, "limit": 13, "t": 695, "open": 23, "borders": 51, "marks": 13}
+{"kind": "open", "evals": 1353, "limit": 13, "t": 702, "open": 14, "borders": 25, "marks": 13}
+{"kind": "open", "evals": 1419, "limit": 13, "t": 740, "open": 13, "borders": 4, "marks": 13}
+{"kind": "open", "evals": 1573, "limit": 13, "t": 828, "open": 6, "borders": 3, "marks": 13}
+{"kind": "done", "evals": 1708, "limit": 13, "t": 900}
