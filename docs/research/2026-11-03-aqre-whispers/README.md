@@ -660,6 +660,21 @@ one worker, under the 900 s cap, and its plain Python check passes, as does a co
 box 8, which is the 7. Boxes 2 and 5 have none. Box 8 leaves exactly the 5 and 6 unshaded, as the proof above says. Empty
 board: https://sudokumaker.app/p/9LPnHP7F6N. Uniqueness is not tested.
 
+What a box's circle cell allows, judged alone, by count and by whether the circle can be shaded (S) or unshaded (U):
+
+| Cell, colour | 1-4 | 5 | 6 | 7 |
+|---|---|---|---|---|
+| corner or edge, high | U | U | S or U | S |
+| corner or edge, low | S or U | U | U | none |
+| centre, high | U | U | U | none |
+| centre, low | S or U | U | U | none |
+
+So the counts 1 to 6 fit every cell on either colour, and no single box forces the 6. What colour does give is shading: a
+circle on the high colour is unshaded unless it is the 7 or a corner or edge 6. Forcing the 7 by position alone needs
+exactly one off-centre circle, because any off-centre circle can be the 7. So the free choices are its box, its cell and
+the two empty boxes: 2,016 placements before the board's 8 symmetries. Corners share the centres' colour, so a corner 7
+makes all six centre circles unshaded at once. An edge 7 makes them low and tells nothing about their shading.
+
 ```
 1.  8.  5.  3#  4.  6.  7#  2.  9.
 6.  3.o 2#  9#  7.  8#  1#  4.o 5.
