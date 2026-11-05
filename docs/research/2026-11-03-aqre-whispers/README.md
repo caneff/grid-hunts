@@ -597,6 +597,21 @@ cell and the only one able to hold an 8 by shape, the shared region's circle and
 forced 7, the others topping out at 6 with counts matchable, every region judged alone. Not covered: the 9 in the
 shared region on the right colour, the 9 in the ninth region, and any region ruled out only with help from outside it.
 
+### Shapes that top out at 6
+
+`aqre_top_six_shapes.py DIR` tests every free 9-cell shape, 1,248 after leaving out the 37 holed ones of the known
+1,285. Judged alone, with no circle and either colouring, the highest shaded count is 8 for 902 shapes, 7 for 345 and 6
+for 1, in 18 s on one process. `region_holds`, the solver check, agreed on every shape's 7 and 8, and all 796 screen
+shapes hold 8.
+
+The 1 shape is `.X.X. / XXXXX / .X.X.`. With a circle holding the count's digit, 16 of the 11,232 shape and circle pairs
+top out at 6, or 11 once symmetry is removed: 4 on that shape and 7 on others. In those 7 the circle has 4 neighbours in
+the shape: `XXXXX. / ...XOX / ....X.`, `XXXX / .X.. / XOX. / .X..`, `XXXX. / ...X. / ..XOX / ...X.`, `XXX / XOX / XXX`,
+`XX.X. / XXXOX / ...X.`, `XX.. / XXX. / .XOX / ..X.` and `.X..... / XOXXXXX / .X.....`. Picture: `aqre_top_six_picture.py`.
+
+So "the shape only allows 6 max" almost never happens by shape alone. The earlier runs' top-out-at-6 regions rely on
+the 7 being ruled out by colour, or on the 9 in the region.
+
 ### Rule dropping, stopped
 
 `aqre_row_diagnose.py DIR FILE ROW` re-solved layouts with one rule dropped at a time. Chris had it stopped at 6 of
