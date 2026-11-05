@@ -700,6 +700,12 @@ several solutions; the app also does not read the marks. With L4 = 9, R5 = 3, B3
 position fails too (`board32.json`): three entries fit only the 6-clue version, found one minimal clash at a time:
 the corner 1s in r2c2/r2c3, the r2c8 pencil 2, 4, 6, and r3c8 = 1. The solution has r2c8 = 1 and r3c8 = 4.
 
+Clues he could not have used before his current position (`board34.json`, `nr_late_clues.py`, exhaustive over
+9,148 grids; all of them agree with his digits). Option 1, Chris's ruling: a clue whose first cell he has not solved
+is "late"; only L5, L6, R5, R6 are, and no set of them finishes, up to all four. Option 2 with 1: add clues that read
+cells he has not solved. The fewest is 3 clues, with at most 1 late clue, and all 11 three-clue finishes found
+before qualify, each with exactly one of L5, L6, R5, R6.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
