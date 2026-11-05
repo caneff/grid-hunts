@@ -638,6 +638,18 @@ This is a likely reason the one-row form had so few layouts, not a proof. A row 
 even column 3 other circles share its colour and only 1 of them can be the 7. The other 2 must come from those 40 pairs.
 Free circles can put all six on the other colour.
 
+### Plain 3x3 boxes, 2026-11-05
+
+Chris's question. A box can never be the 8, so different circles are at most 7, exactly 1 to 7, and one is the 7. From
+`aqre_free_circle_classes.py`: a corner or edge circle on the high colour fits a shaded 7 only, on the low colour it tops
+out at 6, and a centre circle tops out at 6 on either colour. So six circles on centres and one off centre force the 7.
+
+Why a box's 7 is shaded, by hand: a count of 7 leaves two unshaded, one the 5. Suppose the other is the 7. Then 1, 2, 3, 4
+and 6, 8, 9 are all shaded, and the 6 allows only the 1 as a shaded neighbour, so at most one of its neighbours is shaded.
+If the highs are on the corners-and-centre colour, the four lows fill all the edges, so the 6 has at least 2 shaded
+neighbours. If the highs are on the edges, the lows fill 4 of the other 5 cells, and the 6's 3 neighbours include at
+least 2 of them. Both fail. So the 6 is the second unshaded cell: a box counting 7 leaves exactly the 5 and 6 unshaded.
+
 ### Rule dropping, stopped
 
 `aqre_row_diagnose.py DIR FILE ROW` re-solved layouts with one rule dropped at a time. Chris had it stopped at 6 of
