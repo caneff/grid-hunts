@@ -644,6 +644,22 @@ they cut no grids, only help the solver, and the minimum with them is the 5 abov
 other border (B9 = 1) differs only in r5 and r6 of c1 and c9, sums 17 and 3, so it too has only r9, L9 = R9 =
 7. Checked with the reader on one grid of each border.
 
+One-mark changes and matching pairs (`nr_pair_variants.py`, `pair-variants.jsonl`, negative on, borders
+enumerated completely, each line confirmed on the full model with a grid re-read by the reader). Of 19 removals
+and 45 additions, 13 removals and 2 additions stay feasible. New pair lines:
+
+- remove r1c5: 7 borders; r4 in 1, r6 in 2, c5 in 1, c6 in 1.
+- remove r2c3: 1 border; c4 always.
+- remove r2c6: 5 borders; c5 in 3.
+- remove r4c1: 9 borders; r6 in 3, c3 in 1, c4 in 1.
+- remove r4c8: 27 borders; r5, r6, r7, r9, c4 (9), c6, c9.
+- remove r6c1: 18 borders; r4, r5 (14), r6, r7, r9, c4, c5, c6.
+- remove r6c8: 3 borders; r9 always, c5 in 2, c8 in 2.
+- remove r8c5: 1 border; r4 and c4 always.
+
+Removing r2c1, r8c4 or r8c8, or adding r7c1, keeps only r9. Adding r3c7 leaves no pair line. Pair digits were
+read from one witness grid each and can differ by grid.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
