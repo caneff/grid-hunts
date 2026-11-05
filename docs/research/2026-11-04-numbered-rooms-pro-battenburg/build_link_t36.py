@@ -1,9 +1,10 @@
-"""SCRATCH: the SudokuMaker link of the 27-mark board that fixes all 36 targets. No givens.
+"""SCRATCH: the SudokuMaker link of a 36-target board. No givens. Defaults to the 27-mark
+board; ROWS picks another.
 
-Reuses build_link.py's board. Not a unique puzzle: the marks allow 2 borders. The marks
-are cosmetic text, so the app's own solver does not read them.
+Reuses build_link.py's board. Not a unique puzzle. The marks are cosmetic text, so the
+app's own solver does not read them.
 
-Usage: build_link_t36.py OUT_FILE
+Usage: build_link_t36.py OUT_FILE [ROWS]
 """
 
 import json
@@ -23,12 +24,13 @@ B.GRID = GRID
 B.GIVENS = {}
 
 
-def main(out):
-    assert is_sudoku(GRID) and len(targets(GRID)) == 36
-    board = marks(GRID)
-    assert len(board) == 27
+def main(out, rows=ROWS):
+    grid = [[int(d) for d in row] for row in rows.split()]
+    B.GRID = grid
+    assert is_sudoku(grid) and len(targets(grid)) == 36
+    board = marks(grid)
     doc = B.build(json.loads((HERE / "link_template.json").read_text()))
-    doc["puzzle"]["name"] = "Numbered Rooms with Battenburg targets, 27 marks, 36 targets"
+    doc["puzzle"]["name"] = f"Numbered Rooms with Battenburg targets, {len(board)} marks, 36 targets"
     link = encode_link(doc)
     back = decode_puzzle(link)["puzzle"]
     assert not any(back["cells"])
@@ -39,4 +41,4 @@ def main(out):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(*sys.argv[1:])

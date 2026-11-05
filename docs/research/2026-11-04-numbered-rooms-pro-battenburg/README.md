@@ -171,6 +171,18 @@ forced facts, r1c1 not a target (68 steps) and r4c1 a target (78 steps), were lo
 and the tracer stalled with 18 cells open. This is evidence that the board is hard by hand
 from there, not proof: the tracer knows only these rules.
 
+**Correction (Chris, 2026-11-05): "just by Battenburg" means no digits at all.** The 27-mark
+board's proof above used all the Numbered Rooms and sudoku rules. On marks, the negative
+rule and 1 to 4 targets per line alone it allows 424 patterns with 21 cells open
+(`nr_t36_pure.py check`). Under this meaning a 32-mark board has exactly one pattern, with
+36 targets, by complete enumeration, and the grid behind it is confirmed by the reader
+(`nr_t36_pure.py`, seed 5, `t36-pure.jsonl`): r1c1 r1c4 r1c5 r1c6 r2c2 r2c3 r2c4 r2c5 r2c6
+r2c7 r2c8 r3c4 r4c1 r4c4 r4c6 r4c7 r5c1 r5c4 r5c8 r6c1 r6c2 r6c3 r6c4 r6c5 r7c5 r7c8 r8c1
+r8c2 r8c3 r8c6 r8c7 r8c8. Grid 724615389/819243576/536789241/452391768/173864952/968527134/
+381976425/695432817/247158693. Link, no givens (`build_link_t36.py`):
+
+https://sudokumaker.app/p/7mdPh6wG98
+
 ## Digits fixed by the border alone (2026-11-05)
 
 No marks or clues, only the 32 border digits. `fill_climb.c` climbs on the exact number
