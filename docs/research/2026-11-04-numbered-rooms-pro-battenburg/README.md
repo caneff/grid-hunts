@@ -195,6 +195,11 @@ https://sudokumaker.app/p/mbCgPDpBMW
 Chris dropped a variant that assumes exactly 36 targets, so 4 in every line, as a rule the
 solver may use (2026-11-05). At most 4 per line already caps the total at 36.
 
+At most 4 patterns, same rules: seed 7 logged 21 marks with 4 patterns on the way, but its
+grid was not saved. A dedicated run from a limit of 24 (`want=4`, seed 9, 900 s under load
+about 18, 484 tries, `t36-want4.jsonl`) found no hit. Its nearest was 23 marks with 7
+patterns. So 25 marks with 1 pattern is the best saved board.
+
 Under the looser meaning, all the rules allowed, `nr_t36_fewer.py` (seed 3, 900 s,
 `t36-fewer.jsonl`) got down to 14 marks fixing all 36 targets, proven on the full model:
 grid 761394852/592178364/834562719/123487695/957216483/648935271/416753928/379821546/
@@ -507,6 +512,12 @@ r6c2 r6c6 r8c2 r8c6, nothing else (`nr_board13.py`): feasible. Forced non-target
 r1c2 r1c3 r1c6 r1c7 r2c9 r3c9, every other status is open. Border digits: r1c1 is 1, 4, 5, 8
 or 9; r1c9 is 1, 5, 6 or 9; r9c9 is not 7 or 8; r1c2 r1c3 r1c6 r1c7 r2c1 r3c1 r2c9 r3c9 r9c2
 r9c3 r9c6 r9c7 each lose one digit, the one pointing at a forced non-target.
+
+`nr_check.py BOARD_JSON` is the one checker for his boards from here, under that ruling: it
+reads a small JSON board and reports feasibility or a minimal conflict, status and digits.
+`board14.json`, his 11 marks with r4c8 and his colours: holds, 200 grids (capped). r1c8 is
+forced a target, r1c1 is 1, 8 or 9, r1c9 is 1 or 9, r9c9 is 4, 5 or 9. Status map and
+digits come from one run of about 22 s.
 
 ## Step (a)
 

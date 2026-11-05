@@ -1,0 +1,8 @@
+{"kind": "best", "evals": 1, "limit": 24, "t": 6, "patterns": 20000, "complete": false, "open": 31, "marks": 11, "border": "42867931574926853172186346817259"}
+{"kind": "best", "evals": 50, "limit": 24, "t": 123, "patterns": 3476, "complete": true, "open": 21, "marks": 19, "border": "97681524386187147596532258167394"}
+{"kind": "best", "evals": 56, "limit": 24, "t": 131, "patterns": 1014, "complete": true, "open": 26, "marks": 16, "border": "97681524386183147596572259186734"}
+{"kind": "best", "evals": 57, "limit": 24, "t": 131, "patterns": 490, "complete": true, "open": 16, "marks": 21, "border": "96781524386183142576975259186734"}
+{"kind": "best", "evals": 66, "limit": 24, "t": 143, "patterns": 28, "complete": true, "open": 5, "marks": 21, "border": "96785124386183142576975259186734"}
+{"kind": "best", "evals": 115, "limit": 24, "t": 207, "patterns": 26, "complete": true, "open": 5, "marks": 20, "border": "96785124386183149576275259386714"}
+{"kind": "best", "evals": 146, "limit": 24, "t": 254, "patterns": 7, "complete": true, "open": 3, "marks": 23, "border": "96785124386183941576275259386714"}
+{"kind": "done", "evals": 484, "limit": 24, "t": 902}
