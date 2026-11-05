@@ -60,8 +60,10 @@ model, and nothing imports or runs them.
   on a line leave at most 4 - k targets in its other cells, and 4 disjoint marks
   mean the ninth cell is not a target. On 5,000 random grids, 162 lines had 4
   disjoint marks and no ninth cell was a target. A full run of 8 overlapping marks
-  across a line forces targets onto positions 2, 4, 6 and 8, since the other
-  alternation needs 5.
+  across a row pair is impossible: the two rows are complements, so together they
+  hold 9 targets and one has 5 (`nr_force_shapes.py`, infeasible). This corrects an
+  earlier claim here that such a run forces positions 2, 4, 6 and 8. A run of 7 is
+  feasible.
 - **A box can hold 9 targets.** `nr_box_bounds.py` found a grid for the corner,
   edge and centre box, each re-read by the reader, so all nine boxes reach it by
   symmetry.
@@ -144,6 +146,41 @@ per-cell digits `count_fills.c` records): no digit in any cell and no outside di
 Target status is fixed for 36 cells. 12 are always targets: r1c1, r2c2, r2c3, r3c1,
 r3c4, r4c1, r4c3, r4c4, r5c2, r7c2, r8c3, r9c4. 24 are never targets. The other 45 are
 open. Tightest options: r4c1 is 1 or 4, r9c2 is 3 or 8, outside B9 is 1, 2 or 8.
+
+## What forces digits (2026-11-05)
+
+By hand, the four clue families are permutations: the digits of r1 place one top clue
+target in each row and column, and likewise r9, c1 and c9. So the target set is a union
+of 4 permutation matrices, and a border digit is forced when the marks leave its clue one
+possible cell, directly or after the other digits of its line take their cells. A non-target at rXcY rules out r1cY = X, r9cY = 10 - X,
+rXc1 = Y and rXc9 = 10 - Y. Two clues landing on one cell cost a line one of its 4
+targets, which is what breaks a line with 4 disjoint marks.
+
+Shapes with no givens (`nr_force_shapes.py`, negative rule off and on; "forced" is on
+the border-only model, a superset of the real options, so it is sound):
+
+- 16 disjoint marks leaving one row and one column empty force exactly 4 digits at the
+  shared cell, with the negative rule off. Only one symmetry class is feasible, r1 c3
+  and its images (r3 c9 was run too): r1c1 = 3, r1c3 = 1, r1c9 = 7, r9c3 = 9.
+- With the gap at r5 or c5, 16 marks are infeasible, since r5 needs 2 targets. Gap r3 c3
+  is infeasible, since r3c1 and r1c3 would both be 3 in box 1. Gap r1 c1 and gap r1 c9
+  are infeasible, because two clues would land on one cell of a line with 4 marks.
+- Negative rule on: every disjoint block with 12 or more marks was infeasible. 8 marks
+  or fewer in these shapes forced nothing, with more than 5,000 borders (capped).
+
+Sample (`nr_force_sample.py`, seed 11, 300 s, negative rule on): 387 random grids, of
+which 300 hit the 3,000-border cap and make no claim. Of the other 87, 74 force no
+border digit. Forcing rose with mark count: 16 marks reached 6 and 20 marks reached 32.
+
+20 marks that pin the whole border, verified on the full model (`nr_force_verify.py`,
+another border is infeasible): r1c2 r1c3 r2c6 r3c2 r3c3 r3c4 r3c6 r4c2 r4c6 r4c7 r4c8
+r5c1 r5c2 r5c6 r6c2 r6c3 r6c6 r7c2 r7c3 r8c3. Grid 654792831/281635479/793184256/
+547963182/928541763/316278594/162357948/835429617/479816325. That border has exactly
+175,079 fillings (`count_fills.c`), with r3c2 = 9 and r3c7 = 2 forced inside. So marks
+can fix a border outright, and step (c) now rests on whether a border can fix its middle.
+
+Inner cells: r2c2 sees at most 7 border cells and r5c5 at most 4, so no inner cell is
+forced by sight alone. Inner digits come only from hidden singles and deeper logic.
 
 ## Best puzzle so far, step (b)
 

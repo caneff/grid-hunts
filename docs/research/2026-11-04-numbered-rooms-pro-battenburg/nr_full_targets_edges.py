@@ -23,7 +23,7 @@ BOARD = marks(GRID)
 BORDER = [(r, c) for r in range(9) for c in range(9) if r in (0, 8) or c in (0, 8)]
 
 
-def model():
+def model(board=BOARD, negative=True):
     m = cp_model.CpModel()
     b = {(cell, d): m.NewBoolVar("b") for cell in BORDER for d in range(1, 10)}
     for cell in BORDER:
@@ -52,11 +52,11 @@ def model():
     for k in WINDOWS:
         r, c = k
         a, f, d, e = t[r, c], t[r, c + 1], t[r + 1, c], t[r + 1, c + 1]
-        if k in BOARD:
+        if k in board:
             m.Add(a == e)
             m.Add(f == d)
             m.Add(a + f == 1)
-        else:
+        elif negative:
             m.AddBoolOr([a.Not(), e.Not(), f, d])
             m.AddBoolOr([f.Not(), d.Not(), a, e])
     return m, b
