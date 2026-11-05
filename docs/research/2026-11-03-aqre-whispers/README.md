@@ -648,7 +648,8 @@ Why a box's 7 is shaded, by hand: a count of 7 leaves two unshaded, one the 5. S
 and 6, 8, 9 are all shaded, and the 6 allows only the 1 as a shaded neighbour, so at most one of its neighbours is shaded.
 If the highs are on the corners-and-centre colour, the four lows fill all the edges, so the 6 has at least 2 shaded
 neighbours. If the highs are on the edges, the lows fill 4 of the other 5 cells, and the 6's 3 neighbours include at
-least 2 of them. Both fail. So the 6 is the second unshaded cell: a box counting 7 leaves exactly the 5 and 6 unshaded.
+least 2 of them. Both fail, so the 7 is shaded. **Correction, 2026-11-05:** this first said the second unshaded cell must be
+the 6. That does not follow, and it is false: with a corner 7 it is the 6 or the 4.
 
 An empty board of this arrangement, built by `uv run python aqre_box_seven_link.py FILE` with circles on the centres of
 boxes 1, 3, 4, 6, 7 and 9 and on r4c5: https://sudokumaker.app/p/DfGhj6JK7Q. `aqre_box_seven_fixed.py` proves it
@@ -657,7 +658,7 @@ boxes 1, 3, 4, 6, 7 and 9 and on r4c5: https://sudokumaker.app/p/DfGhj6JK7Q. `aq
 **The arrangement itself has grids.** `aqre_box_seven.py`, with the solver choosing the circle boxes, found one in 712 s on
 one worker, under the 900 s cap, and its plain Python check passes, as does a count by hand of all 7 circles
 (`box-seven.json`, `#` shaded, `o` circled). Circles are on the centres of boxes 1, 3, 4, 6, 7 and 9 and on r8c4, an edge of
-box 8, which is the 7. Boxes 2 and 5 have none. Box 8 leaves exactly the 5 and 6 unshaded, as the proof above says. Empty
+box 8, which is the 7. Boxes 2 and 5 have none. Empty
 board: https://sudokumaker.app/p/9LPnHP7F6N. Uniqueness is not tested.
 
 What a box's circle cell allows, judged alone, by count and by whether the circle can be shaded (S) or unshaded (U):
@@ -675,18 +676,14 @@ exactly one off-centre circle, because any off-centre circle can be the 7. So th
 the two empty boxes: 2,016 placements before the board's 8 symmetries. Corners share the centres' colour, so a corner 7
 makes all six centre circles unshaded at once. An edge 7 makes them low and tells nothing about their shading.
 
-Which corner of box 1, by hand, no solve run. With a corner 7 the four edges hold the lows. The two edges beside the 7 are
-{1, 2}, since a shaded 7 allows only those, so the other two edges are {3, 4}. The 4's shaded neighbours can only be the 9,
-so its three neighbours in the box hold the 5, 6 and 9, and the far corner from the 4 is the 8. What this limits outside the
-box, for a shaded neighbour:
+Box 1 with a circled 7 on r3c3, every valid fill judged alone, by plain brute force over digits and shadings: **72**, with 68
+different digit fills, since 4 fills have two shadings. The unshaded pair is 4 and 5 in 48 and 5 and 6 in 24. The 7 is shaded in
+all 72. A box's symmetries give every corner the same count.
 
-| 7 at | The 7's neighbours | Edges with outside neighbours | Limits |
-|---|---|---|---|
-| r3c3 | r3c4, r4c3 are each exactly one digit: the 1 or 2 not in that line | r2c3, r3c2 are {1, 2}: 6 or higher, or 7 or higher | 4 |
-| r1c3 | r1c4 is exactly one digit | r2c3 is 1 or 2; r3c2 is 3 or 4: 8 or 9, or just 9 | 3 |
-| r1c1 | none, both inside the box | r2c3, r3c2 are {3, 4}: 8 or 9, and just 9 | 2 |
-
-This counts forcing only. A tighter corner may also have fewer solutions, and none of the three is known to have a grid.
+**Correction, 2026-11-05.** An earlier version here said all four edges are shaded lows, the 7's neighbours are {1, 2}, and
+ranked the corners by a table of limits built on that. That covers only the 24 with 5 and 6 unshaded, so the table is withdrawn.
+What still holds: a shaded neighbour of the 7 is 1 or 2, and only r3c3 and r1c3 have a 7 touching cells outside the box, 2 and
+1 of them. The false edge fact also went into two solves as a constraint. Both were stopped before giving any result.
 
 ```
 1.  8.  5.  3#  4.  6.  7#  2.  9.
