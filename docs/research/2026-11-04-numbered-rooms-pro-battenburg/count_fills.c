@@ -1,6 +1,7 @@
 /* SCRATCH: exact count of sudoku fillings of the inner 7x7 for each border read from
  * stdin, one per line: 32 digits in row-major order of the edge cells. Solver-free,
- * smallest-domain-first search. Prints "<border> <count>" per line.
+ * smallest-domain-first search. Prints "<border> <count>" per line to stdout, and to
+ * stderr "<border>" plus the bitmask of digits seen in each inner cell, row by row.
  *
  * Build: gcc -O2 -o OUT count_fills.c
  */
@@ -12,10 +13,14 @@
 static int rows[9], cols[9], boxes[9];
 static int er[49], ec[49], eb[49];
 static unsigned long long total;
+static int digit[9][9], seen[9][9];
 
 static void search(int n) {
     if (n == 0) {
         total++;
+        for (int r = 1; r < 8; r++)
+            for (int c = 1; c < 8; c++)
+                seen[r][c] |= digit[r][c];
         return;
     }
     int best = -1, best_n = 10, best_mask = 0;
@@ -41,6 +46,7 @@ static void search(int n) {
         rows[r] ^= bit;
         cols[c] ^= bit;
         boxes[b] ^= bit;
+        digit[r][c] = bit;
         search(n - 1);
         rows[r] ^= bit;
         cols[c] ^= bit;
@@ -80,9 +86,15 @@ int main(void) {
             }
         }
         total = 0;
+        memset(seen, 0, sizeof seen);
         search(n);
         printf("%s %llu\n", line, total);
         fflush(stdout);
+        fprintf(stderr, "%s", line);
+        for (int r = 1; r < 8; r++)
+            for (int c = 1; c < 8; c++)
+                fprintf(stderr, " %d", seen[r][c]);
+        fprintf(stderr, "\n");
     }
     return 0;
 }

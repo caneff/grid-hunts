@@ -139,6 +139,12 @@ confirmed on the repo model that forbidding all 32 borders is infeasible, and th
 border's first 30 fillings exist and re-read to exactly these marks. The fill counts
 above 30 rest on `count_fills.c` alone, a solver-free count.
 
+Forced across all those solutions (`nr_full_targets_forced.py`, read from the
+per-cell digits `count_fills.c` records): no digit in any cell and no outside digit.
+Target status is fixed for 36 cells. 12 are always targets: r1c1, r2c2, r2c3, r3c1,
+r3c4, r4c1, r4c3, r4c4, r5c2, r7c2, r8c3, r9c4. 24 are never targets. The other 45 are
+open. Tightest options: r4c1 is 1 or 4, r9c2 is 3 or 8, outside B9 is 1, 2 or 8.
+
 ## Best puzzle so far, step (b)
 
 13 marks, 5 given outside digits, unique:
