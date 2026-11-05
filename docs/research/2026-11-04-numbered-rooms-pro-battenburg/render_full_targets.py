@@ -1,7 +1,7 @@
-"""SCRATCH: draw the 36-target grid. Pink is a target; marks and outside digits are read
+"""SCRATCH: draw a 36-target grid. Pink is a target; marks and outside digits are read
 from the grid by the reader.
 
-Usage: render_full_targets.py OUT_PNG
+Usage: render_full_targets.py OUT_PNG [ROWS]
 """
 
 import os
@@ -21,10 +21,10 @@ BLUE = "#2f55d4"
 CELL = 76
 
 
-def main(out):
-    grid = [[int(d) for d in row] for row in ROWS.split()]
+def main(out, rows=ROWS):
+    grid = [[int(d) for d in row] for row in rows.split()]
     hit = targets(grid)
-    assert len(hit) == 36 and len(marks(grid)) == 13
+    assert len(hit) == 36
     canvas = GridCanvas(11, 11, cell=CELL, margin=16)
     for r, c in hit:
         canvas.shade_cell(r + 1, c + 1, PINK_FILL)
@@ -54,4 +54,4 @@ def main(out):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(*sys.argv[1:])

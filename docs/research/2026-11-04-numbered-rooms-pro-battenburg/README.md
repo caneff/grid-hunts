@@ -147,6 +147,16 @@ Target status is fixed for 36 cells. 12 are always targets: r1c1, r2c2, r2c3, r3
 r3c4, r4c1, r4c3, r4c4, r5c2, r7c2, r8c3, r9c4. 24 are never targets. The other 45 are
 open. Tightest options: r4c1 is 1 or 4, r9c2 is 3 or 8, outside B9 is 1, 2 or 8.
 
+A 36-target grid whose marks alone fix every target (`nr_t36_climb.py`, seed 1, at least
+18 marks, `t36-hits.jsonl`, picture `full-targets-2.png`): 27 marks at r1c2 r1c6 r2c2 r3c2
+r3c7 r3c8 r4c8 r5c1 r5c5 r5c8 r6c3 r6c4 r6c5 r6c8 r7c2 r7c3 r7c4 r7c5 r7c6 r7c7 r7c8 r8c3
+r8c4 r8c5 r8c6 r8c7 r8c8, negative rule on, no givens. Grid 918732456/465819327/273456819/
+346578291/187294563/529361748/851927634/792643185/634185972. On the repo's full model,
+forbidding its target set is infeasible, so every solution has these 36 targets. The marks
+allow 2 borders on the border-only model. Hits came within 4 evaluations, so this is not
+rare at this density. It says nothing about the fewest marks that can do it, and there is
+no hand path yet. Not unique as a puzzle.
+
 ## What forces digits (2026-11-05)
 
 By hand, the four clue families are permutations: the digits of r1 place one top clue

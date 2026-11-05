@@ -49,7 +49,8 @@ def model(board=BOARD, negative=True):
     for cell, literals in hits.items():
         t[cell] = m.NewBoolVar("t")
         m.AddMaxEquality(t[cell], literals)
-    for k in WINDOWS:
+    m.target_vars = t
+    for k in WINDOWS if board is not None else ():
         r, c = k
         a, f, d, e = t[r, c], t[r, c + 1], t[r + 1, c], t[r + 1, c + 1]
         if k in board:
