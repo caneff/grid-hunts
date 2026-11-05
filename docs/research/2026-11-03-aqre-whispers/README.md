@@ -687,8 +687,11 @@ What still holds: a shaded neighbour of the 7 is 1 or 2, and only r3c3 and r1c3 
 
 `aqre_box_seven_r3c3.py`, plain rules with no added facts: **no grid with the forced 7 on r3c3**, with the other six circles on
 any six of the other box centres. Proven INFEASIBLE in 943 s on 8 CP-SAT workers, under the 1,800 s cap, one model only. By
-symmetry the same holds for the box-corner cell nearest the grid's centre in boxes 3, 7 and 9: r3c7, r7c3 and r7c7. Corner 7s on
-r1c1 and on r1c3 are untested.
+symmetry the same holds for the box-corner cell nearest the grid's centre in boxes 3, 7 and 9: r3c7, r7c3 and r7c7. A corner 7 on
+r1c3 is untested.
+
+`aqre_box_seven_cell.py DIR RxC` asks the same of any off-centre cell. r1c1 and r1c2 both timed out, UNKNOWN at the 1,800 s cap
+on 8 workers, which proves nothing. r1c2's box 1 has 72 fills too, 68 digit layouts, with 5 and 6 unshaded in 48 and 4 and 5 in 24.
 
 With box 1's 72 fills, also on r1c1 with the same split: the 7's two neighbours are 1 and 2 in 48, 2 and an unshaded 4 in 12, and
 2 and an unshaded 5 in 12.
