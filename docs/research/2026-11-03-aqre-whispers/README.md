@@ -612,6 +612,32 @@ the shape: `XXXXX. / ...XOX / ....X.`, `XXXX / .X.. / XOX. / .X..`, `XXXX. / ...
 So "the shape only allows 6 max" almost never happens by shape alone. The earlier runs' top-out-at-6 regions rely on
 the 7 being ruled out by colour, or on the 9 in the region.
 
+Shapes that can be 7 but not 8, `aqre_top_seven_picture.py`: 345 alone, with 3,098 circle cells that can still be the 7.
+The other 7 cells are the 4-neighbour circles above. A further 699 shapes can hold 8 alone but have circle cells that can
+be 7 and not 8, 1,789 cells. That is the 4,887 pairs, or 4,760 once symmetry is removed. 203 of the 902 shapes that hold 8
+have no such cell.
+
+### Circles free of any row
+
+Chris's option A, 2026-11-05: 8 different circles, one region able to be the 8 by shape, then one able to be the 7, the
+rest topping out at 6. `aqre_free_circle_classes.py` tests 10,931 free shape and circle pairs in 9 s, and all 52,698
+one-cell regions in the r5 catalogue get the same entry. A low-coloured circle can never be the 8. 6,160 pairs can be the
+8. Of the 4,771 that cannot, by colour once the 8 sets it:
+
+| Circle on the 8's colour | Circle on the other colour | Pairs |
+|---|---|---|
+| refused, shaded 7 and unshaded 7 both fit | forced 7 | 1,618 |
+| refused | tops out at 6 | 1,524 |
+| forced 7 | forced 7 | 886 |
+| forced 7 | tops out at 6 | 703 |
+| tops out at 6 | forced 7 | 29 |
+| tops out at 6 | tops out at 6 | 11 |
+
+So topping out at 6 needs the other colour: 2,238 pairs on 885 shapes, against 40 pairs on 30 shapes on the 8's colour.
+This is a likely reason the one-row form had so few layouts, not a proof. A row alternates colours, so with the 8 on an
+even column 3 other circles share its colour and only 1 of them can be the 7. The other 2 must come from those 40 pairs.
+Free circles can put all six on the other colour.
+
 ### Rule dropping, stopped
 
 `aqre_row_diagnose.py DIR FILE ROW` re-solved layouts with one rule dropped at a time. Chris had it stopped at 6 of
