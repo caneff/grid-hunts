@@ -651,7 +651,26 @@ neighbours. If the highs are on the edges, the lows fill 4 of the other 5 cells,
 least 2 of them. Both fail. So the 6 is the second unshaded cell: a box counting 7 leaves exactly the 5 and 6 unshaded.
 
 An empty board of this arrangement, built by `uv run python aqre_box_seven_link.py FILE` with circles on the centres of
-boxes 1, 3, 4, 6, 7 and 9 and on r4c5: https://sudokumaker.app/p/DfGhj6JK7Q. Not known to have a solution.
+boxes 1, 3, 4, 6, 7 and 9 and on r4c5: https://sudokumaker.app/p/DfGhj6JK7Q. `aqre_box_seven_fixed.py` proves it
+**infeasible**, in 270 s on one CP-SAT worker, one model only.
+
+**The arrangement itself has grids.** `aqre_box_seven.py`, with the solver choosing the circle boxes, found one in 712 s on
+one worker, under the 900 s cap, and its plain Python check passes, as does a count by hand of all 7 circles
+(`box-seven.json`, `#` shaded, `o` circled). Circles are on the centres of boxes 1, 3, 4, 6, 7 and 9 and on r8c4, an edge of
+box 8, which is the 7. Boxes 2 and 5 have none. Box 8 leaves exactly the 5 and 6 unshaded, as the proof above says. Empty
+board: https://sudokumaker.app/p/9LPnHP7F6N. Uniqueness is not tested.
+
+```
+1.  8.  5.  3#  4.  6.  7#  2.  9.
+6.  3.o 2#  9#  7.  8#  1#  4.o 5.
+7.  4#  9#  5.  2.  1#  8#  3#  6.
+3#  9#  4.  6#  1#  7#  5.  8#  2#
+8#  5.o 1.  4.  9#  2.  3.  6.o 7#
+2#  7#  6.  8.  3#  5.  4#  9#  1#
+5.  1#  8#  2#  6.  4#  9#  7.  3.
+4.  2.o 3.  7#o 5.  9#  6.  1.o 8.
+9.  6.  7.  1#  8#  3#  2.  5.  4.
+```
 
 ### Rule dropping, stopped
 

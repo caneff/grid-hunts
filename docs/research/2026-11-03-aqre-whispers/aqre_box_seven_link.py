@@ -1,6 +1,6 @@
 """SCRATCH: an empty 9x9 SudokuMaker board with plain boxes and 7 circles: six on box centres, one off centre.
 
-usage: aqre_box_seven_link.py OUT_FILE
+usage: aqre_box_seven_link.py OUT_FILE [RxC ...]
 
 Circles are cosmetic ellipses (type 2002), in the form `finders/qqrr/opener.json` uses. Boxes 2 and 8 hold no circle.
 The off-centre circle is r4c5, an edge of box 5. No digits are entered.
@@ -10,7 +10,7 @@ import sys
 
 from sudoku_kit.link_codec import encode_link
 
-CIRCLES = [(2, 2), (2, 8), (5, 2), (5, 8), (8, 2), (8, 8), (4, 5)]
+CIRCLES = [tuple(map(int, x.split("x"))) for x in sys.argv[2:]] or [(2, 2), (2, 8), (5, 2), (5, 8), (8, 2), (8, 8), (4, 5)]
 
 regions = [(r // 3) * 3 + c // 3 for r in range(9) for c in range(9)]
 doc = {
