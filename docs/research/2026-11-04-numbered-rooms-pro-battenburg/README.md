@@ -685,6 +685,12 @@ borders, 9,148 after the pairs): no set of 1 or 2 finishes, 9 sets of 3 do, for 
 L4=3 R5=5 R8=9; L4=9 R5=3 B3=7; L4=6 R5=3 B3=7; L4=3 R6=5 R8=9; L5=3 R4=5 B6=9; L6=3 R4=5 B6=9;
 R4=5 R5=3 B6=9; R4=5 R6=3 B6=9; R6=7 R8=9 T7=6; R6=3 R8=9 T7=6; R6=7 B3=3 B6=6.
 
+The upper clump's target pattern is the same on all 3 borders, and r1c9 = 9 on all of them (`nr_border_clues.py`).
+Chris's hand route (2026-11-05): r9c9 is a target and holds 4 or 6, so it is not 1 and does not read itself; r9c1
+is 6, not 9; so the only route left to the corner is r1c9 = 9. The checker agrees: r9c9 = 4, r9c1 = 6. So B9 = 8 is
+not needed to open the board. With B9 = 8 added anyway (`board28.json`, `min-outside-pairs-b9.jsonl`) the minimum is
+still 3 more, 16 sets, not SAT-checked.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
