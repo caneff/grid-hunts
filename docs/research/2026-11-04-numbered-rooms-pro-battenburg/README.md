@@ -552,6 +552,12 @@ Link, no givens:
 
 https://sudokumaker.app/p/7bjhMWWNRC
 
+Why r1c9 = 8 fails there: no short reason known. By hand it makes r1c2 a target, and the marks
+with the negative rule then force his colouring along r1-r3, r4-r7 in c1, c2, c7, c8, c9 and the
+r8-r9 run. `nr_board18_why.py` finds a set of 15 unmarked windows that fail together, each one
+needed: r3c3 r3c8 r4c2 r4c6 r5c1 r5c3 r5c4 r5c5 r5c6 r5c8 r7c2 r7c6 r7c8 r8c3 r8c7. Dropping any
+one gives a grid. That is one minimal set, not necessarily the smallest.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
