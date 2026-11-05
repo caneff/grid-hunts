@@ -157,6 +157,20 @@ allow 2 borders on the border-only model. Hits came within 4 evaluations, so thi
 rare at this density. It says nothing about the fewest marks that can do it, and there is
 no hand path yet. Not unique as a puzzle.
 
+Link, no givens (`build_link_t36.py`):
+
+https://sudokumaker.app/p/hWHLr9dQzw
+
+Chris's solve state on that board (2026-11-05, all correct against the grid) was traced by
+`nr_t36_next.py`, which applies simple rules and tries each open fact one step ahead.
+Short steps: r4 holds r4c7, r4c9 and one of r4c2/r4c3, so at most one of r4c1 and r4c4 is
+a target. r1c1 = 2 fails in 6 steps through unmarked window r1c1 and mark r1c2. A line with
+4 known targets takes each clue on a different cell, so r5 to r8 have first digit + last
+digit != 10, and so do c2, c3, c6, c7 and c8 between r1 and r9. Beyond those, the next
+forced facts, r1c1 not a target (68 steps) and r4c1 a target (78 steps), were long chains,
+and the tracer stalled with 18 cells open. This is evidence that the board is hard by hand
+from there, not proof: the tracer knows only these rules.
+
 ## Digits fixed by the border alone (2026-11-05)
 
 No marks or clues, only the 32 border digits. `fill_climb.c` climbs on the exact number
