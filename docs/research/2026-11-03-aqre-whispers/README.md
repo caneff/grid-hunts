@@ -650,6 +650,56 @@ If the highs are on the corners-and-centre colour, the four lows fill all the ed
 neighbours. If the highs are on the edges, the lows fill 4 of the other 5 cells, and the 6's 3 neighbours include at
 least 2 of them. Both fail. So the 6 is the second unshaded cell: a box counting 7 leaves exactly the 5 and 6 unshaded.
 
+An empty board of this arrangement, built by `uv run python aqre_box_seven_link.py FILE` with circles on the centres of
+boxes 1, 3, 4, 6, 7 and 9 and on r4c5: https://sudokumaker.app/p/DfGhj6JK7Q. `aqre_box_seven_fixed.py` proves it
+**infeasible**, in 270 s on one CP-SAT worker, one model only.
+
+**The arrangement itself has grids.** `aqre_box_seven.py`, with the solver choosing the circle boxes, found one in 712 s on
+one worker, under the 900 s cap, and its plain Python check passes, as does a count by hand of all 7 circles
+(`box-seven.json`, `#` shaded, `o` circled). Circles are on the centres of boxes 1, 3, 4, 6, 7 and 9 and on r8c4, an edge of
+box 8, which is the 7. Boxes 2 and 5 have none. Box 8 leaves exactly the 5 and 6 unshaded, as the proof above says. Empty
+board: https://sudokumaker.app/p/9LPnHP7F6N. Uniqueness is not tested.
+
+What a box's circle cell allows, judged alone, by count and by whether the circle can be shaded (S) or unshaded (U):
+
+| Cell, colour | 1-4 | 5 | 6 | 7 |
+|---|---|---|---|---|
+| corner or edge, high | U | U | S or U | S |
+| corner or edge, low | S or U | U | U | none |
+| centre, high | U | U | U | none |
+| centre, low | S or U | U | U | none |
+
+So the counts 1 to 6 fit every cell on either colour, and no single box forces the 6. What colour does give is shading: a
+circle on the high colour is unshaded unless it is the 7 or a corner or edge 6. Forcing the 7 by position alone needs
+exactly one off-centre circle, because any off-centre circle can be the 7. So the free choices are its box, its cell and
+the two empty boxes: 2,016 placements before the board's 8 symmetries. Corners share the centres' colour, so a corner 7
+makes all six centre circles unshaded at once. An edge 7 makes them low and tells nothing about their shading.
+
+Which corner of box 1, by hand, no solve run. With a corner 7 the four edges hold the lows. The two edges beside the 7 are
+{1, 2}, since a shaded 7 allows only those, so the other two edges are {3, 4}. The 4's shaded neighbours can only be the 9,
+so its three neighbours in the box hold the 5, 6 and 9, and the far corner from the 4 is the 8. What this limits outside the
+box, for a shaded neighbour:
+
+| 7 at | The 7's neighbours | Edges with outside neighbours | Limits |
+|---|---|---|---|
+| r3c3 | r3c4, r4c3 are each exactly one digit: the 1 or 2 not in that line | r2c3, r3c2 are {1, 2}: 6 or higher, or 7 or higher | 4 |
+| r1c3 | r1c4 is exactly one digit | r2c3 is 1 or 2; r3c2 is 3 or 4: 8 or 9, or just 9 | 3 |
+| r1c1 | none, both inside the box | r2c3, r3c2 are {3, 4}: 8 or 9, and just 9 | 2 |
+
+This counts forcing only. A tighter corner may also have fewer solutions, and none of the three is known to have a grid.
+
+```
+1.  8.  5.  3#  4.  6.  7#  2.  9.
+6.  3.o 2#  9#  7.  8#  1#  4.o 5.
+7.  4#  9#  5.  2.  1#  8#  3#  6.
+3#  9#  4.  6#  1#  7#  5.  8#  2#
+8#  5.o 1.  4.  9#  2.  3.  6.o 7#
+2#  7#  6.  8.  3#  5.  4#  9#  1#
+5.  1#  8#  2#  6.  4#  9#  7.  3.
+4.  2.o 3.  7#o 5.  9#  6.  1.o 8.
+9.  6.  7.  1#  8#  3#  2.  5.  4.
+```
+
 ### Rule dropping, stopped
 
 `aqre_row_diagnose.py DIR FILE ROW` re-solved layouts with one rule dropped at a time. Chris had it stopped at 6 of
