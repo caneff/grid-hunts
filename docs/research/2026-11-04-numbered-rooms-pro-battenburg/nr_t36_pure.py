@@ -50,6 +50,9 @@ class Patterns(cp_model.CpSolverSolutionCallback):
             self.StopSearch()
 
 
+EXACT = False  # True when the solver may assume exactly 36 targets, so 4 in every line.
+
+
 def patterns(board):
     """(count, one pattern, open cells), the count capped at CAP."""
     m = cp_model.CpModel()
@@ -57,7 +60,7 @@ def patterns(board):
     for i in range(9):
         for line in ([(i, c) for c in range(9)], [(r, i) for r in range(9)]):
             total = sum(t[c] for c in line)
-            m.Add(total >= 1)
+            m.Add(total >= (4 if EXACT else 1))
             m.Add(total <= 4)
     for r, c in WINDOWS:
         a, f, d, e = t[r, c], t[r, c + 1], t[r + 1, c], t[r + 1, c + 1]

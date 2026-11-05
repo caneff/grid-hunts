@@ -183,6 +183,18 @@ r8c2 r8c3 r8c6 r8c7 r8c8. Grid 724615389/819243576/536789241/452391768/173864952
 
 https://sudokumaker.app/p/7mdPh6wG98
 
+Fewer marks under the same no-digit rules (`nr_t36_pure_fewer.py`, seed 7, 900 s,
+`t36-pure-fewer.jsonl`, picture `full-targets-3.png`): 25 marks, exactly one pattern with
+36 targets, rechecked by a separate enumeration: r1c1 r1c3 r1c4 r1c8 r2c6 r2c8 r3c2 r3c4 r3c5
+r3c6 r3c8 r4c4 r4c5 r5c1 r5c2 r5c3 r5c7 r6c5 r6c8 r7c1 r7c2 r8c1 r8c4 r8c5 r8c7. Grid
+286319547/751248396/349675821/512984673/634752918/897136254/128493765/975861432/463527189.
+An upper bound from a search, not a minimum. Link, no givens:
+
+https://sudokumaker.app/p/mbCgPDpBMW
+
+Chris dropped a variant that assumes exactly 36 targets, so 4 in every line, as a rule the
+solver may use (2026-11-05). At most 4 per line already caps the total at 36.
+
 Under the looser meaning, all the rules allowed, `nr_t36_fewer.py` (seed 3, 900 s,
 `t36-fewer.jsonl`) got down to 14 marks fixing all 36 targets, proven on the full model:
 grid 761394852/592178364/834562719/123487695/957216483/648935271/416753928/379821546/

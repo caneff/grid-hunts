@@ -1,0 +1,17 @@
+{"kind": "best", "evals": 1, "limit": 31, "t": 4, "patterns": 20000, "complete": false, "open": 43, "marks": 9}
+{"kind": "best", "evals": 3, "limit": 31, "t": 6, "patterns": 3060, "complete": true, "open": 61, "marks": 17}
+{"kind": "best", "evals": 7, "limit": 31, "t": 12, "patterns": 716, "complete": true, "open": 24, "marks": 19}
+{"kind": "best", "evals": 9, "limit": 31, "t": 12, "patterns": 523, "complete": true, "open": 23, "marks": 19}
+{"kind": "best", "evals": 10, "limit": 31, "t": 12, "patterns": 387, "complete": true, "open": 29, "marks": 18}
+{"kind": "best", "evals": 12, "limit": 31, "t": 14, "patterns": 8, "complete": true, "open": 8, "marks": 22}
+{"kind": "best", "evals": 41, "limit": 31, "t": 38, "patterns": 1, "complete": true, "open": 0, "marks": 25}
+{"kind": "HIT", "evals": 41, "limit": 31, "t": 38, "count": 25, "marks": [[0, 0], [0, 2], [0, 3], [0, 7], [1, 5], [1, 7], [2, 1], [2, 3], [2, 4], [2, 5], [2, 7], [3, 3], [3, 4], [4, 0], [4, 1], [4, 2], [4, 6], [5, 4], [5, 7], [6, 0], [6, 1], [7, 0], [7, 3], [7, 4], [7, 6]], "grid": "286319547 751248396 349675821 512984673 634752918 897136254 128493765 975861432 463527189"}
+{"kind": "best", "evals": 42, "limit": 24, "t": 42, "patterns": 20000, "complete": false, "open": 66, "marks": 14}
+{"kind": "best", "evals": 70, "limit": 24, "t": 90, "patterns": 6594, "complete": true, "open": 28, "marks": 16}
+{"kind": "best", "evals": 72, "limit": 24, "t": 92, "patterns": 29, "complete": true, "open": 6, "marks": 22}
+{"kind": "best", "evals": 76, "limit": 24, "t": 94, "patterns": 24, "complete": true, "open": 5, "marks": 22}
+{"kind": "best", "evals": 95, "limit": 24, "t": 110, "patterns": 19, "complete": true, "open": 5, "marks": 21}
+{"kind": "best", "evals": 129, "limit": 24, "t": 140, "patterns": 4, "complete": true, "open": 2, "marks": 21}
+{"kind": "best", "evals": 526, "limit": 24, "t": 601, "patterns": 3, "complete": true, "open": 2, "marks": 24}
+{"kind": "best", "evals": 527, "limit": 24, "t": 601, "patterns": 2, "complete": true, "open": 1, "marks": 24}
+{"kind": "done", "evals": 753, "limit": 24, "t": 900}

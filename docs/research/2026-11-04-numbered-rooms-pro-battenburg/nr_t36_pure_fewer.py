@@ -3,9 +3,9 @@
 The climb of nr_t36_fewer.py scored by nr_t36_pure.patterns: a hit needs exactly one
 yes/no pattern under the marks, the negative rule and 1 to 4 targets per line, with a
 grid behind it. Each hit lowers the mark limit. It finds upper bounds, never a minimum.
-One worker.
+With "exact", the solver may also assume exactly 36 targets, so 4 in every line. One worker.
 
-Usage: nr_t36_pure_fewer.py SECONDS SEED START_LIMIT OUT
+Usage: nr_t36_pure_fewer.py SECONDS SEED START_LIMIT OUT [exact]
 """
 
 import json
@@ -15,6 +15,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import nr_t36_pure
 from nr_full_targets_edges import BORDER
 from nr_t36_climb import read_targets
 from nr_t36_fewer import sample
@@ -72,4 +73,5 @@ def main(seconds, seed, limit, out):
 
 
 if __name__ == "__main__":
+    nr_t36_pure.EXACT = sys.argv[5:] == ["exact"]
     main(float(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]), sys.argv[4])
