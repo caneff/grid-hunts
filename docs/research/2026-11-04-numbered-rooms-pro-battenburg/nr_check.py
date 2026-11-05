@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from nr import WINDOWS, build, is_sudoku, marks, outside, show, targets
+from nr import CLUES, WINDOWS, build, clue_name, is_sudoku, marks, outside, show, targets
 from sudoku_kit.cpsat import SOLVED, UNKNOWN, solver
 
 CAP = 200
@@ -180,6 +180,7 @@ def main(path, *flags):
             row += "X" if yes and not no else "." if no and not yes else "?"
         print(row, flush=True)
     print("digits with 4 or fewer options")
+    options = {}
     for r in range(9):
         row = []
         for c in range(9):
@@ -188,8 +189,40 @@ def main(path, *flags):
                 for d in range(1, 10)
                 if seen(lambda g, r=r, c=c, d=d: g[r][c] == d, lambda m, x, b, t, r=r, c=c, d=d: m.Add(x[r, c] == d))
             ]
+            options[nm((r, c))] = allowed
             row.append("".join(map(str, allowed)) if len(allowed) <= 4 else ".")
         print(f"r{r + 1}", " ".join(f"{v:>5}" for v in row), flush=True)
+    out = next((f[5:] for f in flags if f.startswith("json=")), None)
+    if out:
+        data = json.loads(Path(path).read_text())
+        status = {
+            nm((r, c)): [any((r, c) in targets(g) for g in pool), any((r, c) not in targets(g) for g in pool)]
+            for r in range(9)
+            for c in range(9)
+        }
+        for r in range(9):
+            for c in range(9):
+                name = nm((r, c))
+                for i, v in enumerate((1, 0)):
+                    if not status[name][i]:
+                        status[name][i] = bool(board.solve(items, lambda m, x, b, t, r=r, c=c, v=v: m.Add(t[r, c] == v)))
+        ring = {}
+        for clue in CLUES:
+            name = clue_name(clue)
+            given = data.get("outside", {}).get(name)
+            allowed = []
+            for d in range(1, 10) if given is None else (given,):
+                if any(outside(g)[clue] == d for g in pool):
+                    allowed.append(d)
+                    continue
+                trial = Board({**data, "outside": {**data.get("outside", {}), name: d}}, board.negative)
+                g = trial.solve(trial.items)
+                if g:
+                    pool.append(g)
+                    allowed.append(d)
+            ring[name] = allowed
+        Path(out).write_text(json.dumps({"options": options, "status": status, "outside": ring}))
+        print("wrote", out, flush=True)
 
 
 if __name__ == "__main__":
