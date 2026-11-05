@@ -53,6 +53,15 @@ def main(path, binary):
         print("  border", text, fills)
         digit = dict(zip(BORDER, map(int, text), strict=True))
         table = {k: counts[i * 9 : i * 9 + 9] for i, k in enumerate(inner)}
+        keep_border = True
+        for name, value in data.get("outside", {}).items():
+            cells = line_cells((name[0], int(name[1:]) - 1))
+            target = cells[digit[cells[0]] - 1]
+            assert target in digit, "only outside digits read from the border can be given"
+            keep_border = keep_border and digit[target] == value
+        if not keep_border:
+            total -= fills
+            continue
         for clue in CLUES:
             cells = line_cells(clue)
             target = cells[digit[cells[0]] - 1]

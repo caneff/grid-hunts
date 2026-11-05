@@ -574,7 +574,13 @@ R9, T1, T6, T9, B1, B4, B7 are forced (4, 1, 7, 3, 7, 8, 1, 4, 4, 1, 5) and add 
 
 B9 = 8 settles his magenta/purple pair at once: B9 reads a cell of c9, r1c9 is not a target, so it
 cannot read r1c9, and if r1c9 = 8 no other c9 cell can hold 8. So r1c9 = 9 and purple are the
-targets. It also picks the border. Spec for promoting these scripts: #100.
+targets. It also picks the border. Spec for promoting these scripts: #100. T9 can only be 4: it also
+rules out magenta on the solver, even with no negative constraint, but no short chain was found.
+
+Chris took B9 = 8 (`board20.json`, `nr_check.py`, negative on): one border, 184,900 solutions, r5c1 = 2,
+r6c1 = 9, r5c9 = 1, r6c9 = 8, and r6c6 = 2 is the first forced inner digit, a hidden single in box 5,
+since r4c9, r5c1, r1c4 and r9c5 hold the other 2s reaching it. Only inner cells are open now, and all 81
+target statuses are fixed.
 
 ## Step (a)
 
