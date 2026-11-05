@@ -696,7 +696,9 @@ digits, colours, pencils and corner marks) holds, with every colour right. His l
 fails: in every sudoku completion of his digits the marked window r4c8 is not a checkerboard, because r5c9 has no
 route. r5c9 is a target, reached only by r5c1 = 9 or r5c9 = 1, and r6c9 likewise only by r6c1 = 9 or r6c9 = 1; he
 put both the 9 and the 1 in r6. His extra clues L4, R5, B3 were entered, not given, which is why the app counted
-several solutions; the app also does not read the marks.
+several solutions; the app also does not read the marks. With L4 = 9, R5 = 3, B3 = 7 as givens, his earlier
+position fails too (`board32.json`): three entries fit only the 6-clue version, found one minimal clash at a time:
+the corner 1s in r2c2/r2c3, the r2c8 pencil 2, 4, 6, and r3c8 = 1. The solution has r2c8 = 1 and r3c8 = 4.
 
 ## Step (a)
 
