@@ -1,6 +1,6 @@
 """SCRATCH: check one of Chris's boards under his standing ruling.
 
-No negative rule. Holds every mark, colour, digit and pencil mark. Reads a JSON file:
+No negative rule unless "negative" is passed. Holds every mark, colour, digit and pencil mark. Reads a JSON file:
 {"marks": ["r2c1", ...], "pink": [...], "green": [...], "digits": {"r1c1": 9},
  "pencils": {"r2c1": "2367"}, "outside": {"T7": 5},
  "corners": [{"digit": 9, "cells": ["r4c1", "r7c1"]}]}, a corner set meaning the digit is in
@@ -8,7 +8,7 @@ No negative rule. Holds every mark, colour, digit and pencil mark. Reads a JSON 
 conflict if it fails, otherwise each cell's target status and digits, and a count of
 grids to CAP. Every grid is re-read by the reader. One worker; a timeout raises.
 
-Usage: nr_check.py BOARD_JSON
+Usage: nr_check.py BOARD_JSON [negative]
 """
 
 import json
@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from nr import build, is_sudoku, marks, outside, show, targets
+from nr import WINDOWS, build, is_sudoku, marks, outside, show, targets
 from sudoku_kit.cpsat import SOLVED, UNKNOWN, solver
 
 CAP = 200
@@ -33,7 +33,8 @@ def nm(k):
 
 
 class Board:
-    def __init__(self, data):
+    def __init__(self, data, negative=False):
+        self.negative = negative
         self.marks = frozenset(cell(n) for n in data.get("marks", []))
         self.ring = {(k[0], int(k[1:]) - 1): v for k, v in data.get("outside", {}).items()}
         self.items = (
@@ -45,7 +46,7 @@ class Board:
         )
 
     def model(self, items):
-        m, x, b, t = build(None, self.ring)
+        m, x, b, t = build(self.marks if self.negative else None, self.ring)
         for r, c in self.marks:
             a, f, d, e = t[r, c], t[r, c + 1], t[r + 1, c], t[r + 1, c + 1]
             m.Add(a == e)
@@ -77,7 +78,7 @@ class Board:
         return grid
 
     def reread(self, grid, items):
-        assert is_sudoku(grid) and self.marks <= marks(grid)
+        assert is_sudoku(grid) and (marks(grid) == self.marks if self.negative else self.marks <= marks(grid))
         hit = targets(grid)
         ring = outside(grid)
         assert all(ring[k] == v for k, v in self.ring.items())
@@ -93,8 +94,23 @@ class Board:
 
 
 def bad_marks(board, items):
-    """Marks alone fail: the smallest clashing set, then each single removal."""
+    """Marks alone fail: the smallest clashing set, then each single removal or addition."""
     all_marks = board.marks
+    if board.negative:
+        drop = []
+        for k in sorted(all_marks):
+            board.marks = all_marks - {k}
+            if board.solve([]):
+                drop.append((nm(k), bool(board.solve(items))))
+        add = []
+        for k in WINDOWS:
+            if k not in all_marks:
+                board.marks = all_marks | {k}
+                if board.solve([]):
+                    add.append((nm(k), bool(board.solve(items))))
+        print("(mark, also with everything drawn) feasible after removing:", drop, flush=True)
+        print("(mark, also with everything drawn) feasible after adding:", add, flush=True)
+        return
     core = set(all_marks)
     for k in sorted(all_marks):
         board.marks = frozenset(core - {k})
@@ -115,8 +131,8 @@ def bad_marks(board, items):
             print("    conflict:", [(kind, nm(c), v) for kind, c, v in rest], flush=True)
 
 
-def main(path):
-    board = Board(json.loads(Path(path).read_text()))
+def main(path, *flags):
+    board = Board(json.loads(Path(path).read_text()), "negative" in flags)
     items = board.items
     alone = bool(board.solve([]))
     print("marks alone feasible:", alone, flush=True)
@@ -177,4 +193,4 @@ def main(path):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(*sys.argv[1:])
