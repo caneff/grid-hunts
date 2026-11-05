@@ -666,6 +666,11 @@ forced digit, and 10 statuses are open. Pair digits possible on the full model: 
 as 1, each an end cell holding 1 that reads itself while the other end holds 9; T6 = B6 as 1, 3, 4 or 5, which
 with r1c6 = 8 and r9c6 = 2 reads r8c6, or as 1 with r1c6 = 1 and r9c6 = 9.
 
+Two matching pairs in one grid (`nr_pair_two.py`, full model, grids re-read): none when removing r1c5 or r4c1.
+A pair whose digit is 1 is an end cell holding 1 reading itself; any other digit is read from an inner cell.
+Inner-cell pairs together: remove r6c8, c5 and r9 (witness c5 = 8, r9 = 7); remove r4c8, r5 and r9 (r5 = 5,
+r9 = 7); remove r6c1, r7 and r9 (r7 = 9, r9 = 7). Remove r8c5 allows only c4 = 1 with r4 = 1. Witness digits only.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
