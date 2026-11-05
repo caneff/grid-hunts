@@ -130,7 +130,14 @@ Neither rules out one such grid.
 `nr_full_targets.py`, read back by the reader: 4 targets in every row and column, 13
 marks at r1c1, r1c7, r2c1, r2c3, r3c5, r4c1, r4c2, r5c4, r5c5, r6c6, r7c2, r8c3, r8c8.
 Grid 621483759/359721684/487596321/168942537/593617248/274835916/915378462/846259173/
-732164895.
+732164895. Picture `full-targets-1.png`.
+
+Those 13 marks alone, negative rule on, have exactly 7,669,122 solutions, spread over
+32 borders with 34,849 to 617,449 fillings each. `nr_full_targets_edges.py` enumerated
+the borders to OPTIMAL, `count_fills.c` counted each exactly. `nr_full_targets_check.py`
+confirmed on the repo model that forbidding all 32 borders is infeasible, and that each
+border's first 30 fillings exist and re-read to exactly these marks. The fill counts
+above 30 rest on `count_fills.c` alone, a solver-free count.
 
 ## Best puzzle so far, step (b)
 
