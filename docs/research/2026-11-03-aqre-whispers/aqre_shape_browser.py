@@ -132,7 +132,7 @@ const SETS = [
   {id: "seven", n: "Can be 7, not 8", d: "No circle lets it hold 8; it can hold 7 alone", test: s => s.t === 7},
   {id: "circle", n: "Can hold 8, but some cells can't", d: "Dotted circle cells can be 7 but not 8", test: s => s.t === 8 && s.k.some(notEightButSeven)},
   {id: "six", n: "Tops out at 6", d: "At least one circle cell tops out at 6", test: s => s.k.some(c => !c.e && !anySeven(c))},
-  {id: "rest", n: "No 7-not-8 cell", d: "Holds 8 alone, and every circle cell is either 8-able or tops out", test: s => s.t === 8 && !s.k.some(notEightButSeven)},
+  {id: "rest", n: "Always able to be the 8", d: "The circle can be the 8 on all 9 cells", test: s => s.t === 8 && !s.k.some(notEightButSeven)},
   {id: "all", n: "All shapes", d: "Every shape without a hole", test: () => true},
 ];
 const MARKS = [
