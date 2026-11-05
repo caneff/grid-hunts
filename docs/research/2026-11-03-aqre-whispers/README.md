@@ -574,6 +574,70 @@ even distance apart and each an odd distance from the 8, and the shape stops the
 test allowed this case and it gave 0 layouts in that shape, over the 77 finished placements. The capped one is open.
 So the shape's 562 solved layouts say nothing about this setup.
 
+Every shape, `aqre_nine_wrong_colour.py`, 2026-11-04, on Chris's go: **no grid in this setup.** It ran all 60,208 live
+one-cell placements of the 794 shapes that have them, on 24 processes in 6,657 s (1.8 h). No placement hit the 30-minute
+cap, so this is a proof over the stated space. The longest took 580 s. The run also checks that no shared region here
+can be the 7, and that check never fired.
+
+| row | placements | cases | boards | layouts | relaxed infeasible | CPU seconds |
+|---|---|---|---|---|---|---|
+| r1 | 5,170 | 7,834 | 0 | 0 | 0 | 9 |
+| r2 | 10,930 | 52,032 | 0 | 0 | 0 | 1,646 |
+| r3 | 14,689 | 421,334 | 0 | 0 | 0 | 13,017 |
+| r4 | 18,889 | 637,440 | 13,278 | 0 | 0 | 95,651 |
+| r5 | 10,530 | 600,402 | 27,060 | 12 | 12 | 32,458 |
+
+24,481 placements have no case at all. The 12 layouts are all r5 with the 8 in c2, and the 9 and shared circle on c5 and
+c7 in either order: 8 from shape `X.... / XXXXX / X.XX.` and 4 from shape `X. / X. / XX / XX / X. / XX`. All 12 fail
+without connectivity. The search control passed on the first layout: 112 regions, the search and a plain search both
+give 1 layout, and the planted layout is found. The earlier test's capped placement finished here with 0 layouts.
+
+The space: 8 circles on one of r1 to r5 (r6 to r9 by flip, columns by a 90 degree turn), the 8 region holding one row
+cell and the only one able to hold an 8 by shape, the shared region's circle and 9 each an odd distance from the 8, one
+forced 7, the others topping out at 6 with counts matchable, every region judged alone. Not covered: the 9 in the
+shared region on the right colour, the 9 in the ninth region, and any region ruled out only with help from outside it.
+
+### Shapes that top out at 6
+
+`aqre_top_six_shapes.py DIR` tests every free 9-cell shape, 1,248 after leaving out the 37 holed ones of the known
+1,285. Judged alone, with no circle and either colouring, the highest shaded count is 8 for 902 shapes, 7 for 345 and 6
+for 1, in 18 s on one process. `region_holds`, the solver check, agreed on every shape's 7 and 8, and all 796 screen
+shapes hold 8.
+
+The 1 shape is `.X.X. / XXXXX / .X.X.`. With a circle holding the count's digit, 16 of the 11,232 shape and circle pairs
+top out at 6, or 11 once symmetry is removed: 4 on that shape and 7 on others. In those 7 the circle has 4 neighbours in
+the shape: `XXXXX. / ...XOX / ....X.`, `XXXX / .X.. / XOX. / .X..`, `XXXX. / ...X. / ..XOX / ...X.`, `XXX / XOX / XXX`,
+`XX.X. / XXXOX / ...X.`, `XX.. / XXX. / .XOX / ..X.` and `.X..... / XOXXXXX / .X.....`. Picture: `aqre_top_six_picture.py`.
+
+So "the shape only allows 6 max" almost never happens by shape alone. The earlier runs' top-out-at-6 regions rely on
+the 7 being ruled out by colour, or on the 9 in the region.
+
+Shapes that can be 7 but not 8, `aqre_top_seven_picture.py`: 345 alone, with 3,098 circle cells that can still be the 7.
+The other 7 cells are the 4-neighbour circles above. A further 699 shapes can hold 8 alone but have circle cells that can
+be 7 and not 8, 1,789 cells. That is the 4,887 pairs, or 4,760 once symmetry is removed. 203 of the 902 shapes that hold 8
+have no such cell.
+
+### Circles free of any row
+
+Chris's option A, 2026-11-05: 8 different circles, one region able to be the 8 by shape, then one able to be the 7, the
+rest topping out at 6. `aqre_free_circle_classes.py` tests 10,931 free shape and circle pairs in 9 s, and all 52,698
+one-cell regions in the r5 catalogue get the same entry. A low-coloured circle can never be the 8. 6,160 pairs can be the
+8. Of the 4,771 that cannot, by colour once the 8 sets it:
+
+| Circle on the 8's colour | Circle on the other colour | Pairs |
+|---|---|---|
+| refused, shaded 7 and unshaded 7 both fit | forced 7 | 1,618 |
+| refused | tops out at 6 | 1,524 |
+| forced 7 | forced 7 | 886 |
+| forced 7 | tops out at 6 | 703 |
+| tops out at 6 | forced 7 | 29 |
+| tops out at 6 | tops out at 6 | 11 |
+
+So topping out at 6 needs the other colour: 2,238 pairs on 885 shapes, against 40 pairs on 30 shapes on the 8's colour.
+This is a likely reason the one-row form had so few layouts, not a proof. A row alternates colours, so with the 8 on an
+even column 3 other circles share its colour and only 1 of them can be the 7. The other 2 must come from those 40 pairs.
+Free circles can put all six on the other colour.
+
 ### Rule dropping, stopped
 
 `aqre_row_diagnose.py DIR FILE ROW` re-solved layouts with one rule dropped at a time. Chris had it stopped at 6 of
@@ -622,6 +686,9 @@ All 2026-11-03.
 - 2026-11-04: the 8 circles must share one row or column. The pasted board fails that as drawn:
   its best row touches 6 regions and its best column 5.
 - 2026-11-04: place the 8 region first; no other region may be able to count 8.
+- 2026-11-05: Chris drops the one-row rule for now, in favour of a rule that all circles differ, with 8 circles. Circle
+  digits can only be 1 to 8, since a count of 9 is impossible and a digit is at least 1, so 8 different circles are
+  exactly 1 to 8 and one must be the 8. Two circles in one region would be equal, so the 8 circles are in 8 regions.
 
 ## Rebuild
 
