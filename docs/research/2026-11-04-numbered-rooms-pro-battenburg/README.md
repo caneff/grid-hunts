@@ -328,6 +328,16 @@ and yellow = target (one set: r1c8, r3c8, r5c7), 3 for orange = not and yellow =
 (one set: r3c8, r5c7, r8c6), and 4 for orange = target and yellow = not (one set: r4c7,
 r6c4, r8c4, r8c7). Those three sets are examples, not all of them.
 
+Adding B7=5 (Chris, 2026-11-05) breaks the 12 marks with the negative rule off, so no
+added mark can help (`nr_board10.py`, `nr_board10_check.py`; the two 5s with no marks
+are feasible as a control). By hand: both clues read the 5 of c7, so if it sits in row
+p then r1c7 = p and r9c7 = 10 - p. Row p is not 5, since r1c7 = 5 repeats the 5, and
+not 1 or 9. Both of row p's vertical clues land on the same c7 cell, leaving only its
+left and right clues for c1-6, but row p's three disjoint marks need 3 targets there.
+Removing any one of the 12 marks is feasible with the negative rule off, and each
+witness grid has p in the rows of the removed mark. The negative rule was not tested
+on those removals.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
