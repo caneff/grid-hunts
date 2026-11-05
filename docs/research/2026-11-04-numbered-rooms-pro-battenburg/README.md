@@ -531,6 +531,10 @@ and mark r8c8 makes those opposite. r1c1 = 1 puts two clues on r1c1, leaving 3 c
 4 targets r1c1, r1c2 (right clue), r1c4 (mark r1c3) and one of r1c5/r1c6 (mark r1c5).
 `board16b.json` makes r1c1 green: holds, 200 grids (capped), r1c1 is 2, 4 or 5.
 
+`board17.json`, 17 marks with r1c9 = 8, half-magenta taken as a target, each set of corner 9s
+as "the 9 is in one of these": holds, 200 grids (capped). New: r3c9 = 5 and r9c9 = 3, r5c1
+is a target, r9c1 is not and is 5 or 8.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of

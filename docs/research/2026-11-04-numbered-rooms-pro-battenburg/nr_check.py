@@ -2,7 +2,9 @@
 
 No negative rule. Holds every mark, colour, digit and pencil mark. Reads a JSON file:
 {"marks": ["r2c1", ...], "pink": [...], "green": [...], "digits": {"r1c1": 9},
- "pencils": {"r2c1": "2367"}, "outside": {"T7": 5}}. Prints feasibility, a minimal
+ "pencils": {"r2c1": "2367"}, "outside": {"T7": 5},
+ "corners": [{"digit": 9, "cells": ["r4c1", "r7c1"]}]}, a corner set meaning the digit is in
+ one of those cells. Prints feasibility, a minimal
 conflict if it fails, otherwise each cell's target status and digits, and a count of
 grids to CAP. Every grid is re-read by the reader. One worker; a timeout raises.
 
@@ -25,6 +27,8 @@ def cell(name):
 
 
 def nm(k):
+    if isinstance(k[0], tuple):
+        return "/".join(nm(c) for c in k)
     return f"r{k[0] + 1}c{k[1] + 1}"
 
 
@@ -37,9 +41,8 @@ class Board:
             + [("c", cell(n), 0) for n in data.get("green", [])]
             + [("d", cell(n), v) for n, v in data.get("digits", {}).items()]
             + [("o", cell(n), tuple(int(d) for d in v)) for n, v in data.get("pencils", {}).items()]
+            + [("g", tuple(cell(n) for n in g["cells"]), g["digit"]) for g in data.get("corners", [])]
         )
-        for kind, k, _ in self.items:
-            assert 0 <= k[0] < 9 and 0 <= k[1] < 9, kind
 
     def model(self, items):
         m, x, b, t = build(None, self.ring)
@@ -53,6 +56,8 @@ class Board:
                 m.Add(t[k] == v)
             elif kind == "d":
                 m.Add(x[k] == v)
+            elif kind == "g":
+                m.AddBoolOr([b[r, c, v] for r, c in k])
             else:
                 m.AddBoolOr([b[k[0], k[1], d] for d in v])
         return m, x, b, t
@@ -81,6 +86,8 @@ class Board:
                 assert (k in hit) == bool(v)
             elif kind == "d":
                 assert grid[k[0]][k[1]] == v
+            elif kind == "g":
+                assert any(grid[r][c] == v for r, c in k)
             else:
                 assert grid[k[0]][k[1]] in v
 
