@@ -157,6 +157,29 @@ allow 2 borders on the border-only model. Hits came within 4 evaluations, so thi
 rare at this density. It says nothing about the fewest marks that can do it, and there is
 no hand path yet. Not unique as a puzzle.
 
+## Digits fixed by the border alone (2026-11-05)
+
+No marks or clues, only the 32 border digits. `fill_climb.c` climbs on the exact number
+of fillings. The first run (`fill-climb.log`, 9,846 evaluations) had a bug: most moves
+left the border alone and forced a restart (7,244 restarts), so it was close to random
+sampling. The fixed run (`fill-climb-2.log`, seed 2, 182,280 evaluations, 26 restarts, 900 s
+of wall clock with a pause) reached:
+
+- Fewest fillings 6,712, with r2c3 = 9 and r8c8 = 8 forced. Grid 213794856/579628431/
+  468513729/145872693/932456178/786139542/827341965/351967284/694285317.
+- Most forced inner cells 4, with 59,653 fillings: r2c7 = 9, r3c3 = 4, r7c2 = 1, r7c8 = 7.
+  Grid 321945768/587263914/964781352/132678549/475392186/896514237/219856473/758439621/
+  643127895.
+
+`nr_fill_verify.py` confirms both counts and forced cells with `count_fills.c`. The climb
+scored fillings, not forced cells, so 4 is what it passed on the way, not a target it
+chased. Every forced cell found is in a corner box, where inner cells see the most border.
+No grid fixed by its border turned up, and none is ruled out.
+
+Each digit with no corner cell has 4 border cells and 5 inner cells, in the 5 rows and 5
+columns its border cells leave free. Those 4 cells also clear up to 4 boxes for it, so
+digits whose border cells sit in different boxes have the fewest places left.
+
 ## What forces digits (2026-11-05)
 
 By hand, the four clue families are permutations: the digits of r1 place one top clue
