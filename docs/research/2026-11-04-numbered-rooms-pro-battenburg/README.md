@@ -558,6 +558,14 @@ r8-r9 run. `nr_board18_why.py` finds a set of 15 unmarked windows that fail toge
 needed: r3c3 r3c8 r4c2 r4c6 r5c1 r5c3 r5c4 r5c5 r5c6 r5c8 r7c2 r7c6 r7c8 r8c3 r8c7. Dropping any
 one gives a grid. That is one minimal set, not necessarily the smallest.
 
+Chris's solve on these 19 marks, negative on (ruling 2026-11-05: negative on, exactly these
+marks), has a two-way magenta/purple colouring with r1c9 8 or 9. Next deduction, true both ways
+(`nr_next_pair.py`, `nr_next_chain.py`, confirmed on the full model): r8c1 and r8c2 are not
+targets. c1 and c2 hold 4 and 3 of the pair, one each way round. So the colour with 4 targets in
+its column kills that column's r8 cell, and unmarked window r7c1 kills the other. Pencil marks
+true both ways: r1c1 is 3, 5 or 7 and r9c9 is 2, 3 or 4. r9c2 is also never a target, which is direct
+for magenta and a longer chain for purple.
+
 ## Step (a)
 
 Under the all-marked ruling every sudoku grid is valid: it has exactly one set of
