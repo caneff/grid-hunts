@@ -1,0 +1,15 @@
+{"kind": "best", "evals": 2, "limit": 26, "t": 26, "patterns": 3, "complete": true, "open": 36, "marks": 17}
+{"kind": "best", "evals": 4, "limit": 26, "t": 27, "patterns": 1, "complete": true, "open": 0, "marks": 19}
+{"kind": "HIT", "evals": 4, "limit": 26, "t": 27, "count": 19, "marks": [[0, 1], [1, 1], [2, 0], [2, 3], [2, 6], [3, 4], [3, 6], [4, 1], [4, 6], [4, 7], [5, 1], [5, 4], [5, 5], [6, 4], [6, 5], [7, 0], [7, 1], [7, 2], [7, 7]], "grid": "415376289 392184765 786259431 534718692 928635174 167942358 841567923 659423817 273891546"}
+{"kind": "best", "evals": 6, "limit": 18, "t": 36, "patterns": 26, "complete": true, "open": 75, "marks": 13}
+{"kind": "best", "evals": 7, "limit": 18, "t": 36, "patterns": 4, "complete": true, "open": 8, "marks": 15}
+{"kind": "best", "evals": 11, "limit": 18, "t": 36, "patterns": 1, "complete": true, "open": 0, "marks": 18}
+{"kind": "HIT", "evals": 11, "limit": 18, "t": 36, "count": 18, "marks": [[0, 0], [0, 1], [0, 2], [0, 5], [1, 2], [1, 3], [2, 3], [2, 7], [3, 5], [3, 6], [3, 7], [4, 2], [4, 6], [4, 7], [5, 6], [5, 7], [6, 1], [7, 5]], "grid": "269514783 375298614 481736259 832179465 547862931 196345827 928453176 754621398 613987542"}
+{"kind": "best", "evals": 13, "limit": 17, "t": 38, "patterns": 26, "complete": true, "open": 39, "marks": 14}
+{"kind": "best", "evals": 16, "limit": 17, "t": 38, "patterns": 3, "complete": true, "open": 15, "marks": 16}
+{"kind": "best", "evals": 26, "limit": 17, "t": 68, "patterns": 1, "complete": true, "open": 0, "marks": 15}
+{"kind": "HIT", "evals": 26, "limit": 17, "t": 68, "count": 15, "marks": [[0, 1], [0, 2], [0, 4], [1, 2], [2, 7], [3, 6], [4, 6], [5, 0], [6, 0], [6, 1], [6, 2], [6, 5], [7, 1], [7, 2], [7, 6]], "grid": "416372859 852946371 739518642 965184723 174263598 283759164 641825937 597431286 328697415"}
+{"kind": "best", "evals": 28, "limit": 14, "t": 77, "patterns": 45, "complete": true, "open": 30, "marks": 12}
+{"kind": "best", "evals": 30, "limit": 14, "t": 77, "patterns": 14, "complete": true, "open": 75, "marks": 14}
+{"kind": "best", "evals": 31, "limit": 14, "t": 77, "patterns": 4, "complete": true, "open": 13, "marks": 14}
+{"kind": "best", "evals": 32, "limit": 14, "t": 77, "patterns": 3, "complete": true, "open": 32, "marks": 13}
