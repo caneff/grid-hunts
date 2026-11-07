@@ -115,16 +115,9 @@ def lines_from_doc(doc, constraint_type, kind):
 
 
 def _houses(n, box):
-    bh, bw = box
-    if bh * bw != n:
-        raise ValueError(f"{bh}x{bw} boxes do not hold {n} cells")
+    boxes = cpsat.boxes(n, *box)
     rows = [[(r, c) for c in range(n)] for r in range(n)]
     cols = [[(r, c) for r in range(n)] for c in range(n)]
-    boxes = [
-        [(br + dr, bc + dc) for dr in range(bh) for dc in range(bw)]
-        for br in range(0, n, bh)
-        for bc in range(0, n, bw)
-    ]
     return rows, cols, boxes
 
 
@@ -137,7 +130,7 @@ class HalverModel:
         self.post = post
         self.n = n
         rows, cols, boxes = _houses(n, box)
-        self.model, self.x = cpsat.sudoku_model(n, None, regions=boxes)
+        self.model, self.x = cpsat.sudoku_model(n, boxes)
         m, x = self.model, self.x
         self.h = {cell: m.NewBoolVar(f"h{cell}") for cell in x}
         self.dv = {cell: m.NewIntVar(1, 2 * n, f"dv{cell}") for cell in x}

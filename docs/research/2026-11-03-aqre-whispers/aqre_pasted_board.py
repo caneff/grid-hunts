@@ -62,7 +62,7 @@ class Stop(cp_model.CpSolverSolutionCallback):
 
 
 def fills():
-    m, x = sudoku_model(9, None, regions=REGIONS)
+    m, x = sudoku_model(9, REGIONS)
     s = worker(60.0)
     s.parameters.enumerate_all_solutions = True
     cb = Stop(1000)
@@ -71,7 +71,7 @@ def fills():
 
 
 def shading(whispers, labelled):
-    m, x = sudoku_model(9, None, regions=REGIONS)
+    m, x = sudoku_model(9, REGIONS)
     g = [m.new_bool_var(f"g{i}") for i in range(81)]
     add_flow_connectivity(m, g)
     shaded = lambda r, c: g[r * 9 + c]

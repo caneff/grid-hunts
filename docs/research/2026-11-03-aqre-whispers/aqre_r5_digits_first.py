@@ -40,7 +40,7 @@ def one_worker(limit, seed=0):
 
 
 def build_grid(total_range=(37, 44)):
-    m, x = sudoku_model(9, None, latin=True)
+    m, x = sudoku_model(9, ())
     g = [m.new_bool_var(f"g{i}") for i in range(81)]
     shaded = lambda r, c: g[r * 9 + c]
     even_low = m.new_bool_var("even_low")
