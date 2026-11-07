@@ -96,3 +96,9 @@ def load_lines(path):
 def lines_from_doc(doc):
     """The between lines of a decoded SudokuMaker document, in its order."""
     return halver_rules.lines_from_doc(doc, BETWEEN_LINE, "between")
+
+
+def lines_alone(doc):
+    """The between lines of a 9x9 document holding nothing else, refused
+    otherwise (`halver_rules.lines_alone`)."""
+    return halver_rules.lines_alone(doc, BETWEEN_LINE, "between")

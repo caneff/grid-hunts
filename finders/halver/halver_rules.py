@@ -20,7 +20,8 @@ driver's `unique` and `forced` on it (spec #65, #98). `RuleCheck` and
 A line is a `Line`: two ends and its body cells in path order. Cells are
 (row, column) from 0; `cell_name` and `parse_cell` convert to and from the
 rNcM form the specs and the reports use. `lines_from_doc` reads one line
-type's lines from a decoded SudokuMaker document.
+type's lines from a decoded SudokuMaker document, and `lines_alone` reads
+them from a board that holds nothing else, refusing one that does.
 """
 
 from typing import NamedTuple
@@ -109,6 +110,28 @@ def lines_from_doc(doc, constraint_type, kind):
                 )
             cells = [divmod(i, n) for i in path_cells]
             lines.append(Line(cells[0], tuple(cells[1:-1]), cells[-1]))
+    return lines
+
+
+def lines_alone(doc, constraint_type, kind):
+    """The lines of `lines_from_doc` from a 9x9 document that holds nothing
+    else: beside the given-digits and regions elements (types 0 and 1), any
+    other constraint, or a cell marked `"given": true`, raises a ValueError
+    naming it, so a board is refused rather than left partly unchecked.
+    Digits entered in cells, never given, are not read."""
+    cells = len(doc["puzzle"]["cells"])
+    if cells != 81:
+        raise ValueError(f"{cells} cells, and only 9x9 is checked")
+    lines = lines_from_doc(doc, constraint_type, kind)
+    allowed = {0, 1, constraint_type}
+    other = sorted(
+        {c.get("type") for c in doc["puzzle"]["constraints"]} - allowed, key=str
+    )
+    if other:
+        raise ValueError(f"constraint type {other[0]} on a {kind}-only board")
+    given = [i for i, cell in enumerate(doc["puzzle"]["cells"]) if cell.get("given")]
+    if given:
+        raise ValueError(f"given digit in {cell_name(divmod(given[0], 9))}")
     return lines
 
 

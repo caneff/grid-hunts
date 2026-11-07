@@ -45,17 +45,20 @@ WHITE = (255, 255, 255)
 VIEWERS = ("xdg-open", "display", "eog", "feh", "wslview", "explorer.exe", "open")
 
 
-def run(out, *extra, fake_bin, questions=("feasible", "unique")):
+def run(out, *extra, board=BOARD, fake_bin=None, questions=("feasible", "unique")):
+    """`query.py halver_between BOARD QUESTION... --out OUT EXTRA...`, with
+    no display and, given `fake_bin`, its viewers first on PATH."""
     env = {
         k: v for k, v in os.environ.items() if k not in ("DISPLAY", "WAYLAND_DISPLAY")
     }
-    env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
+    if fake_bin is not None:
+        env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
     return subprocess.run(
         [
             sys.executable,
             str(QUERY),
             "halver_between",
-            str(BOARD),
+            str(board),
             *questions,
             "--out",
             str(out),
@@ -109,7 +112,7 @@ def is_valid(solution, lines):
 def board_with(values):
     """board.json with every cell's entries cleared and, given a solution,
     its digits entered."""
-    doc = copy.deepcopy(json.loads(BOARD.read_text()))
+    doc = json.loads(BOARD.read_text())
     doc["puzzle"]["cells"] = [
         {"value": values[f"r{i // 9 + 1}c{i % 9 + 1}"]} if values else {}
         for i in range(81)
@@ -130,10 +133,36 @@ def links_of(out, answer, fake):
     return [short_link.fake_doc(fake, link) for link in links]
 
 
+def refused_boards(tmp, fake_bin):
+    """A board the between entry cannot read as between lines alone is
+    refused, naming the reason, and nothing is written: a given digit, a
+    second constraint type, a board that is not 9x9."""
+    doc = json.loads(BOARD.read_text())
+    given = copy.deepcopy(doc)
+    given["puzzle"]["cells"][5] = {"value": 5, "given": True}
+    lockout = copy.deepcopy(doc)
+    lockout["puzzle"]["constraints"].append({"type": 407, "lines": [[0, 1, 2]]})
+    small = copy.deepcopy(doc)
+    small["puzzle"]["cells"] = [{} for _ in range(16)]
+    for name, bad, reason in (
+        ("given", given, "given digit in r1c6"),
+        ("lockout", lockout, "constraint type 407 on a between-only board"),
+        ("small", small, "16 cells, and only 9x9 is checked"),
+    ):
+        path = Path(tmp) / f"{name}.json"
+        path.write_text(json.dumps(bad))
+        out = Path(tmp) / f"refused-{name}"
+        r = run(out, board=path, fake_bin=fake_bin)
+        assert r.returncode == 2 and reason in r.stderr, (name, r.stderr)
+        assert not out.exists(), f"a refused {name} board wrote {out}"
+    print("ok: a given digit, a lockout line and a 4x4 board are each refused")
+
+
 def main():
     lines = rules.load_lines(BOARD)
     with tempfile.TemporaryDirectory() as tmp, short_link.fake_mint() as fake:
         fake_bin, opened = fake_viewers(tmp)
+        refused_boards(tmp, fake_bin)
         out = Path(tmp) / "out"
         r = run(out, fake_bin=fake_bin)
         assert r.returncode == 0, r.stderr
