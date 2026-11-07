@@ -4,7 +4,8 @@ finder.
 Drives `query.py` as a subprocess on `toy_finder.py` (one row of distinct
 digits) and asserts what lands in the output directory: each answer's
 `answers.jsonl` line and label, its picture, and the last printed line. The
-forced-mark tests drive the conditions helper through condition files.
+forced-mark tests drive the conditions helper through condition files. The
+max tests climb boards whose largest value is known by hand.
 
     uv run finders/query/test_query.py
 """
@@ -23,7 +24,7 @@ HERE = Path(__file__).resolve().parent
 QUERY = HERE / "query.py"
 TOY = HERE / "toy_finder.py"
 sys.path.insert(0, str(HERE))
-from query import CELL, MARGIN, MARK_COLOR, MARK_RADIUS
+from query import CAPTION_HEIGHT, CELL, MARGIN, MARK_COLOR, MARK_RADIUS
 
 WHITE = (255, 255, 255)
 
@@ -247,6 +248,173 @@ def test_forced_refusals():
         assert r.returncode == 2, r.stderr
         assert "has no mark hook" in r.stderr, r.stderr
         assert not (Path(tmp) / "key").exists(), "a refused run writes nothing"
+
+
+def wait_for_lines(out, k, proc, deadline_s=30):
+    lines = out / "answers.jsonl"
+    deadline = time.monotonic() + deadline_s
+    while time.monotonic() < deadline:
+        if lines.is_file() and len(lines.read_text().splitlines()) >= k:
+            return
+        time.sleep(0.05)
+
+
+def test_enumerate_lists_every_solution_then_complete():
+    """c0 = 1 leaves 1 2 3 and 1 3 2: one line and picture per solution, then
+    a closing line that is complete because a further solve was infeasible."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "out"
+        r = cli(board(tmp, width=3, clues=[[0, 1]]), out, "enumerate")
+        assert r.returncode == 0, r.stderr
+        *found, end = answers(out)
+        assert [(a["status"], a["label"]) for a in found] == [
+            ("solution", "complete")
+        ] * 2, found
+        rows = sorted(
+            tuple(a["solutions"][0][f"c{i}"] for i in range(3)) for a in found
+        )
+        assert rows == [(1, 2, 3), (1, 3, 2)], rows
+        assert (end["status"], end["label"], end["count"]) == (
+            "exhausted",
+            "complete",
+            2,
+        )
+        assert end["solutions"] == [], end
+        assert all((out / a["picture"]).is_file() for a in (*found, end))
+        last = r.stdout.strip().splitlines()[-1]
+        pictures = " ".join(str(out / a["picture"]) for a in (*found, end))
+        assert last == f"pictures: {pictures}", last
+
+
+def test_enumerate_at_its_cap_is_capped():
+    """A free row of 4 has 24 solutions: the default cap stops at 10, a
+    `--limit` at its own number, and either is capped, never exhausted."""
+    with tempfile.TemporaryDirectory() as tmp:
+        b = board(tmp, width=4, clues=[])
+        for limit, extra in ((10, ()), (3, ("--limit", "3"))):
+            out = Path(tmp) / f"out{limit}"
+            r = cli(b, out, "enumerate", extra=extra)
+            assert r.returncode == 0, r.stderr
+            *found, end = answers(out)
+            assert [a["status"] for a in found] == ["solution"] * limit, found
+            rows = {tuple(a["solutions"][0].values()) for a in found}
+            assert len(rows) == limit, "each solution once"
+            assert (end["status"], end["label"]) == ("limit", "capped"), end
+            assert end["count"] == limit, end
+
+        out = Path(tmp) / "exact"
+        r = cli(
+            board(tmp, width=3, clues=[[0, 1]]),
+            out,
+            "enumerate",
+            extra=["--limit", "2"],
+        )
+        assert r.returncode == 0, r.stderr
+        *found, end = answers(out)
+        assert len(found) == 2 and (end["status"], end["label"]) == ("limit", "capped")
+
+
+def test_enumerate_time_limit_is_capped():
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "out"
+        b = board(tmp, width=3, clues=[])
+        r = cli(b, out, "enumerate", extra=["--time-limit", "1e-9"])
+        assert r.returncode == 0, r.stderr
+        (end,) = answers(out)
+        assert (end["status"], end["label"], end["count"]) == ("timeout", "capped", 0)
+
+
+def test_enumerate_writes_each_solution_as_found():
+    """Every build after the first holds for a minute: the first solution's
+    line and picture are on disk before the kill."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "out"
+        b = board(tmp, width=3, clues=[[0, 1]], hold_after_builds=1)
+        proc = subprocess.Popen(
+            [
+                sys.executable,
+                str(QUERY),
+                str(TOY),
+                str(b),
+                "enumerate",
+                "--out",
+                str(out),
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        wait_for_lines(out, 1, proc)
+        assert proc.poll() is None, "the run ended before the kill"
+        proc.send_signal(signal.SIGKILL)
+        proc.wait()
+        (first,) = answers(out)
+        assert (first["status"], first["label"]) == ("solution", "complete"), first
+        assert (out / first["picture"]).is_file(), first
+
+
+def caption_strip(image):
+    return image.crop((0, image.height - CAPTION_HEIGHT, image.width, image.height))
+
+
+def test_max_climbs_to_the_true_maximum():
+    """A row of 4 with c3 = 4: c0 reaches 3 and no higher. Complete, with a
+    witness that reaches it, drawn with the value in a caption below the
+    board."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "out"
+        r = cli(board(tmp, width=4, clues=[[3, 4]]), out, "max", extra=["--max", "c0"])
+        assert r.returncode == 0, r.stderr
+        (answer,) = answers(out)
+        assert (answer["status"], answer["label"]) == ("max", "complete"), answer
+        assert (answer["key"], answer["value"]) == ("c0", 3), answer
+        (witness,) = answer["solutions"]
+        assert witness["c0"] == 3 and witness["c3"] == 4, witness
+
+        image = Image.open(out / answer["picture"]).convert("RGB")
+        board_height = CELL + 2 * MARGIN
+        assert image.height == board_height + CAPTION_HEIGHT, image.size
+        colors = {c for _, c in caption_strip(image).getcolors(1 << 20)}
+        assert colors != {WHITE}, "the caption strip carries text"
+        assert "c0 = 3" in r.stdout, r.stdout
+
+
+def test_max_time_limit_is_capped():
+    """A climb cut short by its time limit is capped, never complete."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "out"
+        b = board(tmp, width=4, clues=[])
+        r = cli(b, out, "max", extra=["--max", "c0", "--time-limit", "1e-9"])
+        assert r.returncode == 0, r.stderr
+        (answer,) = answers(out)
+        assert (answer["status"], answer["label"]) == ("timeout", "capped"), answer
+        assert (out / answer["picture"]).is_file(), answer
+
+
+def test_max_on_an_infeasible_board():
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "out"
+        b = board(tmp, width=3, clues=[[0, 1], [1, 1]])
+        r = cli(b, out, "max", extra=["--max", "c2"])
+        assert r.returncode == 0, r.stderr
+        (answer,) = answers(out)
+        assert (answer["status"], answer["label"]) == ("infeasible", "complete")
+        assert answer["value"] is None and answer["solutions"] == [], answer
+
+
+def test_enumerate_and_max_refusals():
+    with tempfile.TemporaryDirectory() as tmp:
+        b = board(tmp, width=3, clues=[])
+        r = cli(b, Path(tmp) / "a", "max")
+        assert r.returncode == 2 and "max needs --max" in r.stderr, r.stderr
+        r = cli(b, Path(tmp) / "b", "unique", extra=["--max", "c0"])
+        assert r.returncode == 2 and "--max needs the max question" in r.stderr
+        r = cli(b, Path(tmp) / "c", "max", extra=["--max", "c9"])
+        assert r.returncode == 2 and "no variable 'c9'" in r.stderr, r.stderr
+        r = cli(b, Path(tmp) / "d", "enumerate", extra=["--limit", "0"])
+        assert r.returncode == 2 and "--limit" in r.stderr, r.stderr
+        r = cli(b, Path(tmp) / "e", "unique", extra=["--limit", "3"])
+        assert r.returncode == 2 and "--limit needs the enumerate question" in r.stderr
+        assert not any((Path(tmp) / x).exists() for x in "abcde")
 
 
 def test_refusals():
