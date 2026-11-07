@@ -11,13 +11,12 @@
 """
 
 import os
-import re
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import short_link
-from sudoku_kit.link_codec import encode_link
+from sudoku_kit.link_codec import SHORT_LINK, encode_link
 
 DOC = {
     "formatVersion": "1.6.0",
@@ -56,7 +55,7 @@ try:
     with short_link.fake_mint() as tmp:
         assert os.environ[short_link.FAKE_DIR_ENV] == tmp
         link = short_link.mint(DOC)
-        assert re.fullmatch(r"https://sudokumaker\.app/p/[A-Za-z0-9_-]+", link), link
+        assert SHORT_LINK.fullmatch(link), link
         assert short_link.mint(DOC) == link
         assert short_link.mint(OTHER) != link
         assert short_link.fake_doc(tmp, link) == DOC

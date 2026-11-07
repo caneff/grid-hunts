@@ -1,6 +1,6 @@
 """One recorded hit of the lockout hunt, for the gate's tests: the pilot's
 seed 2 (decision log, § Hunt of record), its 24 lines as the log's table
-prints them, its solution, and the link the log publishes for it. Of the
+prints them and its solution. Of the
 three recorded hits it is the one the backtracking check reads fastest
 (about 15 s, against 170 s and 294 s).
 """
@@ -53,5 +53,3 @@ SOLUTION = rules.Solution(
     tuple(tuple(int(d) for d in row) for row in DIGITS),
     frozenset(map(rules.parse_cell, HALVERS)),
 )
-
-LINK = "https://sudokumaker.app/p/fzLp9Hjtbp"

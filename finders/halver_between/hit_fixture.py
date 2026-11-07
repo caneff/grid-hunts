@@ -1,6 +1,6 @@
 """One recorded hit of the hunt, for the gate's tests: the second pilot's
 seed 1 (decision log, § Hunt of record), its 11 added lines as the log's
-table prints them, and the link the log publishes for it. Of the three
+table prints them. Of the three
 recorded hits it is the one the backtracking check reads fastest.
 """
 
@@ -22,5 +22,3 @@ TABLE = [
 
 
 ADDED = tuple(map(rules.parse_line, TABLE))
-
-LINK = "https://sudokumaker.app/p/FDMqj8RtCK"

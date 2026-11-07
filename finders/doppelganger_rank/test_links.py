@@ -34,6 +34,7 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 # isort: split
 import short_link
 from cli_checks import read_jsonl, run_cli
+from sudoku_kit.link_codec import SHORT_LINK
 
 SCRIPT = HERE / "hunt.py"
 
@@ -133,7 +134,7 @@ def check(doc, record):
 def text_of(path):
     """A link file's one line."""
     text = path.read_text()
-    assert text.count("\n") == 1 and text.startswith("https://sudokumaker.app/p/"), text
+    assert text.count("\n") == 1 and SHORT_LINK.fullmatch(text.strip()), text
     return text.strip()
 
 

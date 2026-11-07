@@ -15,10 +15,15 @@ import os
 import tempfile
 from pathlib import Path
 
-from sudoku_kit.link_codec import decode_puzzle, encode_link, shorten_link
+from sudoku_kit.link_codec import (
+    SHORT_LINK,
+    SHORT_LINK_HOST,
+    decode_puzzle,
+    encode_link,
+    shorten_link,
+)
 
 FAKE_DIR_ENV = "GRID_HUNTS_FAKE_MINT_DIR"
-FAKE_PREFIX = "https://sudokumaker.app/p/"
 
 
 def mint(doc):
@@ -29,13 +34,16 @@ def mint(doc):
         return shorten_link(full)
     link_id = "fake" + hashlib.sha1(full.encode()).hexdigest()[:12]
     (Path(fake) / f"{link_id}.txt").write_text(full + "\n")
-    return FAKE_PREFIX + link_id
+    return f"https://{SHORT_LINK_HOST}/p/{link_id}"
 
 
 def fake_doc(fake_dir, short):
     """The document behind a short link `mint` made offline into `fake_dir`."""
-    assert short.startswith(FAKE_PREFIX), short
-    full = (Path(fake_dir) / f"{short[len(FAKE_PREFIX) :]}.txt").read_text().strip()
+    parts = SHORT_LINK.fullmatch(short)
+    assert parts, f"not a short link: {short!r}"
+    kept = Path(fake_dir) / f"{parts.group(2)}.txt"
+    assert kept.is_file(), f"{short} was not minted offline into {fake_dir}"
+    full = kept.read_text().strip()
     return decode_puzzle(full)
 
 

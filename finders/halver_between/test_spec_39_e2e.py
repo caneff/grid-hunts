@@ -3,8 +3,8 @@
 - Chris's six lines plus the hit's 11 check `unique` with the CP-SAT rule
   model, and each of his 23 marks holds in that one solution;
 - every added line keeps Chris's shape rules against the lines before it;
-- `record` writes the line table and the very link the decision log
-  publishes, which decodes back to exactly his six lines plus the hit's, in
+- `record` writes the line table and a short link (minted offline) whose
+  document is exactly his six lines plus the hit's, in
   his line style, with every entered digit, colour and pencil mark cleared,
   and `candidate_from_record` reads the record back to the same hit;
 - `verify` passes the hit (the backtracking check finds one solution, the

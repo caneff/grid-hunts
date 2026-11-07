@@ -8,7 +8,8 @@ fewest added clues, 11, of its 16 hits):
 - `hunt.py verify` on a hunt directory holding the hit passes it: the rule
   reader finds every rule and clue kept, and the second model re-proves it
   unique. `summary` lists it as the one verified hit, and `links` writes
-  the link the hunt of record wrote, the solution entered in the grid.
+  a short link (minted offline) whose document has the solution entered in
+  the grid, the digits from 0 and the rank clues as 0.5-size text.
 - The hit with its last added clue dropped: `verify` refuses it, naming a
   second grid that keeps every rule and every other clue, `summary`
   counts it rejected and `links` writes it no link. Given no time, `verify`
@@ -88,6 +89,9 @@ with short_link.fake_mint() as fake, tempfile.TemporaryDirectory() as tmp:
     doc = short_link.fake_doc(fake, (hits / "links" / "72.txt").read_text().strip())
     assert doc == links.link_doc(record), doc
     cells = doc["puzzle"]["cells"]
+    assert doc["puzzle"]["minDigit"] == 0 and doc["puzzle"]["maxDigit"] == n
+    (text,) = [c for c in doc["puzzle"]["constraints"] if c.get("type") == 2002]
+    assert {p["size"] for p in text["params"]} == {0.5}, text["params"]
     side = n + 4
     for r, row in enumerate(solution):
         for c, digit in enumerate(row):

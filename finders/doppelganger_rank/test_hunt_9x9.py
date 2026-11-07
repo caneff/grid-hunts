@@ -2,7 +2,7 @@
 opening (`fixtures/opening_9x9.json`), seed 72 of the hunt of record finds
 the recorded hit (`fixtures/hit_9x9.json`) again, `verify` passes it,
 `summary` lists it as the one verified hit with the seed split, and `links`
-writes the link the hunt of record wrote. The hunt runs on the defaults,
+writes a short link (minted offline) whose document is the hit's. The hunt runs on the defaults,
 one CP-SAT worker; the hunt of record ran the minimiser on 8
 (`--proof-workers 8`), which changes no hit.
 
