@@ -29,11 +29,14 @@ README before reusing anything there.
   the gate passes: `docs/pants.md`.
 - `finders/query/` is the board-question driver (spec #65), CP-SAT only:
   `query.py FINDER BOARD QUESTION... --out DIR`, run under `job-run`, asks
-  a fixed board `feasible` or `unique` and writes each answer as it is found,
-  a line of `DIR/answers.jsonl` labelled `complete` or `capped`, a picture
-  and the finder's short links. Its docstring states the finder contract
-  (`build(clues)`, `cell_of`, `draw`, optional `link`); `toy_finder.py` is
-  the worked example its suite runs on. `finders/halver/halver_query.py` is
+  a fixed board `feasible`, `unique` or `forced` (whether a mark holds in
+  every solution, from `--condition FILE` or `--marks marks.json`) and writes
+  each answer as it is found, a line of `DIR/answers.jsonl` labelled
+  `complete` or `capped`, a picture and the finder's short links. Its
+  docstring states the finder contract (`build(clues)`, `cell_of`, `draw`,
+  optional `link` and `mark`); `conditions.py` is the shared helper that
+  compiles a condition onto any CP-SAT model; `toy_finder.py` is the worked
+  example its suite runs on. `finders/halver/halver_query.py` is
   the halver finders' adapter, and each halver finder's `query_finder.py`
   its entry.
 - `finders/ubahn/` is the U-Bahn finder (a pencil puzzle, no sudoku), on the

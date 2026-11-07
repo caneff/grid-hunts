@@ -1,4 +1,4 @@
-"""The halver finders on the board-question driver (spec #65, #94):
+"""The halver finders on the board-question driver (spec #65, #94, #95):
 `finders/query/query.py`'s finder contract over `HalverModel`, for any line
 type.
 
@@ -9,15 +9,19 @@ variables are named by cell: `r1c1` the digit, `h_r1c1` 1 on a halver.
 centres in the line type's colour, its two ends ringed. `link` mints a short
 link of `doc` with every cell's entries cleared and, given a solution, its
 digits entered; SudokuMaker has no halvers, so the picture is what shows them.
+`mark` reads a `marks.json` entry as a condition on those variables.
 """
 
 import copy
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "hunt"))
+FINDERS = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(FINDERS / "hunt"))
+sys.path.insert(0, str(FINDERS / "query"))
 
 # isort: split
+from conditions import All, Any_, Eq
 from halver_rules import HalverModel, cell_name, parse_cell
 from short_link import mint
 
@@ -67,3 +71,22 @@ class HalverQuery:
             for i in range(N * N)
         ]
         return mint(doc)
+
+    def mark(self, entry):
+        """A `marks.json` entry as a condition: what every solution must
+        meet for the mark to hold."""
+        kind = entry["kind"]
+        cells = entry.get("cells", [])
+        if kind == "digit":
+            return Eq(entry["cell"], entry["digit"])
+        if kind == "candidates":
+            return Any_(tuple(Eq(entry["cell"], d) for d in entry["digits"]))
+        if kind == "digit_in":
+            return Any_(tuple(Eq(c, entry["digit"]) for c in cells))
+        if kind == "halver":
+            return Eq(f"h_{entry['cell']}", 1)
+        if kind == "halver_digit_in":
+            return Any_(
+                tuple(All((Eq(f"h_{c}", 1), Eq(c, entry["digit"]))) for c in cells)
+            )
+        raise ValueError(f"unknown mark kind {kind!r}: {entry}")
