@@ -20,6 +20,7 @@ import tempfile
 import time
 from pathlib import Path
 
+from ortools.sat.python import cp_model
 from PIL import Image
 
 HERE = Path(__file__).resolve().parent
@@ -486,7 +487,7 @@ def test_enumerate_and_max_refusals():
         r = cli(b, Path(tmp) / "c", "max", extra=["--max", "c9"])
         assert r.returncode == 2 and "no variable 'c9'" in r.stderr, r.stderr
         r = cli(b, Path(tmp) / "d", "enumerate", extra=["--limit", "0"])
-        assert r.returncode == 2 and "--limit" in r.stderr, r.stderr
+        assert r.returncode == 2 and "--limit must be at least 1" in r.stderr
         r = cli(b, Path(tmp) / "e", "unique", extra=["--limit", "3"])
         assert r.returncode == 2 and "--limit needs the enumerate question" in r.stderr
         assert not any((Path(tmp) / x).exists() for x in "abcde")
@@ -563,9 +564,38 @@ def test_refusals():
     with tempfile.TemporaryDirectory() as tmp:
         b = board(tmp, width=3, clues=[])
         r = cli(b, Path(tmp) / "out", "sideways")
-        assert r.returncode == 2 and "sideways" in r.stderr, r.stderr
+        assert r.returncode == 2 and "invalid choice: 'sideways'" in r.stderr
         r = cli(b, Path(tmp) / "out2", "unique", extra=["--time-limit", "0"])
-        assert r.returncode == 2 and "time-limit" in r.stderr, r.stderr
+        assert r.returncode == 2, r.stderr
+        assert "--time-limit must be above 0" in r.stderr, r.stderr
+
+
+def test_an_out_already_answered_is_refused():
+    """A second run into the same --out would append to the first run's
+    answers.jsonl and overwrite the pictures its lines name: refused, the
+    first run's answers left as they were."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "out"
+        b = board(tmp, width=3, clues=[[0, 1]])
+        assert cli(b, out, "feasible").returncode == 0
+        before = (out / "answers.jsonl").read_text()
+        r = cli(b, out, "unique")
+        assert r.returncode == 2, r.stderr
+        assert "answers.jsonl exists: give a fresh --out" in r.stderr, r.stderr
+        assert (out / "answers.jsonl").read_text() == before
+
+
+def test_unique_on_an_invalid_model_raises():
+    """`unique_on` never turns an invalid model into a status."""
+    model = cp_model.CpModel()
+    x = model.NewIntVar(0, 5, "x")
+    model.proto.constraints.add().linear.vars.append(99)  # no variable 99
+    try:
+        query.unique_on(model, {"x": x}, 1.0)
+    except ValueError as error:
+        assert "invalid" in str(error), error
+    else:
+        raise AssertionError("an invalid model gave a status")
 
 
 def main():
