@@ -10,7 +10,7 @@ are the CP-SAT model on sudoku_kit's board. A grid is nine lists of digits.
 """
 
 from ortools.sat.python import cp_model
-from sudoku_kit.cpsat import SOLVED, UNKNOWN, solver, sudoku_model
+from sudoku_kit.cpsat import SOLVED, UNKNOWN, solver, sudoku_model, boxes
 
 CLUES = [(side, i) for side in "LRTB" for i in range(9)]
 WINDOWS = [(r, c) for r in range(8) for c in range(8)]
@@ -120,7 +120,7 @@ def show(grid):
 
 def build(mark_set=None, ring=None, pin=None):
     """(model, x, b, t). `mark_set` None turns the Battenburg rule off."""
-    m, x = sudoku_model(9, (3, 3))
+    m, x = sudoku_model(9, boxes(9, 3, 3))
     b = {}
     for (r, c), var in x.items():
         lits = [m.NewBoolVar(f"b{r}{c}{d}") for d in range(1, 10)]

@@ -222,7 +222,7 @@ def fill_region(cells, count, root, st, rng):
 
 def completes(st, remaining):
     """Latin square, shading, whispers and connectivity with placed cells fixed."""
-    m, x = sudoku_model(9, None, latin=True)
+    m, x = sudoku_model(9, ())
     g = [m.new_bool_var(f"g{i}") for i in range(81)]
     for cell, value in st.digit.items():
         m.add(x[cell] == value)
@@ -244,7 +244,7 @@ def solver_fill(st, count, cells, root, remaining, seed):
 
     Returns (assign, shaded) or None, with the solver status.
     """
-    m, x = sudoku_model(9, None, latin=True)
+    m, x = sudoku_model(9, ())
     g = [m.new_bool_var(f"g{i}") for i in range(81)]
     for cell, value in st.digit.items():
         m.add(x[cell] == value)
@@ -305,7 +305,7 @@ def final_solve(st):
     regions = [[cell for cell in CELLS if region[cell] == k] for k in range(9)]
     if not connected(regions[st.n]):
         return None
-    m, x = sudoku_model(9, None, regions=regions)
+    m, x = sudoku_model(9, regions)
     g = [m.new_bool_var(f"g{i}") for i in range(81)]
     for cell, value in st.digit.items():
         m.add(x[cell] == value)

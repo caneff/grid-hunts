@@ -137,7 +137,7 @@ class HalverModel:
         self.post = post
         self.n = n
         rows, cols, boxes = _houses(n, box)
-        self.model, self.x = cpsat.sudoku_model(n, None, regions=boxes)
+        self.model, self.x = cpsat.sudoku_model(n, boxes)
         m, x = self.model, self.x
         self.h = {cell: m.NewBoolVar(f"h{cell}") for cell in x}
         self.dv = {cell: m.NewIntVar(1, 2 * n, f"dv{cell}") for cell in x}

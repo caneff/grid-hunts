@@ -20,7 +20,7 @@ from connected import add_flow_connectivity
 from finders.hunt.render import GridCanvas
 from ortools.sat.python import cp_model
 from shapes import ORTH
-from sudoku_kit.cpsat import solver, sudoku_model
+from sudoku_kit.cpsat import solver, sudoku_model, boxes
 
 N = 9
 TIME_LIMIT = 600.0
@@ -29,7 +29,7 @@ BOXES = [(br, bc) for br in (0, 3, 6) for bc in (0, 3, 6)]
 
 
 def build(mode, distinct=True):
-    m, x = sudoku_model(N, (3, 3))  # x is digit + 1
+    m, x = sudoku_model(N, boxes(N, 3, 3))  # x is digit + 1
     g = [m.new_bool_var(f"g{i}") for i in range(N * N)]
     add_flow_connectivity(m, g)
     shaded = lambda r, c: g[r * N + c]

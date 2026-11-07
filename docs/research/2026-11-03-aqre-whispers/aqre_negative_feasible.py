@@ -14,7 +14,7 @@ from connected import add_flow_connectivity
 from finders.hunt.render import GridCanvas
 from ortools.sat.python import cp_model
 from shapes import ORTH
-from sudoku_kit.cpsat import solver, sudoku_model
+from sudoku_kit.cpsat import solver, sudoku_model, boxes
 
 TIME_LIMIT = 300.0
 BOXES = [(r, c) for r in (0, 3, 6) for c in (0, 3, 6)]
@@ -62,7 +62,7 @@ def one_box_table():
 
 
 def build():
-    m, x = sudoku_model(9, (3, 3))
+    m, x = sudoku_model(9, boxes(9, 3, 3))
     g = [m.new_bool_var(f"g{i}") for i in range(81)]
     add_flow_connectivity(m, g)
     shaded = lambda r, c: g[r * 9 + c]

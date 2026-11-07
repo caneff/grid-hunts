@@ -204,7 +204,7 @@ def build_layout(row, n, straight_ok=False, flip_cut=True):
 def fill(region, shade, row, n, seed):
     """Digits for fixed regions and shading: (status name, digits or None)."""
     regions = [[cell for cell in CELLS if region[cell] == k] for k in range(9)]
-    m, x = sudoku_model(9, None, regions=regions)
+    m, x = sudoku_model(9, regions)
     even_low = m.new_bool_var("even_low")
     for c in range(9):
         m.add(x[row, c] == (9 if c == n else sum(shade[a][b] for a, b in regions[c])))

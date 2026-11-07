@@ -119,7 +119,7 @@ def region_filter(region, row, n):
 
 def build(region, row, n, connect, circles=True):
     regions = [[cell for cell in CELLS if region[cell] == k] for k in range(9)]
-    m, x = sudoku_model(9, None, regions=regions)
+    m, x = sudoku_model(9, regions)
     g = [m.new_bool_var(f"g{i}") for i in range(81)]
     shaded = lambda r, c: g[r * 9 + c]
     even_low = m.new_bool_var("even_low")

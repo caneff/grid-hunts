@@ -64,7 +64,7 @@ def layout(seed):
 
 
 def build(regions):
-    m, x = sudoku_model(9, None, regions=regions)
+    m, x = sudoku_model(9, regions)
     g = [m.new_bool_var(f"g{i}") for i in range(81)]
     add_flow_connectivity(m, g)
     shaded = lambda r, c: g[r * 9 + c]

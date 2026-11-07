@@ -112,7 +112,7 @@ def walk(seed, seconds):
 
 def fill(region):
     regions = [[cell for cell in CELLS if region[cell] == k] for k in range(9)]
-    m, x = sudoku_model(9, None, regions=regions)
+    m, x = sudoku_model(9, regions)
     s = solver(60.0)
     status = s.solve(m)
     if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
