@@ -347,6 +347,7 @@ def test_enumerate_writes_each_solution_as_found():
         assert proc.poll() is None, "the run ended before the kill"
         proc.send_signal(signal.SIGKILL)
         proc.wait()
+        assert (out / "answers.jsonl").is_file(), "no solution on disk before the kill"
         (first,) = answers(out)
         assert (first["status"], first["label"]) == ("solution", "complete"), first
         assert (out / first["picture"]).is_file(), first
