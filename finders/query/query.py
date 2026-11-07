@@ -36,6 +36,9 @@ A solution is a {name: value} dict. Each answer is written the moment it is
 found: its picture `DIR/<k>-<question>.png` (k counts answers from 1), its links (when the finder has
 the hook) one per line in `DIR/<k>-<question>.txt`, then its line of
 `DIR/answers.jsonl`, so a line is on disk only with its picture and links.
+A link that fails to mint (the network, the app refusing it) never loses
+the answer: its line carries `link_error`, the reason, in place of `links`,
+the reason is printed, and the run goes on.
 The picture and links are each written to a `.partial` file and renamed into
 place whole; the line is appended in one write and flushed to disk, so a
 killed run leaves whole lines and no half-written file.
@@ -325,7 +328,8 @@ def picture(finder, solutions, ringed=(), caption=None, marked=()):
 
 def write_answer(out, k, question, answer, finder, time_limit):
     """`answer`'s picture, links, then its answers.jsonl line, which carries
-    its fields too; the picture's path."""
+    its fields too, or `link_error` when the links failed to mint; the
+    picture's path."""
     stem = f"{k}-{question}"
     picture_path = out / f"{stem}.png"
     partial = out / f"{stem}.partial.png"
@@ -345,12 +349,17 @@ def write_answer(out, k, question, answer, finder, time_limit):
     }
     link = getattr(finder, "link", None)
     if link is not None:
-        links = [link(s) for s in answer.solutions] or [link(None)]
-        links_path = out / f"{stem}.txt"
-        partial = out / f"{stem}.partial.txt"
-        partial.write_text("".join(f"{x}\n" for x in links))
-        partial.replace(links_path)
-        line["links"] = links_path.name
+        try:
+            links = [link(s) for s in answer.solutions] or [link(None)]
+        except (OSError, ValueError) as error:
+            line["link_error"] = f"{type(error).__name__}: {error}"
+            print(f"{stem}: no link: {line['link_error']}", file=sys.stderr)
+        else:
+            links_path = out / f"{stem}.txt"
+            partial = out / f"{stem}.partial.txt"
+            partial.write_text("".join(f"{x}\n" for x in links))
+            partial.replace(links_path)
+            line["links"] = links_path.name
     with (out / "answers.jsonl").open("a") as f:
         f.write(json.dumps(line) + "\n")
         f.flush()

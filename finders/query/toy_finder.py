@@ -5,12 +5,14 @@ Not a real finder rule: it exists so `test_query.py` can drive `query.py` end
 to end on a model small enough to reason about by hand. The board file is
 JSON:
 
-    {"width": 3, "clues": [[0, 1]], "hold_after_builds": 1}
+    {"width": 3, "clues": [[0, 1]], "hold_after_builds": 1, "mint_fails": true}
 
 A row of `width` cells, each 1..width, all different; each clue `[i, d]`
 pins cell i to digit d. `hold_after_builds` (optional) makes every `build`
 after that many sleep for a minute, so a test can kill a run between two
-questions. A marked clue's cell is shaded. The toy has no `link` hook.
+questions. A marked clue's cell is shaded. The toy has no `link` hook
+unless `mint_fails` is set, when it has one that always raises, standing in
+for a mint that fails.
 """
 
 import json
@@ -28,6 +30,8 @@ class ToyRow:
         self.size = (1, self.width)
         self._hold_after = board.get("hold_after_builds")
         self._builds = 0
+        if board.get("mint_fails"):
+            self.link = self.failing_link
 
     def build(self, clues):
         self._builds += 1
@@ -52,6 +56,9 @@ class ToyRow:
         if solution is not None:
             for i in range(self.width):
                 canvas.digit(0, i, solution[f"c{i}"])
+
+    def failing_link(self, solution):
+        raise OSError("mint refused: the toy's injected failure")
 
 
 def load(board_path):

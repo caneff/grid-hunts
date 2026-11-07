@@ -163,6 +163,27 @@ def test_killed_run_keeps_answers_found():
         assert (out / feasible["picture"]).is_file(), feasible
 
 
+def test_a_failed_mint_is_recorded_and_the_run_goes_on():
+    """The toy's link hook raises: each answer's line and picture are still
+    written, the line naming the failure, and every question is answered."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "out"
+        b = board(tmp, width=3, clues=[[0, 1]], mint_fails=True)
+        r = cli(b, out, "feasible", "unique")
+        assert r.returncode == 0, r.stderr
+        found = answers(out)
+        assert [(a["question"], a["status"]) for a in found] == [
+            ("feasible", "feasible"),
+            ("unique", "not_unique"),
+        ], found
+        for a in found:
+            assert "links" not in a, a
+            assert "mint refused: the toy's injected failure" in a["link_error"], a
+            assert (out / a["picture"]).is_file(), a
+        assert "mint refused" in r.stderr, r.stderr
+        assert r.stdout.strip().splitlines()[-1].startswith("pictures: "), r.stdout
+
+
 def condition(tmp, name, cond):
     path = Path(tmp) / f"{name}.json"
     path.write_text(json.dumps(cond))
