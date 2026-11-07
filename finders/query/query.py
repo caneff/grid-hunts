@@ -64,10 +64,12 @@ never read as feasible, infeasible or unique.
   (capped). Reaching the limit is capped even when no other solution exists:
   the run never asked.
 - max: the largest value of the variable `--max` names, climbed with `Gt`,
-  each step a fresh model asked for a solution above the best so far. `max`
+  each step a fresh model asked for a solution above the best so far. Each
+  improving solution is a `witness` answer (capped), written as it is
+  found, so a killed climb keeps its best; then one closing answer: `max`
   (complete) only when the last step came back infeasible; `timeout`
   (capped) when a step reached its time limit, with the best found so far;
-  `infeasible` when the board has no solution. The line carries `key` and
+  `infeasible` when the board has no solution. Each line carries `key` and
   `value` (None with no solution); the picture is the witness solution, the
   value in a caption below the board.
 - drop-one: for each clue in turn, the board rebuilt through `build` with
@@ -232,7 +234,19 @@ def enumerate_solutions(finder, limit, time_limit):
 
 
 def climb(finder, key, time_limit):
-    """The largest value of `key`: its answer, the witness in a caption."""
+    """Each improving witness of `key` as found, a capped `witness` answer,
+    then the closing answer: `max` once a step came back infeasible above
+    the best, `timeout` with the best so far, `infeasible` with none. Each
+    carries the value in a caption."""
+
+    def answer(status, best):
+        value = best[0][key] if best else None
+        caption = None
+        if value is not None:
+            capped = status not in VERDICTS
+            caption = f"{key} = {value}" + (", capped" if capped else "")
+        return Answer(status, best, {"key": key, "value": value}, caption=caption)
+
     best = []
     while True:
         above = [conditions.Gt(key, best[0][key])] if best else []
@@ -240,13 +254,10 @@ def climb(finder, key, time_limit):
         if status != "found":
             break
         best = solutions
+        yield answer("witness", best)
     if status == "infeasible":
         status = "max" if best else "infeasible"
-    value = best[0][key] if best else None
-    caption = None
-    if value is not None:
-        caption = f"{key} = {value}" + (", capped" if status == "timeout" else "")
-    return Answer(status, best, {"key": key, "value": value}, caption=caption)
+    yield answer(status, best)
 
 
 DROP_VERDICT = {"unique": "droppable", "not_unique": "needed", "infeasible": "needed"}
@@ -475,7 +486,7 @@ def answers(question, finder, marks, limit, max_key, time_limit):
     elif question == "enumerate":
         yield from enumerate_solutions(finder, limit, time_limit)
     elif question == "max":
-        yield climb(finder, max_key, time_limit)
+        yield from climb(finder, max_key, time_limit)
     else:
         yield from drop_one(finder, time_limit)
 

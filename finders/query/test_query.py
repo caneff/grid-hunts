@@ -10,6 +10,8 @@ max tests climb boards whose largest value is known by hand.
     uv run finders/query/test_query.py
 """
 
+import contextlib
+import io
 import json
 import signal
 import subprocess
@@ -24,6 +26,7 @@ HERE = Path(__file__).resolve().parent
 QUERY = HERE / "query.py"
 TOY = HERE / "toy_finder.py"
 sys.path.insert(0, str(HERE))
+import query
 from query import CAPTION_HEIGHT, CELL, MARGIN, MARK_COLOR, MARK_RADIUS
 
 WHITE = (255, 255, 255)
@@ -35,22 +38,46 @@ def board(tmp, **fields):
     return path
 
 
+def argv(board_path, out, questions, extra):
+    return [
+        sys.executable,
+        str(QUERY),
+        str(TOY),
+        str(board_path),
+        *questions,
+        "--out",
+        str(out),
+        *extra,
+    ]
+
+
 def cli(board_path, out, *questions, extra=()):
     return subprocess.run(
-        [
-            sys.executable,
-            str(QUERY),
-            str(TOY),
-            str(board_path),
-            *questions,
-            "--out",
-            str(out),
-            *extra,
-        ],
+        argv(board_path, out, questions, extra),
         capture_output=True,
         text=True,
         check=False,
     )
+
+
+def start(board_path, out, *questions, extra=()):
+    """The run, started and left running, for a test that kills it."""
+    return subprocess.Popen(
+        argv(board_path, out, questions, extra),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+
+def wait_for_lines(out, k, deadline_s=30):
+    """Returns once answers.jsonl holds `k` lines; fails at the deadline."""
+    lines = out / "answers.jsonl"
+    deadline = time.monotonic() + deadline_s
+    while time.monotonic() < deadline:
+        if lines.is_file() and len(lines.read_text().splitlines()) >= k:
+            return
+        time.sleep(0.05)
+    raise AssertionError(f"{lines} did not reach {k} line(s) in {deadline_s} s")
 
 
 def answers(out):
@@ -135,26 +162,8 @@ def test_killed_run_keeps_answers_found():
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "out"
         b = board(tmp, width=3, clues=[[0, 1]], hold_after_builds=1)
-        proc = subprocess.Popen(
-            [
-                sys.executable,
-                str(QUERY),
-                str(TOY),
-                str(b),
-                "feasible",
-                "unique",
-                "--out",
-                str(out),
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        lines = out / "answers.jsonl"
-        deadline = time.monotonic() + 30
-        while (
-            not (lines.is_file() and lines.read_text()) and time.monotonic() < deadline
-        ):
-            time.sleep(0.05)
+        proc = start(b, out, "feasible", "unique")
+        wait_for_lines(out, 1)
         assert proc.poll() is None, "the run ended before the kill"
         proc.send_signal(signal.SIGKILL)
         proc.wait()
@@ -271,15 +280,6 @@ def test_forced_refusals():
         assert not (Path(tmp) / "key").exists(), "a refused run writes nothing"
 
 
-def wait_for_lines(out, k, proc, deadline_s=30):
-    lines = out / "answers.jsonl"
-    deadline = time.monotonic() + deadline_s
-    while time.monotonic() < deadline:
-        if lines.is_file() and len(lines.read_text().splitlines()) >= k:
-            return
-        time.sleep(0.05)
-
-
 def test_enumerate_lists_every_solution_then_complete():
     """c0 = 1 leaves 1 2 3 and 1 3 2: one line and picture per solution, then
     a closing line that is complete because a further solve was infeasible."""
@@ -351,20 +351,8 @@ def test_enumerate_writes_each_solution_as_found():
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "out"
         b = board(tmp, width=3, clues=[[0, 1]], hold_after_builds=1)
-        proc = subprocess.Popen(
-            [
-                sys.executable,
-                str(QUERY),
-                str(TOY),
-                str(b),
-                "enumerate",
-                "--out",
-                str(out),
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        wait_for_lines(out, 1, proc)
+        proc = start(b, out, "enumerate")
+        wait_for_lines(out, 1)
         assert proc.poll() is None, "the run ended before the kill"
         proc.send_signal(signal.SIGKILL)
         proc.wait()
@@ -381,15 +369,23 @@ def caption_strip(image):
 def test_max_climbs_to_the_true_maximum():
     """A row of 4 with c3 = 4: each of c0, c1, c2 reaches 3 and no higher.
     One solution puts 1, 2 and 3 in those cells, so a run that stops at its
-    first solve gets 3 on at most one of them. Complete, with a witness that
-    reaches it, drawn with the value in a caption below the board."""
+    first solve gets 3 on at most one of them. Each improving witness is a
+    capped answer as it is found; the closing answer is complete, with a
+    witness that reaches the maximum, drawn with the value in a caption
+    below the board."""
     with tempfile.TemporaryDirectory() as tmp:
         b = board(tmp, width=4, clues=[[3, 4]])
         for key in ("c0", "c1", "c2"):
             out = Path(tmp) / key
             r = cli(b, out, "max", extra=["--max", key])
             assert r.returncode == 0, r.stderr
-            (answer,) = answers(out)
+            *climbed, answer = answers(out)
+            assert climbed, "no witness written on the way up"
+            assert {(a["status"], a["label"]) for a in climbed} == {
+                ("witness", "capped")
+            }, climbed
+            values = [a["value"] for a in climbed]
+            assert values == sorted(set(values)) and values[-1] == 3, values
             assert (answer["status"], answer["label"]) == ("max", "complete"), answer
             assert (answer["key"], answer["value"]) == (key, 3), answer
             (witness,) = answer["solutions"]
@@ -413,6 +409,57 @@ def test_max_time_limit_is_capped():
         (answer,) = answers(out)
         assert (answer["status"], answer["label"]) == ("timeout", "capped"), answer
         assert (out / answer["picture"]).is_file(), answer
+
+
+def test_max_writes_each_witness_as_found():
+    """Every build after the first climbing step holds for a minute (the
+    first build checks `--max`): the first witness's line and picture are
+    on disk, capped, before the kill."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "out"
+        b = board(tmp, width=4, clues=[[3, 4]], hold_after_builds=2)
+        proc = start(b, out, "max", extra=["--max", "c0"])
+        wait_for_lines(out, 1)
+        assert proc.poll() is None, "the run ended before the kill"
+        proc.send_signal(signal.SIGKILL)
+        proc.wait()
+        (first,) = answers(out)
+        assert (first["status"], first["label"]) == ("witness", "capped"), first
+        assert first["value"] == first["solutions"][0]["c0"], first
+        assert (out / first["picture"]).is_file(), first
+
+
+def test_max_timeout_after_a_best_is_capped():
+    """The second climbing solve reaches its time limit: the closing answer
+    is `timeout`, capped, with the best found so far, never `max`."""
+    real_solve = query.solve
+    calls = []
+
+    def solve_then_time_out(question, model, variables, time_limit):
+        calls.append(question)
+        if len(calls) > 1:
+            return "timeout", []
+        return real_solve(question, model, variables, time_limit)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "out"
+        b = board(tmp, width=4, clues=[[3, 4]])
+        query.solve = solve_then_time_out
+        try:
+            with contextlib.redirect_stdout(io.StringIO()):
+                assert (
+                    query.main(
+                        [str(TOY), str(b), "max", "--max", "c0", "--out", str(out)]
+                    )
+                    == 0
+                )
+        finally:
+            query.solve = real_solve
+        witness, end = answers(out)
+        assert (witness["status"], witness["label"]) == ("witness", "capped")
+        assert (end["status"], end["label"]) == ("timeout", "capped"), end
+        assert end["value"] == witness["value"] is not None, (witness, end)
+        assert end["solutions"] == witness["solutions"], end
 
 
 def test_max_on_an_infeasible_board():
@@ -495,20 +542,8 @@ def test_drop_one_writes_each_clue_as_found():
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "out"
         b = board(tmp, width=3, clues=[[0, 1], [1, 2]], hold_after_builds=1)
-        proc = subprocess.Popen(
-            [
-                sys.executable,
-                str(QUERY),
-                str(TOY),
-                str(b),
-                "drop-one",
-                "--out",
-                str(out),
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        wait_for_lines(out, 1, proc)
+        proc = start(b, out, "drop-one")
+        wait_for_lines(out, 1)
         assert proc.poll() is None, "the run ended before the kill"
         proc.send_signal(signal.SIGKILL)
         proc.wait()
