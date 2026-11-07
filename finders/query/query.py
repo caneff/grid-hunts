@@ -1,14 +1,16 @@
-"""Board questions (spec #65, #94, #95): ask a fixed board whether it has any
-solution, whether it has exactly one, and whether a mark holds in every
-solution, for any CP-SAT finder.
+"""Board questions (spec #65, #94, #95, #96): ask a fixed board whether it has
+any solution, whether it has exactly one, whether a mark holds in every
+solution, what its solutions are, and how high a named value can reach, for
+any CP-SAT finder.
 
     uv run finders/query/query.py FINDER BOARD QUESTION... --out DIR
-        [--condition FILE]... [--marks FILE] [--time-limit S]
+        [--condition FILE]... [--marks FILE] [--limit N] [--max KEY]
+        [--time-limit S]
 
 FINDER is a finder's name, read as `finders/<name>/query_finder.py`, or the
-path of a `.py` file. Each QUESTION is `feasible`, `unique` or `forced`,
-answered in order, each solve capped at `--time-limit` seconds (10 unless
-given). `forced` gives one answer per condition: each `--condition` file's
+path of a `.py` file. Each QUESTION is `feasible`, `unique`, `forced`,
+`enumerate` or `max`, answered in order, each solve capped at `--time-limit`
+seconds (10 unless given). `forced` gives one answer per condition: each `--condition` file's
 (`conditions.py` gives the JSON form), then each entry of the `--marks` file,
 a `marks.json` list the finder's `mark` hook translates. Run it under
 `job-run`: it never opens a window.
@@ -48,6 +50,19 @@ never read as feasible, infeasible or unique.
 - unique: the five statuses of `sudoku_kit.uniqueness` (an `invalid` model
   raises); on `not_unique` the picture is both solutions side by side with
   the cells that differ shaded.
+- enumerate: one `solution` answer per solution, written as it is found,
+  its picture that solution; then one closing answer carrying the `count`
+  found: `exhausted` (complete) when a further solve was infeasible, `limit`
+  (capped) when `--limit` solutions (10 unless given) were found, `timeout`
+  (capped). Reaching the limit is capped even when no other solution exists:
+  the run never asked.
+- max: the largest value of the variable `--max` names, climbed with `Gt`,
+  each step a fresh model asked for a solution above the best so far. `max`
+  (complete) only when the last step came back infeasible; `timeout`
+  (capped) when a step reached its time limit, with the best found so far;
+  `infeasible` when the board has no solution. The line carries `key` and
+  `value` (None with no solution); the picture is the witness solution, the
+  value in a caption below the board.
 
 The last line printed is `pictures: <path> ...`, one path per answer.
 
@@ -65,7 +80,7 @@ import sys
 from pathlib import Path
 
 from ortools.sat.python import cp_model
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from sudoku_kit import cpsat
 from sudoku_kit.uniqueness import check_uniqueness
 
@@ -74,11 +89,17 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 
 # isort: split
 import conditions
-from render import GridCanvas
+from render import DEFAULT_FONT, GridCanvas
 
-QUESTIONS = ("feasible", "unique", "forced")
+QUESTIONS = ("feasible", "unique", "forced", "enumerate", "max")
 DEFAULT_TIME_LIMIT = 10.0
-VERDICTS = {"feasible", "infeasible", "unique", "not_unique", "held", "not_held"}
+DEFAULT_LIMIT = 10
+VERDICTS = {
+    *("feasible", "infeasible", "unique", "not_unique", "held", "not_held"),
+    *("solution", "exhausted", "max"),
+}
+CAPTION_HEIGHT = 48
+CAPTION_FONT_SIZE = 28
 CELL = 64
 MARGIN = 24  # around each board, and between two boards side by side
 DIFF_TINT = (255, 90, 90)
@@ -149,6 +170,52 @@ def unique(finder, time_limit):
 ASK = {"feasible": feasible, "unique": unique}
 
 
+def build_with(finder, conds):
+    """A fresh model of the board with every condition in `conds` required."""
+    model, variables = finder.build(finder.clues)
+    for cond in conds:
+        model.AddBoolAnd([conditions.literal(model, variables, cond)])
+    return model, variables
+
+
+def enumerate_solutions(finder, limit, time_limit):
+    """Each solution as found, (`solution`, [it], None), then the closing
+    (status, [], {"count": k}). Each step rebuilds the board with every
+    solution found so far excluded."""
+    found = []
+    while len(found) < limit:
+        excluded = [
+            conditions.Not(
+                conditions.All(tuple(conditions.Eq(k, v) for k, v in s.items()))
+            )
+            for s in found
+        ]
+        status, solutions = solve(
+            "enumerate", *build_with(finder, excluded), time_limit
+        )
+        if status != "found":
+            closing = "exhausted" if status == "infeasible" else status
+            yield closing, [], {"count": len(found)}
+            return
+        found.append(solutions[0])
+        yield "solution", solutions, None
+    yield "limit", [], {"count": len(found)}
+
+
+def climb(finder, key, time_limit):
+    """The largest value of `key`: (status, [witness] or [])."""
+    best = []
+    while True:
+        above = [conditions.Gt(key, best[0][key])] if best else []
+        status, solutions = solve("max", *build_with(finder, above), time_limit)
+        if status != "found":
+            break
+        best = solutions
+    if status == "infeasible":
+        status = "max" if best else "infeasible"
+    return status, best
+
+
 def board_image(finder, solution, shaded=(), ringed=()):
     rows, cols = finder.size
     canvas = GridCanvas(rows, cols, cell=CELL, margin=MARGIN)
@@ -163,9 +230,21 @@ def board_image(finder, solution, shaded=(), ringed=()):
     return canvas.image
 
 
-def picture(finder, solutions, ringed=()):
+def captioned(image, caption):
+    """`image` over a strip carrying `caption`, centred."""
+    out = Image.new("RGB", (image.width, image.height + CAPTION_HEIGHT), "white")
+    out.paste(image, (0, 0))
+    font = ImageFont.truetype(DEFAULT_FONT, CAPTION_FONT_SIZE)
+    centre = (image.width / 2, image.height + CAPTION_HEIGHT / 2)
+    ImageDraw.Draw(out).text(centre, caption, fill="black", font=font, anchor="mm")
+    return out
+
+
+def picture(finder, solutions, ringed=(), caption=None):
     """One board with the `ringed` cells ringed, or two side by side with the
-    cells that differ shaded."""
+    cells that differ shaded; `caption`, when given, in a strip below."""
+    if caption is not None:
+        return captioned(picture(finder, solutions, ringed), caption)
     if len(solutions) < 2:
         return board_image(finder, solutions[0] if solutions else None, (), ringed)
     first, second = solutions
@@ -179,14 +258,23 @@ def picture(finder, solutions, ringed=()):
 
 
 def write_answer(
-    out, k, question, status, solutions, finder, time_limit, ringed=(), fields=None
+    out,
+    k,
+    question,
+    status,
+    solutions,
+    finder,
+    time_limit,
+    ringed=(),
+    fields=None,
+    caption=None,
 ):
     """Picture, links, then the answers.jsonl line, which carries `fields`
     too; the picture's path."""
     stem = f"{k}-{question}"
     picture_path = out / f"{stem}.png"
     partial = out / f"{stem}.partial.png"
-    picture(finder, solutions, ringed).save(partial)
+    picture(finder, solutions, ringed, caption).save(partial)
     partial.replace(picture_path)
     line = {
         "question": question,
@@ -219,6 +307,13 @@ def positive(text):
     return value
 
 
+def count(text):
+    value = int(text)
+    if value < 1:
+        raise argparse.ArgumentTypeError(f"--limit must be at least 1, got {text}")
+    return value
+
+
 def main(argv):
     parser = argparse.ArgumentParser(
         prog="query.py", description=__doc__.split("\n\n")[0]
@@ -229,6 +324,8 @@ def main(argv):
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--condition", type=Path, action="append", default=[])
     parser.add_argument("--marks", type=Path)
+    parser.add_argument("--limit", type=count)
+    parser.add_argument("--max", dest="max_key", metavar="KEY")
     parser.add_argument("--time-limit", type=positive, default=DEFAULT_TIME_LIMIT)
     args = parser.parse_args(argv)
     if (args.out / "answers.jsonl").exists():
@@ -238,18 +335,37 @@ def main(argv):
         parser.error("forced needs --condition or --marks")
     if not asks_forced and (args.condition or args.marks):
         parser.error("--condition and --marks need the forced question")
+    if args.limit is not None and "enumerate" not in args.questions:
+        parser.error("--limit needs the enumerate question")
+    if ("max" in args.questions) != (args.max_key is not None):
+        parser.error(
+            "max needs --max"
+            if args.max_key is None
+            else "--max needs the max question"
+        )
     try:
         finder = load_finder(args.finder, args.board)
         marks = read_marks(finder, args.condition, args.marks) if asks_forced else []
+        if args.max_key is not None:
+            _, variables = finder.build(finder.clues)
+            if args.max_key not in variables:
+                raise ValueError(f"no variable {args.max_key!r} in the finder's model")
     except ValueError as error:
         parser.error(str(error))
     args.out.mkdir(parents=True, exist_ok=True)
     pictures = []
+    options = {
+        "marks": marks,
+        "limit": args.limit or DEFAULT_LIMIT,
+        "max_key": args.max_key,
+        "time_limit": args.time_limit,
+    }
     for question in args.questions:
-        for status, solutions, ringed, fields in answer(
-            question, finder, marks, args.time_limit
+        for status, solutions, ringed, fields, caption in answer(
+            question, finder, **options
         ):
-            print(f"{question}: {status}", flush=True)
+            shown = f" ({caption})" if caption else ""
+            print(f"{question}: {status}{shown}", flush=True)
             pictures.append(
                 write_answer(
                     args.out,
@@ -261,6 +377,7 @@ def main(argv):
                     args.time_limit,
                     ringed,
                     fields,
+                    caption,
                 )
             )
     print("pictures: " + " ".join(map(str, pictures)))
@@ -295,16 +412,29 @@ def read_marks(finder, condition_files, marks_file):
     return marks
 
 
-def answer(question, finder, marks, time_limit):
-    """Each answer to `question`: (status, solutions, ringed cells, fields)."""
-    if question != "forced":
+def answer(question, finder, marks, limit, max_key, time_limit):
+    """Each answer to `question`, as it is found: (status, solutions, ringed
+    cells, fields, caption)."""
+    if question == "forced":
+        for cond, fields in marks:
+            status, solutions = forced(finder, cond, time_limit)
+            ringed = [finder.cell_of(k) for k in conditions.keys(cond)]
+            yield status, solutions, ringed, fields, None
+    elif question == "enumerate":
+        for status, solutions, fields in enumerate_solutions(finder, limit, time_limit):
+            yield status, solutions, (), fields, None
+    elif question == "max":
+        status, solutions = climb(finder, max_key, time_limit)
+        value = solutions[0][max_key] if solutions else None
+        caption = None
+        if value is not None:
+            caption = f"{max_key} = {value}" + (
+                ", capped" if status == "timeout" else ""
+            )
+        yield status, solutions, (), {"key": max_key, "value": value}, caption
+    else:
         status, solutions = ASK[question](finder, time_limit)
-        yield status, solutions, (), None
-        return
-    for cond, fields in marks:
-        status, solutions = forced(finder, cond, time_limit)
-        ringed = [finder.cell_of(k) for k in conditions.keys(cond)]
-        yield status, solutions, ringed, fields
+        yield status, solutions, (), None, None
 
 
 if __name__ == "__main__":

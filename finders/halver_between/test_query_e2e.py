@@ -1,12 +1,15 @@
-"""Board questions on Chris's halver + between board end to end (spec #65, #94).
+"""Board questions on Chris's halver + between board end to end (spec #65, #94,
+#96).
 
-Runs `finders/query/query.py halver_between board.json feasible unique` as a
-subprocess, minting offline (`short_link.fake_mint`), with every image viewer
+Runs `finders/query/query.py halver_between board.json feasible unique`, then
+`enumerate`, as a subprocess, minting offline (`short_link.fake_mint`), with every image viewer
 on PATH replaced by one that records being called, and asserts what lands in
 the output directory: each answer's line and label, two solutions that obey
 every line with the differing cells shaded, the short links rebuilt to the
-board with each solution entered, and no window opened. A tiny time limit
-gives capped answers.
+board with each solution entered, and no window opened; enumerate's ten
+distinct valid solutions, each with its picture and link, closed by a capped
+`limit` line (the board has over 40). A tiny time limit gives capped
+answers.
 
 WHAT A GREEN RUN DOES NOT COVER: how a link reads once opened in
 sudokumaker.app, and whether the picture reads well to Chris.
@@ -42,7 +45,7 @@ WHITE = (255, 255, 255)
 VIEWERS = ("xdg-open", "display", "eog", "feh", "wslview", "explorer.exe", "open")
 
 
-def run(out, *extra, fake_bin):
+def run(out, *extra, fake_bin, questions=("feasible", "unique")):
     env = {
         k: v for k, v in os.environ.items() if k not in ("DISPLAY", "WAYLAND_DISPLAY")
     }
@@ -53,8 +56,7 @@ def run(out, *extra, fake_bin):
             str(QUERY),
             "halver_between",
             str(BOARD),
-            "feasible",
-            "unique",
+            *questions,
             "--out",
             str(out),
             *extra,
@@ -177,6 +179,34 @@ def main():
             assert (out / answer["picture"]).is_file(), answer
             assert links_of(out, answer, fake) == [board_with(None)], answer
         print("ok: a tiny time limit gives capped answers, never a verdict")
+
+        out = Path(tmp) / "enumerate"
+        r = run(out, fake_bin=fake_bin, questions=("enumerate",))
+        assert r.returncode == 0, r.stderr
+        *found, end = answers(out)
+        assert [(a["status"], a["label"]) for a in found] == [
+            ("solution", "complete")
+        ] * 10, found
+        solutions = [a["solutions"][0] for a in found]
+        assert len({json.dumps(s, sort_keys=True) for s in solutions}) == 10
+        assert all(is_valid(as_solution(s), lines) for s in solutions)
+        for a, s in zip(found, solutions, strict=True):
+            assert (out / a["picture"]).is_file(), a
+            assert links_of(out, a, fake) == [board_with(s)], a
+        assert (end["status"], end["label"], end["count"]) == ("limit", "capped", 10)
+        assert not opened.exists(), opened.read_text()
+        print(
+            "ok: enumerate writes ten valid solutions with pictures and links, capped"
+        )
+
+        out = Path(tmp) / "enumerate-capped"
+        r = run(
+            out, "--time-limit", "1e-9", fake_bin=fake_bin, questions=("enumerate",)
+        )
+        assert r.returncode == 0, r.stderr
+        (end,) = answers(out)
+        assert (end["status"], end["label"]) == ("timeout", "capped"), end
+        print("ok: an enumerate cut short by its time limit is capped")
     return 0
 
 
