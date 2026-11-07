@@ -1,6 +1,7 @@
 """PIL grid-drawing base a finder's renderer extends (#483/#490).
 
-`GridCanvas` owns the image: cells, box lines, shading, digits, circles. A
+`GridCanvas` owns the image: cells, box lines, shading, digits, circles,
+lines through cell centres. A
 finder's own render module builds one, draws its candidate onto it, and
 returns `.image` to the driver. Standalone, usable without the driver -- see
 `finders/AGENTS.md`.
@@ -93,3 +94,8 @@ class GridCanvas:
             width=width,
             fill=fill,
         )
+
+    def path(self, cells, color, width):
+        """A line through the centres of `cells`, (row, col) pairs, in order."""
+        points = [self._cell_center(r, c) for r, c in cells]
+        self.draw.line(points, fill=color, width=width, joint="curve")
