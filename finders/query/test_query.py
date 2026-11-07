@@ -421,6 +421,82 @@ def test_enumerate_and_max_refusals():
         assert not any((Path(tmp) / x).exists() for x in "abcde")
 
 
+def test_drop_one_names_the_droppable_clues():
+    """Clues c0 = 1, c1 = 2, c0 = 1 again: dropping either copy of c0 = 1
+    leaves the row unique, dropping c1 = 2 leaves 1 2 3 and 1 3 2. One
+    answer per clue, in order, then a closing answer naming the droppable
+    clues, its picture the board with each droppable clue's cell in a second
+    colour."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "out"
+        b = board(tmp, width=3, clues=[[0, 1], [1, 2], [0, 1]])
+        r = cli(b, out, "drop-one")
+        assert r.returncode == 0, r.stderr
+        *per_clue, end = answers(out)
+        assert [(a["clue"], a["status"], a["label"]) for a in per_clue] == [
+            (0, "droppable", "complete"),
+            (1, "needed", "complete"),
+            (2, "droppable", "complete"),
+        ], per_clue
+        assert all(a["question"] == "drop-one" for a in [*per_clue, end])
+        assert all((out / a["picture"]).is_file() for a in per_clue), per_clue
+        assert (end["status"], end["label"]) == ("done", "complete"), end
+        assert (end["droppable"], end["capped"]) == ([0, 2], []), end
+        assert "droppable: 0, 2" in r.stdout, r.stdout
+
+        image = Image.open(out / end["picture"]).convert("RGB")
+        assert corner(image, 0, 0) != WHITE, "the droppable clue's cell is plain"
+        assert corner(image, 0, 1) == WHITE, "the needed clue's cell is coloured"
+        assert corner(image, 0, 2) == WHITE, "a cell with no clue is coloured"
+
+
+def test_drop_one_time_limit_is_capped():
+    """A tiny time limit gives every clue a timeout: capped, and no clue is
+    called droppable on that evidence."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "out"
+        b = board(tmp, width=3, clues=[[0, 1], [1, 2], [0, 1]])
+        r = cli(b, out, "drop-one", extra=["--time-limit", "1e-9"])
+        assert r.returncode == 0, r.stderr
+        *per_clue, end = answers(out)
+        assert [(a["status"], a["label"]) for a in per_clue] == [
+            ("timeout", "capped")
+        ] * 3, per_clue
+        assert (end["status"], end["label"]) == ("timeout", "capped"), end
+        assert (end["droppable"], end["capped"]) == ([], [0, 1, 2]), end
+        image = Image.open(out / end["picture"]).convert("RGB")
+        assert corner(image, 0, 0) == WHITE, "a capped clue is drawn droppable"
+
+
+def test_drop_one_writes_each_clue_as_found():
+    """Every build after the first holds for a minute: the first clue's line
+    and picture are on disk before the kill."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "out"
+        b = board(tmp, width=3, clues=[[0, 1], [1, 2]], hold_after_builds=1)
+        proc = subprocess.Popen(
+            [
+                sys.executable,
+                str(QUERY),
+                str(TOY),
+                str(b),
+                "drop-one",
+                "--out",
+                str(out),
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        wait_for_lines(out, 1, proc)
+        assert proc.poll() is None, "the run ended before the kill"
+        proc.send_signal(signal.SIGKILL)
+        proc.wait()
+        assert (out / "answers.jsonl").is_file(), "no clue on disk before the kill"
+        (first,) = answers(out)
+        assert (first["clue"], first["status"]) == (0, "needed"), first
+        assert (out / first["picture"]).is_file(), first
+
+
 def test_refusals():
     with tempfile.TemporaryDirectory() as tmp:
         b = board(tmp, width=3, clues=[])

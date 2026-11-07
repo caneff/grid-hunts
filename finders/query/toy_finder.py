@@ -10,13 +10,15 @@ JSON:
 A row of `width` cells, each 1..width, all different; each clue `[i, d]`
 pins cell i to digit d. `hold_after_builds` (optional) makes every `build`
 after that many sleep for a minute, so a test can kill a run between two
-questions. The toy has no `link` hook.
+questions. A marked clue's cell is shaded. The toy has no `link` hook.
 """
 
 import json
 import time
 
 from ortools.sat.python import cp_model
+
+MARKED_TINT = (120, 200, 255)
 
 
 class ToyRow:
@@ -43,7 +45,9 @@ class ToyRow:
     def cell_of(self, name):
         return 0, int(name.removeprefix("c"))
 
-    def draw(self, canvas, solution):
+    def draw(self, canvas, solution, marked=()):
+        for k in marked:
+            canvas.shade_cell(0, self.clues[k][0], MARKED_TINT)
         canvas.box_lines(1, self.width)
         if solution is not None:
             for i in range(self.width):

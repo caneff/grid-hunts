@@ -6,7 +6,8 @@ type.
 line type's `lines`, read from the decoded SudokuMaker document `doc`. Its
 variables are named by cell: `r1c1` the digit, `h_r1c1` 1 on a halver.
 `draw` shades halver cells in one tint and draws each line through its cell
-centres in the line type's colour, its two ends ringed. `link` mints a short
+centres in the line type's colour, its two ends ringed, and each marked
+line in `DROP_COLOR`, the second colour every line type shares. `link` mints a short
 link of `doc` with every cell's entries cleared and, given a solution, its
 digits entered; SudokuMaker has no halvers, so the picture is what shows them.
 `mark` reads a `marks.json` entry as a condition on those variables
@@ -37,6 +38,7 @@ from short_link import mint
 N = 9
 BOX = (3, 3)
 HALVER_TINT = (255, 214, 120)
+DROP_COLOR = (220, 60, 140)
 
 
 class HalverQuery:
@@ -55,17 +57,18 @@ class HalverQuery:
     def cell_of(self, name):
         return parse_cell(name.removeprefix("h_"))
 
-    def draw(self, canvas, solution):
+    def draw(self, canvas, solution, marked=()):
         cells = [(r, c) for r in range(N) for c in range(N)]
         if solution is not None:
             for cell in cells:
                 if solution[f"h_{cell_name(cell)}"]:
                     canvas.shade_cell(*cell, HALVER_TINT)
         width = max(2, canvas.cell // 6)
-        for line in self.clues:
-            canvas.path([line.a, *line.body, line.b], self.line_color, width)
+        for k, line in enumerate(self.clues):
+            color = DROP_COLOR if k in marked else self.line_color
+            canvas.path([line.a, *line.body, line.b], color, width)
             for end in (line.a, line.b):
-                canvas.circle(*end, color=self.line_color, width=width, fill="white")
+                canvas.circle(*end, color=color, width=width, fill="white")
         canvas.box_lines(*BOX)
         if solution is not None:
             for cell in cells:
