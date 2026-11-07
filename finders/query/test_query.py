@@ -1,8 +1,10 @@
-"""The board-question driver's own suite (spec #65, #94), on the toy finder.
+"""The board-question driver's own suite (spec #65, #94, #95), on the toy
+finder.
 
 Drives `query.py` as a subprocess on `toy_finder.py` (one row of distinct
 digits) and asserts what lands in the output directory: each answer's
-`answers.jsonl` line and label, its picture, and the last printed line.
+`answers.jsonl` line and label, its picture, and the last printed line. The
+forced-mark tests drive the conditions helper through condition files.
 
     uv run finders/query/test_query.py
 """
@@ -21,7 +23,7 @@ HERE = Path(__file__).resolve().parent
 QUERY = HERE / "query.py"
 TOY = HERE / "toy_finder.py"
 sys.path.insert(0, str(HERE))
-from query import CELL, MARGIN
+from query import CELL, MARGIN, MARK_COLOR, MARK_RADIUS
 
 WHITE = (255, 255, 255)
 
@@ -158,6 +160,93 @@ def test_killed_run_keeps_answers_found():
         (feasible,) = answers(out)
         assert feasible["question"] == "feasible" and feasible["label"] == "complete"
         assert (out / feasible["picture"]).is_file(), feasible
+
+
+def condition(tmp, name, cond):
+    path = Path(tmp) / f"{name}.json"
+    path.write_text(json.dumps(cond))
+    return path
+
+
+def ring(image, col):
+    """A pixel on the left of the mark ring of cell (0, col): off the digit."""
+    x = MARGIN + col * CELL + CELL // 2 - round(MARK_RADIUS * CELL) + 1
+    return image.getpixel((x, MARGIN + CELL // 2))
+
+
+def test_forced_conditions():
+    """Each condition file is one answer, in the order given. On the board
+    c0 = 1 the row is 1 2 3 or 1 3 2: every condition kind compiles, the
+    held ones are held, and the one that fails shows a counterexample that
+    breaks it, its cell ringed."""
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "out"
+        b = board(tmp, width=3, clues=[[0, 1]])
+        files = [
+            condition(tmp, "any", {"any": [{"eq": ["c1", 2]}, {"eq": ["c1", 3]}]}),
+            condition(tmp, "not-gt", {"not": {"gt": ["c0", 1]}}),
+            condition(tmp, "all", {"all": [{"gt": ["c1", 1]}, {"gt": ["c2", 1]}]}),
+            condition(tmp, "fails", {"eq": ["c2", 3]}),
+        ]
+        extra = [x for f in files for x in ("--condition", str(f))]
+        r = cli(b, out, "forced", extra=extra)
+        assert r.returncode == 0, r.stderr
+        found = answers(out)
+        assert [a["question"] for a in found] == ["forced"] * 4, found
+        statuses = [(a["status"], a["label"]) for a in found]
+        assert statuses == [("held", "complete")] * 3 + [("not_held", "complete")]
+        assert found[0]["condition"] == json.loads(files[0].read_text()), found[0]
+        assert all(a["solutions"] == [] for a in found[:3]), found
+
+        broken = found[3]
+        assert broken["solutions"] == [{"c0": 1, "c1": 3, "c2": 2}], broken
+        image = Image.open(out / broken["picture"]).convert("RGB")
+        assert ring(image, 2) == MARK_COLOR, "the condition's cell is ringed"
+        assert ring(image, 0) == ring(image, 1) == WHITE, "no other cell is"
+
+        last = r.stdout.strip().splitlines()[-1]
+        pictures = " ".join(str(out / a["picture"]) for a in found)
+        assert last == f"pictures: {pictures}", last
+
+
+def test_forced_time_limit_is_capped():
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "out"
+        b = board(tmp, width=3, clues=[])
+        cond = condition(tmp, "c", {"gt": ["c0", 0]})
+        r = cli(
+            b, out, "forced", extra=["--condition", str(cond), "--time-limit", "1e-9"]
+        )
+        assert r.returncode == 0, r.stderr
+        (answer,) = answers(out)
+        assert (answer["status"], answer["label"]) == ("timeout", "capped"), answer
+        assert (out / answer["picture"]).is_file(), answer
+
+
+def test_forced_refusals():
+    with tempfile.TemporaryDirectory() as tmp:
+        b = board(tmp, width=3, clues=[])
+        r = cli(b, Path(tmp) / "none", "forced")
+        assert r.returncode == 2, r.stderr
+        assert "forced needs --condition or --marks" in r.stderr, r.stderr
+
+        r = cli(b, Path(tmp) / "unused", "unique", extra=["--condition", str(b)])
+        assert r.returncode == 2, r.stderr
+        assert "--condition and --marks need the forced question" in r.stderr
+
+        bad = condition(tmp, "bad", {"eq": ["c9", 1]})
+        r = cli(b, Path(tmp) / "key", "forced", extra=["--condition", str(bad)])
+        assert r.returncode == 2 and "no variable 'c9'" in r.stderr, r.stderr
+
+        bad = condition(tmp, "kind", {"lt": ["c0", 1]})
+        r = cli(b, Path(tmp) / "kind", "forced", extra=["--condition", str(bad)])
+        assert r.returncode == 2 and "unknown condition" in r.stderr, r.stderr
+
+        marks = condition(tmp, "marks", [{"kind": "digit", "cell": "r1c1", "digit": 1}])
+        r = cli(b, Path(tmp) / "marks", "forced", extra=["--marks", str(marks)])
+        assert r.returncode == 2, r.stderr
+        assert "has no mark hook" in r.stderr, r.stderr
+        assert not (Path(tmp) / "key").exists(), "a refused run writes nothing"
 
 
 def test_refusals():
