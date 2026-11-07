@@ -22,6 +22,7 @@ detail.
   quantity, which clues can be dropped one at a time, or does a mark hold in
   every solution. Not a hunt: a hunt searches for boards, a board question
   asks about one (#36). _Avoid_: query, board query.
+  `query.py` and `finders/query/` keep the ruled CLI name; prose says board question.
 - **capped** — an answer to a board question that a time or count limit
   stopped before it was settled. A capped answer is never read as unique,
   held or complete. Its opposite is **complete**.

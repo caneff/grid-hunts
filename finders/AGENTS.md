@@ -27,6 +27,20 @@ README before reusing anything there.
   over `chan_big.py`'s model, is the first real one. Other existing finders
   are not ported onto it. A new finder folder needs a BUILD file before
   the gate passes: `docs/pants.md`.
+- `finders/query/` is the board-question driver (spec #65), CP-SAT only:
+  `query.py FINDER BOARD QUESTION... --out DIR`, run under `job-run`, asks
+  a fixed board `feasible`, `unique`, `forced` (whether a mark holds in
+  every solution, from `--condition FILE` or `--marks marks.json`),
+  `enumerate`, `max` or `drop-one` (which clues it stays unique without,
+  drawn in a second colour) and writes
+  each answer as it is found, a line of `DIR/answers.jsonl` labelled
+  `complete` or `capped`, a picture and the finder's short links. Its
+  docstring states the finder contract (`build(clues)`, `cell_of`, `draw`,
+  optional `link` and `mark`); `conditions.py` is the shared helper that
+  compiles a condition onto any CP-SAT model; `toy_finder.py` is the worked
+  example its suite runs on. `finders/halver/halver_query.py` is
+  the halver finders' adapter, and each halver finder's `query_finder.py`
+  its entry.
 - `finders/ubahn/` is the U-Bahn finder (a pencil puzzle, no sudoku), on the
   hunt protocol: `ubahn_finder.py` its docstring and flags, `model.py` the
   CP-SAT model, `network.py` the solver-free rules `verify` reads;
@@ -141,8 +155,9 @@ README before reusing anything there.
   it stays out of both gates.
 - `finders/halver/` is the shared halver layer (spec #52), which holds no
   suite of its own: `halver_rules.py` the CP-SAT board model (digits, one
-  halver per house, doubled values), the five-status check, the per-mark
-  check, `Line` and cell naming; `halver_brute.py` the independent
+  halver per house, doubled values), `Line` and cell naming, asking no
+  question itself: `halver_query.py`'s `uniqueness` and `holds` ask the
+  board-question driver (#98); `halver_brute.py` the independent
   backtracking search, which shares no code with the model, and
   `halver_brute_c.py` the same search in C (`halver_brute.c`, built with
   the system gcc into a git-ignored `target/`), which the lockout check

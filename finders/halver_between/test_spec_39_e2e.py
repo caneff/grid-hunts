@@ -33,18 +33,19 @@ import hit_fixture
 import hunt
 import rules
 import short_link
+from halver_query import holds, uniqueness
 
 ADDED = hit_fixture.ADDED
 LINES = hunt.BOARD + list(ADDED)
 
 # Unique, and Chris's marks hold in the one solution.
 board = rules.RuleModel(LINES)
-check = board.check(time_limit=60)
+check = uniqueness(board, time_limit=60)
 assert check.status == "unique", check.status
 marks = json.loads((HERE / "marks.json").read_text())
 assert len(marks) == 23, len(marks)
 for mark in marks:
-    held = board.mark_holds(mark, time_limit=60)
+    held = holds(board, mark, time_limit=60)
     assert held.status == "held", (rules.mark_name(mark), held)
 
 # Each added line is a legal shape on the lines drawn before it.

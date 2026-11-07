@@ -30,27 +30,12 @@ import rules
 
 # isort: split
 from halver_report import report
-from halver_rules import cell_name, mark_name
-
-ALLOWED = {0, 1, rules.LOCKOUT_LINE}  # given digits, regions, lockout lines
+from halver_rules import mark_name
 
 
 def read_board(path):
     """The board's lockout lines; a ValueError naming what is wrong."""
-    doc = json.loads(path.read_text())
-    cells = len(doc["puzzle"]["cells"])
-    if cells != 81:
-        raise ValueError(f"{cells} cells, and only 9x9 is checked")
-    lines = rules.lines_from_doc(doc)
-    other = sorted(
-        {c.get("type") for c in doc["puzzle"]["constraints"]} - ALLOWED, key=str
-    )
-    if other:
-        raise ValueError(f"constraint type {other[0]} on a lockout-only board")
-    given = [i for i, cell in enumerate(doc["puzzle"]["cells"]) if cell.get("given")]
-    if given:
-        raise ValueError(f"given digit in {cell_name(divmod(given[0], 9))}")
-    return lines
+    return rules.lines_alone(json.loads(path.read_text()))
 
 
 def main(argv):

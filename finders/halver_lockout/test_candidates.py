@@ -16,6 +16,7 @@ sys.path.insert(0, str(HERE))
 
 import candidates
 import rules
+from halver_query import uniqueness
 from rules import Line, parse_cell
 
 
@@ -97,7 +98,7 @@ def lists_brute_force(lines, n, box, gap, cap):
     """The walk lists, once each and shortest first, exactly the lines a
     brute force over every king path of at most `cap` cells finds on the
     board's two witnesses. Returns the brute force's line lengths."""
-    check = rules.RuleModel(lines, n=n, box=box, gap=gap).check(time_limit=60)
+    check = uniqueness(rules.RuleModel(lines, n=n, box=box, gap=gap), time_limit=60)
     assert check.status == "not_unique", check.status
     target, second = check.first, check.second
     brute = {
@@ -131,7 +132,7 @@ assert candidates.new_cells(path("r4c3", "r5c4", "r4c5"), DRAWN) == 1
 assert candidates.new_cells(path("r1c4", "r1c5", "r1c6"), DRAWN) == 3
 assert candidates.free_cell_count(DRAWN, 9) == 81 - 7
 assert candidates.free_cell_count([], 9) == 81
-check = rules.RuleModel(SMALL, n=4, box=(2, 2), gap=2).check(time_limit=60)
+check = uniqueness(rules.RuleModel(SMALL, n=4, box=(2, 2), gap=2), time_limit=60)
 target, second = check.first, check.second
 cells = [(r, c) for r in range(4) for c in range(4)]
 differ = [cell for cell in cells if target.doubled(cell) != second.doubled(cell)]

@@ -1,6 +1,9 @@
-"""The rule check on Chris's board: its lines alone leave more than one
-solution, a check's timeout is reported as a timeout, never as unique, and a
-mark check's timeout never as held. A `digit_in` mark holds exactly when
+"""The rule check on Chris's board, asked through the board-question driver
+(`halver_query.uniqueness` and `halver_query.holds`, spec #65, #98): its lines
+alone leave more than one solution, a check's timeout is reported as a
+timeout, never as unique, and a mark check's timeout never as held. The
+halver model keeps no question logic of its own: the asserts below pin
+that it has no `check` or `mark_holds` method. A `digit_in` mark holds exactly when
 every solution puts the digit in one of its cells, read on the 4x4 case of
 test_brute.py, whose answer is known. A sample is a solution, None on a
 timeout, and an error on lines with no solution. Workers pinned to 1.
@@ -15,6 +18,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import rules
+
+# isort: split
+from halver_query import holds, uniqueness
+from halver_rules import HalverModel
 
 HERE = Path(__file__).resolve().parent
 LINES = rules.load_lines(HERE / "board.json")
@@ -31,7 +38,7 @@ assert [rules.line_name(line) for line in LINES] == [
 ], LINES
 
 base = rules.RuleModel(LINES)
-result = base.check(time_limit=60)
+result = uniqueness(base, time_limit=60)
 assert result.status == "not_unique", result.status
 # Both witnesses obey every line, read in plain Python, and they differ.
 for solution in (result.first, result.second):
@@ -40,13 +47,13 @@ for solution in (result.first, result.second):
 assert result.first != result.second
 
 # A check given no time is a timeout, and a timeout is never unique.
-rushed = base.check(time_limit=1e-6)
+rushed = uniqueness(base, time_limit=1e-6)
 assert rushed.status == "timeout", rushed.status
 
 # A mark check given no time is a timeout too, never "held".
 mark = {"kind": "digit", "cell": "r6c1", "digit": 6}
-assert base.mark_holds(mark, time_limit=10).status == "held"
-rushed_mark = base.mark_holds(mark, time_limit=1e-6)
+assert holds(base, mark, time_limit=10).status == "held"
+rushed_mark = holds(base, mark, time_limit=1e-6)
 assert rushed_mark.status == "timeout", rushed_mark
 
 # digit_in on the 4x4 case whose one answer has rows 3214 / 4123 / 2341 /
@@ -61,11 +68,9 @@ small = rules.RuleModel(
     n=4,
     box=(2, 2),
 )
-held = small.mark_holds(
-    {"kind": "digit_in", "cells": ["r1c4", "r1c3", "r1c2"], "digit": 1}
-)
+held = holds(small, {"kind": "digit_in", "cells": ["r1c4", "r1c3", "r1c2"], "digit": 1})
 assert held.status == "held", held
-broken = small.mark_holds({"kind": "digit_in", "cells": ["r1c1", "r1c2"], "digit": 1})
+broken = holds(small, {"kind": "digit_in", "cells": ["r1c1", "r1c2"], "digit": 1})
 assert broken.status == "not_held", broken
 assert broken.counterexample.digits[0][2] == 1, broken
 
@@ -83,5 +88,9 @@ except ValueError as error:
     assert "INFEASIBLE" in str(error), error
 else:
     raise AssertionError("a sample of lines with no solution returned")
+
+# One copy of the question logic: the driver's (spec #65 story 21).
+assert not hasattr(HalverModel, "check"), "HalverModel.check is back"
+assert not hasattr(HalverModel, "mark_holds"), "HalverModel.mark_holds is back"
 
 print("ok")

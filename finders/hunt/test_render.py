@@ -136,4 +136,25 @@ check(
     any(p != (255, 255, 255) for p in cell_pixels),
 )
 
+# --- path: a line through cell centres, sampled along it and off it ---
+
+canvas_path = GridCanvas(3, 3, cell=20, margin=0, background="white")
+canvas_path.path([(0, 0), (0, 2), (2, 2)], color=(0, 128, 0), width=3)
+check(
+    "path draws along the first leg, cell centre to cell centre",
+    canvas_path.image.getpixel((20, 10)) == (0, 128, 0),
+)
+check(
+    "path turns at the middle cell's centre and draws the second leg",
+    canvas_path.image.getpixel((50, 30)) == (0, 128, 0),
+)
+check(
+    "path leaves a cell it never crosses untouched",
+    canvas_path.image.getpixel((10, 30)) == (255, 255, 255),
+)
+check(
+    "path stops at the last cell's centre",
+    canvas_path.image.getpixel((50, 58)) == (255, 255, 255),
+)
+
 sys.exit(0 if ok else 1)

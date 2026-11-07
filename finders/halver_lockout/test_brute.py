@@ -39,6 +39,7 @@ import brute
 import halver_brute
 import halver_brute_c
 import rules
+from halver_query import uniqueness
 from rules import Line
 
 LIMIT = 2000
@@ -148,7 +149,7 @@ for name, expected in [
 
 # The unique fixture's one answer is the CP-SAT check's.
 unique = rules.load_lines(HERE / "fixtures" / "unique.json")
-answer = rules.RuleModel(unique).check(time_limit=60)
+answer = uniqueness(rules.RuleModel(unique), time_limit=60)
 assert answer.status == "unique", answer.status
 assert brute_solutions(unique, 9, (3, 3), rules.GAP, 2) == {answer.first}
 
@@ -156,7 +157,7 @@ assert brute_solutions(unique, 9, (3, 3), rules.GAP, 2) == {answer.first}
 # each at least 4 from the others span 12, and values run 0.5 to 9. The
 # search says so within a minute (#59).
 four = rules.load_lines(HERE / "fixtures" / "four_diamonds.json")
-assert rules.RuleModel(four).check(time_limit=60).status == "infeasible"
+assert uniqueness(rules.RuleModel(four), time_limit=60).status == "infeasible"
 found = brute.solutions(four, 9, (3, 3), limit=2, deadline=time.monotonic() + 60)
 assert found == [], found
 
