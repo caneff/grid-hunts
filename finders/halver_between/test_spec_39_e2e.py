@@ -3,8 +3,8 @@
 - Chris's six lines plus the hit's 11 check `unique` with the CP-SAT rule
   model, and each of his 23 marks holds in that one solution;
 - every added line keeps Chris's shape rules against the lines before it;
-- `record` writes the line table and the very link the decision log
-  publishes, which decodes back to exactly his six lines plus the hit's, in
+- `record` writes the line table and a short link (minted offline) whose
+  document is exactly his six lines plus the hit's, in
   his line style, with every entered digit, colour and pencil mark cleared,
   and `candidate_from_record` reads the record back to the same hit;
 - `verify` passes the hit (the backtracking check finds one solution, the
@@ -32,7 +32,7 @@ import candidates
 import hit_fixture
 import hunt
 import rules
-from sudoku_kit.link_codec import decode_puzzle
+import short_link
 
 ADDED = hit_fixture.ADDED
 LINES = hunt.BOARD + list(ADDED)
@@ -65,9 +65,9 @@ finder = hunt.HalverBetweenFinder(
     verify_seconds=600.0,
 )
 hit = hunt.Hit(ADDED, check.first)
-record = finder.record(hit)
-assert record["link"] == hit_fixture.LINK, record["link"]
-doc = decode_puzzle(record["link"])
+with short_link.fake_mint() as fake:
+    record = finder.record(hit)
+    doc = short_link.fake_doc(fake, record["link"])
 assert rules.lines_from_doc(doc) == LINES
 assert all(cell == {} for cell in doc["puzzle"]["cells"]), "entered marks kept"
 (group,) = [

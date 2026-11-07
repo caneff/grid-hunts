@@ -3,8 +3,8 @@
 - the hit's 24 lines check `unique` with the CP-SAT rule model, and its one
   solution is the recorded one;
 - every line keeps the drawing rules against the lines before it;
-- `record` writes the very link the decision log publishes, which decodes
-  back to exactly the hit's lines as type 407 with `"solverIgnored": true`
+- `record` writes a short link (minted offline) whose document holds
+  exactly the hit's lines as type 407 with `"solverIgnored": true`
   and nothing entered, and `candidate_from_record` reads the record back to
   the same hit;
 - `verify` passes the hit (the backtracking check finds one solution, the
@@ -36,7 +36,7 @@ import candidates
 import hit_fixture
 import hunt
 import rules
-from sudoku_kit.link_codec import decode_puzzle
+import short_link
 
 ADDED = hit_fixture.ADDED
 
@@ -52,13 +52,16 @@ for line in ADDED:
 
 finder = hunt.HalverLockoutFinder(**hunt.DEFAULTS)
 hit = hunt.Hit(ADDED, hit_fixture.SOLUTION)
-record = finder.record(hit)
-assert record["link"] == hit_fixture.LINK, record["link"]
-doc = decode_puzzle(record["link"])
+with short_link.fake_mint() as fake:
+    record = finder.record(hit)
+    doc = short_link.fake_doc(fake, record["link"])
 assert rules.lines_from_doc(doc) == list(ADDED)
 lockout = [c for c in doc["puzzle"]["constraints"] if c.get("type") == 407]
 assert len(lockout) == 1 and lockout[0]["solverIgnored"] is True, lockout
 assert {c["type"] for c in doc["puzzle"]["constraints"]} == {0, 1, 407}
+(boxes,) = [c["regions"] for c in doc["puzzle"]["constraints"] if c["type"] == 1]
+assert boxes[:9] == [0, 0, 0, 1, 1, 1, 2, 2, 2] and boxes[27] == 3, boxes
+assert [boxes.count(k) for k in range(9)] == [9] * 9, boxes
 assert all(cell == {} for cell in doc["puzzle"]["cells"]), "entered marks kept"
 assert record["table"] == [
     f"L{i} | {row}" for i, row in enumerate(hit_fixture.TABLE, start=1)

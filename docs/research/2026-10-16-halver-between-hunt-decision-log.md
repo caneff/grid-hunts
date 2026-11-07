@@ -180,7 +180,7 @@ Empty reasons, verbatim:
 
 **First pilot, seed 0, 14 added lines.**
 
-https://sudokumaker.app/?puzzle=N4IgZg9gTgtghgFwGoFMoGcCWEB2IBcABCAIwB0AbGQAwgA0xADgK4BerANigYaDnDG5EQ9YnGYIAFtB4gAwpMw4AygihxGokAGMUHDuh4BtYAF8GZi+d7XLNqw-tO7L228euP75988+vAf5BfiG+YYGhEeHB0ZExUQnxSaEAugw6uOhqcEoIhkQmIAgAnoxChNS2RaXlJOlQKADm2Dj5hEbUDJ0VDHWEfX0ATAzDhKPdE71T-SOzY10LPTPLQ3OjAMwMm4TbACwM+4SHAKwMp4Tn21cHN0dn9xdbTzu3hycP5xQMX4Q-AOwMAGEIEADgYYMIEJ+0MBsOB4IRkO+yN+cKBoMRIJSVXQEA4ADc0ABJRo4aAoAAmPDUzBQ6RKZR4u2o2xAHCUKDaRiMgwAnFtuut+UdBX11qNdn1jt1dsLdhDdn80u0KOdjj9dhrjsqjLs1YcKNsKIc-ts-ibtQweUCSBDhSRuiRhYMsVaKKM-n0-t0KMKKNQdX9zn9-kCKBDjhGw5b2rttsdRv6dYMgesgXqdSRRoNui7kxD1gqlVbdhs3utM9mhrydecSNss7XeocSDGjJ9em31udduXM+dBi2KJn-r1i+0e71BpWRtmK8qQFlilweKB2ThOauioptABrDfoNrUMh9DIcGTCADEcBvt5A1hAKBwFIAChBcm1QFhWOVjxDwJg+iyJeYCgWBIK0OkWRQBAu7lKAUiYHuB5HjQoxnhexDXreN73qY+HYqYQA
+https://sudokumaker.app/p/hbQCPRzbtb
 
 | # | Circle A | Body | Circle B |
 |---|---|---|---|
@@ -201,7 +201,7 @@ https://sudokumaker.app/?puzzle=N4IgZg9gTgtghgFwGoFMoGcCWEB2IBcABCAIwB0AbGQAwgA0
 
 **Second pilot, seed 0, 12 added lines.**
 
-https://sudokumaker.app/?puzzle=N4IgZg9gTgtghgFwGoFMoGcCWEB2IBcABCAIwB0AbGQAwgA0xADgK4BerANigYaDnDG5EQ9YnGYIAFtB4gAwpMw4AygihxGokAGMUHDuh4BtYAF8GZi+d7XLNqw-tO7L228euP75988+vAf5BfiG+YYGhEeHB0ZExUQnxSaEAugw6uOhqcEoIhkQmIAgAnoxChNS2RaXlJOlQKADm2Dj5hEbUDJ0VDHWEfX0ATAzDhKPdE71T-SOzY10LPTPLQ3OjAMwMm4TbACwM+4SHAKwMp4Tn21cHN0dn9xdbTzu3hycP5xQMX4Q-AOwMAGEIEADgYYMIEJ+0MBsOB4IRkO+yN+cKBoMRIJSVXQEA4ADc0ABJRo4aAoAAmPDUzBQ6RKZR4u2o2xAHCUKDaRiMgwAnFtuut+UdBX11qNdn1jt1dsLdhDdn80u0KOdjj9dhrjsqjLs1YcKNsKIc-ts-ibtQweUCSBDhSRuiRhYMsVaKKM-n0-t0KMKKNQdX9zn9-kCKBDjhGw5b2rttsdRv6dYMgesgS6dedDiR1jqcyMht0M1b1pc3rmS1ny3ntiRDoNdpneucG8nDus9oMdf9ekqS70Bl23VKjV3lSAssUuDxQOycJyZ0VFNoANbz9BtahkPoZDgyYQAYjgx5PIGsIBQOApAAUILk2qAsKxyluIeBMPpZAewD-fyDaOkWRQBAK7lKAUiYKu66bjQoy7vuxBHiex5nqYaHYqYQA
+https://sudokumaker.app/p/8tmwwMQqJK
 
 | # | Circle A | Body | Circle B |
 |---|---|---|---|
@@ -220,7 +220,7 @@ https://sudokumaker.app/?puzzle=N4IgZg9gTgtghgFwGoFMoGcCWEB2IBcABCAIwB0AbGQAwgA0
 
 **Second pilot, seed 1, 11 added lines.**
 
-https://sudokumaker.app/?puzzle=N4IgZg9gTgtghgFwGoFMoGcCWEB2IBcABCAIwB0AbGQAwgA0xADgK4BerANigYaDnDG5EQ9YnGYIAFtB4gAwpMw4AygihxGokAGMUHDuh4BtYAF8GZi+d7XLNqw-tO7L228euP75988+vAf5BfiG+YYGhEeHB0ZExUQnxSaEAugw6uOhqcEoIhkQmIAgAnoxChNS2RaXlJOlQKADm2Dj5hEbUDJ0VDHWEfX0ATAzDhKPdE71T-SOzY10LPTPLQ3OjAMwMm4TbACwM+4SHAKwMp4Tn21cHN0dn9xdbTzu3hycP5xQMX4Q-AOwMAGEIEADgYYMIEJ+0MBsOB4IRkO+yN+cKBoMRIJSVXQEA4ADc0ABJRo4aAoAAmPDUzBQ6RKZR4u2o2xAHCUKDaRiMgwAnFtuut+UdBX11qNdn1jt1dsLdhDdn80u0KOdjj9dhrjsqjLs1YcKNsKIc-ts-ibtQweUCSBDhSRuiRhYMsVaKKM-n0-t0KMKKNQdX9zn9-kCKBDjhGw5b2oMgesgYqdYMfus3oMdbtRsdRv7k5c9hmrSQbT8U8nHaNBkNeZneicdf7vn13cmIesIXydcdhccWwGrRsDillSAssUuDxQOycJyp0VFNoANaz9BtahkPoZDgyYQAYjgh6PIGsIBQOApAAUILk2qAsKxyhuIeBMPpZHuwF-vyDaOkslAEBLuUoBSJgy6ruuNCjNuu7EAeR6HiepgodiphAA
+https://sudokumaker.app/p/FDMqj8RtCK
 
 | # | Circle A | Body | Circle B |
 |---|---|---|---|

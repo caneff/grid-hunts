@@ -30,8 +30,6 @@ import json
 import sys
 from pathlib import Path
 
-from sudoku_kit.link_codec import encode_link
-
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
@@ -39,6 +37,7 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 # isort: split
 import rules
 from hunt_dir import replace_links, seeded_examples
+from short_link import mint
 from verified_io import example_verdicts
 
 TEXT = {
@@ -140,7 +139,7 @@ def write_links(out):
     run_json = json.loads((out / "run.json").read_text())
     verdicts = example_verdicts(out, run_json["argv"], [r for _, r in examples])
     built = {
-        seed: encode_link(link_doc(record)) + "\n"
+        seed: mint(link_doc(record)) + "\n"
         for (seed, record), verdict in zip(examples, verdicts, strict=True)
         if verdict == "hit"
     }

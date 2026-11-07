@@ -27,8 +27,8 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 # isort: split
 import hunt
 import rules
+import short_link
 from subprocess_env import success_env
-from sudoku_kit.link_codec import decode_puzzle
 
 SCRIPT = HERE / "hunt.py"
 
@@ -42,7 +42,7 @@ def run(*argv):
     )
 
 
-with tempfile.TemporaryDirectory() as tmp:
+with short_link.fake_mint() as fake, tempfile.TemporaryDirectory() as tmp:
     out = Path(tmp) / "hits"
     result = run("--out", str(out), "--seeds", "0:1")
     assert result.returncode == 0, result.stderr
@@ -53,7 +53,7 @@ with tempfile.TemporaryDirectory() as tmp:
     finder = hunt.HalverLockoutFinder(**hunt.DEFAULTS)
     hit = finder.candidate_from_record(record)
     assert hit.added, record
-    doc = decode_puzzle(record["link"])
+    doc = short_link.fake_doc(fake, record["link"])
     assert rules.lines_from_doc(doc) == list(hit.added)
     (group,) = [c for c in doc["puzzle"]["constraints"] if c.get("type") == 407]
     assert group["solverIgnored"] is True, group

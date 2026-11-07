@@ -5,8 +5,8 @@ The loop, its ranking, `verify`, `summary` and the CLI are the shared
 target-grid hunt (`finders/halver/halver_hunt.py`, whose docstring states
 them); this module gives it the between line type, Chris's board as the
 start, and the link. `verify` re-reads a hit with `brute.py`. `record`
-writes the line table and a SudokuMaker link
-(`sudoku_kit.link_codec.encode_link`): Chris's lines plus the added ones, in
+writes the line table and a SudokuMaker short link
+(`short_link.mint`): Chris's lines plus the added ones, in
 his line style, with every entered digit, colour and pencil mark cleared.
 
     uv run finders/halver_between/hunt.py --out DIR --seeds 0:3

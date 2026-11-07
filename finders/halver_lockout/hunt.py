@@ -7,7 +7,7 @@ target-grid hunt (`finders/halver/halver_hunt.py`, whose docstring states
 them); this module gives it the lockout line type and the empty board.
 `verify` re-reads a hit with `brute.py`, the C backtracking search. `record`
 writes the line table, the solution (digits and halvers) and a SudokuMaker
-link (`sudoku_kit.link_codec.encode_link`) of an empty 9x9 with the hit's
+short link (`short_link.mint`) of an empty 9x9 with the hit's
 lines as lockout lines (type 407) with `"solverIgnored": true`, so
 SudokuMaker, which knows nothing about halvers, does not mark the answer
 wrong. Nothing else is entered.
