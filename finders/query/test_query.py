@@ -391,6 +391,9 @@ def test_max_climbs_to_the_true_maximum():
             (witness,) = answer["solutions"]
             assert witness[key] == 3 and witness["c3"] == 4, witness
             assert f"{key} = 3" in r.stdout, r.stdout
+            last = r.stdout.strip().splitlines()[-1]
+            first = last.removeprefix("pictures: ").split()[0]
+            assert first == str(out / answer["picture"]), last
 
         image = Image.open(out / answer["picture"]).convert("RGB")
         board_height = CELL + 2 * MARGIN
@@ -511,6 +514,9 @@ def test_drop_one_names_the_droppable_clues():
         assert (end["status"], end["label"]) == ("done", "complete"), end
         assert (end["droppable"], end["capped"]) == ([0, 2], []), end
         assert "droppable: 0, 2" in r.stdout, r.stdout
+        last = r.stdout.strip().splitlines()[-1]
+        rest = " ".join(str(out / a["picture"]) for a in per_clue)
+        assert last == f"pictures: {out / end['picture']} {rest}", last
 
         image = Image.open(out / end["picture"]).convert("RGB")
         assert corner(image, 0, 0) != WHITE, "the droppable clue's cell is plain"

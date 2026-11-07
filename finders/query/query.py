@@ -82,7 +82,10 @@ never read as feasible, infeasible or unique.
   `timeout` (capped) when any did not. A capped clue is never droppable.
   Its picture is the board with every droppable clue in the second colour.
 
-The last line printed is `pictures: <path> ...`, one path per answer.
+The last line printed is `pictures: <path> ...`, one path per answer, the
+picture to show first first: each closing `max` and `drop-one` answer's
+(the best witness, the board with every droppable clue in the second
+colour), then the rest in the order found.
 
 A caller that holds its own model, built, hinted or grown line by line, asks
 it through `unique_on(model, variables, time_limit)` and `forced_on(model,
@@ -131,7 +134,8 @@ MARK_WIDTH = 4
 class Answer(NamedTuple):
     """One answer to a question: its status and solutions, the fields its
     line carries beside them, and how its picture is drawn (`ringed` cells,
-    `marked` clues, a `caption`)."""
+    `marked` clues, a `caption`). A `summary` answer's picture is named
+    first on the last printed line."""
 
     status: str
     solutions: tuple = ()
@@ -139,6 +143,7 @@ class Answer(NamedTuple):
     ringed: tuple = ()
     caption: str | None = None
     marked: tuple = ()
+    summary: bool = False
 
 
 def load_finder(name, board_path):
@@ -257,7 +262,7 @@ def climb(finder, key, time_limit):
         yield answer("witness", best)
     if status == "infeasible":
         status = "max" if best else "infeasible"
-    yield answer(status, best)
+    yield answer(status, best)._replace(summary=True)
 
 
 DROP_VERDICT = {"unique": "droppable", "not_unique": "needed", "infeasible": "needed"}
@@ -291,6 +296,7 @@ def drop_one(finder, time_limit):
         fields={"droppable": droppable, "capped": capped},
         caption=caption,
         marked=tuple(droppable),
+        summary=True,
     )
 
 
@@ -432,7 +438,7 @@ def main(argv):
     except ValueError as error:
         parser.error(str(error))
     args.out.mkdir(parents=True, exist_ok=True)
-    pictures = []
+    pictures, summaries = [], []
     options = {
         "marks": marks,
         "limit": args.limit or DEFAULT_LIMIT,
@@ -444,10 +450,12 @@ def main(argv):
             shown = f" ({found.caption})" if found.caption else ""
             print(f"{question}: {found.status}{shown}", flush=True)
             k = len(pictures) + 1
-            pictures.append(
-                write_answer(args.out, k, question, found, finder, args.time_limit)
-            )
-    print("pictures: " + " ".join(map(str, pictures)))
+            path = write_answer(args.out, k, question, found, finder, args.time_limit)
+            pictures.append(path)
+            if found.summary:
+                summaries.append(path)
+    shown = summaries + [p for p in pictures if p not in summaries]
+    print("pictures: " + " ".join(map(str, shown)))
     return 0
 
 

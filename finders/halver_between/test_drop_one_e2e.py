@@ -128,7 +128,9 @@ def main():
             for point in points:
                 drawn = image.getpixel(point) == DROP_COLOR
                 assert drawn == (i in DROPPABLE), (i, point, image.getpixel(point))
-        assert r.stdout.strip().splitlines()[-1].startswith("pictures: "), r.stdout
+        last = r.stdout.strip().splitlines()[-1]
+        first = last.removeprefix("pictures: ").split()[0]
+        assert first == str(out / end["picture"]), last
         print("ok: the closing picture draws exactly the droppable lines in colour")
 
         out = Path(tmp) / "capped"
