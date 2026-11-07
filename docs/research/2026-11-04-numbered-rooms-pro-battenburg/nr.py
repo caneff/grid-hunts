@@ -10,7 +10,7 @@ are the CP-SAT model on sudoku_kit's board. A grid is nine lists of digits.
 """
 
 from ortools.sat.python import cp_model
-from sudoku_kit.cpsat import SOLVED, UNKNOWN, solver, sudoku_model, boxes
+from sudoku_kit.cpsat import SOLVED, UNKNOWN, boxes, solver, sudoku_model
 
 CLUES = [(side, i) for side in "LRTB" for i in range(9)]
 WINDOWS = [(r, c) for r in range(8) for c in range(8)]

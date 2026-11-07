@@ -74,7 +74,8 @@ Retiring a finder is `git mv` to `archive/finders/` plus its README; reviving on
   (`uv run pytest finders/counting_shaded`); `just test` runs it too.
 - Python runs in the one project environment (`pyproject.toml`, `uv.lock`):
   `uv run <file>`. `sudoku-kit` (the CP-SAT helpers, the SudokuMaker link
-  codec and the five-status uniqueness check) is pinned there by tag; nothing
+  codec and the five-status uniqueness check) tracks its `main` branch (the lock holds the commit;
+  `uv lock --upgrade-package sudoku-kit` moves it); nothing
   reads a sibling checkout under `~/src`.
 
 ## Pointers

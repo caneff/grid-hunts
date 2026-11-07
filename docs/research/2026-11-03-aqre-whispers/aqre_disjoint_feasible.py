@@ -20,7 +20,7 @@ from connected import add_flow_connectivity
 from finders.hunt.render import GridCanvas
 from ortools.sat.python import cp_model
 from shapes import ORTH
-from sudoku_kit.cpsat import solver, sudoku_model, boxes
+from sudoku_kit.cpsat import boxes, solver, sudoku_model
 
 N = 9
 TIME_LIMIT = 600.0
