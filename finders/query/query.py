@@ -1,7 +1,7 @@
-"""Board questions (spec #65, #94, #95, #96): ask a fixed board whether it has
-any solution, whether it has exactly one, whether a mark holds in every
-solution, what its solutions are, and how high a named value can reach, for
-any CP-SAT finder.
+"""Board questions (spec #65, #94, #95, #96, #97): ask a fixed board whether it
+has any solution, whether it has exactly one, whether a mark holds in every
+solution, what its solutions are, how high a named value can reach, and
+which clues it stays unique without, for any CP-SAT finder.
 
     uv run finders/query/query.py FINDER BOARD QUESTION... --out DIR
         [--condition FILE]... [--marks FILE] [--limit N] [--max KEY]
@@ -9,7 +9,7 @@ any CP-SAT finder.
 
 FINDER is a finder's name, read as `finders/<name>/query_finder.py`, or the
 path of a `.py` file. Each QUESTION is `feasible`, `unique`, `forced`,
-`enumerate` or `max`, answered in order, each solve capped at `--time-limit`
+`enumerate`, `max` or `drop-one`, answered in order, each solve capped at `--time-limit`
 seconds (10 unless given). `forced` gives one answer per condition: each `--condition` file's
 (`conditions.py` gives the JSON form), then each entry of the `--marks` file,
 a `marks.json` list the finder's `mark` hook translates. Run it under
@@ -22,8 +22,11 @@ The finder module's `load(board_path)` reads BOARD and returns the finder:
     build(clues)                a fresh CP-SAT model and its variables by
                                 name, {name: IntVar}
     cell_of(name)               the (row, column) a variable belongs to
-    draw(canvas, solution)      the board's clues and, unless `solution` is
-                                None, its values, onto a `GridCanvas`
+    draw(canvas, solution, marked)
+                                the board's clues and, unless `solution` is
+                                None, its values, onto a `GridCanvas`; each
+                                clue whose index is in `marked` in a second
+                                colour
     link(solution)              optional: a SudokuMaker short link of the
                                 board with `solution`, None for the board alone
     mark(entry)                 optional: a `marks.json` entry as a condition
@@ -63,6 +66,15 @@ never read as feasible, infeasible or unique.
   `infeasible` when the board has no solution. The line carries `key` and
   `value` (None with no solution); the picture is the witness solution, the
   value in a caption below the board.
+- drop-one: for each clue in turn, the board rebuilt through `build` with
+  that clue left out and asked `unique`: one answer per clue, carrying its
+  index `clue` (from 0), `droppable` when the board stays unique without
+  it, `needed` when it does not (or has no solution), `timeout` (capped)
+  otherwise; the picture is the board, the clue in the second colour when
+  droppable. Then one closing answer carrying `droppable` and `capped`, the
+  clue indices of each: `done` (complete) when every clue got a verdict,
+  `timeout` (capped) when any did not. A capped clue is never droppable.
+  Its picture is the board with every droppable clue in the second colour.
 
 The last line printed is `pictures: <path> ...`, one path per answer.
 
@@ -91,12 +103,12 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 import conditions
 from render import DEFAULT_FONT, GridCanvas
 
-QUESTIONS = ("feasible", "unique", "forced", "enumerate", "max")
+QUESTIONS = ("feasible", "unique", "forced", "enumerate", "max", "drop-one")
 DEFAULT_TIME_LIMIT = 10.0
 DEFAULT_LIMIT = 10
 VERDICTS = {
     *("feasible", "infeasible", "unique", "not_unique", "held", "not_held"),
-    *("solution", "exhausted", "max"),
+    *("solution", "exhausted", "max", "droppable", "needed", "done"),
 }
 CAPTION_HEIGHT = 48
 CAPTION_FONT_SIZE = 28
@@ -216,10 +228,30 @@ def climb(finder, key, time_limit):
     return status, best
 
 
-def board_image(finder, solution, shaded=(), ringed=()):
+DROP_VERDICT = {"unique": "droppable", "not_unique": "needed", "infeasible": "needed"}
+
+
+def drop_one(finder, time_limit):
+    """Each clue's verdict as found, (status, its fields), then the closing
+    (status, {"droppable": [...], "capped": [...]}). Each step rebuilds the
+    board without one clue."""
+    droppable, capped = [], []
+    for i in range(len(finder.clues)):
+        rest = finder.clues[:i] + finder.clues[i + 1 :]
+        status, _ = unique_on(*finder.build(rest), time_limit)
+        verdict = DROP_VERDICT.get(status, status)
+        if verdict == "droppable":
+            droppable.append(i)
+        elif verdict != "needed":
+            capped.append(i)
+        yield verdict, {"clue": i}
+    yield ("timeout" if capped else "done"), {"droppable": droppable, "capped": capped}
+
+
+def board_image(finder, solution, shaded=(), ringed=(), marked=()):
     rows, cols = finder.size
     canvas = GridCanvas(rows, cols, cell=CELL, margin=MARGIN)
-    finder.draw(canvas, solution)
+    finder.draw(canvas, solution, marked)
     tint = Image.new("RGB", (CELL, CELL), DIFF_TINT)
     for r, c in shaded:
         x, y = MARGIN + c * CELL, MARGIN + r * CELL
@@ -240,13 +272,15 @@ def captioned(image, caption):
     return out
 
 
-def picture(finder, solutions, ringed=(), caption=None):
-    """One board with the `ringed` cells ringed, or two side by side with the
-    cells that differ shaded; `caption`, when given, in a strip below."""
+def picture(finder, solutions, ringed=(), caption=None, marked=()):
+    """One board with the `ringed` cells ringed and the `marked` clues in the
+    second colour, or two side by side with the cells that differ shaded;
+    `caption`, when given, in a strip below."""
     if caption is not None:
-        return captioned(picture(finder, solutions, ringed), caption)
+        return captioned(picture(finder, solutions, ringed, marked=marked), caption)
     if len(solutions) < 2:
-        return board_image(finder, solutions[0] if solutions else None, (), ringed)
+        solution = solutions[0] if solutions else None
+        return board_image(finder, solution, (), ringed, marked)
     first, second = solutions
     differ = {finder.cell_of(k) for k in first if first[k] != second[k]}
     left = board_image(finder, first, differ)
@@ -268,13 +302,14 @@ def write_answer(
     ringed=(),
     fields=None,
     caption=None,
+    marked=(),
 ):
     """Picture, links, then the answers.jsonl line, which carries `fields`
     too; the picture's path."""
     stem = f"{k}-{question}"
     picture_path = out / f"{stem}.png"
     partial = out / f"{stem}.partial.png"
-    picture(finder, solutions, ringed, caption).save(partial)
+    picture(finder, solutions, ringed, caption, marked).save(partial)
     partial.replace(picture_path)
     line = {
         "question": question,
@@ -361,7 +396,7 @@ def main(argv):
         "time_limit": args.time_limit,
     }
     for question in args.questions:
-        for status, solutions, ringed, fields, caption in answer(
+        for status, solutions, ringed, fields, caption, marked in answer(
             question, finder, **options
         ):
             shown = f" ({caption})" if caption else ""
@@ -378,6 +413,7 @@ def main(argv):
                     ringed,
                     fields,
                     caption,
+                    marked,
                 )
             )
     print("pictures: " + " ".join(map(str, pictures)))
@@ -414,15 +450,26 @@ def read_marks(finder, condition_files, marks_file):
 
 def answer(question, finder, marks, limit, max_key, time_limit):
     """Each answer to `question`, as it is found: (status, solutions, ringed
-    cells, fields, caption)."""
+    cells, fields, caption, marked clues)."""
     if question == "forced":
         for cond, fields in marks:
             status, solutions = forced(finder, cond, time_limit)
             ringed = [finder.cell_of(k) for k in conditions.keys(cond)]
-            yield status, solutions, ringed, fields, None
+            yield status, solutions, ringed, fields, None, ()
     elif question == "enumerate":
         for status, solutions, fields in enumerate_solutions(finder, limit, time_limit):
-            yield status, solutions, (), fields, None
+            yield status, solutions, (), fields, None, ()
+    elif question == "drop-one":
+        for status, fields in drop_one(finder, time_limit):
+            if "clue" in fields:
+                marked = [fields["clue"]] if status == "droppable" else []
+                caption = f"clue {fields['clue']}: {status}"
+            else:
+                marked = fields["droppable"]
+                caption = "droppable: " + (", ".join(map(str, marked)) or "none")
+                if status == "timeout":
+                    caption += ", capped"
+            yield status, [], (), fields, caption, marked
     elif question == "max":
         status, solutions = climb(finder, max_key, time_limit)
         value = solutions[0][max_key] if solutions else None
@@ -431,10 +478,10 @@ def answer(question, finder, marks, limit, max_key, time_limit):
             caption = f"{max_key} = {value}" + (
                 ", capped" if status == "timeout" else ""
             )
-        yield status, solutions, (), {"key": max_key, "value": value}, caption
+        yield status, solutions, (), {"key": max_key, "value": value}, caption, ()
     else:
         status, solutions = ASK[question](finder, time_limit)
-        yield status, solutions, (), None, None
+        yield status, solutions, (), None, None, ()
 
 
 if __name__ == "__main__":

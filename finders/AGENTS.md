@@ -29,8 +29,10 @@ README before reusing anything there.
   the gate passes: `docs/pants.md`.
 - `finders/query/` is the board-question driver (spec #65), CP-SAT only:
   `query.py FINDER BOARD QUESTION... --out DIR`, run under `job-run`, asks
-  a fixed board `feasible`, `unique` or `forced` (whether a mark holds in
-  every solution, from `--condition FILE` or `--marks marks.json`) and writes
+  a fixed board `feasible`, `unique`, `forced` (whether a mark holds in
+  every solution, from `--condition FILE` or `--marks marks.json`),
+  `enumerate`, `max` or `drop-one` (which clues it stays unique without,
+  drawn in a second colour) and writes
   each answer as it is found, a line of `DIR/answers.jsonl` labelled
   `complete` or `capped`, a picture and the finder's short links. Its
   docstring states the finder contract (`build(clues)`, `cell_of`, `draw`,
