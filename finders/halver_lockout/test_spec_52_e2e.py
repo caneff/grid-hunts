@@ -37,10 +37,11 @@ import hit_fixture
 import hunt
 import rules
 import short_link
+from halver_query import uniqueness
 
 ADDED = hit_fixture.ADDED
 
-check = rules.RuleModel(list(ADDED)).check(time_limit=60)
+check = uniqueness(rules.RuleModel(list(ADDED)), time_limit=60)
 assert check.status == "unique", check.status
 assert check.first == hit_fixture.SOLUTION, check.first
 

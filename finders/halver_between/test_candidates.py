@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import candidates
 import rules
+from halver_query import uniqueness
 from rules import parse_cell
 
 HERE = Path(__file__).resolve().parent
@@ -57,7 +58,7 @@ rejects("crosses line r8c3 | r7c3 r6c2 | r6c1", "r6c3", "r7c2", "r8c3")
 rejects("crosses itself", "r1c5", "r2c6", "r2c5", "r1c6")
 
 # The enumeration, on the board's own two witnesses.
-check = rules.RuleModel(BOARD).check(time_limit=60)
+check = uniqueness(rules.RuleModel(BOARD), time_limit=60)
 assert check.status == "not_unique", check.status
 target, second = check.first, check.second
 

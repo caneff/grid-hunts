@@ -153,8 +153,9 @@ README before reusing anything there.
   it stays out of both gates.
 - `finders/halver/` is the shared halver layer (spec #52), which holds no
   suite of its own: `halver_rules.py` the CP-SAT board model (digits, one
-  halver per house, doubled values), the five-status check, the per-mark
-  check, `Line` and cell naming; `halver_brute.py` the independent
+  halver per house, doubled values), `Line` and cell naming, asking no
+  question itself: `halver_query.py`'s `uniqueness` and `holds` ask the
+  board-question driver (#98); `halver_brute.py` the independent
   backtracking search, which shares no code with the model, and
   `halver_brute_c.py` the same search in C (`halver_brute.c`, built with
   the system gcc into a git-ignored `target/`), which the lockout check

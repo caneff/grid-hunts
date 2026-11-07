@@ -27,6 +27,9 @@ import hit_fixture
 import hunt
 import rules
 
+# isort: split
+import halver_query  # on the path rules.py puts finders/halver on
+
 START = hit_fixture.ADDED[:6] + hit_fixture.ADDED[7:]
 
 
@@ -62,12 +65,12 @@ assert short.reason == f"budget: {k - 1} lines added and still not unique", shor
 
 # Every sample and check gets at most the seconds the seed has left.
 limits = []
-real_check, real_sample = rules.RuleModel.check, rules.RuleModel.sample
+real_check, real_sample = halver_query.uniqueness, rules.RuleModel.sample
 
 
-def check(self, time_limit):
+def check(board, time_limit):
     limits.append(time_limit)
-    return real_check(self, time_limit=time_limit)
+    return real_check(board, time_limit=time_limit)
 
 
 def sample(self, rng, time_limit):
@@ -76,7 +79,7 @@ def sample(self, rng, time_limit):
 
 
 with (
-    mock.patch.object(rules.RuleModel, "check", check),
+    mock.patch.object(halver_query, "uniqueness", check),
     mock.patch.object(rules.RuleModel, "sample", sample),
 ):
     bounded = propose(finder(time_limit=30.0, max_seconds=5.0))
@@ -86,11 +89,11 @@ assert limits and all(0 < s <= 5.0 for s in limits), limits
 
 # A check that times out ends the seed as Empty, named for the limit that
 # was reached.
-def timed_out(self, time_limit):
+def timed_out(board, time_limit):
     return rules.RuleCheck("timeout")
 
 
-with mock.patch.object(rules.RuleModel, "check", timed_out):
+with mock.patch.object(halver_query, "uniqueness", timed_out):
     plain = propose(finder(time_limit=10.0))
     budget = propose(finder(time_limit=30.0, max_seconds=5.0))
 assert plain == hunt.Empty("timeout: the check after 0 lines (10s)"), plain

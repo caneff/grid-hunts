@@ -4,6 +4,7 @@ halvers) solution, then re-read the hit with the backtracking check.
 
 One seed is the target-grid loop. Sample a target solution of the board's
 lines (random digit hints on a one-worker solve). Then, while the rule check
+(the board-question driver's `unique`, through `halver_query.uniqueness`)
 says `not_unique`, add one line that holds in the target and fails in the
 second solution, from the line type's `separating_paths`. Stop at `unique`,
 a hit. A seed ends `Empty(reason)` when no line of at most `--max-cells`
@@ -65,6 +66,7 @@ from typing import NamedTuple
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "hunt"))
 
 # isort: split
+import halver_query
 from dedupe import IDENTITY
 from driver import run
 from halver_rules import Line, Solution, cell_name, line_name, parse_cell
@@ -183,7 +185,7 @@ class TargetLoopFinder:
                 return Empty(f"budget: {self.max_seconds:g} s after {new} lines")
             board.hint(target)
             t0 = time.monotonic()
-            check = board.check(time_limit=check_limit)
+            check = halver_query.uniqueness(board, time_limit=check_limit)
             check_seconds = time.monotonic() - t0
             if check.status == "unique":
                 self._note(step=new, check_s=check_seconds, status="unique")

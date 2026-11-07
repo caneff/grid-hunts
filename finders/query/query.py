@@ -50,6 +50,11 @@ never read as feasible, infeasible or unique.
   the cells that differ shaded.
 
 The last line printed is `pictures: <path> ...`, one path per answer.
+
+A caller that holds its own model, built, hinted or grown line by line, asks
+it through `unique_on(model, variables, time_limit)` and `forced_on(model,
+variables, cond, time_limit)`, the same questions without a finder; the
+halver layer's `uniqueness` and `holds` do (#98).
 """
 
 import argparse
@@ -114,19 +119,31 @@ def feasible(finder, time_limit):
     return ("feasible" if status == "found" else status), solutions
 
 
-def forced(finder, cond, time_limit):
-    model, variables = finder.build(finder.clues)
+def forced_on(model, variables, cond, time_limit):
+    """`forced` on a model the caller built: `held`, `not_held` with the
+    solution that breaks `cond`, or `timeout`. Puts `cond`'s negation on
+    `model`, so the caller hands over a fresh model or a clone."""
     model.AddBoolAnd([conditions.literal(model, variables, conditions.Not(cond))])
     status, solutions = solve("forced", model, variables, time_limit)
     return {"found": "not_held", "infeasible": "held"}.get(status, status), solutions
 
 
-def unique(finder, time_limit):
-    model, variables = finder.build(finder.clues)
+def forced(finder, cond, time_limit):
+    return forced_on(*finder.build(finder.clues), cond, time_limit)
+
+
+def unique_on(model, variables, time_limit):
+    """`unique` on a model the caller built, its hints and all: the five
+    statuses of `sudoku_kit.uniqueness` but `invalid`, which raises, with
+    the solutions found. Leaves `model` unchanged."""
     result = check_uniqueness(model, variables, time_limit=time_limit, workers=1)
     if result.status == "invalid":
         raise ValueError("unique: the finder's model is invalid")
     return result.status, [s for s in (result.first, result.second) if s]
+
+
+def unique(finder, time_limit):
+    return unique_on(*finder.build(finder.clues), time_limit)
 
 
 ASK = {"feasible": feasible, "unique": unique}
