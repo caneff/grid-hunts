@@ -35,9 +35,10 @@ The finder module's `load(board_path)` reads BOARD and returns the finder:
 A solution is a {name: value} dict. Each answer is written the moment it is
 found: its picture `DIR/<k>-<question>.png` (k counts answers from 1), its links (when the finder has
 the hook) one per line in `DIR/<k>-<question>.txt`, then its line of
-`DIR/answers.jsonl`, so a line is on disk only with its picture and links;
-each file is renamed into place whole, so a killed run leaves none half
-written.
+`DIR/answers.jsonl`, so a line is on disk only with its picture and links.
+The picture and links are each written to a `.partial` file and renamed into
+place whole; the line is appended in one write and flushed to disk, so a
+killed run leaves whole lines and no half-written file.
 A line carries the question, its status, its label, its solutions and the
 names of its picture and links. The label is `complete` when the status is
 a verdict and `capped` when a solve reached its time limit: a timeout is
@@ -90,6 +91,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 from ortools.sat.python import cp_model
 from PIL import Image, ImageDraw, ImageFont
@@ -121,6 +123,19 @@ MARK_RADIUS = 0.44  # of a cell: outside a halver line's end ring (0.38)
 MARK_WIDTH = 4
 
 
+class Answer(NamedTuple):
+    """One answer to a question: its status and solutions, the fields its
+    line carries beside them, and how its picture is drawn (`ringed` cells,
+    `marked` clues, a `caption`)."""
+
+    status: str
+    solutions: tuple = ()
+    fields: dict | None = None
+    ringed: tuple = ()
+    caption: str | None = None
+    marked: tuple = ()
+
+
 def load_finder(name, board_path):
     """The finder FINDER names, loaded on BOARD."""
     path = Path(name)
@@ -149,7 +164,7 @@ def solve(question, model, variables, time_limit):
 
 def feasible(finder, time_limit):
     status, solutions = solve("feasible", *finder.build(finder.clues), time_limit)
-    return ("feasible" if status == "found" else status), solutions
+    return Answer("feasible" if status == "found" else status, solutions)
 
 
 def forced_on(model, variables, cond, time_limit):
@@ -161,8 +176,10 @@ def forced_on(model, variables, cond, time_limit):
     return {"found": "not_held", "infeasible": "held"}.get(status, status), solutions
 
 
-def forced(finder, cond, time_limit):
-    return forced_on(*finder.build(finder.clues), cond, time_limit)
+def forced(finder, cond, fields, time_limit):
+    status, solutions = forced_on(*finder.build(finder.clues), cond, time_limit)
+    ringed = tuple(finder.cell_of(k) for k in conditions.keys(cond))
+    return Answer(status, solutions, fields, ringed)
 
 
 def unique_on(model, variables, time_limit):
@@ -176,10 +193,7 @@ def unique_on(model, variables, time_limit):
 
 
 def unique(finder, time_limit):
-    return unique_on(*finder.build(finder.clues), time_limit)
-
-
-ASK = {"feasible": feasible, "unique": unique}
+    return Answer(*unique_on(*finder.build(finder.clues), time_limit))
 
 
 def build_with(finder, conds):
@@ -191,8 +205,8 @@ def build_with(finder, conds):
 
 
 def enumerate_solutions(finder, limit, time_limit):
-    """Each solution as found, (`solution`, [it], None), then the closing
-    (status, [], {"count": k}). Each step rebuilds the board with every
+    """Each solution as found, a `solution` answer, then the closing answer
+    carrying the `count` found. Each step rebuilds the board with every
     solution found so far excluded."""
     found = []
     while len(found) < limit:
@@ -207,15 +221,15 @@ def enumerate_solutions(finder, limit, time_limit):
         )
         if status != "found":
             closing = "exhausted" if status == "infeasible" else status
-            yield closing, [], {"count": len(found)}
+            yield Answer(closing, fields={"count": len(found)})
             return
         found.append(solutions[0])
-        yield "solution", solutions, None
-    yield "limit", [], {"count": len(found)}
+        yield Answer("solution", solutions)
+    yield Answer("limit", fields={"count": len(found)})
 
 
 def climb(finder, key, time_limit):
-    """The largest value of `key`: (status, [witness] or [])."""
+    """The largest value of `key`: its answer, the witness in a caption."""
     best = []
     while True:
         above = [conditions.Gt(key, best[0][key])] if best else []
@@ -225,15 +239,20 @@ def climb(finder, key, time_limit):
         best = solutions
     if status == "infeasible":
         status = "max" if best else "infeasible"
-    return status, best
+    value = best[0][key] if best else None
+    caption = None
+    if value is not None:
+        caption = f"{key} = {value}" + (", capped" if status == "timeout" else "")
+    return Answer(status, best, {"key": key, "value": value}, caption=caption)
 
 
 DROP_VERDICT = {"unique": "droppable", "not_unique": "needed", "infeasible": "needed"}
 
 
 def drop_one(finder, time_limit):
-    """Each clue's verdict as found, (status, its fields), then the closing
-    (status, {"droppable": [...], "capped": [...]}). Each step rebuilds the
+    """Each clue's answer as found, the clue in the second colour when
+    droppable, then the closing answer naming the droppable and capped
+    clues, every droppable clue in the second colour. Each step rebuilds the
     board without one clue."""
     droppable, capped = [], []
     for i in range(len(finder.clues)):
@@ -244,8 +263,21 @@ def drop_one(finder, time_limit):
             droppable.append(i)
         elif verdict != "needed":
             capped.append(i)
-        yield verdict, {"clue": i}
-    yield ("timeout" if capped else "done"), {"droppable": droppable, "capped": capped}
+        yield Answer(
+            verdict,
+            fields={"clue": i},
+            caption=f"clue {i}: {verdict}",
+            marked=(i,) if verdict == "droppable" else (),
+        )
+    caption = "droppable: " + (", ".join(map(str, droppable)) or "none")
+    if capped:
+        caption += ", capped"
+    yield Answer(
+        "timeout" if capped else "done",
+        fields={"droppable": droppable, "capped": capped},
+        caption=caption,
+        marked=tuple(droppable),
+    )
 
 
 def board_image(finder, solution, shaded=(), ringed=(), marked=()):
@@ -291,38 +323,29 @@ def picture(finder, solutions, ringed=(), caption=None, marked=()):
     return image
 
 
-def write_answer(
-    out,
-    k,
-    question,
-    status,
-    solutions,
-    finder,
-    time_limit,
-    ringed=(),
-    fields=None,
-    caption=None,
-    marked=(),
-):
-    """Picture, links, then the answers.jsonl line, which carries `fields`
-    too; the picture's path."""
+def write_answer(out, k, question, answer, finder, time_limit):
+    """`answer`'s picture, links, then its answers.jsonl line, which carries
+    its fields too; the picture's path."""
     stem = f"{k}-{question}"
     picture_path = out / f"{stem}.png"
     partial = out / f"{stem}.partial.png"
-    picture(finder, solutions, ringed, caption, marked).save(partial)
+    image = picture(
+        finder, answer.solutions, answer.ringed, answer.caption, answer.marked
+    )
+    image.save(partial)
     partial.replace(picture_path)
     line = {
         "question": question,
-        "status": status,
-        "label": "complete" if status in VERDICTS else "capped",
+        "status": answer.status,
+        "label": "complete" if answer.status in VERDICTS else "capped",
         "time_limit": time_limit,
-        **(fields or {}),
-        "solutions": solutions,
+        **(answer.fields or {}),
+        "solutions": answer.solutions,
         "picture": picture_path.name,
     }
     link = getattr(finder, "link", None)
     if link is not None:
-        links = [link(s) for s in solutions] or [link(None)]
+        links = [link(s) for s in answer.solutions] or [link(None)]
         links_path = out / f"{stem}.txt"
         partial = out / f"{stem}.partial.txt"
         partial.write_text("".join(f"{x}\n" for x in links))
@@ -381,10 +404,11 @@ def main(argv):
     try:
         finder = load_finder(args.finder, args.board)
         marks = read_marks(finder, args.condition, args.marks) if asks_forced else []
+        keys = [k for cond, _ in marks for k in conditions.keys(cond)]
         if args.max_key is not None:
-            _, variables = finder.build(finder.clues)
-            if args.max_key not in variables:
-                raise ValueError(f"no variable {args.max_key!r} in the finder's model")
+            keys.append(args.max_key)
+        if keys:
+            conditions.require(finder.build(finder.clues)[1], keys)
     except ValueError as error:
         parser.error(str(error))
     args.out.mkdir(parents=True, exist_ok=True)
@@ -396,25 +420,12 @@ def main(argv):
         "time_limit": args.time_limit,
     }
     for question in args.questions:
-        for status, solutions, ringed, fields, caption, marked in answer(
-            question, finder, **options
-        ):
-            shown = f" ({caption})" if caption else ""
-            print(f"{question}: {status}{shown}", flush=True)
+        for found in answers(question, finder, **options):
+            shown = f" ({found.caption})" if found.caption else ""
+            print(f"{question}: {found.status}{shown}", flush=True)
+            k = len(pictures) + 1
             pictures.append(
-                write_answer(
-                    args.out,
-                    len(pictures) + 1,
-                    question,
-                    status,
-                    solutions,
-                    finder,
-                    args.time_limit,
-                    ringed,
-                    fields,
-                    caption,
-                    marked,
-                )
+                write_answer(args.out, k, question, found, finder, args.time_limit)
             )
     print("pictures: " + " ".join(map(str, pictures)))
     return 0
@@ -423,8 +434,8 @@ def main(argv):
 def read_marks(finder, condition_files, marks_file):
     """Each forced condition, as (condition, its line's fields): the
     condition files', then the marks file's entries through the finder's
-    `mark` hook. Raises a ValueError naming a file that does not read, or a
-    variable the finder's model lacks, before any question is asked."""
+    `mark` hook. Raises a ValueError naming a file that does not read,
+    before any question is asked."""
     marks = []
     for path in condition_files:
         try:
@@ -440,48 +451,24 @@ def read_marks(finder, condition_files, marks_file):
             cond = hook(entry)
             fields = {"condition": conditions.to_json(cond), "mark": entry}
             marks.append((cond, fields))
-    _, variables = finder.build(finder.clues)
-    for cond, _ in marks:
-        missing = [k for k in conditions.keys(cond) if k not in variables]
-        if missing:
-            raise ValueError(f"no variable {missing[0]!r} in the finder's model")
     return marks
 
 
-def answer(question, finder, marks, limit, max_key, time_limit):
-    """Each answer to `question`, as it is found: (status, solutions, ringed
-    cells, fields, caption, marked clues)."""
-    if question == "forced":
+def answers(question, finder, marks, limit, max_key, time_limit):
+    """Each answer to `question`, as it is found."""
+    if question == "feasible":
+        yield feasible(finder, time_limit)
+    elif question == "unique":
+        yield unique(finder, time_limit)
+    elif question == "forced":
         for cond, fields in marks:
-            status, solutions = forced(finder, cond, time_limit)
-            ringed = [finder.cell_of(k) for k in conditions.keys(cond)]
-            yield status, solutions, ringed, fields, None, ()
+            yield forced(finder, cond, fields, time_limit)
     elif question == "enumerate":
-        for status, solutions, fields in enumerate_solutions(finder, limit, time_limit):
-            yield status, solutions, (), fields, None, ()
-    elif question == "drop-one":
-        for status, fields in drop_one(finder, time_limit):
-            if "clue" in fields:
-                marked = [fields["clue"]] if status == "droppable" else []
-                caption = f"clue {fields['clue']}: {status}"
-            else:
-                marked = fields["droppable"]
-                caption = "droppable: " + (", ".join(map(str, marked)) or "none")
-                if status == "timeout":
-                    caption += ", capped"
-            yield status, [], (), fields, caption, marked
+        yield from enumerate_solutions(finder, limit, time_limit)
     elif question == "max":
-        status, solutions = climb(finder, max_key, time_limit)
-        value = solutions[0][max_key] if solutions else None
-        caption = None
-        if value is not None:
-            caption = f"{max_key} = {value}" + (
-                ", capped" if status == "timeout" else ""
-            )
-        yield status, solutions, (), {"key": max_key, "value": value}, caption, ()
+        yield climb(finder, max_key, time_limit)
     else:
-        status, solutions = ASK[question](finder, time_limit)
-        yield status, solutions, (), None, None, ()
+        yield from drop_one(finder, time_limit)
 
 
 if __name__ == "__main__":

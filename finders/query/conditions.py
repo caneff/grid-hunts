@@ -6,7 +6,8 @@ A condition is one of five small tuples over the finder's variable names:
 `All(conds)` and `Any_(conds)` over a tuple of conditions. `literal(model,
 variables, cond)` puts a Bool literal on `model` that is true exactly when
 `cond` holds, `variables` being the finder's {name: IntVar}. `keys(cond)` is
-every variable name a condition reads.
+every variable name a condition reads, and `require(variables, keys)`
+refuses a name the model lacks.
 
 A condition file is JSON, one object per condition:
 
@@ -41,10 +42,11 @@ class Any_(NamedTuple):
     conds: tuple
 
 
-def _variable(variables, key):
-    if key not in variables:
-        raise ValueError(f"no variable {key!r} in the finder's model")
-    return variables[key]
+def require(variables, keys):
+    """Raises a ValueError naming the first of `keys` not in `variables`."""
+    missing = [k for k in keys if k not in variables]
+    if missing:
+        raise ValueError(f"no variable {missing[0]!r} in the finder's model")
 
 
 def literal(model, variables, cond):
@@ -53,7 +55,8 @@ def literal(model, variables, cond):
         case Not(inner):
             return literal(model, variables, inner).Not()
         case Eq(key, value) | Gt(key, value):
-            var = _variable(variables, key)
+            require(variables, [key])
+            var = variables[key]
             b = model.NewBoolVar("")
             if isinstance(cond, Eq):
                 model.Add(var == value).OnlyEnforceIf(b)
