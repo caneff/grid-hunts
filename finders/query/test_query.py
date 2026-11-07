@@ -358,25 +358,28 @@ def caption_strip(image):
 
 
 def test_max_climbs_to_the_true_maximum():
-    """A row of 4 with c3 = 4: c0 reaches 3 and no higher. Complete, with a
-    witness that reaches it, drawn with the value in a caption below the
-    board."""
+    """A row of 4 with c3 = 4: each of c0, c1, c2 reaches 3 and no higher.
+    One solution puts 1, 2 and 3 in those cells, so a run that stops at its
+    first solve gets 3 on at most one of them. Complete, with a witness that
+    reaches it, drawn with the value in a caption below the board."""
     with tempfile.TemporaryDirectory() as tmp:
-        out = Path(tmp) / "out"
-        r = cli(board(tmp, width=4, clues=[[3, 4]]), out, "max", extra=["--max", "c0"])
-        assert r.returncode == 0, r.stderr
-        (answer,) = answers(out)
-        assert (answer["status"], answer["label"]) == ("max", "complete"), answer
-        assert (answer["key"], answer["value"]) == ("c0", 3), answer
-        (witness,) = answer["solutions"]
-        assert witness["c0"] == 3 and witness["c3"] == 4, witness
+        b = board(tmp, width=4, clues=[[3, 4]])
+        for key in ("c0", "c1", "c2"):
+            out = Path(tmp) / key
+            r = cli(b, out, "max", extra=["--max", key])
+            assert r.returncode == 0, r.stderr
+            (answer,) = answers(out)
+            assert (answer["status"], answer["label"]) == ("max", "complete"), answer
+            assert (answer["key"], answer["value"]) == (key, 3), answer
+            (witness,) = answer["solutions"]
+            assert witness[key] == 3 and witness["c3"] == 4, witness
+            assert f"{key} = 3" in r.stdout, r.stdout
 
         image = Image.open(out / answer["picture"]).convert("RGB")
         board_height = CELL + 2 * MARGIN
         assert image.height == board_height + CAPTION_HEIGHT, image.size
         colors = {c for _, c in caption_strip(image).getcolors(1 << 20)}
         assert colors != {WHITE}, "the caption strip carries text"
-        assert "c0 = 3" in r.stdout, r.stdout
 
 
 def test_max_time_limit_is_capped():
