@@ -2,10 +2,10 @@
 `finders/query/query.py halver_lockout BOARD QUESTION... --out DIR`.
 
 BOARD is a lockout board as `check.py` reads it, refused on the same terms;
-its lines are drawn blue.
+its lines are drawn blue. Its links are the hunt's `link_doc` of the lines,
+left out of SudokuMaker's own checking, whatever else the board file carries.
 """
 
-import json
 import sys
 from pathlib import Path
 
@@ -14,6 +14,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "halver"))
 
 import check
+import hunt
 import rules
 
 # isort: split
@@ -24,5 +25,4 @@ LINE_COLOR = (70, 120, 210)
 
 def load(board_path):
     lines = check.read_board(board_path)
-    doc = json.loads(board_path.read_text())
-    return HalverQuery(rules.post_lockout, lines, doc, LINE_COLOR)
+    return HalverQuery(rules.post_lockout, lines, hunt.link_doc(lines), LINE_COLOR)
