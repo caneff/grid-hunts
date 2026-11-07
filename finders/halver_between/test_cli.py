@@ -28,6 +28,7 @@ import hit_fixture
 import hunt
 import rules
 import short_link
+from halver_query import uniqueness
 
 
 def call(*argv):
@@ -58,7 +59,7 @@ finder = hunt.HalverBetweenFinder(
     max_seconds=120.0,
     verify_seconds=600.0,
 )
-solution = rules.RuleModel(hunt.BOARD + list(hit_fixture.ADDED)).check(60).first
+solution = uniqueness(rules.RuleModel(hunt.BOARD + list(hit_fixture.ADDED)), 60).first
 with short_link.fake_mint():
     good = finder.record(hunt.Hit(hit_fixture.ADDED, solution))
     # The same hit with one more line whose body cell r5c2 is already on a line.

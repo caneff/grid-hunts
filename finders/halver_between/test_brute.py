@@ -29,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import brute
 import rules
+from halver_query import uniqueness
 from rules import Line, parse_cell
 
 
@@ -57,7 +58,7 @@ def brute_status(lines, n, box, limit=2):
 
 
 # The known case: one answer, the same one from both checks.
-cpsat_result = rules.RuleModel([A, B], n=4, box=(2, 2)).check()
+cpsat_result = uniqueness(rules.RuleModel([A, B], n=4, box=(2, 2)))
 assert cpsat_result.status == "unique", cpsat_result
 assert cpsat_result.first == KNOWN, cpsat_result.first
 found = brute.solutions([A, B], 4, (2, 2), limit=2)
@@ -65,9 +66,9 @@ assert [as_solution(f) for f in found] == [KNOWN], found
 
 # Equal circles leave E no body value: no solution from either check, though
 # E alone has solutions.
-assert rules.RuleModel([A, B, E], n=4, box=(2, 2)).check().status == "infeasible"
+assert uniqueness(rules.RuleModel([A, B, E], n=4, box=(2, 2))).status == "infeasible"
 assert brute.solutions([A, B, E], 4, (2, 2), limit=2) == []
-assert rules.RuleModel([E], n=4, box=(2, 2)).check().status == "not_unique"
+assert uniqueness(rules.RuleModel([E], n=4, box=(2, 2))).status == "not_unique"
 assert len(brute.solutions([E], 4, (2, 2), limit=2)) == 2
 
 # A deadline already past stops the search before its first node: no count,
@@ -106,7 +107,7 @@ def random_line():
 statuses = set()
 for _ in range(150):
     lines = [random_line() for _ in range(rng.randint(1, 3))]
-    expected = rules.RuleModel(lines, n=4, box=(2, 2)).check()
+    expected = uniqueness(rules.RuleModel(lines, n=4, box=(2, 2)))
     status, found = brute_status(lines, 4, (2, 2))
     assert status == expected.status, (lines, status, expected.status)
     if status == "unique":
@@ -132,7 +133,7 @@ assert time.monotonic() - started < 10, time.monotonic() - started
 unique_lines = [
     line(*names) for names in json.loads((HERE / "unique_9x9.json").read_text())
 ]
-expected = rules.RuleModel(unique_lines).check(time_limit=60)
+expected = uniqueness(rules.RuleModel(unique_lines), time_limit=60)
 assert expected.status == "unique", expected.status
 started = time.monotonic()
 found = brute.solutions(unique_lines, 9, (3, 3), limit=2)

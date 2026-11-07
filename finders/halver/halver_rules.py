@@ -1,6 +1,5 @@
 """The shared halver layer's CP-SAT side (spec #52): the halver board model,
-its five-status uniqueness check and the per-mark check of a forced
-deduction, for any line type.
+for any line type, and the results of the questions asked of it.
 
 `HalverModel(post, lines)` builds the board once: digits, one halver boolean
 per cell and a doubled value per cell. Each row, column and box has exactly
@@ -11,11 +10,12 @@ constraints on the doubled values `dv` (`index` counts the lines already
 posted, for naming variables). `add_line` posts one more line on the same
 model, so a caller that adds lines one at a time never rebuilds the board.
 `sample` draws one solution, steered by random digit hints, and `hint` makes
-a given solution the one a later `check` tries first. `check` decides
-uniqueness over the digits and the halvers together and leaves the model
-alone; `mark_holds` solves once with the mark negated, so a mark holds
-exactly when that solve is infeasible. Neither ever reads a timeout as unique
-or as held.
+a given solution the one a later uniqueness check tries first. The model asks
+no other question itself: `variables` names its digits and halvers and
+`solution` reads a {name: value} back as a `Solution`, and
+`halver_query.uniqueness` and `halver_query.holds` put the board-question
+driver's `unique` and `forced` on it (spec #65, #98). `RuleCheck` and
+`MarkCheck` are what those two return.
 
 A line is a `Line`: two ends and its body cells in path order. Cells are
 (row, column) from 0; `cell_name` and `parse_cell` convert to and from the
@@ -25,9 +25,7 @@ type's lines from a decoded SudokuMaker document.
 
 from typing import NamedTuple
 
-from ortools.sat.python import cp_model
 from sudoku_kit import cpsat
-from sudoku_kit.uniqueness import check_uniqueness
 
 
 class Line(NamedTuple):
@@ -155,17 +153,20 @@ class HalverModel:
         self.post(self.model, self.dv, line, len(self.lines))
         self.lines.append(line)
 
-    def _variables(self):
-        return [self.x[cell] for cell in self.x] + [self.h[cell] for cell in self.x]
+    def variables(self):
+        """The model's variables by name, digits then halvers: `r1c1` the
+        digit, `h_r1c1` 1 on a halver."""
+        names = {cell_name(c): v for c, v in self.x.items()}
+        names |= {f"h_{cell_name(c)}": v for c, v in self.h.items()}
+        return names
 
-    def _solution(self, values):
+    def solution(self, values):
+        """`values`, a {name: value} over `variables`, as a `Solution`."""
         n = self.n
-        cells = list(self.x)
-        digits = dict(zip(cells, values[: len(cells)], strict=True))
-        halvers = frozenset(
-            c for c, v in zip(cells, values[len(cells) :], strict=True) if v
+        grid = tuple(
+            tuple(values[cell_name((r, c))] for c in range(n)) for r in range(n)
         )
-        grid = tuple(tuple(digits[r, c] for c in range(n)) for r in range(n))
+        halvers = frozenset(c for c in self.x if values[f"h_{cell_name(c)}"])
         return Solution(grid, halvers)
 
     def sample(self, rng, time_limit):
@@ -180,7 +181,9 @@ class HalverModel:
         solver = cpsat.solver(time_limit)
         status = solver.Solve(m)
         if status in cpsat.SOLVED:
-            return self._solution([solver.Value(v) for v in self._variables()])
+            return self.solution(
+                {k: solver.Value(v) for k, v in self.variables().items()}
+            )
         if status == cpsat.UNKNOWN:
             return None
         raise ValueError(f"sampling got solver status {solver.StatusName(status)}")
@@ -191,56 +194,6 @@ class HalverModel:
         for cell, var in self.x.items():
             self.model.AddHint(var, solution.digits[cell[0]][cell[1]])
             self.model.AddHint(self.h[cell], cell in solution.halvers)
-
-    def check(self, time_limit=10.0):
-        """The five-status uniqueness of digits and halvers together, on one
-        worker. Leaves the model unchanged."""
-        result = check_uniqueness(
-            self.model, self._variables(), time_limit=time_limit, workers=1
-        )
-        return RuleCheck(
-            result.status,
-            self._solution(result.first) if result.first else None,
-            self._solution(result.second) if result.second else None,
-        )
-
-    def mark_holds(self, mark, time_limit=10.0):
-        """Whether every solution agrees with `mark` (a `marks.json` entry):
-        one solve of a copy of the model with the mark negated."""
-        m = self.model.clone()
-        x = {c: m.GetIntVarFromProtoIndex(v.Index()) for c, v in self.x.items()}
-        h = {c: m.GetBoolVarFromProtoIndex(v.Index()) for c, v in self.h.items()}
-        kind = mark["kind"]
-        if kind == "digit":
-            m.Add(x[parse_cell(mark["cell"])] != mark["digit"])
-        elif kind == "candidates":
-            for digit in mark["digits"]:
-                m.Add(x[parse_cell(mark["cell"])] != digit)
-        elif kind == "digit_in":
-            for cell in map(parse_cell, mark["cells"]):
-                m.Add(x[cell] != mark["digit"])
-        elif kind == "halver":
-            m.Add(h[parse_cell(mark["cell"])] == 0)
-        elif kind == "halver_digit_in":
-            for cell in map(parse_cell, mark["cells"]):
-                is_digit = m.NewBoolVar(f"is{cell}")
-                m.Add(x[cell] == mark["digit"]).OnlyEnforceIf(is_digit)
-                m.Add(x[cell] != mark["digit"]).OnlyEnforceIf(is_digit.Not())
-                m.AddBoolOr([h[cell].Not(), is_digit.Not()])
-        else:
-            raise ValueError(f"unknown mark kind {kind!r}: {mark}")
-        solver = cpsat.solver(time_limit)
-        status = solver.Solve(m)
-        if status == cp_model.INFEASIBLE:
-            return MarkCheck("held")
-        if status in cpsat.SOLVED:
-            values = [solver.Value(x[c]) for c in self.x] + [
-                solver.Value(h[c]) for c in self.x
-            ]
-            return MarkCheck("not_held", self._solution(values))
-        if status == cpsat.UNKNOWN:
-            return MarkCheck("timeout")
-        raise ValueError(f"mark check got solver status {solver.StatusName(status)}")
 
 
 def mark_name(mark):

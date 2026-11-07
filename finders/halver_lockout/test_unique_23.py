@@ -19,12 +19,13 @@ sys.path.insert(0, str(HERE))
 import brute
 import hunt
 import rules
+from halver_query import uniqueness
 
 BUDGET = hunt.DEFAULTS["verify_seconds"]
 
 lines = rules.load_lines(HERE / "fixtures" / "unique_23.json")
 assert len(lines) == 23, len(lines)
-answer = rules.RuleModel(lines).check(time_limit=120)
+answer = uniqueness(rules.RuleModel(lines), time_limit=120)
 assert answer.status == "unique", answer.status
 
 started = time.monotonic()
