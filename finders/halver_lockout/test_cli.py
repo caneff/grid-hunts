@@ -27,6 +27,7 @@ sys.path.insert(0, str(HERE))
 # isort: split
 import hit_fixture
 import hunt
+import short_link
 
 
 def call(*argv):
@@ -58,7 +59,8 @@ def hunt_dir(path, records, outcomes, seconds=None):
 
 
 finder = hunt.HalverLockoutFinder(**hunt.DEFAULTS)
-good = finder.record(hunt.Hit(hit_fixture.ADDED, hit_fixture.SOLUTION))
+with short_link.fake_mint():
+    good = finder.record(hunt.Hit(hit_fixture.ADDED, hit_fixture.SOLUTION))
 
 with tempfile.TemporaryDirectory() as tmp:
     tmp = Path(tmp)
@@ -68,7 +70,7 @@ with tempfile.TemporaryDirectory() as tmp:
     status, text, err = call("summary", str(hits))
     assert status == 0, err
     assert text.startswith("1 hits in 1 seeds (0..0), wall clock 958 s\n"), text
-    assert f"hit, 24 added lines: {hit_fixture.LINK}" in text, text
+    assert f"hit, 24 added lines: {good['link']}" in text, text
     assert f"  L1 | {hit_fixture.TABLE[0]}" in text, text
 
     none = tmp / "none"

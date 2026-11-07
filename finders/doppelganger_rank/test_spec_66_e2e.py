@@ -32,10 +32,11 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 
 # isort: split
+import links
 import rules
+import short_link
 from cli_checks import read_jsonl, run_cli
 from printed import grid_of, solutions
-from sudoku_kit.link_codec import decode_puzzle, read_link
 
 HUNT, CHECK = HERE / "hunt.py", HERE / "check.py"
 fixture = json.loads((HERE / "fixtures" / "hit_9x9.json").read_text())
@@ -60,7 +61,7 @@ def hunt_dir(out, records):
         (out / f"{name}.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
 
 
-with tempfile.TemporaryDirectory() as tmp:
+with short_link.fake_mint() as fake, tempfile.TemporaryDirectory() as tmp:
     tmp = Path(tmp)
 
     # check.py: unique, its one grid the hit's, and Chris's marks hold.
@@ -84,9 +85,9 @@ with tempfile.TemporaryDirectory() as tmp:
     assert lines[0] == "1 verified hits in 1 seeds (72..72)", lines
     assert lines[2].startswith("hit, 11 added clues: "), lines
     assert run_cli(HUNT, "links", hits).returncode == 0
-    link = read_link(hits / "links" / "72.txt")
-    assert link == fixture["link"], link
-    cells = decode_puzzle(link)["puzzle"]["cells"]
+    doc = short_link.fake_doc(fake, (hits / "links" / "72.txt").read_text().strip())
+    assert doc == links.link_doc(record), doc
+    cells = doc["puzzle"]["cells"]
     side = n + 4
     for r, row in enumerate(solution):
         for c, digit in enumerate(row):

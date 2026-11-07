@@ -28,8 +28,8 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 # isort: split
 import hunt
 import rules
+import short_link
 from subprocess_env import success_env
-from sudoku_kit.link_codec import decode_puzzle
 
 SCRIPT = HERE / "hunt.py"
 
@@ -43,7 +43,7 @@ def run(*argv):
     )
 
 
-with tempfile.TemporaryDirectory() as tmp:
+with short_link.fake_mint() as fake, tempfile.TemporaryDirectory() as tmp:
     out = Path(tmp) / "hits"
     result = run("--out", str(out), "--seeds", "0:1")
     assert result.returncode == 0, result.stderr
@@ -64,7 +64,7 @@ with tempfile.TemporaryDirectory() as tmp:
     )
     hit = finder.candidate_from_record(record)
     assert hit.added, record
-    doc = decode_puzzle(record["link"])
+    doc = short_link.fake_doc(fake, record["link"])
     assert rules.lines_from_doc(doc) == hunt.BOARD + list(hit.added)
     assert all(cell == {} for cell in doc["puzzle"]["cells"]), "entered marks kept"
     (group,) = [

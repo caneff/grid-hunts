@@ -28,12 +28,11 @@ import sys
 import tempfile
 from pathlib import Path
 
-from sudoku_kit.link_codec import decode_puzzle, read_link
-
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "hunt"))
 
 # isort: split
+import short_link
 from cli_checks import read_jsonl, run_cli
 
 SCRIPT = HERE / "hunt.py"
@@ -131,9 +130,17 @@ def check(doc, record):
     assert shown == want, (shown, want)
 
 
-def links_of(out):
-    """Each hit's seed and record, and its decoded link: `links DIR` run on
-    `out`, every file under `out/links` read."""
+def text_of(path):
+    """A link file's one line."""
+    text = path.read_text()
+    assert text.count("\n") == 1 and text.startswith("https://sudokumaker.app/p/"), text
+    return text.strip()
+
+
+def links_of(out, fake):
+    """Each hit's seed and record, and its link's document: `links DIR` run on
+    `out`, every file under `out/links` read as a short link and rebuilt from
+    the offline mint's directory `fake`."""
     result = run_cli(SCRIPT, "links", out)
     assert result.returncode == 0, result.stderr
     seeds = [
@@ -146,19 +153,23 @@ def links_of(out):
     assert [f.name for f in files] == sorted(f"{s}.txt" for s in seeds), files
     assert result.stdout.strip() == f"wrote {len(seeds)} links to {out / 'links'}"
     return [
-        (seed, record, decode_puzzle(read_link(out / "links" / f"{seed}.txt")))
+        (
+            seed,
+            record,
+            short_link.fake_doc(fake, text_of(out / "links" / f"{seed}.txt")),
+        )
         for seed, record in zip(seeds, records, strict=True)
     ]
 
 
-with tempfile.TemporaryDirectory() as tmp:
+with short_link.fake_mint() as fake, tempfile.TemporaryDirectory() as tmp:
     tmp = Path(tmp)
     empty = tmp / "empty_4x4.json"
     empty.write_text(json.dumps({"size": 4, "box": [2, 2], "clues": [], "marks": []}))
     out = tmp / "hits"
     result = run_cli(SCRIPT, "--board", empty, "--out", out, "--seeds", "0:4")
     assert result.returncode == 0, result.stderr
-    found = links_of(out)
+    found = links_of(out, fake)
     assert len(found) == 4, found
     for _seed, record, doc in found:
         check(doc, record)
@@ -168,7 +179,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # directory, so it reads a copy.
     nine = tmp / "links_9x9"
     shutil.copytree(HERE / "fixtures" / "links_9x9", nine)
-    ((seed, record, doc),) = links_of(nine)
+    ((seed, record, doc),) = links_of(nine, fake)
     assert seed == 1 and len(record["clues"]) == 18, record
     check(doc, record)
 

@@ -51,6 +51,7 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 # isort: split
 import brute
 import hunt
+import short_link
 from cli_checks import read_jsonl, run_cli
 from model import RankModel, RuleCheck
 from printed import grid_of
@@ -149,7 +150,7 @@ picked = {
 assert picked == {common, middle, rare}, picked
 
 
-with tempfile.TemporaryDirectory() as tmp:
+with short_link.fake_mint(), tempfile.TemporaryDirectory() as tmp:
     tmp = Path(tmp)
     empty = tmp / "empty_4x4.json"
     mark = {"kind": "digit", "cell": "r1c1", "digit": 0}

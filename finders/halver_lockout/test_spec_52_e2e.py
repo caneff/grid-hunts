@@ -36,7 +36,7 @@ import candidates
 import hit_fixture
 import hunt
 import rules
-from sudoku_kit.link_codec import decode_puzzle
+import short_link
 
 ADDED = hit_fixture.ADDED
 
@@ -52,9 +52,9 @@ for line in ADDED:
 
 finder = hunt.HalverLockoutFinder(**hunt.DEFAULTS)
 hit = hunt.Hit(ADDED, hit_fixture.SOLUTION)
-record = finder.record(hit)
-assert record["link"] == hit_fixture.LINK, record["link"]
-doc = decode_puzzle(record["link"])
+with short_link.fake_mint() as fake:
+    record = finder.record(hit)
+    doc = short_link.fake_doc(fake, record["link"])
 assert rules.lines_from_doc(doc) == list(ADDED)
 lockout = [c for c in doc["puzzle"]["constraints"] if c.get("type") == 407]
 assert len(lockout) == 1 and lockout[0]["solverIgnored"] is True, lockout

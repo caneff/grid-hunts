@@ -27,6 +27,7 @@ sys.path.insert(0, str(HERE))
 import hit_fixture
 import hunt
 import rules
+import short_link
 
 
 def call(*argv):
@@ -58,10 +59,11 @@ finder = hunt.HalverBetweenFinder(
     verify_seconds=600.0,
 )
 solution = rules.RuleModel(hunt.BOARD + list(hit_fixture.ADDED)).check(60).first
-good = finder.record(hunt.Hit(hit_fixture.ADDED, solution))
-# The same hit with one more line whose body cell r5c2 is already on a line.
-reused = rules.Line((4, 0), ((4, 1),), (3, 1))
-bad = finder.record(hunt.Hit((*hit_fixture.ADDED, reused), solution))
+with short_link.fake_mint():
+    good = finder.record(hunt.Hit(hit_fixture.ADDED, solution))
+    # The same hit with one more line whose body cell r5c2 is already on a line.
+    reused = rules.Line((4, 0), ((4, 1),), (3, 1))
+    bad = finder.record(hunt.Hit((*hit_fixture.ADDED, reused), solution))
 examples = [{"seed": 0, "outcome": "example"}, {"seed": 1, "outcome": "example"}]
 
 with tempfile.TemporaryDirectory() as tmp:
@@ -73,7 +75,7 @@ with tempfile.TemporaryDirectory() as tmp:
     status, text, err = call("summary", str(inline))
     assert status == 0, err
     assert text.startswith("2 hits in 2 seeds (0..1), wall clock"), text
-    assert f"hit, 11 added lines: {hit_fixture.LINK}" in text, text
+    assert f"hit, 11 added lines: {good['link']}" in text, text
 
     # --no-verify, before `hunt.py verify`: unchecked, no hit.
     deferred = tmp / "deferred"
@@ -85,7 +87,7 @@ with tempfile.TemporaryDirectory() as tmp:
     assert lines[0].startswith("no verified hit in 2 seeds (0..1)"), text
     assert lines[1].startswith("2 candidates unchecked: the hunt ran with"), text
     assert "\nhit," not in text, text
-    assert f"unchecked candidate, 11 added lines: {hit_fixture.LINK}" in text, text
+    assert f"unchecked candidate, 11 added lines: {good['link']}" in text, text
 
     # After `hunt.py verify`: the good one is a hit, the bad one rejected.
     status, _, err = call("verify", str(deferred))
@@ -95,7 +97,7 @@ with tempfile.TemporaryDirectory() as tmp:
     lines = text.splitlines()
     assert lines[0].startswith("1 hits in 2 seeds (0..1)"), text
     assert lines[1] == "1 candidates rejected by `hunt.py verify`", text
-    assert f"hit, 11 added lines: {hit_fixture.LINK}" in text, text
+    assert f"hit, 11 added lines: {good['link']}" in text, text
     assert (
         "rejected candidate, 12 added lines: r5c1 | r5c2 | r4c2: "
         "body cell r5c2 is already on a line"

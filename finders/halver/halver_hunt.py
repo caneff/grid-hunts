@@ -70,7 +70,7 @@ from driver import run
 from halver_rules import Line, Solution, cell_name, line_name, parse_cell
 from hunt_dir import read_hunt, seed_lines, summary_command
 from protocol import Empty, Verdict
-from sudoku_kit.link_codec import encode_link
+from short_link import mint
 
 N, BOX = 9, (3, 3)
 # The hunt's end, written when a hunt run returns 0; `summary` reads its
@@ -289,7 +289,7 @@ class TargetLoopFinder:
                 f"L{i} | {line_name(line)}"
                 for i, line in enumerate(hit.added, start=len(self.board) + 1)
             ],
-            "link": encode_link(self.link_doc(hit.added)),
+            "link": mint(self.link_doc(hit.added)),
             "digits": ["".join(map(str, row)) for row in hit.solution.digits],
             "halvers": [cell_name(c) for c in sorted(hit.solution.halvers)],
         }

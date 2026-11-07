@@ -32,7 +32,7 @@ import candidates
 import hit_fixture
 import hunt
 import rules
-from sudoku_kit.link_codec import decode_puzzle
+import short_link
 
 ADDED = hit_fixture.ADDED
 LINES = hunt.BOARD + list(ADDED)
@@ -65,9 +65,9 @@ finder = hunt.HalverBetweenFinder(
     verify_seconds=600.0,
 )
 hit = hunt.Hit(ADDED, check.first)
-record = finder.record(hit)
-assert record["link"] == hit_fixture.LINK, record["link"]
-doc = decode_puzzle(record["link"])
+with short_link.fake_mint() as fake:
+    record = finder.record(hit)
+    doc = short_link.fake_doc(fake, record["link"])
 assert rules.lines_from_doc(doc) == LINES
 assert all(cell == {} for cell in doc["puzzle"]["cells"]), "entered marks kept"
 (group,) = [

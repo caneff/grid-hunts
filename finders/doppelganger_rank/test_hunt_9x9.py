@@ -15,9 +15,12 @@ import tempfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 
 # isort: split
+import links
+import short_link
 from cli_checks import read_jsonl, run_cli
 
 SCRIPT = HERE / "hunt.py"
@@ -29,7 +32,7 @@ def run(*args):
     return run_cli(SCRIPT, *args)
 
 
-with tempfile.TemporaryDirectory() as tmp:
+with short_link.fake_mint() as fake, tempfile.TemporaryDirectory() as tmp:
     out = Path(tmp) / "hunt"
     result = run("--board", BOARD, "--out", out, "--seeds", "72:73")
     assert result.returncode == 0, result.stderr
@@ -56,6 +59,7 @@ with tempfile.TemporaryDirectory() as tmp:
     result = run("links", out)
     assert result.returncode == 0, result.stderr
     assert [p.name for p in (out / "links").iterdir()] == ["72.txt"]
-    assert (out / "links" / "72.txt").read_text().strip() == fixture["link"]
+    link = (out / "links" / "72.txt").read_text().strip()
+    assert short_link.fake_doc(fake, link) == links.link_doc(fixture["record"]), link
 
 print("ok")
