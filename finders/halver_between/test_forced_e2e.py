@@ -5,13 +5,15 @@ subprocess, minting offline (`short_link.fake_mint`), and asserts what lands
 in the output directory:
 
 - `--marks marks.json`: all 23 of Chris's marks `held`, complete, the
-  verdicts `HalverModel.mark_holds` gave (read off `report.py` at 2a4cbd1);
+  verdicts `report.py` gives;
 - `--marks` of five more marks, one per kind, and a `--condition` file:
-  the verdicts `mark_holds` gave for the marks, and each counterexample
-  breaks its mark read in plain Python, is a valid solution, has the mark's
-  cells ringed in its picture, and its short link rebuilds to the board with
-  the counterexample entered;
-- a tiny time limit: every answer capped, never held.
+  the marks' verdicts match the recorded list `MORE_MARKS`, and each
+  counterexample breaks its mark read in plain Python, is a valid solution,
+  has the mark's cells ringed in its picture, and its short link rebuilds
+  to the board with the counterexample entered;
+- a tiny time limit: every answer capped, never held;
+- a malformed marks file (not a list, an entry missing a field, not JSON)
+  is refused, naming the file and the reason, and nothing is written.
 
 WHAT A GREEN RUN DOES NOT COVER: whether the picture reads well to Chris.
 
@@ -19,7 +21,6 @@ WHAT A GREEN RUN DOES NOT COVER: whether the picture reads well to Chris.
 """
 
 import json
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -27,8 +28,6 @@ from pathlib import Path
 from PIL import Image
 
 HERE = Path(__file__).resolve().parent
-QUERY = HERE.parent / "query" / "query.py"
-BOARD = HERE / "board.json"
 MARKS = HERE / "marks.json"
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "query"))
@@ -39,8 +38,8 @@ import test_query_e2e as e2e
 # isort: split
 from query import CELL, MARGIN, MARK_COLOR, MARK_RADIUS
 
-# One mark per kind; `HalverModel.mark_holds` on board.json at 2a4cbd1 gave
-# not_held, not_held, not_held, not_held, held.
+# One mark per kind, with its verdict on board.json as `report.py` gives it
+# (re-derived by the spec #65 review).
 MORE_MARKS = [
     ({"kind": "digit", "cell": "r1c1", "digit": 1}, "not_held"),
     ({"kind": "halver", "cell": "r5c5"}, "not_held"),
@@ -52,21 +51,7 @@ CONDITION = {"any": [{"eq": ["r5c5", 5]}, {"gt": ["h_r5c5", 0]}]}
 
 
 def run(out, *extra):
-    return subprocess.run(
-        [
-            sys.executable,
-            str(QUERY),
-            "halver_between",
-            str(BOARD),
-            "forced",
-            "--out",
-            str(out),
-            *extra,
-        ],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    return e2e.run(out, *extra, questions=("forced",))
 
 
 def mark_reads(mark, solution):
@@ -102,7 +87,7 @@ def ring(image, cell):
 
 
 def main():
-    lines = rules.load_lines(BOARD)
+    lines = rules.load_lines(e2e.BOARD)
     marks = json.loads(MARKS.read_text())
     assert len(marks) == 23, len(marks)
     with tempfile.TemporaryDirectory() as tmp, e2e.short_link.fake_mint() as fake:
@@ -113,7 +98,7 @@ def main():
         assert [a["mark"] for a in found] == marks, found
         verdicts = [(a["status"], a["label"]) for a in found]
         assert verdicts == [("held", "complete")] * 23, verdicts
-        print("ok: all 23 of Chris's marks held, complete, as mark_holds said")
+        print("ok: all 23 of Chris's marks held, complete, as the recorded list says")
 
         more = Path(tmp) / "more.json"
         more.write_text(json.dumps([mark for mark, _ in MORE_MARKS]))
@@ -166,6 +151,22 @@ def main():
             assert (answer["status"], answer["label"]) == ("timeout", "capped"), answer
             assert (out / answer["picture"]).is_file(), answer
         print("ok: a tiny time limit gives capped answers, never held")
+
+        for name, text, reason in (
+            ("object", json.dumps(MORE_MARKS[0][0]), "not a list of marks"),
+            ("field", json.dumps([{"kind": "digit"}]), "mark 0 has no 'cell'"),
+            ("entry", json.dumps(["r1c1"]), "mark 0 is not an object"),
+            ("syntax", "[{", "Expecting"),
+        ):
+            bad = Path(tmp) / f"{name}.json"
+            bad.write_text(text)
+            out = Path(tmp) / f"refused-{name}"
+            r = run(out, "--marks", str(bad))
+            assert r.returncode == 2, (name, r.stderr)
+            assert f"{bad}: " in r.stderr and reason in r.stderr, (name, r.stderr)
+            assert "Traceback" not in r.stderr, r.stderr
+            assert not out.exists(), out
+        print("ok: a malformed marks file is refused, naming the file and reason")
     return 0
 
 

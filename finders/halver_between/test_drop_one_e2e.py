@@ -4,8 +4,9 @@ Runs `finders/query/query.py halver_between unique_9x9.json drop-one` as a
 subprocess, minting offline (`short_link.fake_mint`), and asserts what lands
 in the output directory: one complete answer per line, in order, then a
 closing answer naming lines 7, 14 and 15 (counted from 0) as droppable, the
-set the prototype of #36 and a direct uniqueness loop agree on; its picture
-draws exactly those lines in the second colour. A tiny time limit gives
+recorded set (#36's prototype gave it, and the spec #65 review re-derived it
+with a uniqueness check per line left out); its picture, named first on the
+last line, draws exactly those lines in the second colour. A tiny time limit gives
 capped answers and calls no line droppable.
 
 WHAT A GREEN RUN DOES NOT COVER: whether the picture reads well to Chris,
@@ -16,7 +17,6 @@ and how the link reads once opened in sudokumaker.app.
 
 import json
 import math
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -24,7 +24,6 @@ from pathlib import Path
 from PIL import Image
 
 HERE = Path(__file__).resolve().parent
-QUERY = HERE.parent / "query" / "query.py"
 UNIQUE = HERE / "unique_9x9.json"
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "halver"))
@@ -34,6 +33,7 @@ sys.path.insert(0, str(HERE.parent / "query"))
 import itertools
 
 import short_link
+import test_query_e2e as e2e
 from halver_query import DROP_COLOR
 from halver_rules import parse_cell
 from query import CELL, MARGIN
@@ -45,26 +45,7 @@ CLEAR = 10  # pixels: twice a line's half width
 
 
 def run(out, *extra):
-    return subprocess.run(
-        [
-            sys.executable,
-            str(QUERY),
-            "halver_between",
-            str(UNIQUE),
-            "drop-one",
-            "--out",
-            str(out),
-            *extra,
-        ],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-
-
-def answers(out):
-    lines = (out / "answers.jsonl").read_text().splitlines()
-    return [json.loads(line) for line in lines]
+    return e2e.run(out, *extra, board=UNIQUE, questions=("drop-one",))
 
 
 def centre_of(name):
@@ -107,7 +88,7 @@ def main():
         out = Path(tmp) / "out"
         r = run(out)
         assert r.returncode == 0, r.stderr
-        *per_line, end = answers(out)
+        *per_line, end = e2e.answers(out)
         assert [a["clue"] for a in per_line] == list(range(len(names))), per_line
         assert all(a["label"] == "complete" for a in per_line), per_line
         assert [a["clue"] for a in per_line if a["status"] == "droppable"] == (
@@ -136,7 +117,7 @@ def main():
         out = Path(tmp) / "capped"
         r = run(out, "--time-limit", "1e-9")
         assert r.returncode == 0, r.stderr
-        *per_line, end = answers(out)
+        *per_line, end = e2e.answers(out)
         assert {(a["status"], a["label"]) for a in per_line} == {
             ("timeout", "capped")
         }, per_line

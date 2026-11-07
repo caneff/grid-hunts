@@ -462,24 +462,41 @@ def main(argv):
 def read_marks(finder, condition_files, marks_file):
     """Each forced condition, as (condition, its line's fields): the
     condition files', then the marks file's entries through the finder's
-    `mark` hook. Raises a ValueError naming a file that does not read,
-    before any question is asked."""
+    `mark` hook. Raises a ValueError naming a file that does not read, and
+    why, before any question is asked."""
     marks = []
     for path in condition_files:
         try:
             cond = conditions.from_json(json.loads(path.read_text()))
-        except ValueError as error:
+        except (OSError, ValueError) as error:
             raise ValueError(f"{path}: {error}") from None
         marks.append((cond, {"condition": conditions.to_json(cond)}))
     if marks_file is not None:
         hook = getattr(finder, "mark", None)
         if hook is None:
             raise ValueError("this finder has no mark hook: give --condition")
-        for entry in json.loads(marks_file.read_text()):
-            cond = hook(entry)
-            fields = {"condition": conditions.to_json(cond), "mark": entry}
-            marks.append((cond, fields))
+        try:
+            marks += list(read_entries(hook, marks_file))
+        except (OSError, ValueError) as error:
+            raise ValueError(f"{marks_file}: {error}") from None
     return marks
+
+
+def read_entries(hook, marks_file):
+    """Each `marks.json` entry through `hook`, as (condition, its line's
+    fields); a ValueError naming what does not read: not JSON, not a list,
+    an entry that is not an object or lacks a field the hook reads."""
+    entries = json.loads(marks_file.read_text())
+    if not isinstance(entries, list):
+        raise ValueError("not a list of marks")
+    for i, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            raise ValueError(f"mark {i} is not an object")
+        try:
+            cond = hook(entry)
+        except KeyError as error:
+            raise ValueError(f"mark {i} has no {error}") from None
+        yield cond, {"condition": conditions.to_json(cond), "mark": entry}
 
 
 def answers(question, finder, marks, limit, max_key, time_limit):

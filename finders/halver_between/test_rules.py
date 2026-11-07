@@ -2,8 +2,8 @@
 (`halver_query.uniqueness` and `halver_query.holds`, spec #65, #98): its lines
 alone leave more than one solution, a check's timeout is reported as a
 timeout, never as unique, and a mark check's timeout never as held. The
-halver model keeps no question logic of its own: no `check`, no
-`mark_holds`. A `digit_in` mark holds exactly when
+halver model keeps no question logic of its own: the asserts below pin
+that it has no `check` or `mark_holds` method. A `digit_in` mark holds exactly when
 every solution puts the digit in one of its cells, read on the 4x4 case of
 test_brute.py, whose answer is known. A sample is a solution, None on a
 timeout, and an error on lines with no solution. Workers pinned to 1.
