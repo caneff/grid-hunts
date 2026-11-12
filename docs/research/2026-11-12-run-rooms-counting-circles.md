@@ -28,9 +28,12 @@ verdicts.
    digits, so 45 - total = the sum of the uncircled digits.
 4. **Swap twin.** If two digits from {1, 7, 8, 9} are both uncircled, swapping
    them everywhere preserves every rule: neither can be a first digit, and
-   neither is read by a circled clue. Such a layout is never unique. This rules
-   out totals 21, 27, 28 and 35 for any design, and explains why 50+ searched
-   layouts at those totals all had 21+ solutions.
+   neither is read by a circled clue. Such a layout is never unique. It is a
+   property of the digit set, not the total: the row-1 openings searched here
+   forced sets like 1-6 (21), 2-7 (27), 1-7 or 2-6+8 (28) and 2-8 (35), each
+   leaving two of {1, 7, 8, 9} uncircled, which explains why 50+ searched
+   layouts at those totals all had 21+ solutions. Other sets with the same
+   total (for example 35 without 2 and 8) are not ruled out.
 5. **Supply.** The grid holds four copies of each digit, so a circled w >= 5
    needs at least w - 4 outside clues reading w. In a 36-circle puzzle with 9
    uncircled this forces 8,8,8,8,7,7,7,6,5 among the outside clues, every grid
