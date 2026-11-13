@@ -111,3 +111,28 @@ class Finder(Protocol):
         """A picture of one recorded example (a `PIL.Image.Image`), or omit
         this method entirely for a finder with nothing to draw."""
         ...
+
+    # Optional -- what a finder supplies for `summary DIR`, `links DIR` and the
+    # end of a hunt (#121). The driver owns the rest: the seed span, the
+    # found/empty/timed-out/duplicate/rejected counts and the hit list of
+    # `summary DIR` (`hunt_dir.hunt_summary`; an `Empty` reason starting
+    # `timeout` counts as timed out), and for `links DIR` the choice of
+    # verified hits, the minting (`short_link.mint`) and the swap of
+    # `links/<seed>.txt` (`hunt_dir.replace_links`). `links DIR` refuses a
+    # finder with no `link_document`; `summary DIR` works without
+    # `describe_hit`, printing a hit's record as JSON.
+
+    def describe_hit(self, record: dict) -> str:
+        """One line of `summary DIR` for a verified hit's record."""
+        ...
+
+    def link_document(self, candidate: Any) -> dict:
+        """The SudokuMaker document of a verified hit, rebuilt with
+        `candidate_from_record` (or the record itself without that hook)."""
+        ...
+
+    def finish(self, out: Path) -> None:
+        """Called with the hunt directory once a hunt completes (exit 0), never
+        on a killed one; a finder stamps its end here instead of re-parsing
+        `--out`. A resume that completes calls it again."""
+        ...

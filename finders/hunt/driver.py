@@ -17,7 +17,10 @@ examples.jsonl a hunt left. It locks DIR, rebuilds each record with the
 finder's `candidate_from_record` (or the record itself without one), draws it
 with the finder's `render` and swaps renders/ for the complete set of
 renders/<seed>.png in one step, so a kill leaves the previous set or none and
-a re-run converges. `--workers` (default 3,
+a re-run converges. `hunt summary DIR` and `hunt links DIR` (#121) report on
+the hunt and write the short link of each verified hit; a completed hunt calls
+the finder's `finish(out)`. A finder supplies only `describe_hit`,
+`link_document` and `finish` (protocol.py). `--workers` (default 3,
 set on the finder before the first seed) and the 1-minute load gate
 (refuses above 24 unless `--force-load`) are #488. A
 finder's own knobs travel as `finder.config`: run.json records it and a
@@ -844,11 +847,86 @@ def _run_render(finder, argv):
         hunt_files.release_lock(lock_fd)
 
 
+def _run_summary(finder, argv):
+    """`hunt summary DIR`: print the seed span, outcome counts and verified
+    hits of the hunt in DIR (`hunt_dir.hunt_summary`), each hit worded by the
+    finder's optional `describe_hit(record)`. Exit 2 on a bad argument list or
+    a directory with no hunt."""
+    import hunt_dir  # hunt_dir -> verified_io -> driver: imported late
+
+    describe = getattr(finder, "describe_hit", None)
+    return hunt_dir.summary_command(
+        ["summary", *argv], lambda out: hunt_dir.hunt_summary(out, describe)
+    )
+
+
+def _run_links(finder, argv):
+    """`hunt links DIR`: write DIR/links/<seed>.txt, the short link of the
+    finder's `link_document(candidate)`, for each verified hit, replacing
+    `links/` as one set. An unverified example gets none: run `verify DIR`
+    first. Returns 0, or 2 on a refusal (a finder without `link_document`,
+    DIR locked or holding no hunt, a hit that does not rebuild or mint)."""
+    import hunt_dir
+    from short_link import mint
+    from verified_io import example_verdicts
+
+    args = _parse_verify_args(argv)
+    out = Path(args.dir)
+    document = getattr(finder, "link_document", None)
+    if document is None:
+        print(
+            "hunt links: refusing -- the finder has no link_document", file=sys.stderr
+        )
+        return 2
+    lock_fd = hunt_files.acquire_lock(out)
+    if lock_fd is None:
+        print(f"hunt links: refusing -- {args.dir} is locked", file=sys.stderr)
+        return 2
+    try:
+        try:
+            run_json = hunt_files.read_json(out / "run.json")
+            seeded = hunt_dir.seeded_examples(out)
+            verdicts = example_verdicts(
+                out, run_json["argv"], [record for _, record in seeded]
+            )
+            to_candidate = getattr(
+                finder, "candidate_from_record", lambda record: record
+            )
+            built = {
+                seed: mint(document(to_candidate(record))) + "\n"
+                for (seed, record), verdict in zip(seeded, verdicts, strict=True)
+                if verdict == "hit"
+            }
+            hunt_dir.replace_links(out, built)
+        except Exception as e:
+            print(
+                f"hunt links: refusing -- {type(e).__name__}: {e}; links/ was "
+                "left as it was",
+                file=sys.stderr,
+            )
+            return 2
+        return 0
+    finally:
+        hunt_files.release_lock(lock_fd)
+
+
+def _finish(finder, out, code):
+    """Call the finder's optional `finish(out)` once a hunt has completed
+    (exit 0). A killed hunt never gets here, so the hook marks only a
+    completed one."""
+    hook = getattr(finder, "finish", None)
+    if code == 0 and hook is not None:
+        hook(out)
+    return code
+
+
 def run(finder, argv):
     """Run or resume a hunt for `finder` over the seed range in `argv`, or
     (`argv[0] == "verify"`) run deferred verification -- see
     `_run_verify` -- or (`argv[0] == "render"`) draw the pictures -- see
-    `_run_render`.
+    `_run_render` -- or (`"summary"`, `"links"`) report on a hunt or write its
+    short links -- see `_run_summary`, `_run_links`. A completed hunt calls the
+    finder's optional `finish(out)`.
 
     A fresh `--out` (no run.json) starts a new hunt, refusing when it
     already holds any other output file with no run.json to explain it. An
@@ -868,6 +946,10 @@ def run(finder, argv):
         return _run_verify(finder, argv[1:])
     if argv and argv[0] == "render":
         return _run_render(finder, argv[1:])
+    if argv and argv[0] == "summary":
+        return _run_summary(finder, argv[1:])
+    if argv and argv[0] == "links":
+        return _run_links(finder, argv[1:])
 
     args = _parse_args(argv)
     if args.workers < 1:
@@ -921,7 +1003,7 @@ def run(finder, argv):
                     file=sys.stderr,
                 )
                 return 2
-            return _resume(finder, argv, args, out, prior)
+            return _finish(finder, out, _resume(finder, argv, args, out, prior))
         other_files = [
             name
             for name in OUTPUT_FILES
@@ -929,7 +1011,7 @@ def run(finder, argv):
         ]
         if other_files:
             return _refuse(args.out, ", ".join(other_files))
-        return _fresh(finder, argv, args, out)
+        return _finish(finder, out, _fresh(finder, argv, args, out))
     except hunt_files.HuntFileError as e:
         print(f"hunt: refusing to resume -- {e}", file=sys.stderr)
         return 2
