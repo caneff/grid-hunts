@@ -2,8 +2,9 @@
 spec #52 #56): add lines to a board until it has exactly one (digits,
 halvers) solution, then re-read the hit with the backtracking check.
 
-One seed is the target-grid loop. Sample a target solution of the board's
-lines (random digit hints on a one-worker solve). Then, while the rule check
+One seed is the target-grid loop (`finders/hunt/target_loop.py`, #130) on
+this module's hooks. Sample a target solution of the board's lines (random
+digit hints on a one-worker solve). Then, while the rule check
 (the board-question driver's `unique`, through `halver_query.uniqueness`)
 says `not_unique`, add one line that holds in the target and fails in the
 second solution, from the line type's `separating_paths`. Stop at `unique`,
@@ -73,6 +74,7 @@ from halver_rules import Line, Solution, cell_name, line_name, parse_cell
 from hunt_dir import read_hunt, seed_lines
 from protocol import Empty, Verdict
 from short_link import mint
+from target_loop import Budget, Hooks, target_loop
 
 N, BOX = 9, (3, 3)
 # The hunt's end, written when a hunt run returns 0; `summary_lines` reads its
@@ -109,6 +111,98 @@ def best_line(paths, lines, target, second, pool, rng, line_holds, candidates):
         return (-kills / cost, not differs.intersection(path), len(path), rng.random())
 
     return min((*score(path), path) for path in paths)[-1]
+
+
+class _Seed(Hooks):
+    """One seed's hooks for `target_loop`: the board, the lines added and
+    the ranking pool."""
+
+    def __init__(self, finder, rng):
+        self.finder, self.rng = finder, rng
+        self.added = list(finder.start)
+        self.board = finder.rules.RuleModel([*finder.board, *self.added])
+        self.survivors = set()  # pool solutions every added line holds in
+
+    def lines(self):
+        return [*self.finder.board, *self.added]
+
+    def sample(self, limit):
+        return self.board.sample(self.rng, limit)
+
+    def check(self, target, limit):
+        self.board.hint(target)
+        return halver_query.uniqueness(self.board, time_limit=limit)
+
+    def no_space(self, target, second, steps):
+        if self.finder.candidates.no_space(target, second, self.lines()):
+            return Empty(
+                f"no space: after {steps} added lines the target and the "
+                "second solution differ only on body cells of drawn lines"
+            )
+        return None
+
+    def separate(self, target, second, steps, limit):
+        finder, candidates, lines = self.finder, self.finder.candidates, self.lines()
+        t0 = time.monotonic()
+        pool = self.survivors - {target}
+        pool_timeouts = 0
+        for _ in range(finder.pool - len(pool)):
+            draw_limit = limit()
+            if draw_limit <= 0:
+                break
+            drawn = self.board.sample(self.rng, draw_limit)
+            if drawn is None:
+                pool_timeouts += 1
+            elif drawn != target:
+                pool.add(drawn)
+        pool.add(second)
+        pool_seconds = time.monotonic() - t0
+        t0 = time.monotonic()
+        paths = candidates.separating_paths(target, second, lines, finder.max_cells)
+        if not paths:
+            return Empty(
+                f"no line of at most {finder.max_cells} cells separates the "
+                f"target from the second solution after {steps} added lines"
+            )
+        best = best_line(
+            paths,
+            lines,
+            target,
+            second,
+            pool,
+            self.rng,
+            finder.rules.line_holds,
+            candidates,
+        )
+        return (
+            best,
+            pool,
+            {
+                "pool_s": round(pool_seconds, 3),
+                "rank_s": round(time.monotonic() - t0, 3),
+                "candidates": len(paths),
+                "pool": len(pool),
+                "pool_timeouts": pool_timeouts,
+            },
+        )
+
+    def add(self, choice):
+        best, pool, fields = choice
+        candidates, lines = self.finder.candidates, self.lines()
+        line = candidates.line_of(best)
+        self.board.add_line(line)
+        self.added.append(line)
+        self.survivors = {s for s in pool if self.finder.rules.line_holds(s, line)}
+        return {
+            **fields,
+            "kills": len(pool) - len(self.survivors),
+            "new_cells": candidates.new_cells(best, lines),
+            "free_left": candidates.free_cell_count([*lines, line], N),
+            "line": line_name(line),
+        }
+
+    def log(self, fields):
+        self.finder._note(**fields)
 
 
 class TargetLoopFinder:
@@ -157,96 +251,13 @@ class TargetLoopFinder:
             self.log.write(json.dumps(fields) + "\n")
             self.log.flush()
 
-    def _ran_out(self, limit, what):
-        """The Empty for a solve that reached `limit`: the seed's budget when
-        that was what was left, the per-solve `--time-limit` otherwise."""
-        if limit < self.time_limit:
-            return Empty(f"budget: {self.max_seconds:g} s ran out during {what}")
-        return Empty(f"timeout: {what} ({self.time_limit:g}s)")
-
     def propose(self, rng):
-        rules, candidates = self.rules, self.candidates
-        deadline = time.monotonic() + self.max_seconds
-
-        def limit():
-            return min(self.time_limit, deadline - time.monotonic())
-
-        added = list(self.start)
-        board = rules.RuleModel([*self.board, *added])
-        sample_limit = limit()
-        target = board.sample(rng, sample_limit)
-        if target is None:
-            return self._ran_out(sample_limit, "sampling a target")
-        survivors = set()  # pool solutions every added line holds in
-        while True:
-            new = len(added) - len(self.start)
-            check_limit = limit()
-            if check_limit <= 0:
-                return Empty(f"budget: {self.max_seconds:g} s after {new} lines")
-            board.hint(target)
-            t0 = time.monotonic()
-            check = halver_query.uniqueness(board, time_limit=check_limit)
-            check_seconds = time.monotonic() - t0
-            if check.status == "unique":
-                self._note(step=new, check_s=check_seconds, status="unique")
-                return Hit(tuple(added), check.first)
-            if check.status == "timeout":
-                return self._ran_out(check_limit, f"the check after {new} lines")
-            if check.status != "not_unique":
-                raise ValueError(
-                    f"check returned {check.status} on lines the target obeys"
-                )
-            if new >= self.max_lines:
-                return Empty(f"budget: {new} lines added and still not unique")
-            second = check.first if check.first != target else check.second
-            t0 = time.monotonic()
-            lines = [*self.board, *added]
-            if candidates.no_space(target, second, lines):
-                return Empty(
-                    f"no space: after {new} added lines the target and the "
-                    "second solution differ only on body cells of drawn lines"
-                )
-            pool = survivors - {target}
-            pool_timeouts = 0
-            for _ in range(self.pool - len(pool)):
-                draw_limit = limit()
-                if draw_limit <= 0:
-                    break
-                drawn = board.sample(rng, draw_limit)
-                if drawn is None:
-                    pool_timeouts += 1
-                elif drawn != target:
-                    pool.add(drawn)
-            pool.add(second)
-            pool_seconds = time.monotonic() - t0
-            t0 = time.monotonic()
-            paths = candidates.separating_paths(target, second, lines, self.max_cells)
-            if not paths:
-                return Empty(
-                    f"no line of at most {self.max_cells} cells separates the "
-                    f"target from the second solution after {new} added lines"
-                )
-            best = best_line(
-                paths, lines, target, second, pool, rng, rules.line_holds, candidates
-            )
-            rank_seconds = time.monotonic() - t0
-            line = candidates.line_of(best)
-            board.add_line(line)
-            added.append(line)
-            survivors = {s for s in pool if rules.line_holds(s, line)}
-            self._note(
-                step=new + 1,
-                check_s=round(check_seconds, 3),
-                pool_s=round(pool_seconds, 3),
-                rank_s=round(rank_seconds, 3),
-                candidates=len(paths),
-                pool=len(pool),
-                pool_timeouts=pool_timeouts,
-                kills=len(pool) - len(survivors),
-                new_cells=candidates.new_cells(best, lines),
-                free_left=candidates.free_cell_count([*lines, line], N),
-                line=line_name(line),
-            )
+        budget = Budget(self.time_limit, self.max_seconds)
+        seed = _Seed(self, rng)
+        found = target_loop(seed, budget, max_steps=self.max_lines, unit="lines")
+        if isinstance(found, Empty):
+            return found
+        return Hit(tuple(seed.added), found.check.first)
 
     def verify(self, hit):
         candidates, brute = self.candidates, self.brute

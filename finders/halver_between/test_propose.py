@@ -96,7 +96,7 @@ def timed_out(board, time_limit):
 with mock.patch.object(halver_query, "uniqueness", timed_out):
     plain = propose(finder(time_limit=10.0))
     budget = propose(finder(time_limit=30.0, max_seconds=5.0))
-assert plain == hunt.Empty("timeout: the check after 0 lines (10s)"), plain
+assert plain == hunt.Empty("timeout: the check after 0 lines (10 s)"), plain
 assert budget == hunt.Empty("budget: 5 s ran out during the check after 0 lines"), (
     budget
 )

@@ -51,7 +51,7 @@ with short_link.fake_mint() as fake, tempfile.TemporaryDirectory() as tmp:
     assert lines[0] == "1 verified hits in 1 seeds (72..72)", lines
     assert lines[1] == (
         "1 seeds (72..72): found 1, duplicate 0, proven infeasible 0, "
-        "timed out 0, capped 0 (a budget ran out: no proof), "
+        "timed out 0, budget 0 (a budget ran out: no proof), "
         "no separating clue 0, rejected 0"
     ), lines
     assert lines[2].startswith("hit, 11 added clues: "), lines

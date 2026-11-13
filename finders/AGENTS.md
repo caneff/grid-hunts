@@ -183,7 +183,8 @@ README before reusing anything there.
   `line_holds` reading of one line on a solution, and a `narrowing` step for
   the search. `halver_report.py` prints a board's status and its marks'
   verdicts. `halver_hunt.py` is the target-grid hunt both finders run
-  (#56): the loop, its ranking, `verify` on the line type's backtracking
+  (#56): the hooks it gives the shared loop (`finders/hunt/target_loop.py`,
+  #130), its ranking, `verify` on the line type's backtracking
   check, the record, its `summary_lines` wording, the `link_document` and the
   `finish` that stamps `ended.json`; the CLI is the driver's; a finder's `hunt.py` names its
   line type's modules, its starting board and its link. A change here
@@ -244,7 +245,8 @@ README before reusing anything there.
   file format. `fixtures/` holds the test boards, among them
   `opening_9x9.json`, Chris's opening, which `test_opening.py` checks in the
   gate (#68). `hunt.py --board BOARD --out DIR --seeds A:B` is its hunt
-  on the hunt protocol (#69): the halver hunt's target-grid loop adds rank
+  on the hunt protocol (#69): the target-grid loop the halver hunts run
+  (`finders/hunt/target_loop.py`, #130) adds rank
   clues from `separating`'s list until the board is unique, each check
   hinted with the target (#72), picked uniformly (`--pool 0`, the default
   since #72) or the most restricting first by a sample of the board's
@@ -256,8 +258,8 @@ README before reusing anything there.
   compared digit by digit in clauses; #70), refusing a second grid or a
   time limit reached, and `hunt.py summary DIR` lists hits fewest clues
   first and splits the seeds into found, proven infeasible, timed out and
-  capped; `test_hunt.py` runs it at 4x4 in the gate. The 9x9 hunt of
-  record, 16 hits in 120 seeds, is
+  budget (the loop's `budget:` reason); `test_hunt.py` runs it at 4x4 in
+  the gate. The 9x9 hunt of record, 16 hits in 120 seeds, is
   `docs/research/2026-10-22-doppelganger-rank-9x9-hunt/`; its fewest-clue
   hit is `fixtures/hit_9x9.json`, which `test_spec_66_e2e.py` re-checks in
   the gate and `test_hunt_9x9.py` hunts again in `just test-slow` (#72).
