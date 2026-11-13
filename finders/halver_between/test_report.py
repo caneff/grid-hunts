@@ -76,6 +76,7 @@ assert done.stdout.splitlines() == [
     "no mark checked: the board's status is timeout",
 ], done.stdout
 
+
 # A marks file the report cannot read is refused with the reason, exit 2,
 # nothing on stdout: never the 1 of "a mark did not hold".
 def refused(text, why):
