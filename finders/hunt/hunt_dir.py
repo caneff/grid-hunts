@@ -4,17 +4,13 @@ finder writes beside them (#774, #71), shared by the U-Bahn finders and
 reports (`read_hunt`, `summary_command`), shared by the halver hunts and
 `doppelganger_rank`."""
 
-import json
 import sys
 from pathlib import Path
 from typing import NamedTuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import hunt_files
 from verified_io import example_verdicts
-
-
-def _jsonl(path):
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
 class HuntRead(NamedTuple):
@@ -32,11 +28,9 @@ class HuntRead(NamedTuple):
 def read_hunt(out):
     """The hunt in `out`, its examples split by `example_verdicts`."""
     out = Path(out)
-    events = [
-        e for e in _jsonl(out / "progress.jsonl") if e.get("event") == "seed_done"
-    ]
-    examples = _jsonl(out / "examples.jsonl")
-    run = json.loads((out / "run.json").read_text())
+    all_events, examples = hunt_files.read_logs(out)
+    events = [e for e in all_events if e.get("event") == "seed_done"]
+    run = hunt_files.read_json(out / "run.json")
     found = example_verdicts(out, run["argv"], examples)
     verdicts = list(zip(examples, found, strict=True))
     return HuntRead(
@@ -84,35 +78,19 @@ def summary_command(argv, summary):
 
 def seeded_examples(out):
     """[(seed, record)] for every example of the hunt in `out`, paired the
-    way the driver pairs renders: the k-th "example" event of progress.jsonl
-    is the k-th examples.jsonl record. Raises ValueError, naming it, on a
-    missing or unpaired log."""
-    out = Path(out)
-
-    def lines(name):
-        path = out / name
-        if not path.is_file():
-            raise ValueError(f"{out} has no {name}: not a hunt directory")
-        return [json.loads(line) for line in path.read_text().splitlines() if line]
-
-    records = lines("examples.jsonl")
-    seeds = [
-        e["seed"] for e in lines("progress.jsonl") if e.get("outcome") == "example"
-    ]
-    if len(seeds) != len(records):
-        raise ValueError(
-            f"{len(records)} examples but {len(seeds)} example events in progress.jsonl"
-        )
-    return list(zip(seeds, records, strict=True))
+    way the driver pairs them (`hunt_files.read_examples`). Raises
+    ValueError, naming it, on a missing or unreadable log."""
+    return hunt_files.read_examples(out)
 
 
 def replace_links(out, built):
-    """Replace `out/links/` with `{seed: link text}`: a file left by an
-    earlier example list or variant never stays. Returns the directory."""
+    """Replace `out/links/` with `{seed: link text}`, as one set: a file left
+    by an earlier example list or variant never stays. Returns the directory."""
+
+    def write(directory):
+        for seed, text in built.items():
+            (directory / f"{seed}.txt").write_text(text)
+
     links = Path(out) / "links"
-    links.mkdir(exist_ok=True)
-    for stale in links.glob("*.txt"):
-        stale.unlink()
-    for seed, text in built.items():
-        (links / f"{seed}.txt").write_text(text)
+    hunt_files.swap_dir(links, write)
     return links

@@ -332,8 +332,13 @@ with tempfile.TemporaryDirectory() as tmp:
     complete_verified_bytes = (out / "verified.jsonl").read_bytes()
     complete_verified_inode = (out / "verified.jsonl").stat().st_ino
 
+    # The broken record is confirmed by a progress event, as a hunt writes one.
     with (out / "examples.jsonl").open("a") as f:
         f.write(json.dumps({"broken": True}) + "\n")
+    with (out / "progress.jsonl").open("a") as f:
+        f.write(
+            json.dumps({"event": "seed_done", "seed": 99, "outcome": "example"}) + "\n"
+        )
 
     retry_verify = subprocess.run(
         [sys.executable, str(TOY_FINDER), "verify", str(out)],

@@ -39,8 +39,8 @@ the hook) one per line in `DIR/<k>-<question>.txt`, then its line of
 A link that fails to mint (the network, the app refusing it) never loses
 the answer: its line carries `link_error`, the reason, in place of `links`,
 the reason is printed, and the run goes on.
-The picture and links are each written to a `.partial` file and renamed into
-place whole; the line is appended in one write and flushed to disk, so a
+The picture and links are each written by `hunt_files`' atomic writes, so a
+failed save leaves no temp file; the line is appended in one write and flushed to disk, so a
 killed run leaves whole lines and no half-written file.
 A line carries the question, its status, its label, its solutions and the
 names of its picture and links. The label is `complete` when the status is
@@ -111,6 +111,7 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 
 # isort: split
 import conditions
+import hunt_files
 from render import DEFAULT_FONT, GridCanvas
 
 QUESTIONS = ("feasible", "unique", "forced", "enumerate", "max", "drop-one")
@@ -349,12 +350,10 @@ def write_answer(out, k, question, answer, finder, time_limit):
     picture's path."""
     stem = f"{k}-{question}"
     picture_path = out / f"{stem}.png"
-    partial = out / f"{stem}.partial.png"
     image = picture(
         finder, answer.solutions, answer.ringed, answer.caption, answer.marked
     )
-    image.save(partial)
-    partial.replace(picture_path)
+    hunt_files.write_image_atomic(picture_path, image)
     line = {
         "question": question,
         "status": answer.status,
@@ -373,9 +372,7 @@ def write_answer(out, k, question, answer, finder, time_limit):
             print(f"{stem}: no link: {line['link_error']}", file=sys.stderr)
         else:
             links_path = out / f"{stem}.txt"
-            partial = out / f"{stem}.partial.txt"
-            partial.write_text("".join(f"{x}\n" for x in links))
-            partial.replace(links_path)
+            hunt_files.write_text_atomic(links_path, "".join(f"{x}\n" for x in links))
             line["links"] = links_path.name
     with (out / "answers.jsonl").open("a") as f:
         f.write(json.dumps(line) + "\n")
