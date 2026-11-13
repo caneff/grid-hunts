@@ -1,0 +1,122 @@
+[
+[
+"11a",
+"11 outside clues, #1",
+"/tmp/claude-1000/-home-caneff-src-grid-hunts/3702cf19-92f5-4309-b53e-71ca692fbe21/scratchpad/found11_run1.txt",
+1,
+"9gBhjHfrWT",
+"Full top, r1L, r3R, r6L, c1B, c3B. r1c1 = 2, r1c3 = 1 read by c3T = 1."
+],
+[
+"11b",
+"11 outside clues, #2",
+"/tmp/claude-1000/-home-caneff-src-grid-hunts/3702cf19-92f5-4309-b53e-71ca692fbe21/scratchpad/found11_run1.txt",
+2,
+"bqgMHPMNDc",
+"Same clue positions and values as #1, different regions and digits."
+],
+[
+"11c",
+"11 outside clues, #3",
+"/tmp/claude-1000/-home-caneff-src-grid-hunts/3702cf19-92f5-4309-b53e-71ca692fbe21/scratchpad/found11_run1.txt",
+3,
+"6KrjB7ptqP",
+"Same regions as #2; clue values differ."
+],
+[
+"11d",
+"11 outside clues, #4",
+"nr-hunt11b",
+1,
+"8NDD6PFKHp",
+"Full top, r1L, r5R, r6L, c1B, c3B. New regions."
+],
+[
+"11e",
+"11 outside clues, #5",
+"nr-hunt11b",
+2,
+"mCzNQnTgG6",
+"Full top, r1L, r4R, r6L, c1B, c3B."
+],
+[
+"11f",
+"11 outside clues, #6",
+"nr-hunt11b",
+3,
+"hP9czktQ8n",
+"Same regions and clues as #1; different digits and grid circles."
+],
+[
+"11g",
+"11 outside clues, #7",
+"nr-hunt11b",
+4,
+"TTgc9pPCtQ",
+"Same regions and clues as #2; different digits and grid circles."
+],
+[
+"11h",
+"11 outside clues, #8",
+"nr-hunt11b",
+5,
+"MJcJDzHtzh",
+"Same regions as #4, new digits and clue values."
+],
+[
+"11i",
+"11 outside clues, #9",
+"nr-hunt11b",
+6,
+"tRPdPRF6NW",
+"Same solution and clues as #8; only the grid circles differ."
+],
+[
+"11j",
+"11 outside clues, #10",
+"nr-hunt11c",
+1,
+"Cqcg9NbmNt",
+"Same regions and clues as #1; new solution grid."
+],
+[
+"12a",
+"12 outside clues, #1",
+"nr-hunt12",
+1,
+"wdFNbMLFgH",
+"Extra clue r1L = 4. Full top, r1L, r2R, r5L, r6L, c1B, c3B."
+],
+[
+"12b",
+"12 outside clues, #2",
+"nr-hunt12",
+2,
+"gfM6r7q8Bc",
+"Full top, r1L, r4R, r5L, r6L, c1B, c2B."
+],
+[
+"12c",
+"12 outside clues, #3",
+"nr-hunt12",
+3,
+"Wb9MtDTJ6k",
+"Same regions and clues as #1, different digits and grid circles."
+],
+[
+"10a",
+"10 outside clues, #1",
+"nr-hunt10",
+1,
+"bBkPtbJ7kT",
+"No circled 1 outside; c3T dropped. r1c3 = 9; the circled 1 is r4c2."
+],
+[
+"10b",
+"10 outside clues, #2",
+"nr-hunt10",
+2,
+"tbPQHM6bw6",
+"Same regions as 11-clue #1. r1c3 = 9."
+]
+]
