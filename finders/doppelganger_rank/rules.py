@@ -51,10 +51,16 @@ def cell_name(cell):
     return f"r{cell[0] + 1}c{cell[1] + 1}"
 
 
-def parse_cell(name):
-    """The (row, column) from 0 of a cell named rNcM."""
+def parse_cell(name, n=None):
+    """The (row, column) from 0 of a cell named rNcM. A ValueError naming the
+    cell when row or column is 0, or past the board when `n`, its size, is
+    given."""
     row, col = name.removeprefix("r").split("c")
-    return int(row) - 1, int(col) - 1
+    row, col = int(row), int(col)
+    if row < 1 or col < 1 or (n is not None and max(row, col) > n):
+        board = "" if n is None else f" on a {n}x{n} board"
+        raise ValueError(f"no cell {name}{board}")
+    return row - 1, col - 1
 
 
 def place_name(place):

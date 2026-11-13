@@ -21,7 +21,7 @@ import rules
 
 # isort: split
 from halver_query import holds, uniqueness
-from halver_rules import HalverModel
+from halver_rules import HalverModel, parse_cell
 
 HERE = Path(__file__).resolve().parent
 LINES = rules.load_lines(HERE / "board.json")
@@ -94,3 +94,20 @@ assert not hasattr(HalverModel, "check"), "HalverModel.check is back"
 assert not hasattr(HalverModel, "mark_holds"), "HalverModel.mark_holds is back"
 
 print("ok")
+
+
+# parse_cell refuses row or column 0 and anything past the board, by name.
+assert parse_cell("r9c9", 9) == (8, 8)
+for bad in ("r0c1", "r1c0", "r10c1", "r1c10"):
+    try:
+        parse_cell(bad, 9)
+    except ValueError as error:
+        assert bad in str(error), error
+    else:
+        raise AssertionError(f"parse_cell({bad!r}, 9) was accepted")
+try:
+    parse_cell("r0c1")
+except ValueError as error:
+    assert "r0c1" in str(error), error
+else:
+    raise AssertionError("parse_cell('r0c1') was accepted")
