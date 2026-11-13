@@ -93,29 +93,21 @@ class Finder(Protocol):
     # `verify`, not the JSON `record()` wrote. A finder whose record() *is*
     # already verify-able skips this; `hunt verify` then hands `verify` the
     # parsed record line unchanged.
-    #
-    # A stateful finder (has `load_state` and `save_state`) that also has
-    # `render` needs this hook for render repair on resume (#538); without
-    # it a failed render stays missing and a stray render is never deleted.
 
     def candidate_from_record(self, record: dict) -> Any:
         """Rebuild the candidate, as `propose` produced it, from a line
         `record()` wrote to examples.jsonl: everything `verify` *and*
         `render` read, not only what `verify` reads. The driver does not
-        check that. It should not change the finder's state, and the driver
-        snapshots the state before the call and restores it after, so a
-        hook that does never reaches state.json."""
+        check that. `hunt render DIR` rebuilds each example with it."""
         ...
 
-    # Optional -- a finder with no picture to draw skips this. The driver
-    # calls `render` right after an accepted example is written, and saves
-    # the returned image to renders/<seed>.png (#490). Build the image with
-    # `render.GridCanvas`. On resume the driver re-renders a missing or
-    # undecodable picture (#537, #538): a stateless finder is re-proposed; a
-    # stateful one is never re-proposed -- its picture is rebuilt from the
-    # examples.jsonl record with `candidate_from_record` (above).
+    # Optional -- a finder with no picture to draw skips this. `hunt render
+    # DIR` (#119) calls `render` on each example of a finished hunt, rebuilt
+    # with `candidate_from_record` (or the record itself without that hook),
+    # and swaps renders/<seed>.png in as one set. A hunt and its resume never
+    # call it. Build the image with `render.GridCanvas`.
 
     def render(self, candidate: Any):
-        """A picture of this candidate (a `PIL.Image.Image`), or omit this
-        method entirely for a finder with nothing to draw."""
+        """A picture of one recorded example (a `PIL.Image.Image`), or omit
+        this method entirely for a finder with nothing to draw."""
         ...

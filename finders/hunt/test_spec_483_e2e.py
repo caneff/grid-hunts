@@ -200,6 +200,16 @@ def main():
             "state.json was reloaded across the kill, not restarted",
             state["state"]["seeds_seen"] == SEEDS,
         )
+        check(
+            "the hunt and its resume drew no pictures", not (out / "renders").exists()
+        )
+        r = subprocess.run(
+            [sys.executable, __file__, AS_FINDER, "render", str(out)],
+            capture_output=True,
+            text=True,
+            env=success_env(),
+        )
+        check(f"hunt render exits 0 ({r.stderr[-300:]})", r.returncode == 0)
         pngs = sorted(p.stem for p in (out / "renders").glob("*.png"))
         check("one PNG per example", len(pngs) == len(examples) and len(pngs) > 0)
 

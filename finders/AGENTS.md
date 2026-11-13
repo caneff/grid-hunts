@@ -22,7 +22,12 @@ README before reusing anything there.
 - Before writing a new finder, start from `finders/hunt/`: the shared hunt
   protocol (a `typing.Protocol` of `propose`/`verify`/`record`/`key`/
   `symmetry`, and the `hunt` CLI's `run(finder, argv)`) that gives a fresh
-  hunt its output directory and dedupe for free. `finders/hunt/toy_finder.py`
+  hunt its output directory and dedupe for free. A hunt and its resume draw
+  no pictures: `render DIR`, a driver subcommand beside `verify DIR`, does,
+  afterwards, for a finder that has `render(candidate)`: it rebuilds each
+  example with `candidate_from_record`, draws it and swaps `renders/` for the
+  full set of `<seed>.png` in one step, so a kill leaves the previous set or
+  none and a re-run converges. `finders/hunt/toy_finder.py`
   is a minimal worked example; `finders/qqrr/hunt/tie_finder.py`, a new finder
   over `chan_big.py`'s model, is the first real one. Other existing finders
   are not ported onto it. A new finder folder needs a BUILD file before
