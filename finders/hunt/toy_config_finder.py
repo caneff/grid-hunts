@@ -1,10 +1,8 @@
-"""Toy finder with a config of its own, for test_finder_config.py (#491).
+"""Toy finder with its own --parity config, for test_finder_config.py (#491).
 
-Random 4x4 shadings, as in toy_finder.py, but `--parity even|odd` -- a flag
-the driver does not know -- picks which shaded-cell count `verify` accepts,
-and some seeds come back `Empty` with a reason. The script parses its own
-flag and hands the rest of argv to `run`; the finder's `config` is what
-run.json records and a resume must match.
+`--parity even|odd` picks which shaded-cell count `verify` accepts; some seeds
+come back `Empty`. The script parses the flag and hands the rest of argv to
+`run`; `config` is what run.json records.
 
     uv run finders/hunt/toy_config_finder.py --out DIR --seeds START:END --parity odd
 """

@@ -1,14 +1,9 @@
-"""Canonical dedupe key under a finder's declared symmetry group (#483/#484).
+"""Canonical dedupe key under a finder's symmetry group (#483/#484).
 
-`key(candidate)` (part of the finder contract) returns a flat tuple of cell
-values, in whatever fixed order the finder chooses. A cell map is a tuple of
-source indices the same length as that grid: `transformed[i] = grid[map[i]]`.
-`D4` is generated from the grid's own side length (the grid must be square);
-`IDENTITY` is the one-element group that changes nothing; a custom group is
-any list of such maps, for a rule whose symmetry is not the whole square.
-
-`canonical_key` is the least of the grid's images under the group -- equal
-keys mean the same candidate up to that symmetry.
+A cell map is a tuple of source indices: `transformed[i] = grid[map[i]]`.
+`D4` is built from the grid's side length (square grids only); `IDENTITY`
+changes nothing; a custom group is a list of such maps. `canonical_key` is the
+least image under the group.
 """
 
 from functools import lru_cache
@@ -39,12 +34,7 @@ def d4_cell_maps(n):
 
 
 def _normalize_group(maps):
-    """A hashable tuple-of-tuples for `maps`, or raise if it's empty.
-
-    Accepts any iterable (a list, a set, ...) of index sequences -- shared
-    by `validate_group` and `canonical_key`'s custom-group path so neither
-    duplicates the other's setup.
-    """
+    """A hashable tuple-of-tuples for `maps`; raises if it is empty."""
     maps = list(maps)
     if not maps:
         raise ValueError("a custom symmetry group must not be empty")
@@ -54,22 +44,13 @@ def _normalize_group(maps):
 @lru_cache
 def _validate_custom_group(maps, n):
     """Validate `maps` is a group of permutations of range(n): each map a
-    bijection, and closed under composition. Canonicalizing as the minimum
-    image is only an equivalence relation when the maps form a group -- a
-    set that is merely closed under nothing (e.g. `[identity, rotate90]`,
-    missing the other two rotations) can canonicalize two unrelated grids
-    to the same key and silently drop one as a false duplicate (#508).
+    bijection, closed under composition. The minimum image is only an
+    equivalence when the maps form a group; a non-closed set such as
+    `[identity, rotate90]` merges unrelated grids as false duplicates (#508).
 
-    No separate identity check: a finite non-empty set of permutations
-    that's closed under composition is a subgroup of the full permutation
-    group (every element's powers must cycle back to it, and a finite
-    subsemigroup of a group is a subgroup), so closure alone already
-    forces the identity to be present -- a `[rotate90, rotate180,
-    rotate180]`-style group missing it fails composition closure first.
+    No separate identity check: closure alone forces the identity.
 
-    `maps` must be a tuple of tuples (hashable) so this can be cached --
-    the composition check is O(k^2 * n) and `canonical_key` would otherwise
-    redo it on every call for a custom-group finder.
+    Cached, so `maps` is a tuple of tuples: the closure check is O(k^2 * n).
     """
     for cell_map in maps:
         if len(cell_map) != n or sorted(cell_map) != list(range(n)):
@@ -91,18 +72,14 @@ def _validate_custom_group(maps, n):
 
 
 def validate_group(maps):
-    """Validate a custom symmetry group before any candidate exists.
-
-    Same checks `canonical_key` runs on its custom-group path, but derives
-    `n` from the group's own maps instead of a grid, so a hunt driver can
-    reject a broken group up front -- before proposing anything or writing
-    any output.
-    """
+    """Validate a custom symmetry group before any candidate exists: the checks
+    `canonical_key` runs, with `n` taken from the group's own maps."""
     maps = _normalize_group(maps)
     _validate_custom_group(maps, len(maps[0]))
 
 
 def canonical_key(grid, group):
+    """The least image of `grid` under `group` (D4, IDENTITY or custom maps)."""
     grid = tuple(grid)
     if group == IDENTITY:
         return grid

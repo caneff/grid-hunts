@@ -1,28 +1,9 @@
-"""The edges a narrowed run selects by, checked against the real tree.
-
-`tests/all.sh --changed` runs a suite when Pants lists its file among the
-dependents of a changed file, so an edge Pants does not see is a suite a
-narrowed run skips in silence. This asks Pants for the whole graph once
-(`pants dependencies --format=json finders::`) and checks:
-
-- every suite file of the gate is owned by a Pants target, so Pants can list it;
-- no import is ambiguous: Pants drops an import two targets could own;
-- every module a finder source imports by a name some tracked `finders/` file
-  has (`import verified_io`) reaches one file of that name: Pants also drops,
-  in silence, a first-party import no source root resolves;
-- every `.py` file a finder source names in a string (the script a test starts
-  as a subprocess, a file it reads) is a dependency of that source, at any
-  distance. A name resolves as a path from the source's directory or the repo
-  root (`"../model.py"`, `"finders/hunt/driver.py"`); else to every file of
-  that name in the same finder folder, all of which must be reached; else to
-  the files of that name in other finder folders, one of which must be. A
-  name no tracked file has (a temp script the test writes) is skipped;
-- every test file beside a `conftest.py` reaches it: pytest loads it, and
-  nothing imports it;
-- the known edges below: files whose change must select some suites and must
-  not select others.
-
-Pants is required: with no `pants` on the PATH this fails, naming it.
+"""Pants's edges, checked against the real tree: an edge Pants does not see is
+a suite a narrowed run skips in silence. A `.py` name in a string resolves as
+a path from the source's directory or the repo root; else to every file of that
+name in the same finder folder (all must be reached); else to the files of that
+name in other finder folders (one must be). A name no tracked file has is
+skipped. Pants is required: with none on the PATH this fails, naming it.
 
     uv run tests/test_pants_edges.py
 """
@@ -40,7 +21,6 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "finders" / "hunt"))
 from cli_checks import check, finish
 
-# (file, why it is read, suites its change must select, suites it must not)
 KNOWN_EDGES = [
     (
         "finders/hunt/verified_io.py",
@@ -86,8 +66,6 @@ PY_NAME = re.compile(r"""["']([\w./-]*\w\.py)["']""")
 
 
 def graph():
-    """{address: [direct dependency addresses]} for every target under finders/,
-    and what Pants printed on stderr."""
     with tempfile.TemporaryDirectory() as work:
         try:
             r = subprocess.run(
@@ -109,7 +87,6 @@ def graph():
 
 
 def owner(deps, file):
-    """The address of the target that owns `file`'s Python, or None."""
     return next((a for a in deps if a.split(":")[0] == file), None)
 
 
@@ -148,7 +125,6 @@ def named(name, src, py_files):
 
 
 def imported(src):
-    """The top-level module names `src` imports absolutely."""
     names = set()
     for node in ast.walk(ast.parse((REPO / src).read_text())):
         if isinstance(node, ast.Import):
@@ -185,7 +161,7 @@ if __name__ == "__main__":
     for src in py_files:
         address = owner(deps, src)
         if address is None:
-            continue  # the suite check above names an unowned suite
+            continue
         reach = closure(deps, address) - {src}
         for module in sorted(imported(src)):
             same = [f for f in py_files if f.endswith(f"/{module}.py") and f != src]

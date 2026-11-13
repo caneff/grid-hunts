@@ -1,8 +1,5 @@
-"""A hunt directory read back: its examples by seed and the `links/` a
-finder writes beside them (#774, #71), shared by the U-Bahn finders and
-`doppelganger_rank`; and the seeds and verdicts a hunt's `summary DIR`
-reports (`read_hunt`, `summary_command`), shared by the halver hunts and
-`doppelganger_rank`."""
+"""A hunt directory read back: examples by seed, the `links/` beside them, and
+the seeds and verdicts `summary DIR` reports."""
 
 import json
 import sys
@@ -59,9 +56,8 @@ def seed_lines(events):
 
 
 def summary_command(argv, summary):
-    """`hunt.py summary DIR`: print `summary(DIR)`'s lines. Exit 2, naming
-    why, on a wrong argument list, a directory with no run.json, or a
-    ValueError from `summary`."""
+    """`hunt.py summary DIR`: print `summary(DIR)`'s lines; exit 2 on a bad
+    argument list, a directory with no run.json, or a ValueError."""
     if len(argv) != 2:
         print("usage: hunt.py summary DIR", file=sys.stderr)
         return 2
@@ -131,8 +127,7 @@ def seeded_examples(out):
 
 
 def replace_links(out, built):
-    """Replace `out/links/` with `{seed: link text}`, as one set: a file left
-    by an earlier example list or variant never stays. Returns the directory."""
+    """Replace `out/links/` with `{seed: link text}` as one set; returns it."""
 
     def write(directory):
         for seed, text in built.items():

@@ -59,8 +59,8 @@ cd "$root" || exit 1
 #                  halver/lockout 23-line board, about 200 s; the
 #                  halver/lockout hunt from the empty board plus its verify;
 #                  the five slowest U-Bahn suites, timed in
-#                  docs/research/2026-10-22-ubahn-suite-times.md, #77; the
-#                  Doppelganger rank 9x9 hunt, about a minute, #72).
+#                  docs/research/2026-10-22-ubahn-suite-times.md; the
+#                  Doppelganger rank 9x9 hunt, about a minute).
 #   finder_pytest: the pytest suites, run as `uv run pytest <file> -q`.
 finder_slow="finders/halver_between/test_hunt.py finders/halver_lockout/test_unique_23.py finders/halver_lockout/test_hunt.py"
 finder_slow="$finder_slow finders/ubahn/test_ubahn_fewest_markings.py finders/ubahn/test_ubahn_hybrid_bananas.py"
@@ -69,17 +69,13 @@ finder_slow="$finder_slow finders/ubahn/test_ubahn_brute.py"
 finder_slow="$finder_slow finders/doppelganger_rank/test_hunt_9x9.py"
 finder_pytest="finders/counting_shaded/test_counting_shaded.py"
 
-# The suites every --changed selection keeps: the runner's own test, and the
-# check that Pants still sees each edge a narrowed run selects by.
 runner_test="uv run tests/test_all_sh.py"
 edges_test="uv run tests/test_pants_edges.py"
 
-listed() { case " $1 " in *" $2 "*) return 0 ;; esac; return 1; } # <list> <file>
-suite_file() { local w; for w in $1; do case $w in *.py) echo "$w" ;; esac; done; } # <suite>
-# Whether Pants's answer holds a target of the file, `<file>:<target>`.
-placed() { case $'\n'"$affected" in *$'\n'"$1:"*) return 0 ;; esac; return 1; } # <file>
+listed() { case " $1 " in *" $2 "*) return 0 ;; esac; return 1; }
+suite_file() { local w; for w in $1; do case $w in *.py) echo "$w" ;; esac; done; }
+placed() { case $'\n'"$affected" in *$'\n'"$1:"*) return 0 ;; esac; return 1; }
 
-# Prints "<group>\t<command>" per suite, in run order.
 suites() {
   local f
   printf 'lint\t%s\n' \
@@ -93,7 +89,7 @@ suites() {
   for f in $finder_slow; do printf 'slow\tuv run %s\n' "$f"; done
 }
 
-usage() { # <what is wrong>
+usage() {
   echo "tests/all.sh: $1" >&2
   echo "usage: tests/all.sh [--list] [--group <group>] [--jobs <n>] [--changed <base>]" >&2
   exit 2
@@ -136,11 +132,7 @@ else
   note=""
 fi
 
-# Asks Pants for the targets of the changed files and every target that
-# depends on one, at any distance. Sets `affected`, one address per line, or
-# `widened` when Pants is missing, fails, gives an answer that is not a list of
-# addresses, or holds no target of a changed file: no target owns that file.
-ask_pants() { # <changed file>...
+ask_pants() {
   local f
   command -v pants >/dev/null || {
     echo "tests/all.sh: no \`pants\` on the PATH, so the run is not narrowed." >&2
@@ -154,15 +146,12 @@ ask_pants() { # <changed file>...
   for f in "$@"; do placed "$f" || { widened=$f; return; }; done
 }
 
-# --changed: keep lint, the always-run suites, and the suites Pants lists among
-# the dependents of the changed files; a path or an answer it cannot narrow on
-# keeps every suite and names itself in $note.
 if [ -n "$base" ]; then
   files=$(git -c core.quotepath=off diff --name-only --no-renames "$base...HEAD" 2>&1) || usage "git cannot diff $base...HEAD: $files"
   widened="" ask=() affected=""
   while IFS= read -r f; do
     case $f in
-      '' | *.md | archive/*) ;; # archived finders are never suites
+      '' | *.md | archive/*) ;;
       pyproject.toml | uv.lock | pants.toml | justfile | tests/* | .github/*) widened=${widened:-$f} ;;
       *) if [ -e "$f" ] || [ -L "$f" ]; then ask+=("$f"); else widened=${widened:-$f}; fi ;;
     esac
@@ -188,11 +177,7 @@ if [ "$list_only" = 1 ]; then [ -z "$selected" ] || printf '%s\n' "$selected"; e
 
 total=$(grep -c . <<<"$selected")
 
-# One suite, run in the background of this shell: a PASS line and its name on
-# the passed list, or a FAIL line with its whole output and its name on the
-# failed list. A suite this function never finishes (its shell killed) is on
-# neither list, which the count below refuses.
-run_suite() { # <suite command>
+run_suite() {
   local out
   if out=$($1 2>&1 </dev/null); then
     echo "PASS $1"
@@ -207,7 +192,6 @@ touch "$state/passed" "$state/failed"
 while IFS= read -r suite; do
   [ -n "$suite" ] || continue
   while [ "$(jobs -rp | wc -l)" -ge "$jobs" ]; do wait -n; done
-  # A failure starts no further suite; those already running finish below.
   [ -s "$state/failed" ] && break
   run_suite "$suite" &
 done <<<"$selected"

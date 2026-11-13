@@ -1,10 +1,7 @@
 """PIL grid-drawing base a finder's renderer extends (#483/#490).
 
-`GridCanvas` owns the image: cells, box lines, shading, digits, circles,
-lines through cell centres. A
-finder's own render module builds one, draws its candidate onto it, and
-returns `.image` to the driver. Standalone, usable without the driver -- see
-`finders/AGENTS.md`.
+A finder's render module builds a `GridCanvas`, draws its candidate onto it and
+returns `.image`. Usable without the driver; see `finders/AGENTS.md`.
 """
 
 from functools import lru_cache
@@ -16,9 +13,7 @@ DEFAULT_FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 
 @lru_cache
 def _load_font(font_path, size):
-    """Cache the parsed font by (path, size): `digit()` is called once per
-    filled cell, and re-parsing the same TTF from disk every time is
-    wasted work on every render (#490 correctness review)."""
+    """The parsed font, cached by (path, size): `digit()` runs once per cell."""
     return ImageFont.truetype(font_path, size)
 
 

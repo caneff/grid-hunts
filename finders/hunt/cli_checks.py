@@ -1,11 +1,7 @@
-"""Shared helpers for the standalone finder test scripts (#8).
+"""Helpers for the standalone finder test scripts (#8).
 
-A test script calls `check(name, cond)` for each assertion and ends with
-`finish()`, which exits 1 if any check failed. `check_refusal` asserts a
-refusal's exit 2 and its text. `run_cli` launches a finder
-script as a subprocess under `success_env`, so the hunt's load gate reads
-idle (#526). The module is not named `test_*`: the gate runs every
-`test_*.py` it finds by glob."""
+`run_cli` runs a finder under `success_env` so the load gate reads idle.
+Not named `test_*`: the gate runs every `test_*.py` it globs."""
 
 import json
 import subprocess
@@ -18,6 +14,7 @@ _failed = False
 
 
 def check(name, cond):
+    """Print `ok`/`FAIL` for one assertion and remember a failure for `finish`."""
     global _failed
     if not cond:
         _failed = True
@@ -25,6 +22,7 @@ def check(name, cond):
 
 
 def finish():
+    """Exit 1 if any `check` failed, else 0."""
     sys.exit(1 if _failed else 0)
 
 
@@ -45,8 +43,8 @@ def read_jsonl(path, missing_ok=False):
 
 
 def run_cli(script, *args, env=None):
-    """`env` is `success_env`'s overrides: a test of the load gate passes its
-    own HUNT_FAKE_LOAD1."""
+    """Run `script` with `args` as a subprocess under `success_env(env)`; a
+    test of the load gate passes its own HUNT_FAKE_LOAD1 in `env`."""
     return subprocess.run(
         [sys.executable, str(script), *map(str, args)],
         capture_output=True,

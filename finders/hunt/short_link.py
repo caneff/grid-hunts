@@ -1,12 +1,9 @@
 """Minting a SudokuMaker short link from a document (#90).
 
-grid-hunts keeps no full link (`AGENTS.md` § Puzzle links): a writer calls
-`mint(doc)` and writes the `https://sudokumaker.app/p/<id>` it returns.
-
-A test keeps off the network inside `with fake_mint() as fake_dir:`, which
-sets `FAKE_DIR_ENV` (subprocesses inherit it) to a directory: `mint` then answers an id fixed by the document and keeps the
-full link in `<dir>/<id>.txt`, and `fake_doc(dir, short)` rebuilds the
-document from it.
+No full link is kept (`AGENTS.md` § Puzzle links): write the short link
+`mint(doc)` returns. A test runs inside `with fake_mint() as fake_dir:`, which
+sets `FAKE_DIR_ENV` (subprocesses inherit it) so `mint` keeps the full link in
+`<dir>/<id>.txt` offline and `fake_doc(dir, short)` rebuilds the document.
 """
 
 import contextlib

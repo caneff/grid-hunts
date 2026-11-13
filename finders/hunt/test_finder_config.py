@@ -1,16 +1,3 @@
-"""A finder's own config and an empty seed's reason, black-box on the `hunt`
-CLI (#491, forced by the qqrr pilot finder).
-
-A real finder has knobs of its own -- which board, which corner, how long a
-solve may take -- that the driver's argv does not name. The finder hands them
-to the driver as `finder.config`; run.json records it, and a resume under a
-different config refuses rather than mixing two searches in one directory.
-A seed that finds nothing can say why (`protocol.Empty`), so a solver's
-timeout and its proof of infeasibility stay apart in progress.jsonl.
-
-    uv run finders/hunt/test_finder_config.py
-"""
-
 import json
 import sys
 import tempfile
@@ -72,7 +59,6 @@ with tempfile.TemporaryDirectory() as d:
         others and not any("empty_reason" in e for e in others),
     )
 
-# `Empty` has no reasonless spelling (#647).
 from protocol import Empty
 
 try:

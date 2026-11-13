@@ -1,6 +1,5 @@
-"""verified.jsonl, the file `hunt verify DIR` writes (#489, #517): its
-reader for the test suites, and each example's verdict for a hunt's
-`summary`."""
+"""verified.jsonl, the file `hunt verify DIR` writes (#489): its reader and
+each example's verdict."""
 
 import json
 import sys

@@ -1,24 +1,7 @@
-"""One end-to-end test for the whole hunt protocol spec (#483, closing slice #626).
-
-Drives the `hunt` CLI in subprocesses over one toy finder that uses the parts
-the way a real finder does: a CP-SAT uniqueness check as its verifier, its
-rows in its record, a D4 dedupe key, a render hook, saved state and
-`self.workers`. One directory lives through the spec's acceptance criteria in
-order: a fresh run, a SIGKILL mid-hunt, a resume, the refusals (argv
-mismatch, load above 24, then `--force-load`), inline verification against
-`--no-verify` then `hunt verify DIR`, and the `--workers` default.
-
-WHAT A GREEN RUN DOES NOT COVER (this seam is blind to it):
-  - any real finder's search: every path here is a 4x4 toy with a trivial
-    rule, hand-made state and a sub-second solve -- never a real rule, a real
-    CP-SAT verifier, hours of state.json growth, or a kill mid-solve under
-    job-run. That is the one real hunt checked by hand in
-    docs/research/2026-09-28-qqrr-tie-kill-resume.md (#626).
-  - the live app: solve time (`just time`) and how a link renders and solves
-    in sudokumaker.app.
-
-    uv run finders/hunt/test_spec_483_e2e.py
-"""
+"""WHAT A GREEN RUN DOES NOT COVER: any real finder's search (toy rule,
+sub-second solve, no kill mid-solve under job-run; see
+docs/research/2026-09-28-qqrr-tie-kill-resume.md), and the live app (solve
+time, how a link renders in sudokumaker.app)."""
 
 import json
 import subprocess
@@ -55,9 +38,6 @@ class SpecToyFinder:
         return tuple(rng.randint(0, 1) for _ in range(SIDE * SIDE))
 
     def verify(self, candidate):
-        # A real CP-SAT check through the shared part: the model pins every
-        # cell to the candidate and one parity variable to its count, so it
-        # has exactly one solution; an odd count is the rule's rejection.
         m = cp_model.CpModel()
         cells = [m.NewIntVar(0, 1, f"x{i}") for i in range(len(candidate))]
         for var, value in zip(cells, candidate, strict=True):
@@ -143,7 +123,6 @@ def main():
         }
         check("the reference hunt found examples", len(ref_keys) > 0)
 
-        # Kill mid-hunt, then resume with the same argv.
         out = Path(tmp) / "hunt"
         kill_partway(out, seeds, "--workers", "1")
         done_before = seed_done(out)

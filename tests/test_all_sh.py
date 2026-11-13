@@ -1,19 +1,6 @@
-"""`tests/all.sh`: the gate's runner, on a throwaway tree of fake suites.
+"""`tests/all.sh` on a throwaway tree of fake suites, so the real suites never run.
 
-A copy of the runner sits in a temp tree with fake suites, so the real suites
-are never run. The checks: with no flag and no `GATE_JOBS` suites run one at a
-time; `--jobs 2` and `GATE_JOBS=2` run two at once; a failure is named with
-its output, starts no further suite and still lets the running one finish
-before the count line; a suite whose shell is killed fails the run; an empty
-selection is `0 of 0`; a `--jobs` that is not a positive integer is refused.
-`--changed <base>` narrows to the diff `<base>...HEAD` through a stand-in
-`pants` on the PATH: the suites it lists among the changed files' dependents
-run, with lint, this test and the edge check; a shared path, a deleted file, a
-file it does not place, a failed or unreadable answer and no `pants` at all
-widen the run to every suite and the count line names why; a docs-only diff
-asks nothing; `--list --changed` prints the selection.
-
-    uv run tests/test_all_sh.py
+uv run tests/test_all_sh.py
 """
 
 import os
@@ -27,14 +14,10 @@ from cli_checks import check, finish
 
 ALL = Path(__file__).resolve().parent / "all.sh"
 
-# A suite that logs its start and its end to the file `log` at the tree's
-# root: one at a time reads start end start end, two at once start start. When
-# the test expects two at once (`LOGGER_RENDEZVOUS` set), the suite waits
-# between the two lines until both starts are logged, so the order is decided
-# by the runner starting both, not by a sleep; a run that starts only one at a
-# time gives up the wait after 20 s and logs the wrong order. Otherwise it
-# pauses 0.5 s, long enough for a runner that wrongly starts the second suite
-# at once to have logged its start.
+# With `LOGGER_RENDEZVOUS` set the suite waits until both starts are logged, so
+# the order is decided by the runner starting both, not by a sleep; a runner
+# that starts one at a time gives up after 20 s. Otherwise it pauses 0.5 s,
+# long enough for a wrongly concurrent second suite to log its start.
 LOGGER = """\
 import os
 import time
@@ -83,8 +66,6 @@ if len(chain) >= 2:
 
 
 def tree(root, suites):
-    """A copy of the runner over `suites`, {file name: script body}, without
-    its line that lists this test; returns the copy's path."""
     (root / "tests").mkdir(parents=True)
     lines = ALL.read_text().splitlines(keepends=True)
     (root / "tests" / "all.sh").write_text(
@@ -217,10 +198,6 @@ def git(root, *args):
     )
 
 
-# A stand-in for Pants, put first on the PATH: it logs its arguments to
-# `pants-calls` at the tree's root and answers each spec from `pants-answer`
-# there, one `<spec>\t<address>` line per target, as `pants dependents
-# --transitive --closed` would. A `pants-fails` file makes it fail.
 STUB_PANTS = """\
 #!/usr/bin/env bash
 echo "$*" >>pants-calls
@@ -229,9 +206,6 @@ for spec in "$@"; do
   awk -F'\\t' -v s="$spec" '$1 == s { print $2 }' pants-answer
 done | sort -u
 """
-# What the stand-in knows: each test file is its own target; the shared
-# helper, the fixture and finders/fake/BUILD reach finders/fake/test_a.py; the
-# shared paths are placed too.
 ANSWER = {
     "finders/fake/test_a.py": ["finders/fake/test_a.py:py"],
     "finders/fake-two/test_f.py": ["finders/fake-two/test_f.py:py"],
@@ -263,9 +237,6 @@ ANSWER = {
 
 
 def changed_tree(root):
-    """A git tree holding the whole runner, stub runner tests, three fake
-    finder folders and one file at each shared path, committed as `main`,
-    with the stand-in Pants in `<root>/../bin`."""
     files = {
         "tests/all.sh": ALL.read_text(),
         "tests/test_all_sh.py": "pass\n",
@@ -323,7 +294,6 @@ def changed(script, *args, path=None):
         capture_output=True,
         text=True,
         timeout=120,
-        # The fake tree's pyproject.toml and uv.lock are empty files.
         env={
             **BASE_ENV,
             "UV_NO_PROJECT": "1",
@@ -482,9 +452,6 @@ with tempfile.TemporaryDirectory() as d:
         ),
     )
 
-    # A file moved out of shared code is both a deletion and an addition:
-    # Pants answers from the tree as it is now, where nothing imports the old
-    # path, so its importers would go unlisted.
     git(root, "checkout", "-q", "-B", "work", "main")
     git(root, "mv", "finders/hunt/helper.py", "finders/fake/helper.py")
     git(root, "commit", "-q", "-m", "move")
@@ -498,7 +465,6 @@ with tempfile.TemporaryDirectory() as d:
         ),
     )
 
-    # `main` moving on after the branch was cut is not the branch's change.
     touch_on_branch(root, "finders/other-one/test_b.py")
     git(root, "checkout", "-q", "main")
     (root / "justfile").write_text("# main moved\n")
@@ -512,7 +478,6 @@ with tempfile.TemporaryDirectory() as d:
         got == (0, [*LINT, *ALWAYS, "uv run finders/other-one/test_b.py"]),
     )
 
-    # Retired finders' data stays under docs/research/, which no target owns.
     touch_on_branch(root, "docs/research/renbanana/CIRCLES.json")
     got = count_line(script)
     check(
@@ -620,8 +585,6 @@ with tempfile.TemporaryDirectory() as d:
         r.returncode == 2 and "--changed needs a value" in r.stderr,
     )
 
-# The real tree: retired finders live under archive/finders/ with a README and
-# no suite under archive/ is in the gate.
 REPO = ALL.parent.parent
 r = subprocess.run(
     ["bash", str(ALL), "--list"], capture_output=True, text=True, cwd=REPO
