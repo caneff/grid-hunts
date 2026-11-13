@@ -48,7 +48,7 @@ KNOWN_EDGES = [
             "finders/ubahn/test_ubahn_hunt.py",
             "finders/halver_lockout/test_spec_52_e2e.py",
         ],
-        ["finders/hunt/test_grid.py", "finders/qqrr/test_model.py"],
+        ["finders/hunt/test_minimizer.py", "finders/qqrr/test_model.py"],
     ),
     (
         "finders/halver/halver_brute.c",
@@ -63,13 +63,13 @@ KNOWN_EDGES = [
         "finders/ubahn/fixtures/publ-knt.txt",
         "a finder's fixture is data of every Python file in its folder",
         ["finders/ubahn/test_penpa.py"],
-        ["finders/hunt/test_grid.py"],
+        ["finders/hunt/test_minimizer.py"],
     ),
     (
         "finders/hunt/toy_finder.py",
         "test_toy_hunt.py starts it as a subprocess, which no import shows",
         ["finders/hunt/test_toy_hunt.py"],
-        ["finders/hunt/test_grid.py"],
+        ["finders/hunt/test_minimizer.py"],
     ),
     (
         "finders/hunt/render.py",

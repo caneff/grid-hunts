@@ -1,8 +1,8 @@
 """One end-to-end test for the whole hunt protocol spec (#483, closing slice #626).
 
 Drives the `hunt` CLI in subprocesses over one toy finder that uses the parts
-the way a real finder does: a CP-SAT uniqueness check as its verifier, the
-text printer in its record, a D4 dedupe key, a render hook, saved state and
+the way a real finder does: a CP-SAT uniqueness check as its verifier, its
+rows in its record, a D4 dedupe key, a render hook, saved state and
 `self.workers`. One directory lives through the spec's acceptance criteria in
 order: a fresh run, a SIGKILL mid-hunt, a resume, the refusals (argv
 mismatch, load above 24, then `--force-load`), inline verification against
@@ -31,9 +31,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from dedupe import D4, canonical_key
 from driver import run
-from grid import connected_components
 from ortools.sat.python import cp_model
-from printer import render_board
 from protocol import Verdict
 from render import GridCanvas
 from subprocess_env import success_env
@@ -73,11 +71,10 @@ class SpecToyFinder:
         return Verdict(ok=True)
 
     def record(self, candidate):
-        rows = [candidate[r * SIDE : (r + 1) * SIDE] for r in range(SIDE)]
+        rows = [list(candidate[r * SIDE : (r + 1) * SIDE]) for r in range(SIDE)]
         return {
             "grid": list(candidate),
-            "board": render_board(rows),
-            "components": len(connected_components(rows)),
+            "rows": rows,
             "workers": self.workers,
             "seeds_seen_at_find": self.seeds_seen,
         }
