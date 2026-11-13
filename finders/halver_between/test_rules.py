@@ -111,3 +111,26 @@ except ValueError as error:
     assert "r0c1" in str(error), error
 else:
     raise AssertionError("parse_cell('r0c1') was accepted")
+
+# A new mark kind is one MARK_KINDS entry: the name and the board-question
+# condition both read it, and an unknown kind is refused once, by name.
+import halver_rules
+from conditions import Eq
+from halver_query import condition
+
+halver_rules.MARK_KINDS["not_digit"] = halver_rules.MarkKind(
+    lambda m: f"{m['cell']} != {m['digit']}", lambda m: Eq(m["cell"], 0)
+)
+try:
+    extra = {"kind": "not_digit", "cell": "r1c1", "digit": 3}
+    assert halver_rules.mark_name(extra) == "r1c1 != 3"
+    assert condition(extra) == Eq("r1c1", 0)
+finally:
+    del halver_rules.MARK_KINDS["not_digit"]
+for read in (halver_rules.mark_name, condition):
+    try:
+        read({"kind": "not_digit", "cell": "r1c1", "digit": 3})
+    except ValueError as error:
+        assert "unknown mark kind 'not_digit'" in str(error), error
+    else:
+        raise AssertionError(f"{read.__name__} accepted an unknown kind")

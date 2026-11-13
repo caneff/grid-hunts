@@ -31,13 +31,13 @@ sys.path.insert(0, str(FINDERS / "query"))
 
 # isort: split
 import query
-from conditions import All, Any_, Eq
 from halver_rules import (
     HalverModel,
     MarkCheck,
     RuleCheck,
     cell_name,
     check_mark_cells,
+    mark_condition,
     parse_cell,
 )
 from short_link import mint
@@ -95,20 +95,8 @@ class HalverQuery:
 
 def condition(entry):
     """A `marks.json` entry as a condition: what every solution must meet
-    for the mark to hold."""
-    kind = entry["kind"]
-    cells = entry.get("cells", [])
-    if kind == "digit":
-        return Eq(entry["cell"], entry["digit"])
-    if kind == "candidates":
-        return Any_(tuple(Eq(entry["cell"], d) for d in entry["digits"]))
-    if kind == "digit_in":
-        return Any_(tuple(Eq(c, entry["digit"]) for c in cells))
-    if kind == "halver":
-        return Eq(f"h_{entry['cell']}", 1)
-    if kind == "halver_digit_in":
-        return Any_(tuple(All((Eq(f"h_{c}", 1), Eq(c, entry["digit"]))) for c in cells))
-    raise ValueError(f"unknown mark kind {kind!r}: {entry}")
+    for the mark to hold. The kinds are `halver_rules.MARK_KINDS`."""
+    return mark_condition(entry)
 
 
 def uniqueness(board, time_limit=10.0):

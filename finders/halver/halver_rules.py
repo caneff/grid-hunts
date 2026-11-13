@@ -24,9 +24,18 @@ type's lines from a decoded SudokuMaker document, and `lines_alone` reads
 them from a board that holds nothing else, refusing one that does.
 """
 
+import json
+import sys
+from collections.abc import Callable
+from pathlib import Path
 from typing import NamedTuple
 
 from sudoku_kit import cpsat
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "query"))
+
+# isort: split
+from conditions import All, Any_, Eq
 
 
 class Line(NamedTuple):
@@ -238,17 +247,77 @@ class HalverModel:
             self.model.AddHint(self.h[cell], cell in solution.halvers)
 
 
+class MarkKind(NamedTuple):
+    """One kind of `marks.json` entry: `name` puts the mark in words, as the
+    reports print it, and `condition` is what every solution must meet for
+    the mark to hold."""
+
+    name: Callable
+    condition: Callable
+
+
+def _all_halvers_with_digit(mark):
+    return Any_(
+        tuple(All((Eq(f"h_{c}", 1), Eq(c, mark["digit"]))) for c in mark["cells"])
+    )
+
+
+# The one table of mark kinds: a new kind is one entry here.
+MARK_KINDS = {
+    "digit": MarkKind(
+        lambda m: f"{m['cell']} = {m['digit']}",
+        lambda m: Eq(m["cell"], m["digit"]),
+    ),
+    "candidates": MarkKind(
+        lambda m: f"{m['cell']} in {{{','.join(map(str, m['digits']))}}}",
+        lambda m: Any_(tuple(Eq(m["cell"], d) for d in m["digits"])),
+    ),
+    "digit_in": MarkKind(
+        lambda m: f"{m['digit']} in {' or '.join(m['cells'])}",
+        lambda m: Any_(tuple(Eq(c, m["digit"]) for c in m["cells"])),
+    ),
+    "halver": MarkKind(
+        lambda m: f"{m['cell']} is a halver",
+        lambda m: Eq(f"h_{m['cell']}", 1),
+    ),
+    "halver_digit_in": MarkKind(
+        lambda m: f"a halver {m['digit']} in {' or '.join(m['cells'])}",
+        _all_halvers_with_digit,
+    ),
+}
+
+
+def mark_kind(mark):
+    """The `MARK_KINDS` entry of `mark`; a ValueError naming an unknown kind."""
+    kind = mark["kind"]
+    if kind not in MARK_KINDS:
+        raise ValueError(f"unknown mark kind {kind!r}: {mark}")
+    return MARK_KINDS[kind]
+
+
 def mark_name(mark):
     """The mark in words, as the reports print it."""
-    kind = mark["kind"]
-    if kind == "digit":
-        return f"{mark['cell']} = {mark['digit']}"
-    if kind == "candidates":
-        return f"{mark['cell']} in {{{','.join(map(str, mark['digits']))}}}"
-    if kind == "digit_in":
-        return f"{mark['digit']} in {' or '.join(mark['cells'])}"
-    if kind == "halver":
-        return f"{mark['cell']} is a halver"
-    if kind == "halver_digit_in":
-        return f"a halver {mark['digit']} in {' or '.join(mark['cells'])}"
-    raise ValueError(f"unknown mark kind {kind!r}: {mark}")
+    return mark_kind(mark).name(mark)
+
+
+def mark_condition(mark):
+    """A `marks.json` entry as a condition on the board's variables."""
+    return mark_kind(mark).condition(mark)
+
+
+def read_marks(path, n):
+    """The marks in the JSON file `path` for an n x n board. A ValueError
+    names `path` and what is wrong: unreadable, not JSON, not a list of
+    marks, an unknown kind, a missing field or a cell off the board."""
+    try:
+        marks = json.loads(Path(path).read_text())
+        if not isinstance(marks, list) or not all(isinstance(m, dict) for m in marks):
+            raise ValueError("not a list of marks")
+        for mark in marks:
+            mark_name(mark)
+            check_mark_cells(mark, n)
+    except KeyError as error:
+        raise ValueError(f"{path}: a mark lacks {error}") from error
+    except (OSError, ValueError, TypeError) as error:
+        raise ValueError(f"{path}: {error}") from error
+    return marks
