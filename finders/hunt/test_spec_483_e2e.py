@@ -29,6 +29,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+from cli_checks import check, check_refusal, finish, read_jsonl, run_cli
 from dedupe import D4, canonical_key
 from driver import run
 from ortools.sat.python import cp_model
@@ -99,36 +100,14 @@ class SpecToyFinder:
         self.seeds_seen = state["seeds_seen"]
 
 
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
-
 def cli(out, *extra, env=None):
-    return subprocess.run(
-        [sys.executable, __file__, AS_FINDER, "--out", str(out), *extra],
-        capture_output=True,
-        text=True,
-        env=success_env(env),
-    )
-
-
-def read_jsonl(path):
-    if not path.exists():
-        return []
-    return [json.loads(x) for x in path.read_text().splitlines() if x.strip()]
+    return run_cli(__file__, AS_FINDER, "--out", out, *extra, env=env)
 
 
 def seed_done(out):
     return [
         e["seed"]
-        for e in read_jsonl(out / "progress.jsonl")
+        for e in read_jsonl(out / "progress.jsonl", missing_ok=True)
         if e.get("event") == "seed_done"
     ]
 
@@ -150,7 +129,6 @@ def kill_partway(out, *extra, min_done=5):
 
 
 def main():
-    global ok
     seeds = f"--seeds=0:{SEEDS}"
     with tempfile.TemporaryDirectory() as tmp:
         ref = Path(tmp) / "ref"
@@ -215,20 +193,15 @@ def main():
 
         # Refusals.
         r = cli(out, f"--seeds=0:{SEEDS - 1}", "--workers", "1")
-        check(
-            "a different argv refuses",
-            r.returncode != 0 and "argv" in (r.stderr + r.stdout).lower(),
-        )
+        check_refusal("a different argv refuses", r, "argv differs")
         check(
             "the refused resume left the seeds alone",
             sorted(seed_done(out)) == list(range(SEEDS)),
         )
         gated = Path(tmp) / "gated"
         r = cli(gated, "--seeds=0:3", env={"HUNT_FAKE_LOAD1": "25"})
-        check(
-            "load above 24 refuses",
-            r.returncode != 0 and not (gated / "progress.jsonl").exists(),
-        )
+        check_refusal("load above 24 refuses", r, "is above 24")
+        check("and runs no seed", not (gated / "progress.jsonl").exists())
         r = cli(gated, "--seeds=0:3", "--force-load", env={"HUNT_FAKE_LOAD1": "25"})
         check("--force-load proceeds", r.returncode == 0 and len(seed_done(gated)) == 3)
         check(
@@ -259,7 +232,7 @@ def main():
             and [v["ok"] for v in verdicts] == [sum(e["grid"]) % 2 == 0 for e in raw],
         )
 
-    return 0 if ok else 1
+    finish()
 
 
 if __name__ == "__main__":

@@ -63,11 +63,47 @@ with tempfile.TemporaryDirectory() as tmp:
     verify("run_cli runs the child with the load gate idle", lines[1] == IDLE_LOAD)
     verify("run_cli returns text output", isinstance(r.stdout, str))
 
+    r = cli_checks.run_cli(echo, env={"HUNT_FAKE_LOAD1": "25"})
+    verify(
+        "run_cli's env overrides reach the child (a test of the load gate)",
+        r.stdout.splitlines()[1] == "25",
+    )
+
+    exits = tmp / "exits.py"
+    exits.write_text(
+        "import sys\nprint('hunt: refusing -- reason X', file=sys.stderr)\n"
+        "sys.exit(int(sys.argv[1]))\n"
+    )
+    seen = []
+    cli_checks.check = lambda name, cond: seen.append((name, cond))
+    cli_checks.check_refusal(
+        "exit 2 with the text", cli_checks.run_cli(exits, 2), "reason X"
+    )
+    cli_checks.check_refusal(
+        "exit 1 with the text", cli_checks.run_cli(exits, 1), "reason X"
+    )
+    cli_checks.check_refusal(
+        "exit 2 with other text", cli_checks.run_cli(exits, 2), "reason Y"
+    )
+    cli_checks.check_refusal("exit 0", cli_checks.run_cli(exits, 0), "reason X")
+    verify(
+        "check_refusal passes only on exit 2 with the text on stderr",
+        [c for _, c in seen] == [True, False, False, False],
+    )
+    verify(
+        "check_refusal's check names the given name and shows stderr",
+        seen[0][0].startswith("exit 2 with the text") and "reason X" in seen[0][0],
+    )
+
     data = tmp / "d.jsonl"
     data.write_text('{"a": 1}\n\n{"b": 2}\n')
     verify(
         "read_jsonl skips blank lines",
         cli_checks.read_jsonl(data) == [{"a": 1}, {"b": 2}],
+    )
+    verify(
+        "read_jsonl of a missing file is [] only with missing_ok",
+        cli_checks.read_jsonl(tmp / "nope.jsonl", missing_ok=True) == [],
     )
 
 sys.exit(0 if ok else 1)

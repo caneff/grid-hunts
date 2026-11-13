@@ -10,19 +10,9 @@ from pathlib import Path
 from ortools.sat.python import cp_model
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cli_checks import check, finish
 from minimizer import strip
 from sudoku_kit.uniqueness import check_uniqueness
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
 
 # A 2x2 Latin square (digits 1/2, each row and column distinct) with all
 # four cells given -- more clues than a unique Latin square needs, since
@@ -67,4 +57,4 @@ check(
 kept = strip(SOLUTION, keep={(0, 0)}, test=is_unique)
 check("a kept item survives stripping", (0, 0) in kept)
 
-sys.exit(0 if ok else 1)
+finish()

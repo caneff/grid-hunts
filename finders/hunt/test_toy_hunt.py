@@ -15,6 +15,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cli_checks import check, check_refusal, finish
 from dedupe import D4, canonical_key
 from subprocess_env import pin_idle_load, success_env
 
@@ -23,17 +24,6 @@ pin_idle_load()
 HERE = Path(__file__).resolve().parent
 TOY_FINDER = HERE / "toy_finder.py"
 SLOW_FINDER = HERE / "toy_slow_finder.py"
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
 
 with tempfile.TemporaryDirectory() as tmp:
     out = Path(tmp) / "hunt-out"
@@ -212,14 +202,10 @@ sys.exit(run(PartialGroupFinder(), sys.argv[1:]))
     # unrelated crash (an uncaught exception exits 1 with a traceback) would
     # also satisfy a bare nonzero check without proving the pre-flight gate
     # ran at all (#508 review).
-    check(
-        f"a finder with a partial symmetry group exits 2 (stderr: "
-        f"{result.stderr[-300:]})",
-        result.returncode == 2,
-    )
-    check(
-        "the refusal names the invalid symmetry group",
-        "invalid symmetry group" in result.stderr,
+    check_refusal(
+        "a finder with a partial symmetry group refuses",
+        result,
+        "invalid symmetry group",
     )
     check(
         "a finder with a partial symmetry group writes nothing",
@@ -262,10 +248,7 @@ sys.exit(run(TypoSymmetryFinder(), sys.argv[1:]))
         text=True,
         env=success_env(),
     )
-    check(
-        f"a typo'd string symmetry exits 2 (stderr: {result.stderr[-300:]})",
-        result.returncode == 2,
-    )
+    check_refusal("a typo'd string symmetry refuses", result, "invalid symmetry group")
     check(
         "a typo'd string symmetry writes nothing",
         not out.exists(),
@@ -317,10 +300,10 @@ sys.exit(run(MismatchedLengthFinder(), sys.argv[1:]))
         text=True,
         env=success_env(),
     )
-    check(
-        f"a symmetry group whose map length doesn't match key() exits 2 "
-        f"(stderr: {result.stderr[-300:]})",
-        result.returncode == 2,
+    check_refusal(
+        "a symmetry group whose map length doesn't match key() refuses",
+        result,
+        "invalid symmetry group",
     )
     check(
         "the refusal names the length mismatch",
@@ -378,9 +361,8 @@ sys.exit(run(GeneratorSymmetryFinder(), sys.argv[1:]))
         text=True,
         env=success_env(),
     )
-    check(
-        f"a generator-typed symmetry group exits 2 (stderr: {result.stderr[-300:]})",
-        result.returncode == 2,
+    check_refusal(
+        "a generator-typed symmetry group refuses", result, "invalid symmetry group"
     )
     check(
         "the refusal names the exhausted-generator failure",
@@ -434,8 +416,10 @@ sys.exit(run(FinderOwnBugFinder(), sys.argv[1:]))
         "invalid symmetry group" not in result.stderr,
     )
     check(
-        "a finder's own ValueError from key() still surfaces (nonzero exit)",
-        result.returncode != 0,
+        "a finder's own ValueError from key() still surfaces: exit 1 and its "
+        f"message on stderr (exit {result.returncode}, stderr: "
+        f"{result.stderr[-300:]})",
+        result.returncode == 1 and "finder's own bug: bad int literal" in result.stderr,
     )
 
 with tempfile.TemporaryDirectory() as tmp:
@@ -503,10 +487,10 @@ with tempfile.TemporaryDirectory() as tmp:
         text=True,
         env=success_env(),
     )
-    check(
-        f"a mismatched-length refusal into a --out holding unrelated content "
-        f"still exits 2 (stderr: {result.stderr[-300:]})",
-        result.returncode == 2,
+    check_refusal(
+        "a mismatched-length refusal into a --out holding unrelated content still refuses",
+        result,
+        "invalid symmetry group",
     )
     check(
         "unrelated content in --out survives the cleanup",
@@ -566,10 +550,10 @@ with tempfile.TemporaryDirectory() as tmp:
         text=True,
         env=success_env(),
     )
-    check(
-        f"resuming into a symmetry mismatch still exits 2 (stderr: "
-        f"{resumed.stderr[-300:]})",
-        resumed.returncode == 2,
+    check_refusal(
+        "resuming into a symmetry mismatch still refuses",
+        resumed,
+        "invalid symmetry group",
     )
     check(
         "the prior run's genuine example survives a resume-time symmetry mismatch",
@@ -636,7 +620,6 @@ sys.exit(run(ValidGroupFinder(), sys.argv[1:]))
     snapshot = {
         name: (out / name).read_bytes()
         for name in ("run.json", "summary.json", "progress.jsonl", "examples.jsonl")
-        if (out / name).exists()
     }
 
     resumed = subprocess.run(
@@ -653,10 +636,10 @@ sys.exit(run(ValidGroupFinder(), sys.argv[1:]))
         text=True,
         env=success_env(),
     )
-    check(
-        f"resuming an orphan-example hunt into a symmetry mismatch still "
-        f"exits 2 (stderr: {resumed.stderr[-300:]})",
-        resumed.returncode == 2,
+    check_refusal(
+        "resuming an orphan-example hunt into a symmetry mismatch still refuses",
+        resumed,
+        "invalid symmetry group",
     )
     check(
         "every hunt file is still byte-for-byte what the base hunt wrote "
@@ -730,10 +713,10 @@ sys.exit(run(ReconciledFirstSeedFinder(), sys.argv[1:]))
         capture_output=True,
         text=True,
     )
-    check(
-        f"resuming a reconcilable-away 'done' seed into a symmetry mismatch "
-        f"still exits 2 (stderr: {resumed.stderr[-300:]})",
-        resumed.returncode == 2,
+    check_refusal(
+        "resuming a reconcilable-away 'done' seed into a symmetry mismatch still refuses",
+        resumed,
+        "invalid symmetry group",
     )
     check(
         "progress.jsonl is untouched -- the check ran before reconciliation "
@@ -810,10 +793,10 @@ sys.exit(run(AllDoneStaleShapeFinder(), sys.argv[1:]))
         capture_output=True,
         text=True,
     )
-    check(
-        f"resuming an already-fully-done hunt into a stale recorded shape "
-        f"still exits 2 (stderr: {resumed.stderr[-500:]})",
-        resumed.returncode == 2,
+    check_refusal(
+        "resuming an already-fully-done hunt into a stale recorded shape still refuses",
+        resumed,
+        "invalid symmetry group",
     )
     check(
         "progress.jsonl is untouched",
@@ -926,4 +909,4 @@ sys.exit(run(LiveReferenceStateFinder(), sys.argv[1:]))
         len(examples) == 1 and examples[0]["log_len_at_find"] == 1,
     )
 
-sys.exit(0 if ok else 1)
+finish()

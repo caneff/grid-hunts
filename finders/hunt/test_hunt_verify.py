@@ -17,6 +17,7 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cli_checks import check, check_refusal, finish
 from subprocess_env import pin_idle_load
 from verified_io import read_verified
 
@@ -25,17 +26,6 @@ pin_idle_load()
 HERE = Path(__file__).resolve().parent
 TOY_FINDER = HERE / "toy_finder.py"
 TOY_STATEFUL_FINDER = HERE / "toy_stateful_finder.py"
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
 
 with tempfile.TemporaryDirectory() as tmp:
     out = Path(tmp) / "hunt-out"
@@ -125,9 +115,10 @@ with tempfile.TemporaryDirectory() as tmp:
         capture_output=True,
         text=True,
     )
-    check(
+    check_refusal(
         "a fresh --out already holding verified.jsonl refuses",
-        refused.returncode == 2,
+        refused,
+        "already has verified.jsonl",
     )
 
     # A trailing half-written line in examples.jsonl (a kill mid-write) must
@@ -252,11 +243,10 @@ sys.exit(run(WrappedRecordFinder(), sys.argv[1:]))
         capture_output=True,
         text=True,
     )
-    check(
-        "hunt verify on a finder without candidate_from_record refuses "
-        f"(exit {verify_result.returncode}, stderr: "
-        f"{verify_result.stderr[-300:]})",
-        verify_result.returncode == 2,
+    check_refusal(
+        "hunt verify on a finder without candidate_from_record refuses",
+        verify_result,
+        "needs a candidate_from_record",
     )
     check(
         "the refusal names candidate_from_record, not a raw traceback",
@@ -280,15 +270,23 @@ with tempfile.TemporaryDirectory() as tmp:
         )
         + "\n"
     )
+    # Each example is confirmed by a progress event, as a hunt writes them: a
+    # directory without progress.jsonl is refused before any record verifies.
+    (out / "progress.jsonl").write_text(
+        "".join(
+            json.dumps({"event": "seed_done", "seed": i, "outcome": "example"}) + "\n"
+            for i in range(3)
+        )
+    )
     verify_result = subprocess.run(
         [sys.executable, str(TOY_FINDER), "verify", str(out)],
         capture_output=True,
         text=True,
     )
-    check(
-        f"a mid-file verify failure still refuses (exit "
-        f"{verify_result.returncode}, stderr: {verify_result.stderr[-500:]})",
-        verify_result.returncode == 2,
+    check_refusal(
+        "a mid-file verify failure still refuses",
+        verify_result,
+        "raised (KeyError: 'grid')",
     )
     check(
         "verified.jsonl was not published for a failed run that had "
@@ -345,10 +343,10 @@ with tempfile.TemporaryDirectory() as tmp:
         capture_output=True,
         text=True,
     )
-    check(
-        f"a retry that fails on the new record exits non-zero (stderr: "
-        f"{retry_verify.stderr[-500:]})",
-        retry_verify.returncode == 2,
+    check_refusal(
+        "a retry that fails on the new record refuses",
+        retry_verify,
+        "raised (KeyError: 'grid')",
     )
     check(
         "the previously complete verified.jsonl is byte-for-byte unchanged",
@@ -384,10 +382,8 @@ with tempfile.TemporaryDirectory() as tmp:
             capture_output=True,
             text=True,
         )
-        check(
-            f"hunt verify refuses while out/.lock is held (exit "
-            f"{blocked.returncode}, stderr: {blocked.stderr[-300:]})",
-            blocked.returncode == 2,
+        check_refusal(
+            "hunt verify refuses while out/.lock is held", blocked, "is locked"
         )
         check(
             "no verified.jsonl was written while locked out",
@@ -409,4 +405,4 @@ with tempfile.TemporaryDirectory() as tmp:
         unblocked.returncode == 0,
     )
 
-sys.exit(0 if ok else 1)
+finish()

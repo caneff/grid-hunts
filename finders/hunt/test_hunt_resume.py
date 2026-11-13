@@ -26,6 +26,8 @@ exercised:
     uv run finders/hunt/test_hunt_resume.py
 """
 
+import contextlib
+import io
 import json
 import os
 import subprocess
@@ -35,6 +37,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cli_checks import check, check_refusal, finish, read_jsonl, run_cli
 from dedupe import D4, canonical_key
 from subprocess_env import pin_idle_load, success_env
 from toy_stateful_finder import StatefulToyFinder
@@ -48,44 +51,18 @@ STATEFUL_FINDER = HERE / "toy_stateful_finder.py"
 TINY_KEY_FINDER = HERE / "toy_tiny_key_finder.py"
 TOY_FINDER = HERE / "toy_finder.py"
 
-ok = True
 
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
-
-def run_cli(finder, out, seeds):
+def seeded_hunt(finder, out, seeds):
     # `--seeds`, `seeds` as two argv items reads a negative seeds range
     # (e.g. "-3:-2") as an unrecognized option on argparse versions that
     # don't special-case a leading "-" followed by a digit (Python <3.14
     # here) -- the single `--seeds=<value>` token sidesteps that ambiguity
     # on every version (#516).
-    return subprocess.run(
-        [sys.executable, str(finder), "--out", str(out), f"--seeds={seeds}"],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
-
-
-def read_jsonl(path):
-    if not path.exists():
-        return []
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    return run_cli(finder, "--out", out, f"--seeds={seeds}")
 
 
 def run_verify(finder, out):
-    return subprocess.run(
-        [sys.executable, str(finder), "verify", str(out)],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
+    return run_cli(finder, "verify", out)
 
 
 def kill_partway(finder, out, seeds, min_seed_done_events=3, extra_args=()):
@@ -111,7 +88,7 @@ def kill_partway(finder, out, seeds, min_seed_done_events=3, extra_args=()):
     while time.time() < deadline:
         if (
             progress_path.exists()
-            and len(read_jsonl(progress_path)) >= min_seed_done_events
+            and len(read_jsonl(progress_path, missing_ok=True)) >= min_seed_done_events
         ):
             break
         if proc.poll() is not None:
@@ -126,7 +103,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # Reference: an uninterrupted hunt over the same seed range, to compare
     # the resumed hunt's final output against.
     ref = Path(tmp) / "ref"
-    ref_result = run_cli(TOY_FINDER, ref, "0:60")
+    ref_result = seeded_hunt(TOY_FINDER, ref, "0:60")
     check(
         f"reference hunt exits 0 (stderr: {ref_result.stderr[-300:]})",
         ref_result.returncode == 0,
@@ -142,7 +119,7 @@ with tempfile.TemporaryDirectory() as tmp:
         0 < len(progress_before) < 60,
     )
 
-    resumed = run_cli(SLOW_FINDER, out, "0:60")
+    resumed = seeded_hunt(SLOW_FINDER, out, "0:60")
     check(
         f"resume after a kill exits 0 (stderr: {resumed.stderr[-300:]})",
         resumed.returncode == 0,
@@ -194,7 +171,7 @@ with tempfile.TemporaryDirectory() as tmp:
         0 <= len(progress_before) - state_before["state"].get("seeds_seen", -1) <= 1,
     )
 
-    resumed = run_cli(STATEFUL_FINDER, out, "0:40")
+    resumed = seeded_hunt(STATEFUL_FINDER, out, "0:40")
     check(
         f"resume of a stateful hunt exits 0 (stderr: {resumed.stderr[-300:]})",
         resumed.returncode == 0,
@@ -223,7 +200,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # looking wrong. Simulated by hand: progress.jsonl confirms one more
     # seed than state.json reflects.
     out = Path(tmp) / "state-behind"
-    result = run_cli(STATEFUL_FINDER, out, "0:10")
+    result = seeded_hunt(STATEFUL_FINDER, out, "0:10")
     check(
         f"base stateful hunt exits 0 (stderr: {result.stderr[-300:]})",
         result.returncode == 0,
@@ -245,7 +222,7 @@ with tempfile.TemporaryDirectory() as tmp:
     ]
     (out / "progress.jsonl").write_text("".join(json.dumps(e) + "\n" for e in marked))
 
-    rerun = run_cli(STATEFUL_FINDER, out, "0:10")
+    rerun = seeded_hunt(STATEFUL_FINDER, out, "0:10")
     check(
         f"resume after a state/progress gap exits 0 (stderr: {rerun.stderr[-300:]})",
         rerun.returncode == 0,
@@ -270,7 +247,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # seed_done event for -3 survives either way, so the witness is
     # whether state.json comes back at all, not whether -3 reappears there.
     out = Path(tmp) / "negative-seed-no-state"
-    result = run_cli(STATEFUL_FINDER, out, "-3:-2")
+    result = seeded_hunt(STATEFUL_FINDER, out, "-3:-2")
     check(
         f"base negative-seed stateful hunt exits 0 (stderr: {result.stderr[-300:]})",
         result.returncode == 0,
@@ -284,7 +261,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # Remove state.json entirely, as if seed -3's save never landed.
     state_path.unlink()
 
-    rerun = run_cli(STATEFUL_FINDER, out, "-3:-2")
+    rerun = seeded_hunt(STATEFUL_FINDER, out, "-3:-2")
     check(
         f"resume after a negative-seed state gap exits 0 (stderr: {rerun.stderr[-300:]})",
         rerun.returncode == 0,
@@ -352,7 +329,7 @@ with tempfile.TemporaryDirectory() as tmp:
         any(e.get("outcome") == "duplicate" for e in progress_before),
     )
 
-    resumed = run_cli(TINY_KEY_FINDER, out, "0:50")
+    resumed = seeded_hunt(TINY_KEY_FINDER, out, "0:50")
     check(
         f"resume of a tiny-key hunt exits 0 (stderr: {resumed.stderr[-300:]})",
         resumed.returncode == 0,
@@ -375,16 +352,17 @@ with tempfile.TemporaryDirectory() as tmp:
     out = Path(tmp) / "bad-middle"
     check(
         "base hunt for the bad-middle test exits 0",
-        run_cli(TOY_FINDER, out, "0:30").returncode == 0,
+        seeded_hunt(TOY_FINDER, out, "0:30").returncode == 0,
     )
     examples_path = out / "examples.jsonl"
     kept = examples_path.read_text().splitlines()
     examples_path.write_text("\n".join([kept[0], "{not json", *kept[1:]]) + "\n")
     before = {p.name: p.read_bytes() for p in out.iterdir() if p.is_file()}
-    rerun = run_cli(TOY_FINDER, out, "0:30")
-    check("a bad middle line refuses the resume, exit 2", rerun.returncode == 2)
-    check(
-        "the refusal names the file and line", "examples.jsonl line 2" in rerun.stderr
+    rerun = seeded_hunt(TOY_FINDER, out, "0:30")
+    check_refusal(
+        "a bad middle line refuses the resume, naming the file and line",
+        rerun,
+        "examples.jsonl line 2",
     )
     check(
         "a refused resume changes no file",
@@ -399,7 +377,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # direction: the confirmed seed must rerun and rewrite the example,
     # not leave summary.json overcounting a line that no longer exists.
     out = Path(tmp) / "corrupted"
-    result = run_cli(TOY_FINDER, out, "0:100")
+    result = seeded_hunt(TOY_FINDER, out, "0:100")
     check(
         f"base hunt for corruption test exits 0 (stderr: {result.stderr[-300:]})",
         result.returncode == 0,
@@ -410,7 +388,7 @@ with tempfile.TemporaryDirectory() as tmp:
     last_line = examples_text.splitlines()[-1]
     examples_path.write_text(examples_text[: -(len(last_line) // 2)])
 
-    rerun = run_cli(TOY_FINDER, out, "0:100")
+    rerun = seeded_hunt(TOY_FINDER, out, "0:100")
     check(
         f"resume after a half-written trailing example line exits 0 (stderr: {rerun.stderr[-300:]})",
         rerun.returncode == 0,
@@ -445,7 +423,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # is only an "example" outcome about half the time, which would make
     # this test flaky rather than exercise the orphan path at all.
     out = Path(tmp) / "orphan"
-    result = run_cli(TINY_KEY_FINDER, out, "0:1")
+    result = seeded_hunt(TINY_KEY_FINDER, out, "0:1")
     check(
         f"base hunt for orphan-example test exits 0 (stderr: {result.stderr[-300:]})",
         result.returncode == 0,
@@ -459,7 +437,7 @@ with tempfile.TemporaryDirectory() as tmp:
     progress_path = out / "progress.jsonl"
     progress_path.write_text("")
 
-    rerun = run_cli(TINY_KEY_FINDER, out, "0:1")
+    rerun = seeded_hunt(TINY_KEY_FINDER, out, "0:1")
     check(
         f"resume after an orphaned example line exits 0 (stderr: {rerun.stderr[-300:]})",
         rerun.returncode == 0,
@@ -514,7 +492,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # witness whether .lock specifically stays absent on a refusal -- see
     # the next block for that.)
     out = Path(tmp) / "mismatch"
-    result = run_cli(TOY_FINDER, out, "0:30")
+    result = seeded_hunt(TOY_FINDER, out, "0:30")
     check(
         f"base hunt for argv-mismatch test exits 0 (stderr: {result.stderr[-300:]})",
         result.returncode == 0,
@@ -523,8 +501,8 @@ with tempfile.TemporaryDirectory() as tmp:
     before = sorted(p.name for p in out.iterdir())
     before_contents = {name: (out / name).read_bytes() for name in before}
 
-    rerun = run_cli(TOY_FINDER, out, "0:99")
-    check("a differing argv (seeds) exits non-zero", rerun.returncode != 0)
+    rerun = seeded_hunt(TOY_FINDER, out, "0:99")
+    check_refusal("a differing argv (seeds) refuses", rerun, "argv differs")
 
     after = sorted(p.name for p in out.iterdir())
     after_contents = {name: (out / name).read_bytes() for name in after}
@@ -548,10 +526,11 @@ with tempfile.TemporaryDirectory() as tmp:
     )
     check("no .lock exists before the refused rerun", not (out / ".lock").exists())
 
-    rerun = run_cli(TOY_FINDER, out, "0:99")
-    check(
-        "a differing argv against a hand-written run.json exits non-zero",
-        rerun.returncode != 0,
+    rerun = seeded_hunt(TOY_FINDER, out, "0:99")
+    check_refusal(
+        "a differing argv against a hand-written run.json refuses",
+        rerun,
+        "argv differs",
     )
     check(
         ".lock may now exist (locking runs before the argv check), "
@@ -644,7 +623,7 @@ with tempfile.TemporaryDirectory() as tmp:
 with tempfile.TemporaryDirectory() as tmp:
     # Git sha mismatch warns but proceeds.
     out = Path(tmp) / "sha-mismatch"
-    result = run_cli(TOY_FINDER, out, "0:30")
+    result = seeded_hunt(TOY_FINDER, out, "0:30")
     check(
         f"base hunt for sha-mismatch test exits 0 (stderr: {result.stderr[-300:]})",
         result.returncode == 0,
@@ -654,12 +633,15 @@ with tempfile.TemporaryDirectory() as tmp:
     run_info["git_sha"] = "0" * 40
     (out / "run.json").write_text(json.dumps(run_info))
 
-    rerun = run_cli(TOY_FINDER, out, "0:30")
+    rerun = seeded_hunt(TOY_FINDER, out, "0:30")
     check(
         f"a differing git sha proceeds (exit 0, stderr: {rerun.stderr[-300:]})",
         rerun.returncode == 0,
     )
-    check("a differing git sha prints a warning", "sha" in rerun.stderr.lower())
+    check(
+        "a differing git sha prints the sha warning",
+        "warning -- git sha differs from the recorded run" in rerun.stderr,
+    )
 
 for base_no_verify, resume_no_verify, label in (
     (True, False, "no-verify-then-verify"),
@@ -700,9 +682,8 @@ for base_no_verify, resume_no_verify, label in (
             text=True,
             env=success_env(),
         )
-        check(
-            f"resuming a mode-changing {label} hunt refuses",
-            resumed.returncode != 0,
+        check_refusal(
+            f"resuming a mode-changing {label} hunt refuses", resumed, "argv differs"
         )
         after = sorted(p.name for p in out.iterdir())
         after_contents = {name: (out / name).read_bytes() for name in after}
@@ -717,14 +698,14 @@ with tempfile.TemporaryDirectory() as tmp:
     # setup as the orphan-example case above (the one seed reruns after
     # reconciliation trims its example), with `hunt verify` run first.
     out = Path(tmp) / "verify-then-resume"
-    run_cli(TINY_KEY_FINDER, out, "0:1")
+    seeded_hunt(TINY_KEY_FINDER, out, "0:1")
     verified = run_verify(TINY_KEY_FINDER, out)
     check(
         f"hunt verify before the resume exits 0 (stderr: {verified.stderr[-300:]})",
         verified.returncode == 0 and (out / "verified.jsonl").exists(),
     )
     (out / "progress.jsonl").write_text("")
-    rerun = run_cli(TINY_KEY_FINDER, out, "0:1")
+    rerun = seeded_hunt(TINY_KEY_FINDER, out, "0:1")
     check(
         f"resume that reconciles examples.jsonl exits 0 (stderr: {rerun.stderr[-300:]})",
         rerun.returncode == 0,
@@ -738,14 +719,14 @@ with tempfile.TemporaryDirectory() as tmp:
     # #517: a resume with nothing left to run leaves examples.jsonl alone,
     # so a current verified.jsonl survives it byte for byte.
     out = Path(tmp) / "verify-then-noop-resume"
-    run_cli(TINY_KEY_FINDER, out, "0:5")
+    seeded_hunt(TINY_KEY_FINDER, out, "0:5")
     verified = run_verify(TINY_KEY_FINDER, out)
     check(
         f"hunt verify of a finished hunt exits 0 (stderr: {verified.stderr[-300:]})",
         verified.returncode == 0,
     )
     before = (out / "verified.jsonl").read_bytes()
-    rerun = run_cli(TINY_KEY_FINDER, out, "0:5")
+    rerun = seeded_hunt(TINY_KEY_FINDER, out, "0:5")
     check(
         f"resume of a finished hunt exits 0 (stderr: {rerun.stderr[-300:]})",
         rerun.returncode == 0,
@@ -770,7 +751,7 @@ with tempfile.TemporaryDirectory() as tmp:
         "verify of a killed hunt wrote verified.jsonl",
         (out / "verified.jsonl").exists(),
     )
-    rerun = run_cli(SLOW_FINDER, out, "0:200")
+    rerun = seeded_hunt(SLOW_FINDER, out, "0:200")
     check(
         f"resume of the killed hunt exits 0 (stderr: {rerun.stderr[-300:]})",
         rerun.returncode == 0,
@@ -796,11 +777,17 @@ with tempfile.TemporaryDirectory() as tmp:
         ("save_state only", "half-save", SaveOnlyFinder),
     ):
         out = Path(tmp) / dirname
-        code = driver_module.run(cls(), ["--out", str(out), "--seeds=0:3"])
-        check(f"a finder with {label} is refused at launch (exit 2)", code == 2)
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            code = driver_module.run(cls(), ["--out", str(out), "--seeds=0:3"])
+        check(
+            f"a finder with {label} is refused at launch (exit 2, stderr: "
+            f"{stderr.getvalue()[-300:]})",
+            code == 2 and "a stateful finder needs both" in stderr.getvalue(),
+        )
         check(
             f"a finder with {label} leaves no hunt file behind",
             not out.exists() or not any(out.iterdir()),
         )
 
-sys.exit(0 if ok else 1)
+finish()

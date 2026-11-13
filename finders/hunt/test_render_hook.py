@@ -9,7 +9,6 @@ internal.
 """
 
 import fcntl
-import json
 import os
 import signal
 import subprocess
@@ -19,6 +18,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cli_checks import check, check_refusal, finish, read_jsonl, run_cli
 from subprocess_env import pin_idle_load, success_env
 
 pin_idle_load()
@@ -59,29 +59,6 @@ class HookFinder(ToyRenderFinder):
 sys.exit(run(HookFinder(), sys.argv[1:]))
 """
 
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
-
-def cli(script, *args, env=None):
-    return subprocess.run(
-        [sys.executable, str(script), *args],
-        capture_output=True,
-        text=True,
-        env=success_env(env),
-    )
-
-
-def read_jsonl(path):
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
-
 
 def example_seeds(out):
     return sorted(
@@ -98,16 +75,16 @@ def renders_state(out):
 
 with tempfile.TemporaryDirectory() as tmp:
     out = Path(tmp) / "hunt-out"
-    r = cli(TOY_RENDER_FINDER, "--out", str(out), "--seeds", "0:200")
+    r = run_cli(TOY_RENDER_FINDER, "--out", str(out), "--seeds", "0:200")
     check(f"hunt exits 0 ({r.stderr[-300:]})", r.returncode == 0)
     seeds = example_seeds(out)
     check("the hunt found examples", len(seeds) > 0)
     check("a hunt draws no pictures: no renders/", not (out / "renders").exists())
 
-    r = cli(TOY_RENDER_FINDER, "--out", str(out), "--seeds", "0:200")
+    r = run_cli(TOY_RENDER_FINDER, "--out", str(out), "--seeds", "0:200")
     check("a resume draws no pictures either", not (out / "renders").exists())
 
-    r = cli(TOY_RENDER_FINDER, "render", str(out))
+    r = run_cli(TOY_RENDER_FINDER, "render", str(out))
     check(f"render exits 0 ({r.stderr[-300:]})", r.returncode == 0)
     names = sorted(p.name for p in (out / "renders").iterdir())
     check(
@@ -130,7 +107,7 @@ with tempfile.TemporaryDirectory() as tmp:
     (out / "renders.tmp").mkdir()
     (out / "renders.tmp" / "1.png").write_bytes(b"half")
     (out / "renders.old").mkdir()
-    r = cli(TOY_RENDER_FINDER, "render", str(out))
+    r = run_cli(TOY_RENDER_FINDER, "render", str(out))
     check("re-run exits 0", r.returncode == 0)
     check("re-run converges to the same full set", renders_state(out) == first)
     check(
@@ -139,8 +116,8 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
     # A failing draw refuses and leaves the previous set untouched.
-    r = cli(TOY_RENDER_FINDER, "render", str(out), env={"TOY_RENDER_FAIL": "1"})
-    check("a failing render exits 2", r.returncode == 2)
+    r = run_cli(TOY_RENDER_FINDER, "render", str(out), env={"TOY_RENDER_FAIL": "1"})
+    check_refusal("a failing render refuses", r, "did not draw")
     check("it names the seed", f"seed {seeds[0]}" in r.stderr)
     check("the previous set is untouched", renders_state(out) == first)
     check("no scratch directory is left", not (out / "renders.tmp").exists())
@@ -148,23 +125,23 @@ with tempfile.TemporaryDirectory() as tmp:
     # A held lock refuses.
     lock = os.open(out / ".lock", os.O_RDWR)
     fcntl.flock(lock, fcntl.LOCK_EX)
-    r = cli(TOY_RENDER_FINDER, "render", str(out))
+    r = run_cli(TOY_RENDER_FINDER, "render", str(out))
     os.close(lock)
-    check("a locked directory refuses", r.returncode == 2 and "locked" in r.stderr)
+    check_refusal("a locked directory refuses", r, "is locked")
     check("and changes nothing", renders_state(out) == first)
 
 with tempfile.TemporaryDirectory() as tmp:
     out = Path(tmp) / "plain"
-    cli(TOY_FINDER, "--out", str(out), "--seeds", "0:50")
-    r = cli(TOY_FINDER, "render", str(out))
-    check(
-        "a finder with no render refuses",
-        r.returncode == 2 and not (out / "renders").exists(),
-    )
+    run_cli(TOY_FINDER, "--out", str(out), "--seeds", "0:50")
+    r = run_cli(TOY_FINDER, "render", str(out))
+    check_refusal("a finder with no render refuses", r, "the finder has no render")
+    check("and draws nothing", not (out / "renders").exists())
 
 with tempfile.TemporaryDirectory() as tmp:
-    r = cli(TOY_RENDER_FINDER, "render", str(Path(tmp) / "empty"))
-    check("a directory with no examples.jsonl refuses", r.returncode == 2)
+    r = run_cli(TOY_RENDER_FINDER, "render", str(Path(tmp) / "empty"))
+    check_refusal(
+        "a directory with no examples.jsonl refuses", r, "not a hunt directory"
+    )
 
 with tempfile.TemporaryDirectory() as tmp:
     # candidate_from_record is the rebuild; a kill mid-pass leaves the
@@ -172,9 +149,9 @@ with tempfile.TemporaryDirectory() as tmp:
     script = Path(tmp) / "hook_finder.py"
     script.write_text(HOOK_FINDER.format(hunt=str(HERE)))
     out = Path(tmp) / "hunt-out"
-    cli(script, "--out", str(out), "--seeds", "0:200")
+    run_cli(script, "--out", str(out), "--seeds", "0:200")
     seeds = example_seeds(out)
-    r = cli(script, "render", str(out))
+    r = run_cli(script, "render", str(out))
     check(
         f"render via candidate_from_record exits 0 ({r.stderr[-300:]})",
         r.returncode == 0,
@@ -203,23 +180,23 @@ with tempfile.TemporaryDirectory() as tmp:
 
     check("the stalled render was killed mid-pass", killed_render(out))
     check("a kill during render leaves the previous set", renders_state(out) == full)
-    r = cli(script, "render", str(out))
+    r = run_cli(script, "render", str(out))
     check(
         "a re-run after the kill converges",
         r.returncode == 0 and renders_state(out) == full,
     )
 
     fresh = Path(tmp) / "fresh"
-    cli(script, "--out", str(fresh), "--seeds", "0:200")
+    run_cli(script, "--out", str(fresh), "--seeds", "0:200")
     check("kill mid-pass with no earlier set", killed_render(fresh))
     check(
         "a kill during a first render leaves no renders/",
         not (fresh / "renders").exists(),
     )
-    r = cli(script, "render", str(fresh))
+    r = run_cli(script, "render", str(fresh))
     check(
         "and a re-run draws the full set",
         r.returncode == 0 and renders_state(fresh) == full,
     )
 
-sys.exit(0 if ok else 1)
+finish()
