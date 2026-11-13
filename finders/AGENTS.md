@@ -1,7 +1,7 @@
 # finders/AGENTS.md
 
-Grid finders: JavaScript-adjacent Python code that hunts, verifies, and
-renders candidate grids for constraint prototypes. The `.py` finder code
+Grid finders: Python code that hunts, verifies, and
+renders candidate grids. The `.py` finder code
 lives here; notes, hunt outputs, precomputed catalogues, and the `.sh`
 drivers that launch a hunt overnight stay under `docs/research/` (#469).
 A finder's own input fixture stays beside its code: `finders/qqrr/` holds
@@ -39,8 +39,10 @@ README before reusing anything there.
   torn last line and refuses any other bad line, atomic writes, `swap_dir`
   and `run_log(path, config)`, a locked resumable log for any search; read and
   write hunt files only through it. `finders/qqrr/hunt/tie_finder.py`, a new finder
-  over `chan_big.py`'s model, is the first real one. Other existing finders
-  are not ported onto it. A new finder folder needs a BUILD file before
+  over `chan_big.py`'s model, is the first real one. On the protocol (they
+  call `driver.run`): halver, doppelganger_rank, ubahn, hybrid and qqrr's
+  `tie_finder`. Not on it: counting_shaded and qqrr's checker and sweep
+  scripts. A new finder folder needs a BUILD file before
   the gate passes: `docs/pants.md`.
 - `finders/query/` is the board-question driver (spec #65), CP-SAT only:
   `query.py FINDER BOARD QUESTION... --out DIR`, run under `job-run`, asks
@@ -59,8 +61,8 @@ README before reusing anything there.
 - `finders/ubahn/` is the U-Bahn finder (a pencil puzzle, no sudoku), on the
   hunt protocol: `ubahn_finder.py` its docstring and flags, `model.py` the
   CP-SAT model, `network.py` the solver-free rules `verify` reads;
-  `sat_model.py` is a prototype second uniqueness check on PySAT (#776), which
-  the plain finder does not call. `measure_baseline.py` times a hunt's proposal
+  `sat_model.py` is the PySAT base (#776) both PySAT engines build on
+  (`hybrid_sat.py` imports it); the plain finder does not call it. `measure_baseline.py` times a hunt's proposal
   step per seed and cause (#777; by hand, outside both gates). Conditions
   arrive one at a time as finder rules. Preflight answers and measurements:
   `docs/research/2026-10-10-u-bahn-finder-decision-log.md`. The five

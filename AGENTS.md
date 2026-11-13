@@ -49,24 +49,15 @@ Retiring a finder is `git mv` to `archive/finders/` plus its README; reviving on
 
 ## Commands
 
-- **Gate — run before each commit and before opening a PR:** `just check` —
-  ruff on `finders/` and `tests/`, `uv lock --check`, every
-  `finders/**/test_*.py` except the slow ones, `tests/test_all_sh.py`
-  (the runner's own test) and `tests/test_pants_edges.py` (the Pants edges). It is the full seam: CI runs it nightly, on a cron
-  line in `.github/workflows/ci.yml`, installing uv and the Pants launcher;
-  a local run needs the launcher too (`docs/pants.md`). A pull request and a
-  push to main run the narrowed gate, `bash tests/all.sh --changed
-  origin/main` (a push uses the pushed range's base; a new branch or a
-  force-push runs `just check` and says it widened). `--list --changed
-  <base>` prints the selection; `tests/all.sh`'s header states the rules.
+- **Gate — run before each commit and before opening a PR:** `just check`,
+  the full seam (CI runs it nightly; a local run needs the Pants launcher,
+  `docs/pants.md`). A pull request and a push to main run the narrowed gate
+  instead: see **Narrowed** above.
 - Suites run one at a time. `GATE_JOBS=<n>` (or `bash tests/all.sh --jobs <n>`)
   runs n at once; CI sets 4 on its 4-vCPU runner, and a local run leaves it
   unset because the box is shared.
-- CI gate wall clock, the `Gate (check)` step: **before** 15 min 15 s, one
-  suite at a time (run 38341110336, push to main, 2026-10-13). **After:**
-  6 min 22 s, 4 suites at once (run 38724587608, pull request, 2026-10-15,
-  the same 64 test suites plus the runner's own test). Those are full-seam
-  times; a narrowed run costs the selected suites only.
+- CI gate wall clock, before and after the parallel runner:
+  `docs/research/2026-10-13-gate-wall-clock.md`.
 - Lint + auto-fix: `just fmt`
 - Tests alone: `just test` — slow tests, by hand: `just test-slow`
 - Most tests are standalone scripts run by name (`uv run <file>`).
