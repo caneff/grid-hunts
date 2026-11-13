@@ -147,7 +147,9 @@ def main():
         out = Path(tmp) / "capped"
         r = run(out, "--marks", str(more), "--time-limit", "1e-9")
         assert r.returncode == 0, r.stderr
-        for answer in e2e.answers(out):
+        capped = e2e.answers(out)
+        assert len(capped) == len(MORE_MARKS), capped
+        for answer in capped:
             assert (answer["status"], answer["label"]) == ("timeout", "capped"), answer
             assert (out / answer["picture"]).is_file(), answer
         print("ok: a tiny time limit gives capped answers, never held")
