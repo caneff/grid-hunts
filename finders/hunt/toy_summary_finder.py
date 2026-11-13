@@ -9,7 +9,9 @@ the tests, counting `propose` calls from 1 in a fresh process:
 
 - `TOY_EMPTY=timeout:2,infeasible:4` makes those calls return
   `Empty("<reason>: ...")`;
-- `TOY_STALL_CALL=N` makes call N sleep 60 s, so a test can kill the hunt there.
+- `TOY_STALL_CALL=N` makes call N sleep 60 s, so a test can kill the hunt there;
+- `TOY_OWN_SUMMARY=1` gives the finder a `summary_lines(out)` hook, wording
+  `summary DIR` itself.
 
     uv run finders/hunt/toy_summary_finder.py --out DIR --seeds START:END
     uv run finders/hunt/toy_summary_finder.py summary DIR
@@ -57,6 +59,11 @@ class ToySummaryFinder:
         for part in filter(None, os.environ.get("TOY_EMPTY", "").split(",")):
             reason, call = part.split(":")
             self.empty[int(call)] = reason
+        if os.environ.get("TOY_OWN_SUMMARY"):
+            self.summary_lines = self._own_summary
+
+    def _own_summary(self, out):
+        return [f"own wording for {Path(out).name}"]
 
     def propose(self, rng):
         self.calls += 1

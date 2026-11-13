@@ -84,8 +84,8 @@ import rules
 from check import one_line, read_board
 from dedupe import IDENTITY
 from driver import run
-from hunt_dir import read_hunt, seed_lines, summary_command
-from links import write_links
+from hunt_dir import read_hunt, seed_lines
+from links import link_doc
 from minimizer import strip
 from model import RankModel
 from protocol import Empty, Verdict
@@ -107,6 +107,8 @@ DEFAULTS = {
     "pool_floor": 4,
     "proof_workers": 1,
 }
+# The subcommands that read a hunt directory, not a board.
+DIR_COMMANDS = (["verify"], ["render"], ["summary"], ["links"])
 # The Empty reason's class, as `summary` names it in the split.
 CLASSES = {
     "infeasible": "proven infeasible",
@@ -330,6 +332,71 @@ class DoppelgangerRankFinder:
     def key(self, hit):
         return tuple(sorted((c["line"], c["end"], c["rank"]) for c in hit.clues))
 
+    def link_document(self, hit):
+        return link_doc(self.record(hit))
+
+    @staticmethod
+    def _hit_line(kind, record):
+        clues = ", ".join(
+            f"{rules.place_name((c['line'], c['end']))} {c['rank']}"
+            for c in record["clues"]
+        )
+        return (
+            f"{kind}, {record['added']} added clues: {clues}"
+            f" | solution {' '.join(record['solution'])}"
+        )
+
+    def summary_lines(self, out):
+        """What a hunt in `out` found, as lines of text."""
+        _run, events, hits, unchecked, rejected = read_hunt(out)
+        seeds = sorted(e["seed"] for e in events)
+        span = f"{len(seeds)} seeds" + (f" ({seeds[0]}..{seeds[-1]})" if seeds else "")
+
+        split = Counter()
+        for e in events:
+            if e["outcome"] == "example":
+                split["found"] += 1
+            elif e["outcome"] in ("duplicate", "rejected"):
+                split[e["outcome"]] += 1
+            else:
+                reason = e.get("empty_reason", "")
+                name = reason.split(":")[0]
+                if name not in CLASSES:
+                    raise ValueError(
+                        f"seed {e['seed']} ended with no known reason: {reason!r}"
+                    )
+                split[CLASSES[name]] += 1
+
+        if hits:
+            text = [f"{len(hits)} verified hits in {span}"]
+        elif unchecked or rejected:
+            text = [f"no verified hit in {span}"]
+        else:
+            text = [f"none found in {span}"]
+        text.append(
+            f"{span}: found {split['found']}, duplicate {split['duplicate']}, "
+            f"proven infeasible {split['proven infeasible']}, "
+            f"timed out {split['timed out']}, "
+            f"capped {split['capped']} (a budget ran out: no proof), "
+            f"no separating clue {split['no separating clue']}, "
+            f"rejected {split['rejected']}"
+        )
+        if unchecked:
+            text.append(
+                f"{len(unchecked)} candidates unchecked: the hunt ran with "
+                f"--no-verify and `hunt.py verify {out}` has not run"
+            )
+        if rejected:
+            text.append(f"{len(rejected)} candidates rejected by `hunt.py verify`")
+        text.extend(seed_lines(events))
+        text.extend(
+            self._hit_line("hit", r) for r in sorted(hits, key=lambda r: r["added"])
+        )
+        text.extend(self._hit_line("unchecked candidate", r) for r in unchecked)
+        for record, reason in rejected:
+            text.append(self._hit_line("rejected candidate", record) + f" | {reason}")
+        return text
+
     def candidate_from_record(self, record):
         solution = tuple(tuple(map(int, row)) for row in record["solution"])
         return Hit(
@@ -341,86 +408,8 @@ class DoppelgangerRankFinder:
         )
 
 
-def _hit_line(kind, record):
-    clues = ", ".join(
-        f"{rules.place_name((c['line'], c['end']))} {c['rank']}"
-        for c in record["clues"]
-    )
-    return (
-        f"{kind}, {record['added']} added clues: {clues}"
-        f" | solution {' '.join(record['solution'])}"
-    )
-
-
-def summary(out):
-    """What a hunt in `out` found, as lines of text."""
-    _run, events, hits, unchecked, rejected = read_hunt(out)
-    seeds = sorted(e["seed"] for e in events)
-    span = f"{len(seeds)} seeds" + (f" ({seeds[0]}..{seeds[-1]})" if seeds else "")
-
-    split = Counter()
-    for e in events:
-        if e["outcome"] == "example":
-            split["found"] += 1
-        elif e["outcome"] in ("duplicate", "rejected"):
-            split[e["outcome"]] += 1
-        else:
-            reason = e.get("empty_reason", "")
-            name = reason.split(":")[0]
-            if name not in CLASSES:
-                raise ValueError(
-                    f"seed {e['seed']} ended with no known reason: {reason!r}"
-                )
-            split[CLASSES[name]] += 1
-
-    if hits:
-        text = [f"{len(hits)} verified hits in {span}"]
-    elif unchecked or rejected:
-        text = [f"no verified hit in {span}"]
-    else:
-        text = [f"none found in {span}"]
-    text.append(
-        f"{span}: found {split['found']}, duplicate {split['duplicate']}, "
-        f"proven infeasible {split['proven infeasible']}, "
-        f"timed out {split['timed out']}, "
-        f"capped {split['capped']} (a budget ran out: no proof), "
-        f"no separating clue {split['no separating clue']}, "
-        f"rejected {split['rejected']}"
-    )
-    if unchecked:
-        text.append(
-            f"{len(unchecked)} candidates unchecked: the hunt ran with "
-            f"--no-verify and `hunt.py verify {out}` has not run"
-        )
-    if rejected:
-        text.append(f"{len(rejected)} candidates rejected by `hunt.py verify`")
-    text.extend(seed_lines(events))
-    text.extend(_hit_line("hit", r) for r in sorted(hits, key=lambda r: r["added"]))
-    text.extend(_hit_line("unchecked candidate", r) for r in unchecked)
-    for record, reason in rejected:
-        text.append(_hit_line("rejected candidate", record) + f" | {reason}")
-    return text
-
-
 def main(argv):
-    """`links DIR`, `summary DIR`, or the driver's commands with the finder built from
-    its own flags."""
-    if argv and argv[0] == "links":
-        if len(argv) != 2:
-            print("usage: hunt.py links DIR", file=sys.stderr)
-            return 2
-        out = Path(argv[1])
-        try:
-            written, skipped = write_links(out)
-        except (OSError, ValueError) as error:
-            print(f"hunt.py links: {error}", file=sys.stderr)
-            return 2
-        print(f"wrote {written} links to {out / 'links'}")
-        if skipped:
-            print(f"{skipped} candidates skipped: not verified hits (`summary {out}`)")
-        return 0
-    if argv and argv[0] == "summary":
-        return summary_command(argv, summary)
+    """The driver's commands with the finder built from its own flags."""
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--board")
     for knob, default in DEFAULTS.items():
@@ -444,7 +433,7 @@ def main(argv):
             file=sys.stderr,
         )
         return 2
-    if own.board is None and rest[:1] != ["verify"]:
+    if own.board is None and rest[:1] not in DIR_COMMANDS:
         print("hunt.py: a hunt needs --board BOARD", file=sys.stderr)
         return 2
     try:
