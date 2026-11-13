@@ -76,4 +76,25 @@ assert done.stdout.splitlines() == [
     "no mark checked: the board's status is timeout",
 ], done.stdout
 
+
+# A marks file the report cannot read is refused with the reason, exit 2,
+# nothing on stdout: never the 1 of "a mark did not hold".
+def refused(text, why):
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "marks.json"
+        if text is not None:
+            path.write_text(text)
+        done = run("--marks", str(path))
+    assert done.returncode == 2, (why, done.returncode, done.stdout, done.stderr)
+    assert done.stdout == "", (why, done.stdout)
+    assert why in done.stderr, (why, done.stderr)
+
+
+refused(None, "marks.json")
+refused("{not json", "marks.json")
+refused('{"kind": "digit"}', "not a list of marks")
+refused('[{"kind": "parity", "cell": "r1c1"}]', "unknown mark kind 'parity'")
+refused('[{"kind": "digit", "digit": 5}]', "a mark lacks 'cell'")
+refused('[{"kind": "digit", "cell": "r0c1", "digit": 5}]', "r0c1")
+
 print("ok")
