@@ -1,3 +1,5 @@
+"""Pins a finder's `config`: run.json records it, the finder receives it, a resume under another config refuses, and `Empty()` needs a reason."""
+
 import json
 import sys
 import tempfile

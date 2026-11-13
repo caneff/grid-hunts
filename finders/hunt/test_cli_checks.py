@@ -1,3 +1,5 @@
+"""Pins `cli_checks`: `check`/`finish` exit codes and output, and `run_cli` (str arguments, idle load gate, text output)."""
+
 import os
 import sys
 import tempfile

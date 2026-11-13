@@ -24,21 +24,17 @@ README before reusing anything there.
   `symmetry`, and the `hunt` CLI's `run(finder, argv)`) that gives a fresh
   hunt its output directory and dedupe for free. A hunt and its resume draw
   no pictures: `render DIR`, a driver subcommand beside `verify DIR`, does,
-  afterwards, for a finder that has `render(candidate)`: it rebuilds each
-  example with `candidate_from_record`, draws it and swaps `renders/` for the
-  full set of `<seed>.png` in one step, so a kill leaves the previous set or
-  none and a re-run converges. `summary DIR` and `links DIR` are driver
-  subcommands too (#121): the seed span, outcome counts, hit list and link
-  minting live in the protocol, and a finder supplies only
-  `describe_hit(record)` (its hit line), `link_document(candidate)` (the
-  SudokuMaker document `links DIR` mints for each verified hit) and
-  `finish(out)` (called once when a hunt completes, never on a killed one);
+  for a finder that has `render(candidate)` (swap mechanics: `hunt_files.swap_dir`).
+  `summary DIR` and `links DIR` are driver subcommands too (#121); the split
+  between driver and finder, including `describe_hit`, `link_document` and
+  `finish`, is stated in `finders/hunt/protocol.py`.
   `toy_summary_finder.py` is the worked example. `finders/hunt/toy_finder.py`
   is a minimal worked example. `finders/hunt/hunt_files.py` owns every file a
   hunt writes and every read of one: the lock, JSONL logs whose read drops a
   torn last line and refuses any other bad line, atomic writes, `swap_dir`
-  and `run_log(path, config)`, a locked resumable log for any search; read and
-  write hunt files only through it. `finders/qqrr/hunt/tie_finder.py`, a new finder
+  and `run_log(path, config)`, a locked resumable log for any search; finder
+  code reads and writes hunt files only through it (a test may read them with
+  `cli_checks.read_jsonl`). `finders/qqrr/hunt/tie_finder.py`, a new finder
   over `chan_big.py`'s model, is the first real one. On the protocol (they
   call `driver.run`): halver, doppelganger_rank, ubahn, hybrid and qqrr's
   `tie_finder`. Not on it: counting_shaded and qqrr's checker and sweep

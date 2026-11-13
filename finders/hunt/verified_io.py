@@ -1,4 +1,4 @@
-"""verified.jsonl, the file `hunt verify DIR` writes (#489): its reader and
+"""verified.jsonl, the file `hunt verify DIR` writes (#489, #517): its reader and
 each example's verdict."""
 
 import json

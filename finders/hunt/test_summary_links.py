@@ -8,6 +8,8 @@ against a completed hunt and a SIGKILLed one.
     uv run finders/hunt/test_summary_links.py
 """
 
+import fcntl
+import os
 import signal
 import subprocess
 import sys
@@ -18,6 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import short_link
+import toy_summary_finder
 from cli_checks import check, check_refusal, finish, read_jsonl, run_cli
 from subprocess_env import pin_idle_load, success_env
 
@@ -73,8 +76,20 @@ with tempfile.TemporaryDirectory() as tmp, short_link.fake_mint() as fake:
         check(
             f"seed {seed}'s link holds the toy's document",
             short_link.fake_doc(fake, link)
-            == __import__("toy_summary_finder").link_doc(record["grid"]),
+            == toy_summary_finder.link_doc(record["grid"]),
         )
+
+    # a held lock refuses, and links/ stays as it was
+    before = sorted(p.name for p in (out / "links").iterdir())
+    lock = os.open(out / ".lock", os.O_RDWR)
+    fcntl.flock(lock, fcntl.LOCK_EX)
+    result = run_cli(TOY, "links", out)
+    os.close(lock)
+    check_refusal("links on a locked directory", result, "is locked")
+    check(
+        "a refused links changes nothing",
+        sorted(p.name for p in (out / "links").iterdir()) == before,
+    )
 
     # a --no-verify hunt has no verified hit: links writes none until `verify`
     raw = Path(tmp) / "raw"

@@ -115,25 +115,41 @@ def _confirmed(events):
     return sum(1 for e in events if e.get("outcome") == "example")
 
 
-def read_logs(out):
+def read_logs(out, stateful=False):
     """`(events, examples)` of the hunt in `out` as a resume reads them: the
     progress events and the example records, torn tails dropped. A kill leaves
     at most the last events ahead of examples.jsonl, and those seeds rerun, so
     trailing events whose example line is missing are dropped; an example line
-    past the last "example" event is dropped too, since no event confirms it."""
+    past the last "example" event is dropped too, since no event confirms it.
+    A stateful finder's resume also reruns every seed past the one state.json
+    last saved (all of them when it has not saved yet), so those events are
+    dropped too. A state.json marks the hunt stateful; `stateful=True` covers
+    a kill before the first save, when there is none yet."""
     out = Path(out)
     _, examples = read_log(out / "examples.jsonl")
     _, events = read_log(out / "progress.jsonl")
-    while events and _confirmed(events) > len(examples):
+    state_path = out / "state.json"
+    stateful = stateful or state_path.exists()
+    state_seed = read_json(state_path).get("seed") if state_path.exists() else None
+    while events and (
+        _confirmed(events) > len(examples)
+        # A missing "seed" reads as ahead of any state, as the resume does.
+        or (
+            stateful
+            and (
+                state_seed is None or events[-1].get("seed", float("inf")) > state_seed
+            )
+        )
+    ):
         events.pop()
     return events, examples[: _confirmed(events)]
 
 
-def read_examples(out):
-    """`[(seed, record)]` for every example of the hunt in `out` (`read_logs`),
-    the k-th "example" event paired with the k-th record. Raises HuntFileError,
-    naming the file, on a missing log."""
-    events, examples = read_logs(out)
+def read_examples(out, stateful=False):
+    """`[(seed, record)]` for every example of the hunt in `out` (`read_logs`,
+    which `stateful` is passed to), the k-th "example" event paired with the
+    k-th record. Raises HuntFileError, naming the file, on a missing log."""
+    events, examples = read_logs(out, stateful=stateful)
     seeds = [e["seed"] for e in events if e.get("outcome") == "example"]
     return list(zip(seeds, examples, strict=True))
 
@@ -172,22 +188,26 @@ def write_json_atomic(path, data):
 
 
 def write_image_atomic(path, image):
-    """Save the PIL `image` to `path`, its format the suffix's."""
-    path = Path(path)
-    _write_atomic(path, lambda tmp: image.save(tmp, format=path.suffix[1:].upper()))
+    """Save the PIL `image` to `path` as a PNG, whatever its suffix."""
+    _write_atomic(path, lambda tmp: image.save(tmp, format="PNG"))
 
 
 def swap_dir(target, write):
     """Replace the directory `target` with the one `write(directory)` fills.
-    It is filled beside `target` first and swapped in whole, the old one
-    moving aside and then removed, so a kill leaves the old set or the new
-    one and a rerun converges: it sweeps the scratch a kill left. A failure
-    in `write` removes the new directory and leaves `target` as it was."""
+    It is filled beside `target` first, then swapped in by two renames: the old
+    directory moves to `<target>.old`, the new one to `target`. A kill before
+    the first rename leaves the old set, after the second the new one, and
+    between them neither (the old set sits in `<target>.old`); a rerun
+    converges, sweeping the scratch a kill left, so the old set is then gone
+    and the rerun writes the whole new one. A failure in `write` removes the
+    new directory and leaves `target` as it was; a failed removal of the
+    scratch raises."""
     target = Path(target)
     new = target.with_name(target.name + ".tmp")
     old = target.with_name(target.name + ".old")
-    shutil.rmtree(new, ignore_errors=True)
-    shutil.rmtree(old, ignore_errors=True)
+    for scratch in (new, old):
+        if scratch.exists():
+            shutil.rmtree(scratch)
     new.mkdir(parents=True)
     try:
         write(new)
@@ -196,7 +216,8 @@ def swap_dir(target, write):
         new.rename(target)
     finally:
         shutil.rmtree(new, ignore_errors=True)
-    shutil.rmtree(old, ignore_errors=True)
+    if old.exists():
+        shutil.rmtree(old)
 
 
 class RunLog:
@@ -210,8 +231,7 @@ class RunLog:
         self.config = json.loads(json.dumps(config))
         self.lines = []
         self._fd = None
-        self._files = contextlib.ExitStack()
-        self._append = None
+        self._file = None
 
     def __enter__(self):
         fd = acquire_lock(self.path.parent, self.path.name + ".lock")
@@ -242,14 +262,15 @@ class RunLog:
             raw = [json.dumps(header) + "\n"]
         rewrite_log(self.path, raw)
         self.lines = records[1:]
-        self._append = self._files.enter_context(open_log(self.path))
+        self._file = self.path.open("a")
 
     def append(self, obj):
-        self._append(obj)
+        self._file.write(json.dumps(obj) + "\n")
+        self._file.flush()
         self.lines.append(obj)
 
     def __exit__(self, *exc):
-        self._files.close()
+        self._file.close()
         release_lock(self._fd)
         return False
 

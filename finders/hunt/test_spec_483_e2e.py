@@ -1,4 +1,6 @@
-"""WHAT A GREEN RUN DOES NOT COVER: any real finder's search (toy rule,
+"""The whole hunt protocol spec (#483, closing slice #626).
+
+WHAT A GREEN RUN DOES NOT COVER: any real finder's search (toy rule,
 sub-second solve, no kill mid-solve under job-run; see
 docs/research/2026-09-28-qqrr-tie-kill-resume.md), and the live app (solve
 time, how a link renders in sudokumaker.app)."""

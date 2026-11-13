@@ -211,6 +211,31 @@ with tempfile.TemporaryDirectory() as tmp:
         and len(hunt_files.read_examples(hunt)) == 3,
     )
 
+    # a stateful hunt: events past state.json's seed rerun on resume
+    check(
+        "without a state.json every event stands",
+        len(hunt_files.read_logs(hunt)[0]) == 4,
+    )
+    (hunt / "state.json").write_text('{"seed": 4, "state": null}')
+    events, examples = hunt_files.read_logs(hunt)
+    check(
+        "events past state.json's seed are dropped, with the example they confirm",
+        [e["seed"] for e in events] == [3, 4] and len(examples) == 1,
+    )
+    (hunt / "state.json").unlink()
+    check(
+        "a stateful hunt killed before its first save keeps no event",
+        hunt_files.read_logs(hunt, stateful=True) == ([], []),
+    )
+
+    # a picture is a PNG whatever its suffix
+    for name in ("pic", "pic.jpg"):
+        hunt_files.write_image_atomic(root / name, Image.new("RGB", (2, 2)))
+        check(
+            f"write_image_atomic writes a PNG to {name}",
+            (root / name).read_bytes()[:4] == b"\x89PNG",
+        )
+
     # run_log
     path = root / "runs" / "sets.jsonl"
     config = {"side": 9, "limit": 5}
@@ -270,6 +295,12 @@ with tempfile.TemporaryDirectory() as tmp:
         pass
     with hunt_files.run_log(path, config):
         pass
-    check("a refused open released the lock", True)
+    for refused_log in (path, other):
+        lock_fd = hunt_files.acquire_lock(
+            refused_log.parent, refused_log.name + ".lock"
+        )
+        check(f"the lock of {refused_log.name} can be taken again", lock_fd is not None)
+        if lock_fd is not None:
+            hunt_files.release_lock(lock_fd)
 
 finish()

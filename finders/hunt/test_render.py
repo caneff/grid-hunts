@@ -1,3 +1,5 @@
+"""Pins `render.GridCanvas`: board size, cell shading, box lines and marks drawn at the pixels they belong to."""
+
 import sys
 from pathlib import Path
 

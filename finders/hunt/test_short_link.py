@@ -1,3 +1,5 @@
+"""Pins `short_link.mint` (one network call per document) and `fake_mint`, the offline stand-in that never reaches the network."""
+
 import os
 import sys
 from pathlib import Path

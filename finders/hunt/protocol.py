@@ -88,8 +88,8 @@ class Finder(Protocol):
         ...
 
     # Optional. `hunt render DIR` (#119) calls `render` on each example of a
-    # finished hunt and swaps renders/<seed>.png in as one set; a hunt and its
-    # resume never call it. Build the image with `render.GridCanvas`.
+    # finished hunt and swaps renders/<seed>.png in as one set (`hunt_files.swap_dir`); a hunt
+    # and its resume never call it. Build the image with `render.GridCanvas`.
 
     def render(self, candidate: Any):
         """A picture of one recorded example (a `PIL.Image.Image`), or omit

@@ -1,3 +1,5 @@
+"""Pins `minimizer.strip`: it removes givens while the puzzle stays unique and keeps the ones it must."""
+
 import sys
 from pathlib import Path
 

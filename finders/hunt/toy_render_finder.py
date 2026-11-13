@@ -1,6 +1,7 @@
 """Toy finder with `render`, for the `hunt render DIR` test (#490, #119).
 
-Same rule as toy_finder.py, plus a `render` that draws the shading.
+Same rule as toy_finder.py, plus a `render` that draws the shading, and the
+`candidate_from_record` that rebuilds a candidate from a record.
 toy_finder.py stays render-less to prove the driver writes no renders/ for it.
 
     uv run finders/hunt/toy_render_finder.py --out DIR --seeds START:END
@@ -37,8 +38,11 @@ class ToyRenderFinder:
     def key(self, candidate):
         return candidate
 
+    def candidate_from_record(self, record):
+        return tuple(record["grid"])
+
     def render(self, candidate):
-        # TOY_RENDER_FAIL simulates a render failure for test_render_hook.py's
+        # TOY_RENDER_FAIL simulates a render failure for test_render_dir.py's
         # test that a failed `render DIR` leaves the previous set.
         if os.environ.get("TOY_RENDER_FAIL"):
             raise RuntimeError("simulated transient render failure")

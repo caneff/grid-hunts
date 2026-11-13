@@ -47,7 +47,8 @@ import network
 import penpa
 from dedupe import D4
 from driver import run
-from hunt_dir import replace_links, seeded_examples
+from hunt_dir import replace_links
+from hunt_files import read_examples
 from protocol import Empty, Verdict
 
 DEFAULT_SIDE = 6
@@ -230,11 +231,11 @@ class UbahnFinder:
 
 def write_links(out, blank_number=False):
     """Write `out/links/<seed>.txt`, one Penpa+ link per example of the hunt
-    in `out`, each under its seed (`seeded_examples`). Returns how many;
+    in `out`, each under its seed (`hunt_files.read_examples`). Returns how many;
     raises ValueError, naming it, on a missing or unpaired log or a record
     `candidate_from_record` refuses."""
     out = Path(out)
-    examples = seeded_examples(out)
+    examples = read_examples(out)
     finder = UbahnFinder()
     # Every link is built before any file is touched: a record the finder
     # refuses leaves links/ as it was, and a rerun replaces the whole set,

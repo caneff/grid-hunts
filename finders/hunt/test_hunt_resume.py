@@ -18,9 +18,6 @@ exercised:
   progress.jsonl event and its state.json save.
 - A precisely-timed thread barrier reproducing the fresh-vs-resume
   classify-before-lock race, which a live kill can't reliably hit.
-- A hand-truncated progress.jsonl paired with a `_hunt_loop` monkeypatch
-  that stops a resume right after reconciliation's own writes, pinning the
-  state a *second* kill mid-rerun would leave behind.
 
     uv run finders/hunt/test_hunt_resume.py
 """
@@ -39,6 +36,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from cli_checks import check, check_refusal, finish, read_jsonl, run_cli
 from dedupe import D4, canonical_key
 from subprocess_env import pin_idle_load, success_env
+from toy_render_finder import ToyRenderFinder
 from toy_stateful_finder import StatefulToyFinder
 from toy_tiny_key_finder import TinyKeyFinder
 
@@ -466,6 +464,34 @@ with tempfile.TemporaryDirectory() as tmp:
     check(
         "the resume leaves every stray picture untouched and adds none",
         {p.name: p.read_bytes() for p in (out / "renders").iterdir()} == strays,
+    )
+
+with tempfile.TemporaryDirectory() as tmp:
+    # The same for a finder that has `render`: its hunt draws nothing, and a
+    # resume leaves a populated renders/ byte for byte (#119).
+    import driver as driver_module
+
+    out = Path(tmp) / "render-finder-resume"
+    argv = ["--out", str(out), "--seeds=0:6"]
+    code = driver_module.run(ToyRenderFinder(), argv)
+    check("base hunt for the render-finder resume test exits 0", code == 0)
+    check(
+        "a hunt of a finder with render still writes no renders/",
+        not (out / "renders").exists(),
+    )
+
+    (out / "renders").mkdir()
+    pictures = {"0.png": b"drawn", "3.png": b"drawn too"}
+    for name, data in pictures.items():
+        (out / "renders" / name).write_bytes(data)
+    progress_lines = (out / "progress.jsonl").read_text().splitlines(keepends=True)
+    (out / "progress.jsonl").write_text(progress_lines[0])
+
+    code = driver_module.run(ToyRenderFinder(), argv)
+    check("resume of a finder with render exits 0", code == 0)
+    check(
+        "the resume leaves a render finder's pictures untouched and adds none",
+        {p.name: p.read_bytes() for p in (out / "renders").iterdir()} == pictures,
     )
 
 with tempfile.TemporaryDirectory() as tmp:

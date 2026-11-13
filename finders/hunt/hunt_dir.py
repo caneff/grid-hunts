@@ -1,5 +1,5 @@
-"""A hunt directory read back: examples by seed, the `links/` beside them, and
-the seeds and verdicts `summary DIR` reports."""
+"""A hunt directory read back: examples by seed, the `links/` beside them
+(#774, #71), and the seeds and verdicts `summary DIR` reports."""
 
 import json
 import sys
@@ -92,12 +92,14 @@ def hunt_summary(out, describe_hit=None):
         and e.get("empty_reason", "").split(":")[0] == "timeout"
     )
     describe = describe_hit or _record_json
+    if hits:
+        headline = f"{len(hits)} verified hits in {span}"
+    elif unchecked or rejected:
+        headline = f"no verified hit in {span}"
+    else:
+        headline = f"none found in {span}"
     text = [
-        f"{len(hits)} verified hits in {span}"
-        if hits
-        else f"no verified hit in {span}"
-        if unchecked or rejected
-        else f"none found in {span}",
+        headline,
         f"found {outcome['example']}, empty {outcome['empty'] - timed_out}, "
         f"timed out {timed_out}, duplicate {outcome['duplicate']}, "
         f"rejected {outcome['rejected']}",
@@ -117,13 +119,6 @@ def hunt_summary(out, describe_hit=None):
 def _record_json(record):
     shown = {k: v for k, v in record.items() if k != "__dedupe_key__"}
     return "hit " + json.dumps(shown, sort_keys=True)
-
-
-def seeded_examples(out):
-    """[(seed, record)] for every example of the hunt in `out`, paired the
-    way the driver pairs them (`hunt_files.read_examples`). Raises
-    ValueError, naming it, on a missing or unreadable log."""
-    return hunt_files.read_examples(out)
 
 
 def replace_links(out, built):

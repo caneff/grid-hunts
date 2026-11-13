@@ -1,4 +1,4 @@
-"""The hunt driver: `run(finder, argv)`.
+"""The hunt driver: `run(finder, argv)` (#483/#484/#487).
 
 A thin loop over a finder's `propose`/`verify`/`record`/`key`: it owns the
 output directory, inline verification, dedupe and resume after a kill -- no
@@ -8,24 +8,23 @@ new hunt; an `--out` that already has one resumes it: seeds with a
 log, and a finder's optional `save_state`/`load_state` round-trip through
 state.json. A differing argv versus the recorded run refuses to start; a
 differing git sha only warns. `--no-verify` skips `finder.verify` while
-searching, and `hunt verify DIR` runs it afterwards over everything
+searching, and `hunt verify DIR` (#489) runs it afterwards over everything
 `--no-verify` saved, writing to verified.jsonl a stamp line (the count of
-examples verified) and then one verdict per examples.jsonl line. A
+examples verified, #517) and then one verdict per examples.jsonl line. A
 resume that may change examples.jsonl deletes verified.jsonl. A hunt and
 its resume draw no pictures: `hunt render DIR` does, afterwards, over the
 examples.jsonl a hunt left. It locks DIR, rebuilds each record with the
 finder's `candidate_from_record` (or the record itself without one), draws it
-with the finder's `render` and swaps renders/ for the complete set of
-renders/<seed>.png in one step, so a kill leaves the previous set or none and
-a re-run converges. `hunt summary DIR` and `hunt links DIR` (#121) report on
-the hunt and write the short link of each verified hit; a completed hunt calls
+with the finder's `render` and replaces renders/ with the set of
+renders/<seed>.png (`hunt_files.swap_dir` owns the swap). `hunt summary DIR`
+and `hunt links DIR` (#121) report on the hunt and write the short link of each verified hit; a completed hunt calls
 the finder's `finish(out)`. A finder supplies only `describe_hit`,
 `link_document` and `finish` (protocol.py). `--workers` (default 3,
 set on the finder before the first seed) and the 1-minute load gate
-(refuses above 24 unless `--force-load`) are box knobs. A
+(refuses above 24 unless `--force-load`) are box knobs (#488). A
 finder's own knobs travel as `finder.config`: run.json records it and a
 resume under a different one refuses; a seed that found nothing may return
-`Empty(reason)`, written as `empty_reason`.
+`Empty(reason)`, written as `empty_reason` (#491).
 
     uv run finders/hunt/toy_finder.py --out DIR --seeds START:END
     uv run finders/hunt/toy_finder.py --out DIR --seeds START:END --no-verify
@@ -87,7 +86,7 @@ LOAD_LIMIT = 24
 
 
 def _load1():
-    """The 1-minute load, or `HUNT_FAKE_LOAD1`: an env var because a
+    """The 1-minute load, or `HUNT_FAKE_LOAD1` (#488): an env var because a
     subprocess-launched hunt cannot take a fake load function, and a test knob
     stays out of production argv.
     """
@@ -166,16 +165,35 @@ def _parse_args(argv):
     return parser.parse_args(_merge_seeds_token(argv))
 
 
-def _parse_verify_args(argv):
-    parser = argparse.ArgumentParser(prog="hunt verify")
+def _parse_dir_args(prog, argv):
+    parser = argparse.ArgumentParser(prog=prog)
     parser.add_argument("dir")
     return parser.parse_args(argv)
 
 
-def _parse_render_args(argv):
-    parser = argparse.ArgumentParser(prog="hunt render")
-    parser.add_argument("dir")
-    return parser.parse_args(argv)
+@contextlib.contextmanager
+def _held_lock(prog, dir_arg):
+    """Hold DIR's lock for the block and yield True, or print the refusal and
+    yield False when a hunt or another subcommand holds it."""
+    lock_fd = hunt_files.acquire_lock(Path(dir_arg))
+    if lock_fd is None:
+        print(
+            f"{prog}: refusing -- {dir_arg} is locked (a hunt or another "
+            "verify, render or links is using it)",
+            file=sys.stderr,
+        )
+        yield False
+        return
+    try:
+        yield True
+    finally:
+        hunt_files.release_lock(lock_fd)
+
+
+def _candidate_builder(finder):
+    """Rebuild a candidate from an examples.jsonl record: the finder's
+    `candidate_from_record`, or the record itself without one."""
+    return getattr(finder, "candidate_from_record", lambda record: record)
 
 
 def _git_sha():
@@ -193,7 +211,7 @@ def _git_sha():
 
 def _resume_key(argv):
     """The parts of `argv` that define a hunt's search space and how its
-    results are trustworthy: `--out`, `--seeds`, and `--no-verify` (resuming
+    results are trustworthy: `--out`, `--seeds`, and `--no-verify` (#527: resuming
     across a verify-mode change mixes verified and unverified examples).
     `--workers` and `--force-load` are excluded so the load gate's own
     "use --force-load" advice is never refused."""
@@ -202,7 +220,7 @@ def _resume_key(argv):
 
 
 def _finder_config(finder):
-    """The finder's config as JSON reads it back, so a resume compares like
+    """The finder's config (#491) as JSON reads it back, so a resume compares like
     with like against run.json. `_resume_key` only sees the driver's flags;
     the config records the finder's."""
     return json.loads(json.dumps(getattr(finder, "config", None)))
@@ -215,7 +233,7 @@ def _refuse(out_arg, why):
 
 class SymmetryMismatch(Exception):
     """A custom symmetry group that passes `validate_group`'s pre-flight but
-    fails inside `canonical_key` on the first verified candidate. A
+    fails inside `canonical_key` on the first verified candidate (#509). A
     driver-local type, not ValueError, so `run` can catch it without
     swallowing an unrelated finder bug.
     """
@@ -276,7 +294,7 @@ def _truncate_to_valid(path, valid_lines):
 
 def _state_seed(finder, out):
     """None when there is no saved state: `--seeds` accepts negatives, so no
-    numeric sentinel is safe."""
+    numeric sentinel is safe (#516)."""
     if not _is_stateful(finder):
         return None
     state_path = out / "state.json"
@@ -321,7 +339,7 @@ def _reconcile(
         )
         examples_ok = example_confirmed <= len(examples_records)
         # Missing "seed" reads as ahead of any state so it reruns; a numeric
-        # default could collide with a real negative seed.
+        # default could collide with a real negative seed (#516).
         last_seed = progress_events[-1].get("seed", float("inf"))
         state_ok = not tracks_state or (
             state_seed is not None and last_seed <= state_seed
@@ -351,7 +369,7 @@ def _is_stateful(finder):
 
 def _validate_stateful(finder):
     """Load-only never writes state.json, so every resume trims back to the
-    start; save-only writes a state it never reads."""
+    start; save-only writes a state it never reads (#664)."""
     has_load, has_save = _state_hooks(finder)
     if has_load == has_save:
         return None
@@ -400,7 +418,7 @@ def _load_state(finder, out):
 def _propose_and_key(finder, seed, symmetry, no_verify=False):
     """Returns (candidate, verdict, key); verdict and key are None when there
     is no candidate or it was rejected. `no_verify` skips `finder.verify` and
-    treats the candidate as accepted, for `hunt verify DIR` to check later.
+    treats the candidate as accepted, for `hunt verify DIR` (#489) to check later.
     """
     candidate = finder.propose(random.Random(seed))
     if _is_empty(candidate):
@@ -425,7 +443,7 @@ def _is_empty(candidate):
 
 
 def _process_seed(
-    finder, seed, seen, symmetry, append_example, append_event, counts, out, no_verify
+    finder, seed, seen, symmetry, append_example, append_event, counts, no_verify
 ):
     candidate, verdict, key = _propose_and_key(finder, seed, symmetry, no_verify)
     event = {"event": "seed_done", "seed": seed}
@@ -473,7 +491,6 @@ def _hunt_loop(
                 append_example,
                 append_event,
                 counts,
-                out,
                 no_verify=no_verify,
             )
             hunt_files.write_json_atomic(out / "summary.json", dict(counts))
@@ -511,14 +528,14 @@ def _check_symmetry_before_mutation(
     finder, symmetry, seed_start, seed_end, done_seeds, examples_records, no_verify
 ):
     """Refuse a resume whose custom symmetry group no longer fits the
-    finder's key shape. Two checks, both before any write:
+    finder's key shape. Two checks, both before any write (#525):
 
     1. The group against the key length recorded in examples.jsonl (covers a
        resume whose whole seed range is already done).
     2. The first un-done seed's real key (covers a `key()` shape that changed
        since the last run).
 
-    D4 and IDENTITY skip both. `done_seeds` must be the reconciled set.
+    D4 and IDENTITY skip both (#529). `done_seeds` must be the reconciled set.
     `_load_state` must run first so the probe snapshots resumed state, not
     the finder's fresh default.
     """
@@ -562,7 +579,7 @@ def _resume(finder, argv, args, out, prior):
     raw_examples_count = len(examples_lines)
 
     # Reconciliation only edits these lists; every write waits until the
-    # symmetry check below passes.
+    # symmetry check below passes (#525).
     progress_lines, progress_events, examples_lines, examples_records = _reconcile(
         finder, out, progress_lines, progress_events, examples_lines, examples_records
     )
@@ -585,7 +602,7 @@ def _resume(finder, argv, args, out, prior):
         args.no_verify,
     )
 
-    # verified.jsonl describes the examples.jsonl it read; delete it before
+    # verified.jsonl describes the examples.jsonl it read (#517); delete it before
     # reconciling or appending so a kill cannot leave it stale.
     if len(examples_lines) != raw_examples_count or any(
         seed not in done_seeds for seed in range(seed_start, seed_end)
@@ -623,31 +640,25 @@ def _resume(finder, argv, args, out, prior):
 
 
 def _run_verify(finder, argv):
-    """`hunt verify DIR`: run `finder.verify` over every line in
+    """`hunt verify DIR` (#489): run `finder.verify` over every line in
     DIR/examples.jsonl and write a stamp line, then one verdict per line, to
     DIR/verified.jsonl -- the deferred half of a `--no-verify` hunt.
     Returns 0, or 2 when DIR has no examples.jsonl or a record fails to
     verify. Each verdict line carries its own record, so it joins back to
     examples.jsonl by content. verified.jsonl is published only on a
-    complete run; a failure leaves any existing file untouched.
+    complete run; a failure leaves any existing file untouched (#527).
 
     Takes the hunt's out/.lock before opening examples.jsonl, so it never
     reads a running hunt's half-written log."""
-    args = _parse_verify_args(argv)
+    args = _parse_dir_args("hunt verify", argv)
     out = Path(args.dir)
 
-    lock_fd = hunt_files.acquire_lock(out)
-    if lock_fd is None:
-        print(
-            f"hunt verify: refusing -- {args.dir} is locked (a hunt or "
-            "another verify is using it)",
-            file=sys.stderr,
-        )
-        return 2
-    try:
-        to_candidate = getattr(finder, "candidate_from_record", lambda record: record)
+    with _held_lock("hunt verify", args.dir) as held:
+        if not held:
+            return 2
+        to_candidate = _candidate_builder(finder)
         try:
-            _, records = hunt_files.read_logs(out)
+            _, records = hunt_files.read_logs(out, stateful=_is_stateful(finder))
         except hunt_files.HuntFileError as error:
             print(f"hunt verify: refusing -- {error}", file=sys.stderr)
             return 2
@@ -675,48 +686,36 @@ def _run_verify(finder, argv):
             lines.append(json.dumps(entry) + "\n")
         hunt_files.rewrite_log(out / "verified.jsonl", lines)
         return 0
-    finally:
-        hunt_files.release_lock(lock_fd)
 
 
 def _run_render(finder, argv):
     """`hunt render DIR`: draw a picture of every example in DIR/examples.jsonl
-    to DIR/renders/<seed>.png, the post-pass that replaces drawing inside the
-    hunt. Returns the exit code: 0 on success, 2 on a refusal (a finder with
-    no `render`, DIR locked or without examples.jsonl, a record that fails to
-    rebuild or draw).
+    to DIR/renders/<seed>.png, a post-pass over a finished hunt. Returns 0, or
+    2 on a refusal (a finder with no `render`, DIR locked or without
+    examples.jsonl, a record that fails to rebuild or draw).
 
     Takes the hunt's out/.lock, so it never reads a running hunt's logs. The
     k-th "example" event of progress.jsonl names the seed of the k-th
     examples.jsonl record; a record past the last event is an example a kill
-    left unconfirmed, which a resume would trim, so it gets no picture. Every
-    picture is drawn into renders.tmp/ first and renders/ is swapped for it
-    whole (the old set moves to renders.old/, which is then removed), so a kill
-    leaves the previous set or none, never a mix, and a re-run converges: it
-    sweeps the two scratch directories a kill left. A failure partway
-    removes renders.tmp/ and leaves renders/ as it was."""
-    args = _parse_render_args(argv)
+    left unconfirmed, which a resume would trim, so it gets no picture.
+    renders/ is replaced as one set by `hunt_files.swap_dir`, which owns the
+    swap mechanics and what a kill or a failure leaves behind."""
+    args = _parse_dir_args("hunt render", argv)
     out = Path(args.dir)
     render = getattr(finder, "render", None)
     if render is None:
         print("hunt render: refusing -- the finder has no render", file=sys.stderr)
         return 2
 
-    lock_fd = hunt_files.acquire_lock(out)
-    if lock_fd is None:
-        print(
-            f"hunt render: refusing -- {args.dir} is locked (a hunt or "
-            "another verify or render is using it)",
-            file=sys.stderr,
-        )
-        return 2
-    try:
+    with _held_lock("hunt render", args.dir) as held:
+        if not held:
+            return 2
         try:
-            seeded = hunt_files.read_examples(out)
+            seeded = hunt_files.read_examples(out, stateful=_is_stateful(finder))
         except hunt_files.HuntFileError as error:
             print(f"hunt render: refusing -- {error}", file=sys.stderr)
             return 2
-        to_candidate = getattr(finder, "candidate_from_record", lambda record: record)
+        to_candidate = _candidate_builder(finder)
         drawn = {}
         for seed, record in seeded:
             try:
@@ -743,8 +742,6 @@ def _run_render(finder, argv):
             )
             return 2
         return 0
-    finally:
-        hunt_files.release_lock(lock_fd)
 
 
 def _run_summary(finder, argv):
@@ -770,7 +767,7 @@ def _run_links(finder, argv):
     from short_link import mint
     from verified_io import example_verdicts
 
-    args = _parse_verify_args(argv)
+    args = _parse_dir_args("hunt links", argv)
     out = Path(args.dir)
     document = getattr(finder, "link_document", None)
     if document is None:
@@ -778,20 +775,16 @@ def _run_links(finder, argv):
             "hunt links: refusing -- the finder has no link_document", file=sys.stderr
         )
         return 2
-    lock_fd = hunt_files.acquire_lock(out)
-    if lock_fd is None:
-        print(f"hunt links: refusing -- {args.dir} is locked", file=sys.stderr)
-        return 2
-    try:
+    with _held_lock("hunt links", args.dir) as held:
+        if not held:
+            return 2
         try:
             run_json = hunt_files.read_json(out / "run.json")
-            seeded = hunt_dir.seeded_examples(out)
+            seeded = hunt_files.read_examples(out, stateful=_is_stateful(finder))
             verdicts = example_verdicts(
                 out, run_json["argv"], [record for _, record in seeded]
             )
-            to_candidate = getattr(
-                finder, "candidate_from_record", lambda record: record
-            )
+            to_candidate = _candidate_builder(finder)
             built = {
                 seed: mint(document(to_candidate(record))) + "\n"
                 for (seed, record), verdict in zip(seeded, verdicts, strict=True)
@@ -806,8 +799,6 @@ def _run_links(finder, argv):
             )
             return 2
         return 0
-    finally:
-        hunt_files.release_lock(lock_fd)
 
 
 def _finish(finder, out, code):

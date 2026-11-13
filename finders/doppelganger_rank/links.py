@@ -23,7 +23,7 @@ and carries no answer check and no rule constraint.
     uv run finders/doppelganger_rank/hunt.py links DIR
 
 writes `DIR/links/<seed>.txt` for each verified hit of the hunt in DIR
-(`hunt_dir.seeded_examples`), replacing what was there.
+(`hunt_files.read_examples`), replacing what was there.
 """
 
 import json
@@ -35,8 +35,9 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 
 # isort: split
+import hunt_files
 import rules
-from hunt_dir import replace_links, seeded_examples
+from hunt_dir import replace_links
 from short_link import mint
 from verified_io import example_verdicts
 
@@ -135,7 +136,7 @@ def write_links(out):
     """Write one link per verified hit of the hunt in `out`, under its
     seed. Returns (links written, examples skipped as not verified hits)."""
     out = Path(out)
-    examples = seeded_examples(out)
+    examples = hunt_files.read_examples(out)
     run_json = json.loads((out / "run.json").read_text())
     verdicts = example_verdicts(out, run_json["argv"], [r for _, r in examples])
     built = {
