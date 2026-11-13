@@ -107,6 +107,8 @@ DEFAULTS = {
     "pool_floor": 4,
     "proof_workers": 1,
 }
+# The subcommands that read a hunt directory, not a board.
+DIR_COMMANDS = (["verify"], ["render"], ["summary"], ["links"])
 # The Empty reason's class, as `summary` names it in the split.
 CLASSES = {
     "infeasible": "proven infeasible",
@@ -431,7 +433,7 @@ def main(argv):
             file=sys.stderr,
         )
         return 2
-    if own.board is None and rest[:1] != ["verify"]:
+    if own.board is None and rest[:1] not in DIR_COMMANDS:
         print("hunt.py: a hunt needs --board BOARD", file=sys.stderr)
         return 2
     try:
