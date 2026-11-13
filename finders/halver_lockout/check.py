@@ -30,7 +30,7 @@ import rules
 
 # isort: split
 from halver_report import report
-from halver_rules import mark_name
+from halver_rules import check_mark_cells, mark_name
 
 
 def read_board(path):
@@ -54,6 +54,7 @@ def main(argv):
             marks = json.loads(args.marks.read_text()) if args.marks else []
             for mark in marks:
                 mark_name(mark)
+                check_mark_cells(mark, board.n)
         except (OSError, ValueError, KeyError) as error:
             raise ValueError(f"{args.marks}: {error}") from error
     except ValueError as error:

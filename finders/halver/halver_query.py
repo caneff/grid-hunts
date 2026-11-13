@@ -32,7 +32,14 @@ sys.path.insert(0, str(FINDERS / "query"))
 # isort: split
 import query
 from conditions import All, Any_, Eq
-from halver_rules import HalverModel, MarkCheck, RuleCheck, cell_name, parse_cell
+from halver_rules import (
+    HalverModel,
+    MarkCheck,
+    RuleCheck,
+    cell_name,
+    check_mark_cells,
+    parse_cell,
+)
 from short_link import mint
 
 N = 9
@@ -112,7 +119,9 @@ def uniqueness(board, time_limit=10.0):
 
 def holds(board, mark, time_limit=10.0):
     """The driver's `forced` on the `marks.json` entry `mark`, asked on a copy
-    of `board`'s model, which it leaves unchanged."""
+    of `board`'s model, which it leaves unchanged. A ValueError names a cell
+    of `mark` that is not on the board."""
+    check_mark_cells(mark, board.n)
     model = board.model.clone()
     variables = {
         k: model.GetIntVarFromProtoIndex(v.Index())
