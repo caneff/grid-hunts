@@ -38,10 +38,10 @@ import json
 import random
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
-import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -316,20 +316,36 @@ with short_link.fake_mint(), tempfile.TemporaryDirectory() as tmp:
     assert result.returncode == 2 and "no known reason" in result.stderr, result
 
     # A hunt killed partway resumes to the hits of the hunt that ran through.
+    # The kill lands on a seed count the test sets: the child SIGKILLs itself
+    # as seed number STOPPED starts, so exactly STOPPED seeds are done.
     killed = tmp / "killed"
+    STOPPED = 3
     argv = ("--board", empty, "--out", killed, "--seeds", f"0:{SEEDS}")
-    command = [sys.executable, str(SCRIPT), *map(str, argv)]
-    proc = subprocess.Popen(command, env=success_env())
+    suicide = tmp / "suicide.py"
+    suicide.write_text(
+        "import os, signal, sys\n"
+        f"sys.path[:0] = [{str(HERE)!r}, {str(HERE.parent / 'hunt')!r}]\n"
+        "import driver, hunt\n"
+        "real, calls = driver._process_seed, []\n"
+        "def counted(*a, **k):\n"
+        "    calls.append(a[1])\n"
+        f"    if len(calls) > {STOPPED}:\n"
+        "        os.kill(os.getpid(), signal.SIGKILL)\n"
+        "    return real(*a, **k)\n"
+        "driver._process_seed = counted\n"
+        "sys.exit(hunt.main(sys.argv[1:]))\n"
+    )
+    proc = subprocess.run(
+        [sys.executable, str(suicide), *map(str, argv)],
+        env=success_env(),
+        capture_output=True,
+        text=True,
+        timeout=300,
+    )
+    assert proc.returncode == -signal.SIGKILL, (proc.returncode, proc.stderr)
     progress = killed / "progress.jsonl"
-    deadline = time.time() + 60
-    while time.time() < deadline and proc.poll() is None:
-        if progress.exists() and read_jsonl(progress):
-            break
-        time.sleep(0.01)
-    proc.kill()
-    proc.wait(timeout=10)
     done = len(read_jsonl(progress))
-    assert 1 <= done < SEEDS, f"the kill left {done} of {SEEDS} seeds done"
+    assert done == STOPPED, f"the kill left {done} of {SEEDS} seeds done"
     result = run(*argv)
     assert result.returncode == 0, result.stderr
     seeds = sorted(e["seed"] for e in read_jsonl(progress))

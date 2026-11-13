@@ -203,7 +203,9 @@ def main():
         out = Path(tmp) / "capped"
         r = run(out, "--time-limit", "1e-9", fake_bin=fake_bin)
         assert r.returncode == 0, r.stderr
-        for answer in answers(out):
+        capped = answers(out)
+        assert len(capped) == 2, capped  # feasible and unique, one line each
+        for answer in capped:
             assert (answer["status"], answer["label"]) == ("timeout", "capped"), answer
             assert (out / answer["picture"]).is_file(), answer
             assert links_of(out, answer, fake) == [board_with(None)], answer

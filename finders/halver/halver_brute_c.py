@@ -89,7 +89,16 @@ def _ints(values):
     return (ctypes.c_int * max(1, len(values)))(*values)
 
 
-def solutions(narrowing, lines, n, box, limit, deadline=None, probe_ends=False):
+def solutions(
+    narrowing,
+    lines,
+    n,
+    box,
+    limit,
+    deadline=None,
+    probe_ends=False,
+    clock=time.monotonic,
+):
     if n > MAX_N or len(lines) > MAX_LINES:
         raise ValueError(
             f"the C search takes up to {MAX_N}x{MAX_N} and {MAX_LINES} lines, "
@@ -114,7 +123,7 @@ def solutions(narrowing, lines, n, box, limit, deadline=None, probe_ends=False):
     ends = sorted(ends) if probe_ends else []
     budget = -1.0
     if deadline is not None:
-        budget = deadline - time.monotonic()
+        budget = deadline - clock()
         if budget <= 0:
             raise OutOfTime
     out = (ctypes.c_int * (limit * n * n))()
@@ -131,7 +140,7 @@ def solutions(narrowing, lines, n, box, limit, deadline=None, probe_ends=False):
         budget,
         out,
     )
-    if got < 0 or (deadline is not None and time.monotonic() > deadline):
+    if got < 0 or (deadline is not None and clock() > deadline):
         raise OutOfTime
     found = []
     for k in range(got):

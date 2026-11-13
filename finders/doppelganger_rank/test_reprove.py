@@ -70,7 +70,7 @@ assert set(seen) == {"unique", "not_unique", "infeasible"}, seen
 
 tie = json.loads((FIXTURES / "tie_6x6.json").read_text())
 got = reprove(6, (2, 3), tie["clues"], time_limit=30.0)
-assert got.status in ("unique", "not_unique"), got
+assert got.status == "not_unique", got
 for grid in (got.first, got.second):
     if grid is not None:
         reading = rules.read(grid, (2, 3))

@@ -138,7 +138,9 @@ def test_unique_and_infeasible_boards():
         out = Path(tmp) / "infeasible"
         r = cli(board(tmp, width=3, clues=[[0, 1], [1, 1]]), out, "feasible", "unique")
         assert r.returncode == 0, r.stderr
-        for answer in answers(out):
+        infeasible = answers(out)
+        assert len(infeasible) == 2, infeasible  # feasible and unique, one line each
+        for answer in infeasible:
             assert answer["status"] == "infeasible", answer
             assert answer["label"] == "complete", answer
             assert answer["solutions"] == [], answer
@@ -151,7 +153,9 @@ def test_time_limit_is_capped():
         b = board(tmp, width=3, clues=[])
         r = cli(b, out, "feasible", "unique", extra=["--time-limit", "1e-9"])
         assert r.returncode == 0, r.stderr
-        for answer in answers(out):
+        capped = answers(out)
+        assert len(capped) == 2, capped  # feasible and unique, one line each
+        for answer in capped:
             assert answer["status"] == "timeout", answer
             assert answer["label"] == "capped", answer
             assert (out / answer["picture"]).is_file(), answer
@@ -258,27 +262,37 @@ def test_forced_time_limit_is_capped():
 def test_forced_refusals():
     with tempfile.TemporaryDirectory() as tmp:
         b = board(tmp, width=3, clues=[])
-        r = cli(b, Path(tmp) / "none", "forced")
+        refused = []
+
+        def refuse(name, *question, extra=()):
+            out = Path(tmp) / name
+            refused.append(out)
+            return cli(b, out, *question, extra=list(extra))
+
+        r = refuse("none", "forced")
         assert r.returncode == 2, r.stderr
         assert "forced needs --condition or --marks" in r.stderr, r.stderr
 
-        r = cli(b, Path(tmp) / "unused", "unique", extra=["--condition", str(b)])
+        r = refuse("unused", "unique", extra=["--condition", str(b)])
         assert r.returncode == 2, r.stderr
         assert "--condition and --marks need the forced question" in r.stderr
 
         bad = condition(tmp, "bad", {"eq": ["c9", 1]})
-        r = cli(b, Path(tmp) / "key", "forced", extra=["--condition", str(bad)])
+        r = refuse("key", "forced", extra=["--condition", str(bad)])
         assert r.returncode == 2 and "no variable 'c9'" in r.stderr, r.stderr
 
         bad = condition(tmp, "kind", {"lt": ["c0", 1]})
-        r = cli(b, Path(tmp) / "kind", "forced", extra=["--condition", str(bad)])
+        r = refuse("kind", "forced", extra=["--condition", str(bad)])
         assert r.returncode == 2 and "unknown condition" in r.stderr, r.stderr
 
         marks = condition(tmp, "marks", [{"kind": "digit", "cell": "r1c1", "digit": 1}])
-        r = cli(b, Path(tmp) / "marks", "forced", extra=["--marks", str(marks)])
+        r = refuse("marks", "forced", extra=["--marks", str(marks)])
         assert r.returncode == 2, r.stderr
         assert "has no mark hook" in r.stderr, r.stderr
-        assert not (Path(tmp) / "key").exists(), "a refused run writes nothing"
+
+        assert len(refused) == 5, refused
+        written = [out.name for out in refused if out.exists()]
+        assert not written, f"a refused run wrote its --out: {written}"
 
 
 def test_enumerate_lists_every_solution_then_complete():
