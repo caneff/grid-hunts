@@ -101,11 +101,11 @@ class BanabnerFinder:
         model = bm.Model(self.config["max_choc_side"], self.config["speedups"])
         cells = {("d", p): v for p, v in model.d.items()}
         cells |= {("c", p): v for p, v in model.choc.items()}
-        for i, (rows, shading) in enumerate(self.found):
+        for rows, shading in self.found:
             grid, is_choc = to_maps(Candidate(rows, shading))
             pinned = {("d", p): v for p, v in grid.items()}
             pinned |= {("c", p): int(v) for p, v in is_choc.items()}
-            cpsat.forbid(model.m, cells, pinned, tag=f"found{i}")
+            cpsat.forbid(model.m, cells, pinned)
         return model
 
     def propose(self, rng):
