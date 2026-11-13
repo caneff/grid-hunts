@@ -109,4 +109,58 @@ pruned = {
 assert any(len(next(iter(line))) == 4 for line in naive), "no four-cell line"
 assert pruned == naive, (len(pruned), len(naive))
 
+# A 6x6 board (no 9x9 constant in the walk): stub solutions with doubled
+# values 1..12 give exactly the lines a naive walk finds.
+import random
+
+
+class Stub:
+    def __init__(self, values):
+        self.digits = values
+        self.values = values
+
+    def doubled(self, cell):
+        return self.values[cell[0]][cell[1]]
+
+
+rng = random.Random(6)
+cells6 = [(r, c) for r in range(6) for c in range(6)]
+grid_a = [[rng.randint(1, 12) for _ in range(6)] for _ in range(6)]
+grid_b = [[rng.randint(1, 12) for _ in range(6)] for _ in range(6)]
+target6, second6 = Stub(grid_a), Stub(grid_b)
+
+
+def legal6(p):
+    line = rules.Line(p[0], tuple(p[1:-1]), p[-1])
+    return (
+        candidates.shape_violation(p, [], n=6) is None
+        and rules.line_holds(target6, line)
+        and not rules.line_holds(second6, line)
+    )
+
+
+def king_paths6(prefix, length):
+    if len(prefix) == length:
+        yield prefix
+        return
+    last = prefix[-1]
+    for q in cells6:
+        if q not in prefix and abs(q[0] - last[0]) <= 1 and abs(q[1] - last[1]) <= 1:
+            yield from king_paths6((*prefix, q), length)
+
+
+naive6 = {
+    frozenset((p, p[::-1]))
+    for length in (3, 4)
+    for a in cells6
+    for p in king_paths6((a,), length)
+    if legal6(p)
+}
+pruned6 = {
+    frozenset((p, p[::-1]))
+    for p in candidates.separating_paths(target6, second6, [], max_cells=4)
+}
+assert naive6, "no 6x6 line"
+assert pruned6 == naive6, (len(pruned6), len(naive6))
+
 print("ok")

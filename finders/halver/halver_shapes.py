@@ -1,8 +1,8 @@
 """The drawing rules every line type on halver cells shares (spec #39 Q8,
 spec #52), and the cell counts a hunt ranks candidate lines by. Each line
 type's candidate module (`halver_between/candidates.py`,
-`halver_lockout/candidates.py`) re-exports these and adds its own
-separating-line walk.
+`halver_lockout/candidates.py`) re-exports these and gives `separating_paths`
+its own two rules.
 
 A path is a tuple of (row, column) cells from 0: an end, body cells in order,
 the other end. The ends are a between line's circles and a lockout line's
@@ -127,3 +127,74 @@ def no_space(target, second, lines):
         for c in range(n)
         if target.doubled((r, c)) != second.doubled((r, c))
     )
+
+
+def separating_paths(
+    target, second, lines, max_cells, *, holds, initial, closes, extend
+):
+    """Every path of at most `max_cells` cells that `shape_violation` accepts,
+    that holds in `target` and fails in `second` under `holds(solution, line)`,
+    shortest first, each line once (a path and its reverse are one line).
+
+    It walks out from each cell as a first end and keeps a body only while
+    `extend` allows it, so it never builds a path the target already breaks.
+    The values are the target's doubled values, 1..2n on an n x n board
+    (`lowest`, `highest`); a line type gives its own rules:
+
+    - `initial(lowest, highest)`: the state of a path with no body yet;
+    - `extend(start, v, state, lowest, highest)`: the state after a body cell
+      of value `v` on a path whose first end has value `start`, or None when
+      no closing end could still keep the body in range;
+    - `closes(start, v, state)`: whether a cell of value `v` closes the path
+      as its second end.
+    """
+    on_line, bodies, diagonals = occupied(lines)
+    n = len(target.digits)
+    cells = [(r, c) for r in range(n) for c in range(n)]
+    doubled = {cell: target.doubled(cell) for cell in cells}
+    lowest, highest = 1, 2 * n  # a halved 1, a normal n
+    found = []
+
+    def step_ok(p, q, own_diagonals):
+        cross = crossing(p, q)
+        return cross is None or (cross not in diagonals and cross not in own_diagonals)
+
+    def walk(path, state, own_diagonals):
+        """Extend `path` (first end, then body) in `state`; `own_diagonals`
+        holds its diagonal steps."""
+        last = path[-1]
+        start = doubled[path[0]]
+        for dr, dc in STEPS:
+            q = (last[0] + dr, last[1] + dc)
+            if not (0 <= q[0] < n and 0 <= q[1] < n) or q in path:
+                continue
+            if not step_ok(last, q, own_diagonals):
+                continue
+            diagonals_after = (
+                own_diagonals | {frozenset((last, q))}
+                if crossing(last, q)
+                else own_diagonals
+            )
+            v = doubled[q]
+            # q as the closing end.
+            if (
+                len(path) >= 2
+                and q not in bodies
+                and path[0] < q
+                and closes(start, v, state)
+            ):
+                candidate = (*path, q)
+                if not holds(second, line_of(candidate)):
+                    found.append(candidate)
+            # q as one more body cell, leaving room for the closing end.
+            if len(path) + 2 > max_cells or q in on_line or v == start:
+                continue
+            new_state = extend(start, v, state, lowest, highest)
+            if new_state is not None:
+                walk((*path, q), new_state, diagonals_after)
+
+    for a in cells:
+        if a not in bodies:
+            walk((a,), initial(lowest, highest), frozenset())
+    found.sort(key=len)
+    return found
