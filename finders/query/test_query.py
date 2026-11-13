@@ -198,6 +198,35 @@ def test_a_failed_mint_is_recorded_and_the_run_goes_on():
         assert r.stdout.strip().splitlines()[-1].startswith("pictures: "), r.stdout
 
 
+def test_a_failed_picture_save_leaves_no_partial_file():
+    """The picture's save dies after writing part of the file: the run stops
+    with that error, and the output directory holds no half picture and no
+    `.partial` or `.tmp` file."""
+    real_save = Image.Image.save
+
+    def dying_save(self, fp, *args, **kwargs):
+        Path(fp).write_bytes(b"half a picture")
+        raise OSError("disk full")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "out"
+        b = board(tmp, width=3, clues=[[0, 1]])
+        Image.Image.save = dying_save
+        try:
+            with contextlib.redirect_stdout(io.StringIO()):
+                try:
+                    query.main([str(TOY), str(b), "feasible", "--out", str(out)])
+                except OSError as error:
+                    assert "disk full" in str(error), error
+                else:
+                    raise AssertionError("the failed save was swallowed")
+        finally:
+            Image.Image.save = real_save
+        left = sorted(p.name for p in out.iterdir())
+        assert not [n for n in left if "partial" in n or n.endswith(".tmp")], left
+        assert not [n for n in left if n.endswith(".png")], left
+
+
 def condition(tmp, name, cond):
     path = Path(tmp) / f"{name}.json"
     path.write_text(json.dumps(cond))

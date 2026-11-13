@@ -108,6 +108,10 @@ with tempfile.TemporaryDirectory() as tmp:
     # A verified.jsonl that no longer covers examples.jsonl is refused.
     with (deferred / "examples.jsonl").open("a") as f:
         f.write(json.dumps(good) + "\n")
+    with (deferred / "progress.jsonl").open("a") as f:
+        f.write(
+            json.dumps({"event": "seed_done", "seed": 2, "outcome": "example"}) + "\n"
+        )
     status, text, err = call("summary", str(deferred))
     assert status == 2, (status, text)
     assert "covers 2 examples and examples.jsonl holds 3" in err, err
@@ -119,6 +123,27 @@ with tempfile.TemporaryDirectory() as tmp:
     status, text, err = call("summary", str(rejected))
     assert status == 0, err
     assert "seed 0: rejected, no reason given" in text, text
+
+    # A kill cut the last line of each log short: summary reads what a resume
+    # reads, no traceback.
+    torn = tmp / "torn"
+    hunt_dir(torn, ["--out", str(torn), "--seeds", "0:3"], [good, good], examples)
+    with (torn / "examples.jsonl").open("a") as f:
+        f.write('{"seed": 2, "gr')
+    with (torn / "progress.jsonl").open("a") as f:
+        f.write('{"event": "seed_done", "seed": 2, "outc')
+    status, text, err = call("summary", str(torn))
+    assert status == 0, (status, err)
+    assert text.startswith("2 hits in 2 seeds (0..1)"), text
+
+    # An unreadable line that is not the last is refused by name.
+    broken = tmp / "broken"
+    hunt_dir(broken, ["--out", str(broken), "--seeds", "0:2"], [good, good], examples)
+    lines = (broken / "examples.jsonl").read_text().splitlines()
+    (broken / "examples.jsonl").write_text("\n".join(["{bad", *lines]) + "\n")
+    status, text, err = call("summary", str(broken))
+    assert status == 2, (status, text)
+    assert "examples.jsonl line 1" in err, err
 
     # --workers 3 is refused by name, and no hunt directory is made.
     refused = tmp / "refused"

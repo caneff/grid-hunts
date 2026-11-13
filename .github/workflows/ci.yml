@@ -8,13 +8,10 @@ on:
     - cron: "17 3 * * *"
 
 jobs:
-  # The gate is `just check`: ruff and the finder tests. A pull request and a
-  # push to main run the narrowed gate (`tests/all.sh --changed`); the schedule
-  # runs the full `just check` nightly as the backstop. uv fetches Python,
-  # ruff and just itself; the Pants launcher is installed for the narrowed
-  # run's selection and the edge check (pants.toml, docs/pants.md). tests/all.sh takes its
-  # suite count from GATE_JOBS: the Actions VM has 4 vCPUs and every suite is
-  # one process, so 4 suites at once.
+  # A pull request and a push to main run the narrowed gate
+  # (`tests/all.sh --changed`); the schedule runs the full `just check` nightly
+  # as the backstop. The Pants launcher serves the narrowed run's selection and
+  # the edge check (pants.toml, docs/pants.md).
   check:
     runs-on: ubuntu-latest
     steps:
@@ -31,8 +28,6 @@ jobs:
       - name: uv sync
         run: uv sync
 
-      # The Pants launcher, cached with the Pants it downloads. pants.toml
-      # turns the result cache off.
       - name: Install Pants
         uses: pantsbuild/actions/init-pants@v11
         with:
@@ -41,13 +36,12 @@ jobs:
 
       - name: Gate (check)
         env:
+          # The Actions VM has 4 vCPUs and every suite is one process.
           GATE_JOBS: 4
           EVENT: ${{ github.event_name }}
           BASE_REF: ${{ github.base_ref }}
           BEFORE: ${{ github.event.before }}
         run: |
-          # A full run the CI chose itself ends with the widened note, as
-          # tests/all.sh does for the widenings it chooses.
           full() {
             uvx --from rust-just just check; rc=$?
             echo "widened: $1"; return $rc

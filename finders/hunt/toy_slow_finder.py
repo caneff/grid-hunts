@@ -1,9 +1,7 @@
-"""Slow toy finder for the hunt resume tests (#487): sleeps briefly per seed.
+"""Slow toy finder for the hunt resume tests (#487).
 
-Same trivial rule as toy_finder.py (an even shaded-cell count passes), but
-`propose` sleeps a few milliseconds so a subprocess kill lands reliably
-mid-hunt in a test, instead of racing a hunt that finishes before the test
-can send the signal.
+toy_finder.py's rule; `propose` sleeps per seed so a test's SIGKILL lands
+mid-hunt.
 
     uv run finders/hunt/toy_slow_finder.py --out DIR --seeds START:END
 """

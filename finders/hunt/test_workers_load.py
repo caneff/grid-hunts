@@ -9,13 +9,12 @@ production argv never carries a test-only knob.
 """
 
 import json
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from subprocess_env import success_env
+from cli_checks import check, check_refusal, finish, run_cli
 
 HERE = Path(__file__).resolve().parent
 
@@ -41,39 +40,18 @@ class WorkersFinder:
 sys.exit(run(WorkersFinder(), sys.argv[1:]))
 """
 
-ok = True
+_script_dir = tempfile.TemporaryDirectory()
+WORKERS_SCRIPT = Path(_script_dir.name) / "workers_finder.py"
+WORKERS_SCRIPT.write_text(WORKERS_FINDER)
 
 
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
-
-def run_cli(out, extra_args, env=None):
-    full_env = success_env(env)
-    return subprocess.run(
-        [
-            sys.executable,
-            "-c",
-            WORKERS_FINDER,
-            "--out",
-            str(out),
-            "--seeds",
-            "0:1",
-            *extra_args,
-        ],
-        capture_output=True,
-        text=True,
-        env=full_env,
-    )
+def workers_hunt(out, extra_args, env=None):
+    return run_cli(WORKERS_SCRIPT, "--out", out, "--seeds", "0:1", *extra_args, env=env)
 
 
 with tempfile.TemporaryDirectory() as tmp:
     out = Path(tmp) / "hunt-out"
-    result = run_cli(out, [])
+    result = workers_hunt(out, [])
     check(
         f"no --workers exits 0 (stderr: {result.stderr[-500:]})", result.returncode == 0
     )
@@ -86,7 +64,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
 with tempfile.TemporaryDirectory() as tmp:
     out = Path(tmp) / "hunt-out"
-    result = run_cli(out, ["--workers", "8"])
+    result = workers_hunt(out, ["--workers", "8"])
     check(
         f"--workers 8 exits 0 (stderr: {result.stderr[-500:]})", result.returncode == 0
     )
@@ -99,16 +77,13 @@ with tempfile.TemporaryDirectory() as tmp:
 
 with tempfile.TemporaryDirectory() as tmp:
     out = Path(tmp) / "hunt-out"
-    result = run_cli(out, [], env={"HUNT_FAKE_LOAD1": "25"})
-    check(
-        f"load 25 exits nonzero (stderr: {result.stderr[-500:]})",
-        result.returncode != 0,
-    )
+    result = workers_hunt(out, [], env={"HUNT_FAKE_LOAD1": "25"})
+    check_refusal("load 25 refuses", result, "is above 24")
     check("load 25 refuses before any seed runs", not (out / "progress.jsonl").exists())
 
 with tempfile.TemporaryDirectory() as tmp:
     out = Path(tmp) / "hunt-out"
-    result = run_cli(out, ["--force-load"], env={"HUNT_FAKE_LOAD1": "25"})
+    result = workers_hunt(out, ["--force-load"], env={"HUNT_FAKE_LOAD1": "25"})
     check(
         f"load 25 with --force-load exits 0 (stderr: {result.stderr[-500:]})",
         result.returncode == 0,
@@ -117,14 +92,12 @@ with tempfile.TemporaryDirectory() as tmp:
 
 with tempfile.TemporaryDirectory() as tmp:
     # A box-safety flag added on resume must not read as a differing search
-    # (#488 review C1/P2): the box's load, not the search, changed between
-    # the two invocations, and #487's argv-equality resume check must not
-    # conflate the two -- otherwise the gate's own "use --force-load" advice
+    # (#487's argv-equality check), or the gate's "use --force-load" advice
     # is advice resume then refuses to take.
     out = Path(tmp) / "hunt-out"
-    first = run_cli(out, [])
+    first = workers_hunt(out, [])
     check(f"base hunt exits 0 (stderr: {first.stderr[-500:]})", first.returncode == 0)
-    resumed = run_cli(out, ["--force-load"])
+    resumed = workers_hunt(out, ["--force-load"])
     check(
         f"resuming with --force-load added is not an argv mismatch "
         f"(stderr: {resumed.stderr[-500:]})",
@@ -134,17 +107,14 @@ with tempfile.TemporaryDirectory() as tmp:
 with tempfile.TemporaryDirectory() as tmp:
     # An exported-but-empty HUNT_FAKE_LOAD1 (the ordinary shape of
     # `export HUNT_FAKE_LOAD1=$X` with X unset) is not an override -- it
-    # must read as "no override", never crash (#488 review C2). "No
-    # override" itself falls through to the real box's load (driver.py's
-    # `if not override`), so it can't be pinned to a fixed exit code the
-    # way every other case here is (#526 review C1/S1/P1) -- it's compared
-    # against a reference call with the var truly unset (`None` deletes the
-    # key -- see subprocess_env.success_env) instead, so both sides see the
-    # same real load and the check holds however busy the box is.
+    # must read as "no override", never crash. Empty falls through to the
+    # real box load, so compare against a run with the var unset (`None`
+    # deletes the key, see subprocess_env.success_env), not a fixed exit
+    # code.
     out = Path(tmp) / "hunt-out"
-    result = run_cli(out, [], env={"HUNT_FAKE_LOAD1": ""})
+    result = workers_hunt(out, [], env={"HUNT_FAKE_LOAD1": ""})
     ref_out = Path(tmp) / "hunt-out-unset"
-    reference = run_cli(ref_out, [], env={"HUNT_FAKE_LOAD1": None})
+    reference = workers_hunt(ref_out, [], env={"HUNT_FAKE_LOAD1": None})
     check(
         f"empty HUNT_FAKE_LOAD1 does not crash (stderr: {result.stderr[-500:]})",
         "Traceback" not in result.stderr,
@@ -157,62 +127,52 @@ with tempfile.TemporaryDirectory() as tmp:
 
 with tempfile.TemporaryDirectory() as tmp:
     # A non-numeric override is a broken test setup, not a real load --
-    # refuse cleanly rather than an uncaught traceback (#488 review C2).
+    # refuse cleanly rather than an uncaught traceback.
     out = Path(tmp) / "hunt-out"
-    result = run_cli(out, [], env={"HUNT_FAKE_LOAD1": "not-a-number"})
-    check(
-        f"non-numeric HUNT_FAKE_LOAD1 refuses cleanly, no traceback "
-        f"(stderr: {result.stderr[-500:]})",
-        result.returncode == 2 and "Traceback" not in result.stderr,
+    result = workers_hunt(out, [], env={"HUNT_FAKE_LOAD1": "not-a-number"})
+    check_refusal(
+        "non-numeric HUNT_FAKE_LOAD1 refuses cleanly", result, "is not a valid load"
     )
+    check("and prints no traceback", "Traceback" not in result.stderr)
 
 with tempfile.TemporaryDirectory() as tmp:
-    # LOAD_LIMIT's boundary: exactly 24 must run (refusal is "above 24").
     out = Path(tmp) / "hunt-out"
-    result = run_cli(out, [], env={"HUNT_FAKE_LOAD1": "24"})
+    result = workers_hunt(out, [], env={"HUNT_FAKE_LOAD1": "24"})
     check(
         f"load exactly 24 runs (stderr: {result.stderr[-500:]})",
         result.returncode == 0,
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # --workers 0 would hand a CP-SAT finder "pick automatically" -- the
-    # whole box, the exact failure this ticket exists to prevent
-    # (#488 review C3).
+    # --workers 0 would hand a CP-SAT finder "pick automatically": the
+    # whole box.
     out = Path(tmp) / "hunt-out"
-    result = run_cli(out, ["--workers", "0"])
-    check(
-        f"--workers 0 refuses (stderr: {result.stderr[-500:]})",
-        result.returncode != 0,
-    )
+    result = workers_hunt(out, ["--workers", "0"])
+    check_refusal("--workers 0 refuses", result, "--workers must be at least 1, got 0")
 
 with tempfile.TemporaryDirectory() as tmp:
     out = Path(tmp) / "hunt-out"
-    result = run_cli(out, ["--workers", "-1"])
-    check(
-        f"--workers -1 refuses (stderr: {result.stderr[-500:]})",
-        result.returncode != 0,
+    result = workers_hunt(out, ["--workers", "-1"])
+    check_refusal(
+        "--workers -1 refuses", result, "--workers must be at least 1, got -1"
     )
 
 with tempfile.TemporaryDirectory() as tmp:
     # `nan` parses as a float and `nan > LOAD_LIMIT` is False, so the naive
     # comparison lets a hunt start unconditionally regardless of the real
-    # box load (Codex pass 1, PR 520). A negative override is equally
+    # box load. A negative override is equally
     # nonsensical and must not silently pass the gate either.
     out = Path(tmp) / "hunt-out"
-    result = run_cli(out, [], env={"HUNT_FAKE_LOAD1": "nan"})
-    check(
-        f"HUNT_FAKE_LOAD1=nan refuses instead of bypassing the gate "
-        f"(stderr: {result.stderr[-500:]})",
-        result.returncode != 0,
+    result = workers_hunt(out, [], env={"HUNT_FAKE_LOAD1": "nan"})
+    check_refusal(
+        "HUNT_FAKE_LOAD1=nan refuses instead of bypassing the gate",
+        result,
+        "'nan' is not a valid load",
     )
 
 with tempfile.TemporaryDirectory() as tmp:
     out = Path(tmp) / "hunt-out"
-    result = run_cli(out, [], env={"HUNT_FAKE_LOAD1": "-1"})
-    check(
-        f"HUNT_FAKE_LOAD1=-1 refuses (stderr: {result.stderr[-500:]})",
-        result.returncode != 0,
-    )
+    result = workers_hunt(out, [], env={"HUNT_FAKE_LOAD1": "-1"})
+    check_refusal("HUNT_FAKE_LOAD1=-1 refuses", result, "'-1' is not a valid load")
 
-sys.exit(0 if ok else 1)
+finish()
