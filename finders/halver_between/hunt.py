@@ -1,7 +1,7 @@
 """The halver + between-line hunt (spec #39, #41): add between lines to Chris's
 board until it has exactly one (digits, halvers) solution.
 
-The loop, its ranking, `verify`, `summary` and the CLI are the shared
+The loop, its ranking, `verify`, `summary_lines` and the driver's CLI are the shared
 target-grid hunt (`finders/halver/halver_hunt.py`, whose docstring states
 them); this module gives it the between line type, Chris's board as the
 start, and the link. `verify` re-reads a hit with `brute.py`. `record`

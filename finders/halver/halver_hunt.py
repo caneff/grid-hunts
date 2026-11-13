@@ -37,7 +37,7 @@ shares no code with the CP-SAT model: exactly one solution, the hit's own,
 and every added line a legal shape. The backtracking search stops at
 `--verify-seconds` and then refuses the hit with no verdict, never passes
 it. `record` writes the line table, the solution and the finder's
-SudokuMaker link. `summary DIR` prints the verified hits, or "none found"
+SudokuMaker link. `summary DIR` (the driver's, worded by `summary_lines`) prints the verified hits, or "none found"
 with the seeds, the wall clock (run.json's start to the end a returning
 hunt records in `ended.json`; "not recorded" without one) and each seed's
 reason; a `--no-verify`
@@ -70,12 +70,12 @@ import halver_query
 from dedupe import IDENTITY
 from driver import run
 from halver_rules import Line, Solution, cell_name, line_name, parse_cell
-from hunt_dir import read_hunt, seed_lines, summary_command
+from hunt_dir import read_hunt, seed_lines
 from protocol import Empty, Verdict
 from short_link import mint
 
 N, BOX = 9, (3, 3)
-# The hunt's end, written when a hunt run returns 0; `summary` reads its
+# The hunt's end, written when a hunt run returns 0; `summary_lines` reads its
 # wall clock from run.json's start and this, never a file's modification
 # time, which git does not keep.
 ENDED = "ended.json"
@@ -305,6 +305,61 @@ class TargetLoopFinder:
         path = tuple(r * N + c for r, c in self.candidates.path_of(line))
         return min(path, path[::-1])
 
+    def link_document(self, hit):
+        return self.link_doc(hit.added)
+
+    def finish(self, out):
+        """Stamp the hunt's end in `ENDED`, which `summary_lines` reads."""
+        stamp = {"end": datetime.now(UTC).isoformat()}
+        (out / ENDED).write_text(json.dumps(stamp) + "\n")
+
+    def summary_lines(self, out):
+        """What a hunt in `out` found, as lines of text."""
+        run_json, events, hits, unchecked, rejected = read_hunt(out)
+        clock = "wall clock not recorded"
+        if (out / ENDED).exists():
+            started = datetime.fromisoformat(run_json["start_time"])
+            ended = datetime.fromisoformat(json.loads((out / ENDED).read_text())["end"])
+            clock = f"wall clock {(ended - started).total_seconds():.0f} s"
+        seeds = sorted(e["seed"] for e in events)
+        span = f"{len(seeds)} seeds" + (f" ({seeds[0]}..{seeds[-1]})" if seeds else "")
+        outcomes = Counter(e["outcome"] for e in events)
+        text = []
+        if hits:
+            text.append(f"{len(hits)} hits in {span}, {clock}")
+        elif unchecked or rejected:
+            text.append(f"no verified hit in {span}, {clock}")
+        else:
+            text.append(
+                f"none found in {span}, {clock}: a search result, "
+                "not a proof that no finish exists"
+            )
+        if unchecked:
+            text.append(
+                f"{len(unchecked)} candidates unchecked: the hunt ran with "
+                f"--no-verify and `hunt.py verify {out}` has not run"
+            )
+        if rejected:
+            text.append(f"{len(rejected)} candidates rejected by `hunt.py verify`")
+        text.append(
+            "outcomes: " + ", ".join(f"{k} {v}" for k, v in sorted(outcomes.items()))
+        )
+        text.extend(seed_lines(events))
+        for record in hits:
+            text.append(f"hit, {len(record['lines'])} added lines: {record['link']}")
+            text.extend(f"  {row}" for row in record["table"])
+        for record in unchecked:
+            text.append(
+                f"unchecked candidate, {len(record['lines'])} added lines: {record['link']}"
+            )
+            text.extend(f"  {row}" for row in record["table"])
+        for record, reason in rejected:
+            text.append(
+                f"rejected candidate, {len(record['lines'])} added lines: {reason}"
+            )
+            text.extend(f"  {row}" for row in record["table"])
+        return text
+
     def candidate_from_record(self, record):
         a, b = f"{self.end}_a", f"{self.end}_b"
         added = tuple(
@@ -320,57 +375,9 @@ class TargetLoopFinder:
         return Hit(added, Solution(digits, halvers))
 
 
-def summary(out):
-    """What a hunt in `out` found, as lines of text."""
-    run_json, events, hits, unchecked, rejected = read_hunt(out)
-    clock = "wall clock not recorded"
-    if (out / ENDED).exists():
-        started = datetime.fromisoformat(run_json["start_time"])
-        ended = datetime.fromisoformat(json.loads((out / ENDED).read_text())["end"])
-        clock = f"wall clock {(ended - started).total_seconds():.0f} s"
-    seeds = sorted(e["seed"] for e in events)
-    span = f"{len(seeds)} seeds" + (f" ({seeds[0]}..{seeds[-1]})" if seeds else "")
-    outcomes = Counter(e["outcome"] for e in events)
-    text = []
-    if hits:
-        text.append(f"{len(hits)} hits in {span}, {clock}")
-    elif unchecked or rejected:
-        text.append(f"no verified hit in {span}, {clock}")
-    else:
-        text.append(
-            f"none found in {span}, {clock}: a search result, "
-            "not a proof that no finish exists"
-        )
-    if unchecked:
-        text.append(
-            f"{len(unchecked)} candidates unchecked: the hunt ran with "
-            f"--no-verify and `hunt.py verify {out}` has not run"
-        )
-    if rejected:
-        text.append(f"{len(rejected)} candidates rejected by `hunt.py verify`")
-    text.append(
-        "outcomes: " + ", ".join(f"{k} {v}" for k, v in sorted(outcomes.items()))
-    )
-    text.extend(seed_lines(events))
-    for record in hits:
-        text.append(f"hit, {len(record['lines'])} added lines: {record['link']}")
-        text.extend(f"  {row}" for row in record["table"])
-    for record in unchecked:
-        text.append(
-            f"unchecked candidate, {len(record['lines'])} added lines: {record['link']}"
-        )
-        text.extend(f"  {row}" for row in record["table"])
-    for record, reason in rejected:
-        text.append(f"rejected candidate, {len(record['lines'])} added lines: {reason}")
-        text.extend(f"  {row}" for row in record["table"])
-    return text
-
-
 def main(finder_class, argv, defaults):
-    """The hunt CLI: `summary DIR`, or the driver's commands with the finder
-    built from its own flags, each defaulting to `defaults[knob]`."""
-    if argv and argv[0] == "summary":
-        return summary_command(argv, summary)
+    """The hunt CLI: the driver's commands with the finder built from its own
+    flags, each defaulting to `defaults[knob]`."""
     parser = argparse.ArgumentParser(add_help=False)
     for knob in KNOBS:
         flag = "--" + knob.replace("_", "-")
@@ -389,11 +396,4 @@ def main(finder_class, argv, defaults):
         return 2
     log = own.step_log.open("a") if own.step_log else None
     finder = finder_class(**{knob: getattr(own, knob) for knob in KNOBS}, log=log)
-    code = run(finder, rest)
-    hunt = argparse.ArgumentParser(add_help=False)
-    hunt.add_argument("--out", type=Path)
-    out = hunt.parse_known_args(rest)[0].out
-    if code == 0 and rest[:1] != ["verify"] and out and (out / "run.json").exists():
-        stamp = {"end": datetime.now(UTC).isoformat()}
-        (out / ENDED).write_text(json.dumps(stamp) + "\n")
-    return code
+    return run(finder, rest)
