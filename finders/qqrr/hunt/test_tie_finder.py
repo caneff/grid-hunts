@@ -104,6 +104,12 @@ with tempfile.TemporaryDirectory() as d:
     (out / "examples.jsonl").write_text(
         "".join(json.dumps(rec) + "\n" for _, rec, _, _ in cases)
     )
+    (out / "progress.jsonl").write_text(
+        "".join(
+            json.dumps({"event": "seed_done", "seed": k, "outcome": "example"}) + "\n"
+            for k in range(len(cases))
+        )
+    )
     r = run_cli("verify", str(out))
     check("hunt verify exits 0", r.returncode == 0)
     stamp, verdicts = read_verified(out / "verified.jsonl")
