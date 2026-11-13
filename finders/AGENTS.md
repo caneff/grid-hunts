@@ -27,7 +27,13 @@ README before reusing anything there.
   afterwards, for a finder that has `render(candidate)`: it rebuilds each
   example with `candidate_from_record`, draws it and swaps `renders/` for the
   full set of `<seed>.png` in one step, so a kill leaves the previous set or
-  none and a re-run converges. `finders/hunt/toy_finder.py`
+  none and a re-run converges. `summary DIR` and `links DIR` are driver
+  subcommands too (#121): the seed span, outcome counts, hit list and link
+  minting live in the protocol, and a finder supplies only
+  `describe_hit(record)` (its hit line), `link_document(candidate)` (the
+  SudokuMaker document `links DIR` mints for each verified hit) and
+  `finish(out)` (called once when a hunt completes, never on a killed one);
+  `toy_summary_finder.py` is the worked example. `finders/hunt/toy_finder.py`
   is a minimal worked example. `finders/hunt/hunt_files.py` owns every file a
   hunt writes and every read of one: the lock, JSONL logs whose read drops a
   torn last line and refuses any other bad line, atomic writes, `swap_dir`

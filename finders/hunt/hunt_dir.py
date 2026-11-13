@@ -4,7 +4,9 @@ finder writes beside them (#774, #71), shared by the U-Bahn finders and
 reports (`read_hunt`, `summary_command`), shared by the halver hunts and
 `doppelganger_rank`."""
 
+import json
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import NamedTuple
 
@@ -74,6 +76,51 @@ def summary_command(argv, summary):
         return 2
     print("\n".join(text))
     return 0
+
+
+def hunt_summary(out, describe_hit=None):
+    """The lines `hunt summary DIR` prints for the driver's protocol: the seed
+    span, the outcome counts (found, empty, timed out, duplicate, rejected --
+    an empty seed whose reason starts `timeout` counts as timed out), the
+    unchecked and rejected candidates, each non-finding seed's reason and one
+    line per verified hit, worded by the finder's `describe_hit(record)` (its
+    record as JSON without one)."""
+    _run, events, hits, unchecked, rejected = read_hunt(out)
+    seeds = sorted(e["seed"] for e in events)
+    span = f"{len(seeds)} seeds" + (f" ({seeds[0]}..{seeds[-1]})" if seeds else "")
+    outcome = Counter(e["outcome"] for e in events)
+    timed_out = sum(
+        1
+        for e in events
+        if e["outcome"] == "empty"
+        and e.get("empty_reason", "").split(":")[0] == "timeout"
+    )
+    describe = describe_hit or _record_json
+    text = [
+        f"{len(hits)} verified hits in {span}"
+        if hits
+        else f"no verified hit in {span}"
+        if unchecked or rejected
+        else f"none found in {span}",
+        f"found {outcome['example']}, empty {outcome['empty'] - timed_out}, "
+        f"timed out {timed_out}, duplicate {outcome['duplicate']}, "
+        f"rejected {outcome['rejected']}",
+    ]
+    if unchecked:
+        text.append(
+            f"{len(unchecked)} candidates unchecked: the hunt ran with "
+            "--no-verify and `verify DIR` has not run"
+        )
+    if rejected:
+        text.append(f"{len(rejected)} candidates rejected by `verify DIR`")
+    text.extend(seed_lines(events))
+    text.extend(describe(record) for record in hits)
+    return text
+
+
+def _record_json(record):
+    shown = {k: v for k, v in record.items() if k != "__dedupe_key__"}
+    return "hit " + json.dumps(shown, sort_keys=True)
 
 
 def seeded_examples(out):
