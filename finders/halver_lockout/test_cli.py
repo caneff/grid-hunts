@@ -75,7 +75,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
     none = tmp / "none"
     reasons = [
-        "timeout: sampling a target (30s)",
+        "timeout: sampling a target (30 s)",
         "budget: 40 lines added and still not unique",
     ]
     outcomes = [

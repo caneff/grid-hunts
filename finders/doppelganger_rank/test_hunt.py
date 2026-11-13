@@ -13,12 +13,12 @@
   the key holds, and refuses a hit as timed out, never unique, when the
   second model's re-proof gets no time.
 - `summary` lists the hits, fewest added clues first, and splits the seeds
-  into found, proven infeasible, timed out and capped, the capped count
+  into found, proven infeasible, timed out and budget, the budget count
   labelled as no proof, on a hunt of each.
 - The ranked pick (`--pool 16`) adds the most restricting clue, and its
   hits are unique and minimal by the key too.
 - A solve that times out ends its seed `timeout:` in the add loop and in
-  the minimiser, and `capped:` when the seed's `--max-seconds` is what ran
+  the minimiser, and `budget:` when the seed's `--max-seconds` is what ran
   out; none is read as unique.
 - The minimiser on two CP-SAT workers (`--proof-workers 2`) gives the
   same hits, a finished hunt resumes under another `--proof-workers`, and
@@ -61,7 +61,7 @@ SCRIPT = HERE / "hunt.py"
 SEEDS = 20
 SPLIT = re.compile(
     r"(\d+) seeds .*: found (\d+), duplicate (\d+), proven infeasible (\d+), "
-    r"timed out (\d+), capped (\d+) \(a budget ran out: no proof\), "
+    r"timed out (\d+), budget (\d+) \(a budget ran out: no proof\), "
     r"no separating clue (\d+), rejected (\d+)"
 )
 
@@ -80,7 +80,7 @@ def split(out):
     assert result.returncode == 0, result.stderr
     lines = result.stdout.splitlines()
     (match,) = [m for line in lines if (m := SPLIT.fullmatch(line))]
-    names = ("seeds", "found", "duplicate", "infeasible", "timeout", "capped")
+    names = ("seeds", "found", "duplicate", "infeasible", "timeout", "budget")
     names += ("inseparable", "rejected")
     counts = dict(zip(names, map(int, match.groups()), strict=True))
     assert counts["seeds"] == sum(v for k, v in counts.items() if k != "seeds")
@@ -183,11 +183,11 @@ with short_link.fake_mint(), tempfile.TemporaryDirectory() as tmp:
     assert_key_hits(ranked_out, empty)
 
     # A timed-out solve is never unique: in the add loop, in the minimiser,
-    # and capped when the seed's own budget is what ran out.
+    # and budget: when the seed's own budget is what ran out.
     loop = timed_out(finder_with(str(empty)), lambda kw: "workers" not in kw)
     assert loop == hunt.Empty("timeout: the check after 0 clues (30 s)"), loop
     budget = timed_out(finder_with(str(empty), max_seconds=5.0), lambda kw: True)
-    assert budget.reason.startswith("capped: 5 s ran out during the check"), budget
+    assert budget.reason.startswith("budget: 5 s ran out during the check"), budget
     minimiser = timed_out(finder_with(str(empty)), lambda kw: "workers" in kw)
     assert minimiser == hunt.Empty("timeout: the minimiser (30 s)"), minimiser
 
@@ -232,7 +232,7 @@ with short_link.fake_mint(), tempfile.TemporaryDirectory() as tmp:
 
     counts, lines = split(out)
     assert counts["seeds"] == SEEDS and counts["found"] == len(examples), counts
-    assert counts["infeasible"] == counts["timeout"] == counts["capped"] == 0, counts
+    assert counts["infeasible"] == counts["timeout"] == counts["budget"] == 0, counts
     added = [int(m.group(1)) for line in lines if (m := re.match(r"hit, (\d+) ", line))]
     assert sorted(added) == added and len(added) == len(examples), added
 
@@ -313,8 +313,8 @@ with short_link.fake_mint(), tempfile.TemporaryDirectory() as tmp:
     )
     assert result.returncode == 0, result.stderr
     counts, lines = split(capped)
-    assert counts["capped"] == 3, counts
-    assert sum(line.startswith("seed ") and "capped" in line for line in lines) == 3
+    assert counts["budget"] == 3, counts
+    assert sum(line.startswith("seed ") and "budget" in line for line in lines) == 3
     with (capped / "progress.jsonl").open("a") as f:
         odd = {"event": "seed_done", "seed": 3, "outcome": "empty"}
         f.write(json.dumps({**odd, "empty_reason": "stalled: no class"}) + "\n")
