@@ -92,17 +92,13 @@ KNOBS = (
 
 
 class Hit(NamedTuple):
-    """The added lines, in the order the loop added them, and the one
-    solution of the board with them."""
+    """A hit: the added lines in loop order, and the board's one solution."""
 
     added: tuple
     solution: Solution
 
 
 def best_line(paths, lines, target, second, pool, rng, line_holds, candidates):
-    """The best of `paths`: most pool solutions broken per new cell taken,
-    then touching a cell whose halver status differs between target and
-    second, then shortest, then a random tie-break."""
     differs = target.halvers ^ second.halvers
 
     def score(path):
@@ -121,7 +117,7 @@ class _Seed(Hooks):
         self.finder, self.rng = finder, rng
         self.added = list(finder.start)
         self.board = finder.rules.RuleModel([*finder.board, *self.added])
-        self.survivors = set()  # pool solutions every added line holds in
+        self.survivors = set()
 
     def lines(self):
         return [*self.finder.board, *self.added]
@@ -243,7 +239,7 @@ class TargetLoopFinder:
         return {knob: getattr(self, knob) for knob in KNOBS}
 
     def link_doc(self, added):
-        """The decoded SudokuMaker document `record` encodes for a hit."""
+        """The decoded SudokuMaker document for a hit's added lines; a subclass supplies it."""
         raise NotImplementedError
 
     def _note(self, **fields):
@@ -311,8 +307,6 @@ class TargetLoopFinder:
         return tuple(sorted(self._canonical(line) for line in hit.added))
 
     def _canonical(self, line):
-        """The line's cells as board indices, read from whichever end is
-        smaller: a line and its reverse are one line."""
         path = tuple(r * N + c for r, c in self.candidates.path_of(line))
         return min(path, path[::-1])
 
@@ -325,7 +319,7 @@ class TargetLoopFinder:
         (out / ENDED).write_text(json.dumps(stamp) + "\n")
 
     def summary_lines(self, out):
-        """What a hunt in `out` found, as lines of text."""
+        """The summary of the hunt in `out`, as lines of text."""
         run_json, events, hits, unchecked, rejected = read_hunt(out)
         clock = "wall clock not recorded"
         if (out / ENDED).exists():
@@ -387,8 +381,7 @@ class TargetLoopFinder:
 
 
 def main(finder_class, argv, defaults):
-    """The hunt CLI: the driver's commands with the finder built from its own
-    flags, each defaulting to `defaults[knob]`."""
+    """The hunt CLI: the driver's commands, the finder built from `defaults[knob]` flags."""
     parser = argparse.ArgumentParser(add_help=False)
     for knob in KNOBS:
         flag = "--" + knob.replace("_", "-")

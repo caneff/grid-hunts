@@ -94,6 +94,8 @@ class Reading(NamedTuple):
     ranks: dict
 
     def broken_clues(self, clues):
+        """One sentence per rank clue whose place ranks otherwise in this
+        reading; empty when every clue holds."""
         broken = []
         for clue in clues:
             place = (clue["line"], clue["end"])
@@ -105,6 +107,9 @@ class Reading(NamedTuple):
 
 
 def read(grid, box):
+    """Read a full n x n grid of digits 0..n with boxes `box` (rows, columns)
+    tall and wide into a `Reading`: broken rules, missing digits, numbers and
+    ranks."""
     n = len(grid)
     rows, cols, boxes = houses(n, box)
     violations = []

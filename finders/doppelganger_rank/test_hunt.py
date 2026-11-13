@@ -75,7 +75,6 @@ def finder_with(board, **knobs):
 
 
 def split(out):
-    """The summary's seed split, as a dict, and the summary's lines."""
     result = run("summary", out)
     assert result.returncode == 0, result.stderr
     lines = result.stdout.splitlines()
@@ -92,8 +91,6 @@ def grid(record):
 
 
 def assert_key_hits(out, board):
-    """Every hit in `out` is unique by the key, its one grid its seed's
-    target, and minimal: not unique without any one of its clues."""
     examples = read_jsonl(out / "examples.jsonl")
     found = [e for e in read_jsonl(out / "progress.jsonl") if e["outcome"] == "example"]
     assert examples and len(found) == len(examples), (len(found), len(examples))
@@ -112,8 +109,6 @@ def assert_key_hits(out, board):
 
 
 def timed_out(finder, when):
-    """`finder.propose` on seed 0 with every check `when(kwargs)` picks a
-    timeout and the rest solved as usual."""
     real = RankModel.check
 
     def check(self, **kwargs):
@@ -142,7 +137,6 @@ for seed in range(20):
     rng = random.Random(seed)
     place = hunt.most_restricting([common, middle, rare], target_ranks, pool, rng)
     assert place == rare, (seed, place)
-# Ties break by the seed's rng: with no sample every place ties.
 picked = {
     hunt.most_restricting([common, middle, rare], target_ranks, [], random.Random(s))
     for s in range(20)
@@ -158,14 +152,12 @@ with short_link.fake_mint(), tempfile.TemporaryDirectory() as tmp:
         json.dumps({"size": 4, "box": [2, 2], "clues": [], "marks": [mark]})
     )
 
-    # The hunt adds each clue by the ranked pick, from a sample of the board.
     picks = []
     ranked = hunt.most_restricting
 
     def spy(places, target, sample, rng):
         place = ranked(places, target, sample, rng)
         picks.append((place, len(sample)))
-        # The sample keeps only grids every clue added so far holds in.
         for earlier, _ in picks[:-1]:
             assert all(grid[earlier] == target[earlier] for grid in sample), picks
         return place
@@ -176,14 +168,11 @@ with short_link.fake_mint(), tempfile.TemporaryDirectory() as tmp:
     assert isinstance(hit, hunt.Hit), hit
     assert picks and picks[0][1] >= hunt.DEFAULTS["pool_floor"], picks
 
-    # The ranked pick's hits, by the key.
     ranked_out = tmp / "ranked"
     result = run("--board", empty, "--out", ranked_out, "--seeds", "0:3", "--pool", 16)
     assert result.returncode == 0, result.stderr
     assert_key_hits(ranked_out, empty)
 
-    # A timed-out solve is never unique: in the add loop, in the minimiser,
-    # and budget: when the seed's own budget is what ran out.
     loop = timed_out(finder_with(str(empty)), lambda kw: "workers" not in kw)
     assert loop == hunt.Empty("timeout: the check after 0 clues (30 s)"), loop
     budget = timed_out(finder_with(str(empty), max_seconds=5.0), lambda kw: True)
@@ -191,14 +180,12 @@ with short_link.fake_mint(), tempfile.TemporaryDirectory() as tmp:
     minimiser = timed_out(finder_with(str(empty)), lambda kw: "workers" in kw)
     assert minimiser == hunt.Empty("timeout: the minimiser (30 s)"), minimiser
 
-    # The hunt that runs through.
     out = tmp / "hits"
     result = run("--board", empty, "--out", out, "--seeds", f"0:{SEEDS}")
     assert result.returncode == 0, result.stderr
     found, examples = assert_key_hits(out, empty)
     assert any(grid(r)[0][0] != 0 for r in examples), "the mark held in every hit"
 
-    # The minimiser's proofs on two workers keep every verdict, so the hits.
     wide = tmp / "wide"
     result = run(
         "--board", empty, "--out", wide, "--seeds", "0:5", "--proof-workers", 2
@@ -214,7 +201,6 @@ with short_link.fake_mint(), tempfile.TemporaryDirectory() as tmp:
         assert result.returncode == 2 and f"{flag[0]} {flag[1]}" in result.stderr
         assert not (tmp / "none").exists(), flag
 
-    # A board the hunt cannot read, and a resume on a board of another size.
     bad = tmp / "bad.json"
     rank = {"line": "r1", "end": "left", "rank": 40}
     bad.write_text(json.dumps({"size": 4, "box": [2, 2], "clues": [rank]}))
@@ -236,7 +222,6 @@ with short_link.fake_mint(), tempfile.TemporaryDirectory() as tmp:
     added = [int(m.group(1)) for line in lines if (m := re.match(r"hit, (\d+) ", line))]
     assert sorted(added) == added and len(added) == len(examples), added
 
-    # verify refuses a planted bad record and passes its source.
     planted = tmp / "planted"
     result = run("--board", empty, "--out", planted, "--seeds", "0:1", "--no-verify")
     assert result.returncode == 0, result.stderr
@@ -276,7 +261,6 @@ with short_link.fake_mint(), tempfile.TemporaryDirectory() as tmp:
     assert verdict == (False, "timeout: the re-proof reached 1e-09 s"), verdict
     assert any(line.startswith("hit, ") for line in lines), lines
 
-    # A later verify overrules the hunt's own: a hit with a clue dropped.
     reverified = tmp / "reverified"
     shutil.copytree(out, reverified)
     records = read_jsonl(reverified / "examples.jsonl")
@@ -292,7 +276,6 @@ with short_link.fake_mint(), tempfile.TemporaryDirectory() as tmp:
     assert "1 candidates skipped" in result.stdout, result.stdout
     assert len(list((reverified / "links").iterdir())) == len(records) - 1
 
-    # The split on hunts that find nothing, each for its own reason.
     infeasible = tmp / "infeasible"
     board = HERE / "fixtures" / "infeasible_4x4.json"
     assert run("--board", board, "--out", infeasible, "--seeds", "0:2").returncode == 0
@@ -321,9 +304,6 @@ with short_link.fake_mint(), tempfile.TemporaryDirectory() as tmp:
     result = run("summary", capped)
     assert result.returncode == 2 and "no known reason" in result.stderr, result
 
-    # A hunt killed partway resumes to the hits of the hunt that ran through.
-    # The kill lands on a seed count the test sets: the child SIGKILLs itself
-    # as seed number STOPPED starts, so exactly STOPPED seeds are done.
     killed = tmp / "killed"
     STOPPED = 3
     argv = ("--board", empty, "--out", killed, "--seeds", f"0:{SEEDS}")

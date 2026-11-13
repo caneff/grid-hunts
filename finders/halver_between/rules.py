@@ -50,7 +50,7 @@ __all__ = [
     "post_between",
 ]
 
-BETWEEN_LINE = 403  # SudokuMaker's constraint type for a between line
+BETWEEN_LINE = 403
 
 
 def line_holds(solution, line):
@@ -61,8 +61,7 @@ def line_holds(solution, line):
 
 def post_between(m, dv, line, index):
     """Post one between line: each body cell strictly between the circles'
-    doubled values, whichever circle is larger. Equal circles leave no body
-    value possible."""
+    doubled values. Equal circles leave no body value possible."""
     if not line.body:
         raise ValueError(f"line {line_name(line)} has no body cell")
     if line.a == line.b:
@@ -78,8 +77,7 @@ def post_between(m, dv, line, index):
 
 
 class RuleModel(HalverModel):
-    """The halver board with between lines. A 9x9 board with 3x3 boxes
-    unless told otherwise."""
+    """The halver board with between lines; 9x9 with 3x3 boxes by default."""
 
     def __init__(self, lines, n=9, box=(3, 3)):
         super().__init__(post_between, lines, n, box)

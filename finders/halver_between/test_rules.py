@@ -26,8 +26,7 @@ from halver_rules import HalverModel, parse_cell
 HERE = Path(__file__).resolve().parent
 LINES = rules.load_lines(HERE / "board.json")
 
-# The fixture's lines are the table of Chris's board switch on #39, circles
-# first and last.
+# Chris's board switch on #39.
 assert [rules.line_name(line) for line in LINES] == [
     "r4c3 | r4c4 r5c4 r5c5 r4c5 r4c6 r5c6 r6c6 r6c5 r6c4 | r6c3",
     "r8c3 | r7c3 r6c2 | r6c1",
@@ -40,17 +39,14 @@ assert [rules.line_name(line) for line in LINES] == [
 base = rules.RuleModel(LINES)
 result = uniqueness(base, time_limit=60)
 assert result.status == "not_unique", result.status
-# Both witnesses obey every line, read in plain Python, and they differ.
 for solution in (result.first, result.second):
     assert all(rules.line_holds(solution, line) for line in LINES)
     assert len(solution.halvers) == 9
 assert result.first != result.second
 
-# A check given no time is a timeout, and a timeout is never unique.
 rushed = uniqueness(base, time_limit=1e-6)
 assert rushed.status == "timeout", rushed.status
 
-# A mark check given no time is a timeout too, never "held".
 mark = {"kind": "digit", "cell": "r6c1", "digit": 6}
 assert holds(base, mark, time_limit=10).status == "held"
 rushed_mark = holds(base, mark, time_limit=1e-6)
@@ -75,7 +71,7 @@ assert broken.status == "not_held", broken
 assert broken.counterexample.digits[0][2] == 1, broken
 
 # A sample is a solution, or None when its solve has no time; lines with no
-# solution at all raise rather than read as a timeout. The third line's
+# solution at all raise rather than read as a timeout. The added line's
 # circles are equal in the 4x4 case's one answer, so no solution is left.
 rng = random.Random(39)
 drawn = small.sample(rng, time_limit=10)

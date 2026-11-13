@@ -38,8 +38,8 @@ import test_query_e2e as e2e
 # isort: split
 from query import CELL, MARGIN, MARK_COLOR, MARK_RADIUS
 
-# One mark per kind, with its verdict on board.json as `report.py` gives it
-# (re-derived by the spec #65 review).
+# One mark per kind, with its verdict on board.json as `report.py` gives it,
+# re-derived independently (spec #65 review).
 MORE_MARKS = [
     ({"kind": "digit", "cell": "r1c1", "digit": 1}, "not_held"),
     ({"kind": "halver", "cell": "r5c5"}, "not_held"),
@@ -55,7 +55,6 @@ def run(out, *extra):
 
 
 def mark_reads(mark, solution):
-    """Whether `solution` (a `rules.Solution`) agrees with `mark`."""
 
     def digit(name):
         r, c = rules.parse_cell(name)

@@ -36,7 +36,6 @@ assert violation("r4c3", "r3c4", "r2c5") is None
 assert violation("r8c3", "r8c4", "r9c4") is None
 
 
-# Rejected, one rule each, with the reason naming it.
 def rejects(reason, *names):
     got = violation(*names)
     assert got is not None and reason in got, (names, got)
@@ -45,19 +44,12 @@ def rejects(reason, *names):
 rejects("king step", "r1c4", "r1c6", "r1c7")
 rejects("revisits", "r1c4", "r1c5", "r2c4", "r1c5", "r1c6")
 rejects("no body", "r1c4", "r1c5")
-# A body cell already in L1's body.
 rejects("r4c4 is already on a line", "r3c3", "r4c4", "r3c5")
-# A body cell that is L1's circle.
 rejects("r4c3 is already on a line", "r3c3", "r4c3", "r5c3")
-# A circle on L1's body.
 rejects("circle r4c4", "r4c4", "r3c4", "r2c4")
-# Crossing L2's r7c3 -> r6c2 step diagonally.
 rejects("crosses line r8c3 | r7c3 r6c2 | r6c1", "r6c3", "r7c2", "r8c3")
-# Crossing itself: r1c5 -> r2c6 and r2c5 -> r1c6 are the two diagonals of
-# one 2x2.
 rejects("crosses itself", "r1c5", "r2c6", "r2c5", "r1c6")
 
-# The enumeration, on the board's own two witnesses.
 check = uniqueness(rules.RuleModel(BOARD), time_limit=60)
 assert check.status == "not_unique", check.status
 target, second = check.first, check.second
@@ -75,13 +67,9 @@ def legal_separating(found):
 found = list(candidates.separating_paths(target, second, BOARD, max_cells=5))
 assert found, "no separating line on the board"
 assert all(legal_separating(p) for p in found)
-# One entry per line: a path and its reverse are the same line.
 assert len({frozenset((p, p[::-1])) for p in found}) == len(found)
-# Short first.
 assert [len(p) for p in found] == sorted(len(p) for p in found)
 
-# Up to four cells (so bodies of one and two cells), the pruned walk finds
-# exactly the lines a naive walk over every king path does.
 cells = [(r, c) for r in range(9) for c in range(9)]
 
 

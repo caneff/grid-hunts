@@ -40,7 +40,7 @@ from query import CELL, MARGIN
 from sudoku_kit.link_codec import SHORT_LINK
 
 DROPPABLE = [7, 14, 15]
-STEP = 6  # pixels past a segment's middle
+STEP = 6
 CLEAR = 10  # pixels: twice a line's half width
 
 
@@ -54,7 +54,6 @@ def centre_of(name):
 
 
 def distance(p, a, b):
-    """From point `p` to the segment from `a` to `b`."""
     (px, py), (ax, ay), (bx, by) = p, a, b
     dx, dy = bx - ax, by - ay
     t = max(0, min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)))

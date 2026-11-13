@@ -53,7 +53,6 @@ def run(*args):
 
 
 def broken_by(line):
-    """The grid on a `  broken by: r1 0231 r2 ...` line."""
     return grid_of(line.removeprefix("  broken by: "))
 
 

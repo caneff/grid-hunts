@@ -65,6 +65,8 @@ class HalverQuery:
         return parse_cell(name.removeprefix("h_"))
 
     def draw(self, canvas, solution, marked=()):
+        """Draw the lines (those indexed in `marked` in `DROP_COLOR`), and, given a
+        `solution`, its halver tints and digits, onto `canvas`."""
         cells = [(r, c) for r in range(N) for c in range(N)]
         if solution is not None:
             for cell in cells:
@@ -82,6 +84,8 @@ class HalverQuery:
                 canvas.digit(*cell, solution[cell_name(cell)])
 
     def link(self, solution):
+        """A short link of `doc` with every cell cleared, and `solution`'s digits
+        entered when given."""
         doc = copy.deepcopy(self.doc)
         doc["puzzle"]["cells"] = [
             {"value": solution[cell_name(divmod(i, N))]} if solution else {}

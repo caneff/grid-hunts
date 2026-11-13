@@ -49,8 +49,6 @@ assert record["clues"][:4] == opening["clues"] and record["added"] == 11, record
 
 
 def hunt_dir(out, records):
-    """A hunt directory, as `hunt.py` leaves one, holding `records` as the
-    examples of seeds 72 on, verified by none yet."""
     out.mkdir()
     argv = ["--out", str(out), "--seeds", f"72:{72 + len(records)}"]
     (out / "run.json").write_text(json.dumps({"argv": argv, "config": {}}))
@@ -65,7 +63,6 @@ def hunt_dir(out, records):
 with short_link.fake_mint() as fake, tempfile.TemporaryDirectory() as tmp:
     tmp = Path(tmp)
 
-    # check.py: unique, its one grid the hit's, and Chris's marks hold.
     board = tmp / "board.json"
     board.write_text(json.dumps({**opening, "clues": record["clues"]}))
     done = run_cli(CHECK, board, "--time-limit", 60)
@@ -76,7 +73,6 @@ with short_link.fake_mint() as fake, tempfile.TemporaryDirectory() as tmp:
     verdicts = [line for line in out if line[:4] in ("held", "NOT ", "TIME")]
     assert len(verdicts) == 5 and all(v.startswith("held") for v in verdicts), out
 
-    # verify, summary and links on the hit.
     hits = tmp / "hit"
     hunt_dir(hits, [record])
     assert run_cli(HUNT, "verify", hits).returncode == 0
@@ -97,7 +93,6 @@ with short_link.fake_mint() as fake, tempfile.TemporaryDirectory() as tmp:
         for c, digit in enumerate(row):
             assert cells[r * side + c] == {"value": digit}, (r, c, cells[r * side + c])
 
-    # The hit with its last added clue dropped, and the hit given no time.
     loose = {**record, "clues": record["clues"][:-1], "added": 10}
     refused = tmp / "loose"
     hunt_dir(refused, [loose])
