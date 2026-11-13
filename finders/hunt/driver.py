@@ -1,4 +1,4 @@
-"""The hunt driver: `run(finder, argv)` (#483/#484/#487).
+"""The hunt driver: `run(finder, argv)`.
 
 A thin loop over a finder's `propose`/`verify`/`record`/`key`: it owns the
 output directory, inline verification, dedupe and resume after a kill -- no
@@ -8,9 +8,9 @@ new hunt; an `--out` that already has one resumes it: seeds with a
 log, and a finder's optional `save_state`/`load_state` round-trip through
 state.json. A differing argv versus the recorded run refuses to start; a
 differing git sha only warns. `--no-verify` skips `finder.verify` while
-searching, and `hunt verify DIR` (#489) runs it afterwards over everything
+searching, and `hunt verify DIR` runs it afterwards over everything
 `--no-verify` saved, writing to verified.jsonl a stamp line (the count of
-examples verified, #517) and then one verdict per examples.jsonl line. A
+examples verified) and then one verdict per examples.jsonl line. A
 resume that may change examples.jsonl deletes verified.jsonl. A hunt and
 its resume draw no pictures: `hunt render DIR` does, afterwards, over the
 examples.jsonl a hunt left. It locks DIR, rebuilds each record with the
@@ -22,10 +22,10 @@ the hunt and write the short link of each verified hit; a completed hunt calls
 the finder's `finish(out)`. A finder supplies only `describe_hit`,
 `link_document` and `finish` (protocol.py). `--workers` (default 3,
 set on the finder before the first seed) and the 1-minute load gate
-(refuses above 24 unless `--force-load`) are #488. A
+(refuses above 24 unless `--force-load`) are box knobs. A
 finder's own knobs travel as `finder.config`: run.json records it and a
 resume under a different one refuses; a seed that found nothing may return
-`Empty(reason)`, written as `empty_reason` (#491).
+`Empty(reason)`, written as `empty_reason`.
 
     uv run finders/hunt/toy_finder.py --out DIR --seeds START:END
     uv run finders/hunt/toy_finder.py --out DIR --seeds START:END --no-verify
@@ -34,9 +34,8 @@ resume under a different one refuses; a seed that found nothing may return
 
 Every accepted example carries a driver-owned `__dedupe_key__` field
 alongside whatever `finder.record()` returned, so the dedupe set can be
-rebuilt from examples.jsonl on resume the way the ticket asks -- the
-double-underscore name is meant to never collide with a finder's own
-field. progress.jsonl's per-seed `outcome` (empty/rejected/duplicate/
+rebuilt from examples.jsonl on resume; the double-underscore name avoids
+a finder's own fields. progress.jsonl's per-seed `outcome` (empty/rejected/duplicate/
 example) is what lets summary.json's counts rebuild without trusting a
 summary.json snapshot a kill may have left stale.
 
@@ -71,7 +70,7 @@ OUTPUT_FILES = (
     "run.json",
     "state.json",
     "verified.jsonl",
-    "renders",  # a directory, not a file -- (out / name).exists() covers both
+    "renders",
 )
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -88,12 +87,9 @@ LOAD_LIMIT = 24
 
 
 def _load1():
-    """The 1-minute load average, or `HUNT_FAKE_LOAD1` when set.
-
-    The env var is the injection point for tests (#488): a hunt started
-    through the CLI in a subprocess has no way to hand in a fake load
-    function, so the override travels as an env var instead of a
-    production-visible CLI flag.
+    """The 1-minute load, or `HUNT_FAKE_LOAD1`: an env var because a
+    subprocess-launched hunt cannot take a fake load function, and a test knob
+    stays out of production argv.
     """
     override = os.environ.get("HUNT_FAKE_LOAD1")
     if not override:
@@ -197,24 +193,18 @@ def _git_sha():
 
 def _resume_key(argv):
     """The parts of `argv` that define a hunt's search space and how its
-    results are trustworthy: `--out`, `--seeds`, and `--no-verify` (#527 --
-    a killed `--no-verify` hunt resumed without the flag would verify later
-    seeds inline while earlier seeds kept unverified candidates, and the
-    inverse). Box-safety knobs (`--workers`, `--force-load`) are excluded on
-    purpose -- the box's load or a chosen worker count
-    differing between two invocations of the same hunt is not a differing
-    search, and the load gate's own "use --force-load" advice must not be
-    something the resume check then refuses."""
+    results are trustworthy: `--out`, `--seeds`, and `--no-verify` (resuming
+    across a verify-mode change mixes verified and unverified examples).
+    `--workers` and `--force-load` are excluded so the load gate's own
+    "use --force-load" advice is never refused."""
     args = _parse_args(argv)
     return (args.out, args.seeds, args.no_verify)
 
 
 def _finder_config(finder):
-    """The finder's own knobs (#491) -- `finder.config`, or None -- as JSON
-    reads them back, so a resume compares like with like against run.json.
-    A finder parses its own flags and hands `run` the rest of argv; the
-    config is what makes those flags part of the recorded search, since
-    `_resume_key` only sees the driver's."""
+    """The finder's config as JSON reads it back, so a resume compares like
+    with like against run.json. `_resume_key` only sees the driver's flags;
+    the config records the finder's."""
     return json.loads(json.dumps(getattr(finder, "config", None)))
 
 
@@ -225,35 +215,23 @@ def _refuse(out_arg, why):
 
 class SymmetryMismatch(Exception):
     """A custom symmetry group that passes `validate_group`'s pre-flight but
-    fails inside `canonical_key` on the first verified candidate (#509). A
-    driver-local type, not ValueError, so `run` can single it out without
+    fails inside `canonical_key` on the first verified candidate. A
+    driver-local type, not ValueError, so `run` can catch it without
     swallowing an unrelated finder bug.
     """
 
 
 def _cleanup_partial_output(out):
-    """Remove only the files this run may itself have written -- the
-    OUTPUT_FILES set -- leaving anything else in `out` untouched: the
-    pre-flight this mirrors never touches a pre-existing directory at all, so
-    a blanket `rmtree` here would destroy content this run never created. A
-    file that can't be removed (a symlink, a read-only parent, ...) is reported
-    instead of silently left behind -- swallowing that failure would violate
-    "no partial output files" with no signal it happened.
+    """Remove only OUTPUT_FILES, never other content in `out`. A file that
+    can't be removed is reported, not silently left behind.
 
-    `.lock` is deliberately excluded (#519): `run()`'s `finally` still
-    holds this process's `flock` on it here, and unlinking would let a
-    second process re-`open` the path as a fresh inode and lock that one
-    -- two processes each believing they hold `--out`'s lock. The pre-
-    flight (`other_files` above) ignores a lone `.lock`, so leaving it
-    behind never blocks a later run -- the same state a normal completed
-    hunt already leaves `--out` in.
+    `.lock` is kept: this process still holds its flock, and unlinking lets a
+    second process lock a fresh inode at the same path. The pre-flight in
+    `run` (`other_files`) ignores a lone `.lock`, so it never blocks a later
+    run.
 
-    Since `.lock` always exists here (`hunt_files.acquire_lock` created it before
-    any call to this function), `out` itself is therefore never removed
-    on this path -- only its OUTPUT_FILES contents.
-
-    `renders/` is the one OUTPUT_FILES entry that's a directory, not a file,
-    and a hunt never writes it (`hunt render` does), so it is skipped.
+    `renders/` is a directory a hunt never writes (`hunt render` does), so it
+    is skipped.
     """
     failures = []
     for name in OUTPUT_FILES:
@@ -274,18 +252,12 @@ def _cleanup_partial_output(out):
 
 
 def _to_hashable(value):
-    """Undo JSON's list-ifying of a dedupe key's tuple(s) on the way back
-    in, so a key nested more than one level deep still hashes."""
     if isinstance(value, list):
         return tuple(_to_hashable(v) for v in value)
     return value
 
 
 def _validate_symmetry(finder):
-    """Refuse before any output exists if `finder.symmetry` is a custom
-    group that doesn't form one (#508/#511) -- a resume validates it again
-    since it reruns `canonical_key` on every un-skipped seed the same as a
-    fresh hunt would."""
     symmetry = getattr(finder, "symmetry", D4)
     if symmetry in (D4, IDENTITY):
         return None
@@ -303,10 +275,8 @@ def _truncate_to_valid(path, valid_lines):
 
 
 def _state_seed(finder, out):
-    """The seed number the finder's last saved state reflects, or None if
-    this finder doesn't save state or hasn't saved any yet -- None, since
-    `--seeds` accepts negative integers and no numeric sentinel is safe
-    from colliding with a real one (#516)."""
+    """None when there is no saved state: `--seeds` accepts negatives, so no
+    numeric sentinel is safe."""
     if not _is_stateful(finder):
         return None
     state_path = out / "state.json"
@@ -350,12 +320,8 @@ def _reconcile(
             1 for e in progress_events if e.get("outcome") == "example"
         )
         examples_ok = example_confirmed <= len(examples_records)
-        # A seed_done event always carries "seed" (_process_seed sets it
-        # unconditionally); this default only guards a line corrupted in a
-        # way `hunt_files.read_log` still parses. It must not default to a
-        # numeric sentinel -- that's the exact collision #516 fixed for
-        # state_seed -- so an event missing "seed" reads as "always ahead
-        # of any real state_seed," never confirmed, always rerun.
+        # Missing "seed" reads as ahead of any state so it reruns; a numeric
+        # default could collide with a real negative seed.
         last_seed = progress_events[-1].get("seed", float("inf"))
         state_ok = not tracks_state or (
             state_seed is not None and last_seed <= state_seed
@@ -373,8 +339,6 @@ def _reconcile(
 
 
 def _state_hooks(finder):
-    """`(has_load, has_save)`: which of `load_state`/`save_state` the finder
-    has. The one place that reads them."""
     return (
         getattr(finder, "load_state", None) is not None,
         getattr(finder, "save_state", None) is not None,
@@ -382,17 +346,12 @@ def _state_hooks(finder):
 
 
 def _is_stateful(finder):
-    """A finder with both `load_state` and `save_state` is stateful: its
-    `propose()` can have side effects state.json owns. The one place that
-    says so; `_validate_stateful` refuses a finder with only one of them."""
     return all(_state_hooks(finder))
 
 
 def _validate_stateful(finder):
-    """Refuse before any output exists a finder with only one of
-    `load_state`/`save_state` (#664). Load-only never writes state.json, so
-    every resume would trim each event back to the start and truncate
-    examples.jsonl; save-only writes a state it never reads back."""
+    """Load-only never writes state.json, so every resume trims back to the
+    start; save-only writes a state it never reads."""
     has_load, has_save = _state_hooks(finder)
     if has_load == has_save:
         return None
@@ -439,16 +398,9 @@ def _load_state(finder, out):
 
 
 def _propose_and_key(finder, seed, symmetry, no_verify=False):
-    """The propose -> verify -> key -> canonical_key sequence, shared by
-    `_process_seed` (which writes the outcome) and
-    `_check_symmetry_before_mutation` (which only wants the key) so the two
-    can't drift on what counts as a mismatch. Returns `(candidate, verdict,
-    key)`; `verdict` and `key` are `None` when there's nothing further to
-    compute -- no candidate, or a rejected one. `no_verify` (#489) skips the
-    call to
-    `finder.verify` the same way `_process_seed` always has -- a
-    candidate that would be rejected is treated as accepted, so `hunt
-    verify DIR` can check it later.
+    """Returns (candidate, verdict, key); verdict and key are None when there
+    is no candidate or it was rejected. `no_verify` skips `finder.verify` and
+    treats the candidate as accepted, for `hunt verify DIR` to check later.
     """
     candidate = finder.propose(random.Random(seed))
     if _is_empty(candidate):
@@ -460,11 +412,8 @@ def _propose_and_key(finder, seed, symmetry, no_verify=False):
     try:
         key = canonical_key(cell_values, symmetry)
     except ValueError as e:
-        # Only a custom group's own shape can raise here -- D4's "needs a
-        # square grid" is a separate, out-of-scope bug
-        # and finder.key() itself is called above, outside this try, so a
-        # finder's own ValueError is never relabelled as a symmetry
-        # failure.
+        # finder.key() is outside this try so a finder's own ValueError is
+        # never relabelled a symmetry failure.
         if symmetry in (D4, IDENTITY):
             raise
         raise SymmetryMismatch(str(e)) from e
@@ -472,16 +421,12 @@ def _propose_and_key(finder, seed, symmetry, no_verify=False):
 
 
 def _is_empty(candidate):
-    """A seed that proposed nothing: None, or an `Empty` that may say why."""
     return candidate is None or isinstance(candidate, Empty)
 
 
 def _process_seed(
     finder, seed, seen, symmetry, append_example, append_event, counts, out, no_verify
 ):
-    """Run one seed and append its outcome to examples.jsonl/progress.jsonl,
-    updating `seen` and `counts` in place. Shared by the fresh and resumed
-    loops so the two can't drift apart on what a seed's outcome means."""
     candidate, verdict, key = _propose_and_key(finder, seed, symmetry, no_verify)
     event = {"event": "seed_done", "seed": seed}
     if _is_empty(candidate):
@@ -566,41 +511,16 @@ def _check_symmetry_before_mutation(
     finder, symmetry, seed_start, seed_end, done_seeds, examples_records, no_verify
 ):
     """Refuse a resume whose custom symmetry group no longer fits the
-    finder's key shape, before `_resume` writes anything -- two checks,
-    both run ahead of any write (#525):
+    finder's key shape. Two checks, both before any write:
 
-    1. The group against the key length already durable in
-       examples.jsonl, with no finder call at all -- catches a resume
-       whose entire seed range is already done, where check 2 below never
-       has an un-done seed to probe and so would otherwise never notice a
-       stale recorded shape (PR 530).
-    2. The first not-yet-done seed's *actual* key -- for a finder whose
-       `key()` shape changed since the run being resumed last succeeded,
-       where the group's own length still happens to match the *old*
-       recorded shape and check 1 can't see the drift without a real
-       candidate (a regression test depends on
-       this).
+    1. The group against the key length recorded in examples.jsonl (covers a
+       resume whose whole seed range is already done).
+    2. The first un-done seed's real key (covers a `key()` shape that changed
+       since the last run).
 
-    `symmetry in (D4, IDENTITY)` skips both: D4's own "needs a square
-    grid" ValueError is a separate, out-of-scope bug,
-    never converted to `SymmetryMismatch` either way, so neither check
-    can ever produce a refusal on that path -- running them anyway would
-    only spend an unconditional extra propose/verify per resume for
-    nothing (#529).
-
-    `done_seeds` must be the reconciled set `_hunt_loop` will actually
-    skip, not a raw read of progress.jsonl. Calling
-    `finder.propose`/`verify` again for check 2 is only safe for a
-    stateless finder; a stateful one's `save_state`/`load_state`
-    round-trips the in-memory state around the probe so it can't
-    double-count whatever the probed seed did --
-    `_resume` must call `_load_state` before this runs, so the snapshot
-    taken here is the resumed state, not the finder's fresh default. That
-    snapshot is a deep copy (`json.loads(json.dumps(...))`), not the live
-    object `save_state()` returned -- a finder that mutates its own saved
-    state in place (rather than returning a fresh one each call) would
-    otherwise see the probe's mutation bleed into the "restored" state
-    too, since restoring a reference restores nothing.
+    D4 and IDENTITY skip both. `done_seeds` must be the reconciled set.
+    `_load_state` must run first so the probe snapshots resumed state, not
+    the finder's fresh default.
     """
     if symmetry in (D4, IDENTITY):
         return
@@ -641,10 +561,8 @@ def _resume(finder, argv, args, out, prior):
 
     raw_examples_count = len(examples_lines)
 
-    # Reconciliation itself only edits these in-memory lists -- every write
-    # (`_truncate_to_valid`, summary.json) is held off
-    # until the symmetry check below has passed, so nothing is on disk yet
-    # for it to protect (#525).
+    # Reconciliation only edits these lists; every write waits until the
+    # symmetry check below passes.
     progress_lines, progress_events, examples_lines, examples_records = _reconcile(
         finder, out, progress_lines, progress_events, examples_lines, examples_records
     )
@@ -667,10 +585,8 @@ def _resume(finder, argv, args, out, prior):
         args.no_verify,
     )
 
-    # verified.jsonl describes the examples.jsonl `hunt verify` read (#517).
-    # This resume reconciled it, or has a seed left that may append to it
-    # (whether one does is only known once it runs). Deleted before either
-    # write, so a kill in between can't leave a stale file.
+    # verified.jsonl describes the examples.jsonl it read; delete it before
+    # reconciling or appending so a kill cannot leave it stale.
     if len(examples_lines) != raw_examples_count or any(
         seed not in done_seeds for seed in range(seed_start, seed_end)
     ):
@@ -707,30 +623,16 @@ def _resume(finder, argv, args, out, prior):
 
 
 def _run_verify(finder, argv):
-    """`hunt verify DIR` (#489): run `finder.verify` over every line in
+    """`hunt verify DIR`: run `finder.verify` over every line in
     DIR/examples.jsonl and write a stamp line, then one verdict per line, to
-    DIR/verified.jsonl
-    -- the deferred half of a `--no-verify` hunt. Returns the process exit
-    code: 0 on success, 2 when DIR has no examples.jsonl to verify.
+    DIR/verified.jsonl -- the deferred half of a `--no-verify` hunt.
+    Returns 0, or 2 when DIR has no examples.jsonl or a record fails to
+    verify. Each verdict line carries its own record, so it joins back to
+    examples.jsonl by content. verified.jsonl is published only on a
+    complete run; a failure leaves any existing file untouched.
 
-    Reads the logs through `hunt_files.read_logs` -- the same kill
-    tolerance `run`'s own resume gives them. Each
-    verdict line carries its own record, not just position, so it joins back
-    to examples.jsonl by content.
-    A record that fails to turn into a candidate and verify (most likely a
-    finder with no `candidate_from_record` whose record() isn't itself
-    verify-able, but possibly a genuine bug in `verify` itself -- the
-    driver can't tell which) refuses with both named as possible causes,
-    rather than propagating a raw traceback. verified.jsonl is published
-    only on a complete, successful run: a failure partway discards the
-    scratch verdicts and the .tmp file, leaving whatever verified.jsonl
-    already existed (absent, or a previously complete file) untouched (#527).
-
-    Takes the same out/.lock a hunt takes (`hunt_files.acquire_lock`), before
-    examples.jsonl is even opened -- so this can't read a hunt's
-    still-being-written examples.jsonl and publish a verified.jsonl that
-    silently omits the tail, and two `hunt verify` runs can't race on the
-    same verified.jsonl.tmp (#489)."""
+    Takes the hunt's out/.lock before opening examples.jsonl, so it never
+    reads a running hunt's half-written log."""
     args = _parse_verify_args(argv)
     out = Path(args.dir)
 
@@ -749,8 +651,6 @@ def _run_verify(finder, argv):
         except hunt_files.HuntFileError as error:
             print(f"hunt verify: refusing -- {error}", file=sys.stderr)
             return 2
-        # The stamp (#517): how many examples this pass verified, so a
-        # reader can compare it to the count of examples.jsonl.
         lines = [json.dumps({"verified_examples": len(records)}) + "\n"]
         for record in records:
             try:
@@ -922,25 +822,9 @@ def _finish(finder, out, code):
 
 def run(finder, argv):
     """Run or resume a hunt for `finder` over the seed range in `argv`, or
-    (`argv[0] == "verify"`) run deferred verification -- see
-    `_run_verify` -- or (`argv[0] == "render"`) draw the pictures -- see
-    `_run_render` -- or (`"summary"`, `"links"`) report on a hunt or write its
-    short links -- see `_run_summary`, `_run_links`. A completed hunt calls the
-    finder's optional `finish(out)`.
-
-    A fresh `--out` (no run.json) starts a new hunt, refusing when it
-    already holds any other output file with no run.json to explain it. An
-    `--out` with a run.json resumes: already-done seeds are skipped, the
-    dedupe set is rebuilt from examples.jsonl, summary.json's counts from
-    progress.jsonl, and a finder's optional state round-trips through
-    state.json. Every one of those checks and decisions is made only after
-    this process holds --out's lock (see below), and re-reads --out fresh
-    at that point rather than trusting anything observed before acquiring
-    it -- a decision made from a pre-lock read can be stale by the time the
-    lock is granted. Returns the process exit code: 0 on a completed hunt,
-    2 on a refusal (an occupied fresh --out, a resume whose argv doesn't
-    match the recorded run, or a second process already holding this
-    --out's lock).
+    dispatch `argv[0]` of `verify`, `render`, `summary` or `links` to its
+    subcommand. A completed hunt calls the finder's optional `finish(out)`.
+    Returns 0 on a completed hunt, 2 on a refusal.
     """
     if argv and argv[0] == "verify":
         return _run_verify(finder, argv[1:])
@@ -967,16 +851,9 @@ def run(finder, argv):
         return refusal
     out = Path(args.out)
 
-    # Taken before anything about --out's state is inspected, not just
-    # before anything is written: classifying --out as fresh or resumed by
-    # reading run.json *before* acquiring this lock is itself a race
-    # -- a second process can see no
-    # run.json, then, delayed by ordinary scheduling rather than by
-    # blocking on this non-blocking lock, acquire it only after a first
-    # process's complete fresh hunt has already finished and released it.
-    # Acting on that stale "no run.json" belief overwrites the finished
-    # hunt and replays every seed. Locking first makes every read below an
-    # authoritative one.
+    # Lock before reading run.json: classifying --out as fresh or resumed
+    # from a pre-lock read can be stale once the lock is granted (a finished
+    # hunt would be overwritten and replayed).
     lock_fd = hunt_files.acquire_lock(out)
     if lock_fd is None:
         return _refuse(args.out, "an active hunt (locked)")
@@ -1016,16 +893,8 @@ def run(finder, argv):
         print(f"hunt: refusing to resume -- {e}", file=sys.stderr)
         return 2
     except SymmetryMismatch as e:
-        # Same clean refusal `_validate_symmetry`'s pre-flight gives a
-        # structurally-broken group -- this one only surfaces once a real
-        # candidate exists. On a fresh hunt that output is only this
-        # attempt's own, so it's torn down. On a resume, `_resume` checks
-        # the symmetry group against the first un-done seed's key before
-        # writing anything (#525), so the case this exists to guard --
-        # the mismatch a resumed hunt would have hit on its very next seed
-        # -- refuses with every hunt file untouched, no restore needed. A
-        # mismatch a later seed raises once `_hunt_loop` is already
-        # running is unguarded the same way any other mid-loop failure is.
+        # A fresh hunt's output is only this attempt's, so tear it down; a
+        # resume refuses before writing, so there is nothing to restore.
         print(f"hunt: refusing to run -- invalid symmetry group: {e}", file=sys.stderr)
         if not is_resume:
             _cleanup_partial_output(out)

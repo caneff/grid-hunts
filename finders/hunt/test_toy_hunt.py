@@ -64,9 +64,7 @@ with tempfile.TemporaryDirectory() as tmp:
         sum(1 for e in progress if e.get("event") == "seed_done") == 200,
     )
 
-    # Toy finder's own trivial verifier rejects an odd shading count -- see
-    # toy_finder.py. A candidate it rejects must be absent from
-    # examples.jsonl: recheck the rule ourselves against every line written.
+    # Recheck toy_finder.py's even-count rule against every line written.
     all_even = all(sum(ex["grid"]) % 2 == 0 for ex in examples)
     check("no rejected (odd-count) candidate reached examples.jsonl", all_even)
 
@@ -105,9 +103,9 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # A second hunt started on an --out whose first hunt is still running
-    # must refuse and leave the first one's output alone. The first hunt is
-    # slow and the second starts only once the first's lock exists, so the
+    # A second hunt on an --out whose first hunt is still running must
+    # refuse and leave the first one's output alone. The first is slow and
+    # the second starts only once the first's progress.jsonl exists, so the
     # overlap is certain.
     out = Path(tmp) / "hunt-out"
     argv = [sys.executable, str(SLOW_FINDER), "--out", str(out), "--seeds", "0:400"]
@@ -143,7 +141,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
 with tempfile.TemporaryDirectory() as tmp:
     # An empty seed range is a completed hunt that found nothing, not an
-    # error: all four files must still exist, summary.json's counts zero.
+    # error: all four files exist, summary.json's counts zero.
     out = Path(tmp) / "hunt-out"
     result = subprocess.run(
         [sys.executable, str(TOY_FINDER), "--out", str(out), "--seeds", "5:5"],
@@ -198,10 +196,7 @@ sys.exit(run(PartialGroupFinder(), sys.argv[1:]))
         text=True,
         env=success_env(),
     )
-    # Exact code 2 and the refusal message, not just "nonzero" -- an
-    # unrelated crash (an uncaught exception exits 1 with a traceback) would
-    # also satisfy a bare nonzero check without proving the pre-flight gate
-    # ran at all (#508 review).
+    # Exact code 2 and the message: an unrelated crash also exits nonzero.
     check_refusal(
         "a finder with a partial symmetry group refuses",
         result,
@@ -214,10 +209,8 @@ sys.exit(run(PartialGroupFinder(), sys.argv[1:]))
 
 with tempfile.TemporaryDirectory() as tmp:
     # A typo'd string symmetry (e.g. "d4" instead of dedupe.D4) must not
-    # slip past the pre-flight gate: the old `isinstance(symmetry, str)`
-    # dispatch treated every string as a built-in group and let it reach
-    # `canonical_key` uncaught mid-loop, after output already existed
-    # (#508 review).
+    # slip past the pre-flight gate and reach `canonical_key` uncaught
+    # mid-loop, after output already exists.
     out = Path(tmp) / "hunt-out"
     typo_finder_script = f"""
 import sys
@@ -258,10 +251,9 @@ with tempfile.TemporaryDirectory() as tmp:
     # A structurally valid, closed custom group (#511's own checks all pass)
     # whose maps are simply the wrong length for the finder's real key()
     # must not reach canonical_key uncaught mid-loop, after run.json and
-    # summary.json already exist (#509). `validate_group`'s pre-flight
-    # derives n from the group's own maps (4 here) and never sees the
-    # finder's actual 9-cell key, so it passes cleanly -- the mismatch only
-    # surfaces inside canonical_key on the first verified candidate.
+    # summary.json already exist (#509). validate_group derives n from the
+    # maps (4) and never sees the 9-cell key, so only canonical_key catches
+    # it.
     out = Path(tmp) / "hunt-out"
     mismatched_length_script = f"""
 import sys
@@ -318,11 +310,8 @@ sys.exit(run(MismatchedLengthFinder(), sys.argv[1:]))
 
 with tempfile.TemporaryDirectory() as tmp:
     # A generator-typed `symmetry` is a second shape of the same bug: the
-    # pre-flight's `list(maps)` drains it during validation, so the *same*
-    # exhausted generator object reaches canonical_key's custom-group path
-    # on the first verified candidate and fails "must not be empty" --
-    # with output already on disk, same as the length mismatch above (noted
-    # on #509: "the fix this ticket lands should cover both").
+    # pre-flight's list() drains it, so canonical_key later sees it empty
+    # and fails "must not be empty" with output already on disk.
     out = Path(tmp) / "hunt-out"
     generator_symmetry_script = f"""
 import sys
@@ -378,8 +367,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # A ValueError raised by the finder's own key() -- nothing to do with
     # the symmetry group -- must not be relabelled a symmetry failure and
     # must not have its output silently removed: finder.key() is called
-    # outside the try that catches canonical_key's ValueError (#509 review,
-    # finding P1).
+    # outside the try that catches canonical_key's ValueError.
     out = Path(tmp) / "hunt-out"
     finder_bug_script = f"""
 import sys
@@ -425,7 +413,7 @@ sys.exit(run(FinderOwnBugFinder(), sys.argv[1:]))
 with tempfile.TemporaryDirectory() as tmp:
     # The built-in D4 group raising on a non-square grid is a separate,
     # out-of-scope bug (#509 is about custom groups only) -- it must not be
-    # caught and relabelled "invalid symmetry group" (#509 review, C3).
+    # caught and relabelled "invalid symmetry group".
     out = Path(tmp) / "hunt-out"
     d4_mismatch_script = f"""
 import sys
@@ -468,7 +456,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # A --out that already holds content this run didn't write (and that
     # isn't one of the four hunt output files) must survive a symmetry
     # refusal: cleanup removes only what this run itself may have created,
-    # never a blanket rmtree of the whole directory (#509 review, C1).
+    # never a blanket rmtree of the whole directory.
     out = Path(tmp) / "hunt-out"
     out.mkdir()
     sentinel = out / "notes.txt"
@@ -512,7 +500,7 @@ with tempfile.TemporaryDirectory() as tmp:
 with tempfile.TemporaryDirectory() as tmp:
     # A symmetry mismatch that surfaces on a *resume*, not a fresh hunt,
     # must not delete a prior attempt's genuine completed results -- only
-    # this attempt's own output, if any (#509 review, finding V1). Hand-
+    # this attempt's own output, if any. Hand-
     # built the same way test_hunt_resume.py hand-corrupts its resume
     # fixtures: a completed, confirmed seed 0 (matching progress.jsonl and
     # examples.jsonl, the way an uninterrupted prior run would leave them)
@@ -565,20 +553,12 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # Skipping cleanup on resume isn't enough on its own: `_resume` would
-    # otherwise reconcile (trimming an orphaned example) and rewrite
-    # summary.json *before* the loop ever reaches a seed's key, mutating
-    # those files ahead of a SymmetryMismatch raised deep inside the loop
-    # (#509 Codex pass 1, finding 1). #525 moves the symmetry check ahead
-    # of reconciliation and any write instead, so nothing needs restoring
-    # -- this test proves that by orphaning an example and checking every
-    # hunt file is still exactly what the base hunt produced. Built via a
-    # genuine base hunt (not hand-crafted files) so run.json/summary.json/
-    # progress.jsonl/examples.jsonl are exactly what the driver itself
-    # would produce, then progress.jsonl is truncated to orphan the one
-    # example -- forcing reconciliation to actually want to trim
-    # examples.jsonl and rewrite summary.json on the next invocation, if
-    # the symmetry check didn't refuse first.
+    # The symmetry check runs ahead of reconciliation and any write (#525),
+    # so a refused resume leaves every hunt file exactly as the base hunt
+    # produced it. A genuine base hunt supplies the files; progress.jsonl is
+    # then truncated to orphan the one example, so reconciliation would
+    # trim examples.jsonl and rewrite summary.json if the symmetry check did
+    # not refuse first.
     out = Path(tmp) / "hunt-out"
     valid_script = f"""
 import sys
@@ -652,18 +632,11 @@ sys.exit(run(ValidGroupFinder(), sys.argv[1:]))
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # #525 review, C2/P1: the symmetry probe must check the seeds
-    # reconciliation will *actually* leave un-done, not a raw read of
-    # progress.jsonl -- reconciliation can un-done a seed progress.jsonl
-    # claims is finished (its example never made it to examples.jsonl), and
-    # a probe using the raw set skips exactly that seed, checks a
-    # well-formed later one instead, and passes -- clearing the way for
-    # reconciliation's truncate/rewrite to run before the loop reprocesses
-    # the un-done seed for real and raises, now with no restore path.
-    # Seed 0 here is hand-marked done-with-an-example but examples.jsonl
-    # has no such example, forcing reconciliation to un-done it; its
-    # candidate is the one that doesn't fit the group, while seed 1 (what a
-    # raw-done-set probe would check instead) fits fine. The two
+    # The symmetry probe must check the seeds reconciliation will actually
+    # leave un-done (#525), not a raw read of progress.jsonl. Seed 0 is
+    # marked done with an example that examples.jsonl lacks, so
+    # reconciliation un-dones it; only its candidate misfits the group. A
+    # probe using the raw done set checks seed 1 and passes. The two
     # `randint` draws below are `random.Random(0)`/`random.Random(1)`'s
     # own first draw -- the only way `propose` can tell seeds apart, since
     # it only ever sees an already-seeded `rng`, never the seed itself.
@@ -734,16 +707,10 @@ sys.exit(run(ReconciledFirstSeedFinder(), sys.argv[1:]))
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # Codex pass 1 on PR 530, finding 1: a resume whose entire seed range
-    # is already done never gives the live probe an un-done seed to check
-    # -- so a group that no longer fits the shape already durable in
-    # examples.jsonl (here: the group was a length-9 identity while the
-    # recorded key is length 4, as if the declared symmetry changed after
-    # a run that used a different one completed) must be caught by
-    # comparing the group against the recorded key length directly, with
-    # no finder call at all. `propose` raises if called, so a probe that
-    # still tried to call it (instead of catching this from the recorded
-    # length alone) would fail loudly rather than silently passing.
+    # A resume whose whole seed range is done gives the live probe no
+    # un-done seed to check, so a group that no longer fits the recorded
+    # key (a length-9 identity against length-4 keys) must be caught by the
+    # recorded key length alone. `propose` raises if called.
     out = Path(tmp) / "hunt-out"
     out.mkdir()
     argv = ["--out", str(out), "--seeds", "0:1"]
@@ -809,23 +776,14 @@ sys.exit(run(AllDoneStaleShapeFinder(), sys.argv[1:]))
     check("no summary.json was written", not (out / "summary.json").exists())
 
 with tempfile.TemporaryDirectory() as tmp:
-    # Codex pass 1 on PR 530, finding 2: the probe's save_state()/
-    # load_state() round-trip must snapshot a deep copy, not the live
-    # object save_state() returns -- a finder whose save_state() hands
-    # back the same mutable object it keeps mutating (here, a list
-    # `propose` appends to in place, rather than returning a fresh copy
-    # each time) would otherwise see the probe's own extra propose() call
-    # bleed into the "restored" state, since restoring a reference to an
-    # already-mutated object restores nothing.
+    # The probe's save_state()/load_state() round-trip must deep-copy: here
+    # save_state returns a live list that propose appends to, so a shallow
+    # snapshot would see the probe's own extra propose() bleed in.
     #
-    # A genuine base hunt (one seed) completes normally, then state.json
-    # is deleted to simulate a kill before its save landed -- the same
-    # technique test_hunt_resume.py's negative-seed-no-state case uses.
-    # Reconciliation then un-dones that one seed (a stateful finder with
-    # no state.json can never prove it "caught up"), so on resume the
-    # probe's first (and only) candidate is that same seed's, starting
-    # from the finder's fresh (empty) log -- a live-reference bug is not
-    # masked by anything already in it.
+    # A base hunt of one seed completes, then state.json is deleted. A
+    # stateful finder with no state.json cannot prove it caught up, so
+    # reconciliation un-dones the seed and the probe's one candidate starts
+    # from an empty log, where a live-reference bug is not masked.
     out = Path(tmp) / "hunt-out"
     live_reference_script = f"""
 import sys

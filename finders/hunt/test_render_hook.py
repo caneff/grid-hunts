@@ -1,13 +1,3 @@
-"""`hunt render DIR`, the post-pass that draws a hunt's pictures (#119).
-
-A hunt and its resume draw nothing; `render DIR` locks the directory, rebuilds
-each recorded example and swaps renders/ as one set. Black-box: only what a
-caller of the CLI can see -- files on disk and exit code, never a driver.py
-internal.
-
-    uv run finders/hunt/test_render_hook.py
-"""
-
 import fcntl
 import os
 import signal

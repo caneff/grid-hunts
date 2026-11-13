@@ -50,10 +50,8 @@ with tempfile.TemporaryDirectory() as tmp:
         if line
     ]
 
-    # Toy finder's own trivial verifier rejects an odd shading count -- see
-    # toy_finder.py. With --no-verify, that check never ran, so over 200
-    # seeds at least one odd-count candidate should have reached
-    # examples.jsonl -- the thing inline verification exists to prevent.
+    # toy_finder.py's verifier rejects an odd shading count; --no-verify
+    # skipped it, so over 200 seeds an odd-count candidate should be in.
     any_odd = any(sum(ex["grid"]) % 2 != 0 for ex in examples)
     check(
         "with --no-verify, a candidate the verifier would reject reached "
@@ -97,10 +95,9 @@ with tempfile.TemporaryDirectory() as tmp:
         all(v.get("record") == ex for v, ex in zip(verified, examples, strict=True)),
     )
 
-    # A dir already holding verified.jsonl must refuse a fresh --out the same
-    # way it refuses one already holding examples.jsonl -- otherwise a second
-    # hunt into the same --out silently leaves this run's verdicts beside a
-    # different search's examples.jsonl (#489 review, correctness C2).
+    # A dir already holding verified.jsonl refuses a fresh --out, as one
+    # holding examples.jsonl does; else a second hunt would leave these
+    # verdicts beside a different search's examples.jsonl.
     (out / "does-not-exist").mkdir()
     (out / "does-not-exist" / "verified.jsonl").write_text('{"ok": true}\n')
     refused = subprocess.run(
@@ -122,10 +119,9 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
     # A trailing half-written line in examples.jsonl (a kill mid-write) must
-    # not crash `hunt verify` and lose every verdict already computed for the
-    # good lines before it (#489 review, correctness C1).
+    # not crash `hunt verify` or lose the verdicts for the good lines.
     with (out / "examples.jsonl").open("a") as f:
-        f.write('{"grid": [0, 0')  # deliberately unterminated
+        f.write('{"grid": [0, 0')
     corrupted_verify = subprocess.run(
         [sys.executable, str(TOY_FINDER), "verify", str(out)],
         capture_output=True,
@@ -147,10 +143,8 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # A finder whose record() differs from its candidate (SlowToyFinder's
-    # {"grid": [...]} wrapper) must still verify through inheritance, not
-    # just on the one finder that happens to define candidate_from_record
-    # directly.
+    # A finder whose record() differs from its candidate (a {"grid": [...]}
+    # wrapper) must still verify through an inherited candidate_from_record.
     out = Path(tmp) / "hunt-out"
     result = subprocess.run(
         [
@@ -197,7 +191,7 @@ with tempfile.TemporaryDirectory() as tmp:
 with tempfile.TemporaryDirectory() as tmp:
     # A finder with no candidate_from_record whose record() isn't itself
     # verify-able must fail loud with a named cause, not a raw traceback
-    # into finder.verify's own internals (#489 review, correctness C3).
+    # into finder.verify's internals.
     out = Path(tmp) / "hunt-out"
     wrapped_finder_script = f"""
 import sys
@@ -256,8 +250,7 @@ sys.exit(run(WrappedRecordFinder(), sys.argv[1:]))
 
 with tempfile.TemporaryDirectory() as tmp:
     # A record partway through examples.jsonl that fails to verify must not
-    # publish a partial verified.jsonl -- a failure publishes only on
-    # complete success (#527).
+    # publish a partial verified.jsonl (#527).
     out = Path(tmp) / "hunt-out"
     out.mkdir()
     (out / "examples.jsonl").write_text(
@@ -297,7 +290,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
 with tempfile.TemporaryDirectory() as tmp:
     # #527: a failed re-verify must not destroy a previously complete,
-    # correct verified.jsonl -- only publish on a fully successful run.
+    # correct verified.jsonl.
     out = Path(tmp) / "hunt-out"
     result = subprocess.run(
         [
@@ -359,10 +352,9 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # hunt verify must not read examples.jsonl while a hunt still holds
-    # out/.lock -- otherwise it can publish a verified.jsonl that silently
-    # omits whatever the hunt appends after the read (#489/#523 Codex pass
-    # 1). Simulate a running hunt by holding the same lock file ourselves.
+    # hunt verify must not read examples.jsonl while a hunt holds out/.lock,
+    # or it can publish a verified.jsonl that omits what the hunt appends
+    # after the read. Holding the same lock file ourselves simulates a hunt.
     out = Path(tmp) / "hunt-out"
     result = subprocess.run(
         [sys.executable, str(TOY_FINDER), "--out", str(out), "--seeds", "0:5"],
@@ -393,7 +385,6 @@ with tempfile.TemporaryDirectory() as tmp:
         fcntl.flock(lock_fd, fcntl.LOCK_UN)
         os.close(lock_fd)
 
-    # Released, verify now succeeds.
     unblocked = subprocess.run(
         [sys.executable, str(TOY_FINDER), "verify", str(out)],
         capture_output=True,

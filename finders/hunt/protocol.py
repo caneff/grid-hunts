@@ -1,9 +1,5 @@
-"""The finder contract every hunt drives (#483/#484).
-
-A finder states only its rule and its search; `driver.run` supplies the
-output directory, dedupe and the CLI. See `finders/AGENTS.md` for the
-pointer from a new finder to this package.
-"""
+"""The finder contract every hunt drives (#483/#484): a finder states its rule
+and its search; `driver.run` supplies the rest. See `finders/AGENTS.md`."""
 
 import sys
 from pathlib import Path
@@ -23,11 +19,10 @@ class Verdict(NamedTuple):
 
 
 class Empty(NamedTuple):
-    """What `Finder.propose` may return in place of None when a seed found
-    nothing and can say why (#491) -- a solver's timeout and its proof of
-    infeasibility mean opposite things. The driver writes the reason to
-    that seed's progress event as `empty_reason`. The reason is required:
-    a seed with nothing to say returns None."""
+    """What `Finder.propose` returns instead of None when a seed found nothing
+    and can say why (#491): a timeout and a proof of infeasibility mean
+    opposite things. The reason is written as `empty_reason`. A seed with
+    nothing to say returns None."""
 
     reason: str
 
@@ -36,19 +31,15 @@ class Finder(Protocol):
     """A finder rule: propose a candidate, verify it, say how to record it.
 
     `symmetry` is the group `key()`'s grid dedupes under: `dedupe.D4`,
-    `dedupe.IDENTITY`, or a custom list of cell maps (see dedupe.py). A
-    finder that leaves `symmetry` unset gets `dedupe.D4` from the driver --
-    the common, square-board case needs no code.
+    `dedupe.IDENTITY`, or a custom list of cell maps (see dedupe.py); unset
+    means `dedupe.D4`.
 
-    `workers` is set by the driver from `--workers` (default `DEFAULT_WORKERS`)
-    before the first seed runs (#488) -- a finder that solves with CP-SAT
-    reads `self.workers` for its own solver's worker count, so a hunt
-    started without `--workers` still leaves cores for the rest of the box.
+    `workers` is set from `--workers` (default `DEFAULT_WORKERS`) before the
+    first seed (#488); a CP-SAT finder reads `self.workers`.
 
-    `config` is the finder's own knobs, JSON-serialisable (#491), the flags it
-    parses itself and the driver's argv does not name. Optional: the driver
-    reads it with `getattr(finder, "config", None)`, run.json records it, and a
-    resume under a different config refuses.
+    `config` is the finder's own JSON-serialisable knobs (#491), the flags the
+    driver's argv does not name. Optional; run.json records it and a resume
+    under a different config refuses.
     """
 
     symmetry: Any = D4
@@ -74,12 +65,9 @@ class Finder(Protocol):
         `symmetry`."""
         ...
 
-    # Optional -- a finder with no expensive cuts to remember skips both. A
-    # finder with only one of the two is refused at launch (#664): a
-    # load-only finder would never have a state.json to load.
-    # The driver calls `save_state` after every seed and `load_state` once,
-    # before a resumed hunt's first seed, round-tripping through state.json
-    # (#487) so a resumed hunt doesn't relearn what it already knew.
+    # Optional pair (#487); a finder with only one is refused at launch (#664).
+    # The driver saves to state.json after every seed and loads once before a
+    # resumed hunt's first seed.
 
     def save_state(self) -> Any:
         """JSON-serialisable state to persist to state.json."""
@@ -89,10 +77,8 @@ class Finder(Protocol):
         """Restore state a prior run's `save_state` wrote."""
         ...
 
-    # Optional -- `hunt verify DIR` (#489) needs a candidate to hand
-    # `verify`, not the JSON `record()` wrote. A finder whose record() *is*
-    # already verify-able skips this; `hunt verify` then hands `verify` the
-    # parsed record line unchanged.
+    # Optional: `hunt verify DIR` (#489) needs a candidate, not the record.
+    # Without it `verify` gets the parsed record line unchanged.
 
     def candidate_from_record(self, record: dict) -> Any:
         """Rebuild the candidate, as `propose` produced it, from a line
@@ -101,11 +87,9 @@ class Finder(Protocol):
         check that. `hunt render DIR` rebuilds each example with it."""
         ...
 
-    # Optional -- a finder with no picture to draw skips this. `hunt render
-    # DIR` (#119) calls `render` on each example of a finished hunt, rebuilt
-    # with `candidate_from_record` (or the record itself without that hook),
-    # and swaps renders/<seed>.png in as one set. A hunt and its resume never
-    # call it. Build the image with `render.GridCanvas`.
+    # Optional. `hunt render DIR` (#119) calls `render` on each example of a
+    # finished hunt and swaps renders/<seed>.png in as one set; a hunt and its
+    # resume never call it. Build the image with `render.GridCanvas`.
 
     def render(self, candidate: Any):
         """A picture of one recorded example (a `PIL.Image.Image`), or omit

@@ -13,12 +13,11 @@ exercised:
   that a timing race can't reliably reproduce: a write caught mid-syscall.
 - A hand-truncated last progress.jsonl line, simulating a kill between an
   example's append to examples.jsonl and that seed's own progress event --
-  the orphan-example case (#487, added scope from the Codex pass on #507).
+  the orphan-example case.
 - A hand-rolled-back state.json, simulating a kill between a seed's
-  progress.jsonl event and its state.json save (#812 Codex pass 1).
+  progress.jsonl event and its state.json save.
 - A precisely-timed thread barrier reproducing the fresh-vs-resume
-  classify-before-lock race a real kill/schedule-delay combination can
-  trigger but can't reliably reproduce on demand (#812 Codex pass 1).
+  classify-before-lock race, which a live kill can't reliably hit.
 - A hand-truncated progress.jsonl paired with a `_hunt_loop` monkeypatch
   that stops a resume right after reconciliation's own writes, pinning the
   state a *second* kill mid-rerun would leave behind.
@@ -53,11 +52,8 @@ TOY_FINDER = HERE / "toy_finder.py"
 
 
 def seeded_hunt(finder, out, seeds):
-    # `--seeds`, `seeds` as two argv items reads a negative seeds range
-    # (e.g. "-3:-2") as an unrecognized option on argparse versions that
-    # don't special-case a leading "-" followed by a digit (Python <3.14
-    # here) -- the single `--seeds=<value>` token sidesteps that ambiguity
-    # on every version (#516).
+    # One `--seeds=<value>` token, so a negative range like "-3:-2" cannot
+    # read as an option (#516). The two-token form has its own test below.
     return run_cli(finder, "--out", out, f"--seeds={seeds}")
 
 
@@ -100,8 +96,6 @@ def kill_partway(finder, out, seeds, min_seed_done_events=3, extra_args=()):
 
 
 with tempfile.TemporaryDirectory() as tmp:
-    # Reference: an uninterrupted hunt over the same seed range, to compare
-    # the resumed hunt's final output against.
     ref = Path(tmp) / "ref"
     ref_result = seeded_hunt(TOY_FINDER, ref, "0:60")
     check(
@@ -151,7 +145,6 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # A toy finder that saves state (#487 AC: "gets it back on resume").
     # seeds_seen is a counter this finder can only get right by continuing
     # from a saved value, not by restarting at zero.
     out = Path(tmp) / "stateful"
@@ -193,12 +186,10 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # #812 Codex pass 1, finding 2: a kill between a seed's progress.jsonl
-    # event and its state.json save leaves that seed marked done with its
-    # contribution to state never captured -- and since a done seed never
-    # reruns, that contribution would be lost forever with nothing else
-    # looking wrong. Simulated by hand: progress.jsonl confirms one more
-    # seed than state.json reflects.
+    # A kill between a seed's progress.jsonl event and its state.json save
+    # leaves that seed marked done with its contribution to state never
+    # captured, and a done seed never reruns. Simulated by hand:
+    # progress.jsonl confirms one more seed than state.json reflects.
     out = Path(tmp) / "state-behind"
     result = seeded_hunt(STATEFUL_FINDER, out, "0:10")
     check(
@@ -210,7 +201,6 @@ with tempfile.TemporaryDirectory() as tmp:
     check(
         "the base hunt's state.json reflects the last seed", real_state.get("seed") == 9
     )
-    # Roll state.json back one seed, as if seed 9's save never landed.
     state_path.write_text(json.dumps({"seed": 8, "state": {"seeds_seen": 9}}))
 
     # Mark seed 9's progress event so a rerun is visible: a rerun writes a
@@ -241,11 +231,10 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # #516: simulates a kill between negative seed -3's progress.jsonl
-    # event and its state.json save by removing state.json after a
-    # completed run, as if that one save never landed. progress.jsonl's
-    # seed_done event for -3 survives either way, so the witness is
-    # whether state.json comes back at all, not whether -3 reappears there.
+    # Removing state.json after a completed run simulates a kill between
+    # negative seed -3's progress event and its state save. progress's
+    # event for -3 survives either way, so the witness is whether
+    # state.json comes back.
     out = Path(tmp) / "negative-seed-no-state"
     result = seeded_hunt(STATEFUL_FINDER, out, "-3:-2")
     check(
@@ -258,7 +247,6 @@ with tempfile.TemporaryDirectory() as tmp:
         "the base hunt's state.json reflects the negative seed",
         real_state.get("seed") == -3,
     )
-    # Remove state.json entirely, as if seed -3's save never landed.
     state_path.unlink()
 
     rerun = seeded_hunt(STATEFUL_FINDER, out, "-3:-2")
@@ -288,13 +276,9 @@ with tempfile.TemporaryDirectory() as tmp:
         )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # #516 Codex pass 2: the CLI itself must accept a negative --seeds
-    # range as two separate argv tokens ("--seeds", "-3:-2"), not only the
-    # "--seeds=-3:-2" single-token form the rest of this file uses -- a
-    # real user invoking the CLI by hand types the two-token form, and
-    # argparse's own heuristic for telling a negative-looking value apart
-    # from an unrecognized option only accepts it on Python 3.14+ without
-    # `_merge_seeds_token`'s help.
+    # The CLI accepts a negative --seeds range as two argv tokens, the form
+    # a user types by hand; argparse alone takes it only on Python 3.14+,
+    # so this needs `_merge_seeds_token`.
     out = Path(tmp) / "two-token-negative-seeds"
     result = subprocess.run(
         [sys.executable, str(TOY_FINDER), "--out", str(out), "--seeds", "-3:-1"],
@@ -315,8 +299,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # Only two possible keys exist for this finder, so a broken dedupe
     # rebuild (e.g. "seen" defaulting to empty on resume) would show up as
     # a real duplicate line, not a coincidence the toy 4x4 finders' bigger
-    # key space could hide (#487 review: the original 4x4-based resume
-    # tests all still passed with dedupe-rebuild removed entirely).
+    # key space could hide.
     out = Path(tmp) / "tiny-key"
     kill_partway(TINY_KEY_FINDER, out, "0:50")
     progress_before = read_jsonl(out / "progress.jsonl")
@@ -370,9 +353,8 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # A half-written trailing line in examples.jsonl, as a real kill
-    # mid-write() can leave -- not reproducible via timing, so it's
-    # hand-corrupted here. progress.jsonl still confirms the seed as an
+    # A half-written trailing line in examples.jsonl, hand-corrupted.
+    # progress.jsonl still confirms the seed as an
     # "example", so this is the "file behind progress" reconciliation
     # direction: the confirmed seed must rerun and rewrite the example,
     # not leave summary.json overcounting a line that no longer exists.
@@ -487,10 +469,8 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # Argv mismatch refuses to start and writes nothing to any hunt file.
-    # (This block's base hunt already leaves .lock behind, so it can't
-    # witness whether .lock specifically stays absent on a refusal -- see
-    # the next block for that.)
+    # This block's base hunt already leaves .lock behind, so it can't
+    # witness whether .lock stays absent on a refusal; the next block does.
     out = Path(tmp) / "mismatch"
     result = seeded_hunt(TOY_FINDER, out, "0:30")
     check(
@@ -512,13 +492,10 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # #812 Codex pass 1, finding 1: classifying --out as fresh or resumed
-    # (and checking argv) *before* acquiring the lock is itself a race, so
-    # the fix moved that classification inside the lock -- meaning a
-    # refusal now does create .lock (an acceptable, harmless side effect of
-    # correctly serializing access), even though it still writes no hunt
-    # data. Hand-written run.json, no CLI run first, so this is a clean
-    # before/after on exactly that.
+    # Classifying --out as fresh or resumed (and checking argv) happens
+    # inside the lock, so a refusal creates .lock (harmless) but writes no
+    # hunt data. Hand-written run.json, no CLI run first, so this is a
+    # clean before/after on exactly that.
     out = Path(tmp) / "mismatch-lock-ok"
     out.mkdir()
     (out / "run.json").write_text(
@@ -541,16 +518,12 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # #812 Codex pass 1, finding 1, reproduced directly: two processes on
-    # the same fresh --out, where the second reads "no run.json" before the
-    # first has even started, but only reaches its own lock acquisition
-    # after the first has finished a complete hunt and released it. A real
-    # timing race (like the pre-existing "racing on a fresh --out" test)
-    # can't reliably land in that exact window, so this drives driver.run()
-    # in-process across two threads and pins the ordering with a barrier:
-    # thread B is paused inside a patched fcntl.flock, right where it would
-    # otherwise acquire the lock, until the main thread has run a complete
-    # hunt (thread A) to completion on the same --out.
+    # Two hunts on the same fresh --out, where the second reads "no
+    # run.json" before the first starts but reaches its lock only after the
+    # first has finished and released it. A real timing race can't reliably
+    # land in that window, so driver.run() runs in-process across two
+    # threads: thread B pauses inside a patched fcntl.flock until thread A
+    # finishes a whole hunt.
     import threading
     from unittest import mock
 
@@ -576,10 +549,6 @@ with tempfile.TemporaryDirectory() as tmp:
 
     hunt_files.fcntl.flock = _patched_flock
     b_result = {}
-    # This drives driver.run() in-process, so it reads the real
-    # HUNT_FAKE_LOAD1/os.environ at call time, not a subprocess env dict --
-    # force the gate idle here too so a busy box doesn't refuse either
-    # thread's hunt (#526).
     try:
         with mock.patch.dict(os.environ, {"HUNT_FAKE_LOAD1": "0"}):
             b_thread = threading.Thread(
@@ -621,7 +590,6 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # Git sha mismatch warns but proceeds.
     out = Path(tmp) / "sha-mismatch"
     result = seeded_hunt(TOY_FINDER, out, "0:30")
     check(
@@ -648,14 +616,11 @@ for base_no_verify, resume_no_verify, label in (
     (False, True, "verify-then-no-verify"),
 ):
     with tempfile.TemporaryDirectory() as tmp:
-        # #527: a killed --no-verify hunt resumed without the flag would
-        # verify later seeds inline while earlier seeds kept unverified
-        # candidates (and the inverse) -- the resume identity must pin the
-        # verification mode, refusing a mode-changing resume and writing
-        # nothing, the same as a seeds mismatch does above. A genuinely
-        # killed, partial hunt is required here: a base hunt run to
-        # completion has no un-done seed left for a wrongly-accepted resume
-        # to touch, so it can't tell the fix from the bug (#527 review C1).
+        # #527: a resume that flips --no-verify mixes verified and
+        # unverified candidates, so the resume identity pins the
+        # verification mode and refuses, writing nothing, as a seeds
+        # mismatch does above. A killed, partial hunt is needed: a
+        # completed one has no un-done seed for a wrong resume to touch.
         out = Path(tmp) / label
         base_extra = ("--no-verify",) if base_no_verify else ()
         kill_partway(SLOW_FINDER, out, "0:60", extra_args=base_extra)
@@ -693,8 +658,8 @@ for base_no_verify, resume_no_verify, label in (
         )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # #517: a resume that reconciles or appends to examples.jsonl must
-    # delete verified.jsonl -- its verdicts describe the old file. Same
+    # #517: a resume that reconciles or appends to examples.jsonl deletes
+    # verified.jsonl, whose verdicts describe the old file. Same
     # setup as the orphan-example case above (the one seed reruns after
     # reconciliation trims its example), with `hunt verify` run first.
     out = Path(tmp) / "verify-then-resume"

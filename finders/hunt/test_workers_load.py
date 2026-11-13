@@ -92,9 +92,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
 with tempfile.TemporaryDirectory() as tmp:
     # A box-safety flag added on resume must not read as a differing search
-    # (#488 review C1/P2): the box's load, not the search, changed between
-    # the two invocations, and #487's argv-equality resume check must not
-    # conflate the two -- otherwise the gate's own "use --force-load" advice
+    # (#487's argv-equality check), or the gate's "use --force-load" advice
     # is advice resume then refuses to take.
     out = Path(tmp) / "hunt-out"
     first = workers_hunt(out, [])
@@ -109,13 +107,10 @@ with tempfile.TemporaryDirectory() as tmp:
 with tempfile.TemporaryDirectory() as tmp:
     # An exported-but-empty HUNT_FAKE_LOAD1 (the ordinary shape of
     # `export HUNT_FAKE_LOAD1=$X` with X unset) is not an override -- it
-    # must read as "no override", never crash (#488 review C2). "No
-    # override" itself falls through to the real box's load (driver.py's
-    # `if not override`), so it can't be pinned to a fixed exit code the
-    # way every other case here is (#526 review C1/S1/P1) -- it's compared
-    # against a reference call with the var truly unset (`None` deletes the
-    # key -- see subprocess_env.success_env) instead, so both sides see the
-    # same real load and the check holds however busy the box is.
+    # must read as "no override", never crash. Empty falls through to the
+    # real box load, so compare against a run with the var unset (`None`
+    # deletes the key, see subprocess_env.success_env), not a fixed exit
+    # code.
     out = Path(tmp) / "hunt-out"
     result = workers_hunt(out, [], env={"HUNT_FAKE_LOAD1": ""})
     ref_out = Path(tmp) / "hunt-out-unset"
@@ -132,7 +127,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
 with tempfile.TemporaryDirectory() as tmp:
     # A non-numeric override is a broken test setup, not a real load --
-    # refuse cleanly rather than an uncaught traceback (#488 review C2).
+    # refuse cleanly rather than an uncaught traceback.
     out = Path(tmp) / "hunt-out"
     result = workers_hunt(out, [], env={"HUNT_FAKE_LOAD1": "not-a-number"})
     check_refusal(
@@ -141,7 +136,6 @@ with tempfile.TemporaryDirectory() as tmp:
     check("and prints no traceback", "Traceback" not in result.stderr)
 
 with tempfile.TemporaryDirectory() as tmp:
-    # LOAD_LIMIT's boundary: exactly 24 must run (refusal is "above 24").
     out = Path(tmp) / "hunt-out"
     result = workers_hunt(out, [], env={"HUNT_FAKE_LOAD1": "24"})
     check(
@@ -150,9 +144,8 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # --workers 0 would hand a CP-SAT finder "pick automatically" -- the
-    # whole box, the exact failure this ticket exists to prevent
-    # (#488 review C3).
+    # --workers 0 would hand a CP-SAT finder "pick automatically": the
+    # whole box.
     out = Path(tmp) / "hunt-out"
     result = workers_hunt(out, ["--workers", "0"])
     check_refusal("--workers 0 refuses", result, "--workers must be at least 1, got 0")
@@ -167,7 +160,7 @@ with tempfile.TemporaryDirectory() as tmp:
 with tempfile.TemporaryDirectory() as tmp:
     # `nan` parses as a float and `nan > LOAD_LIMIT` is False, so the naive
     # comparison lets a hunt start unconditionally regardless of the real
-    # box load (Codex pass 1, PR 520). A negative override is equally
+    # box load. A negative override is equally
     # nonsensical and must not silently pass the gate either.
     out = Path(tmp) / "hunt-out"
     result = workers_hunt(out, [], env={"HUNT_FAKE_LOAD1": "nan"})

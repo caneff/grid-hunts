@@ -1,10 +1,7 @@
 """Toy finder with `render`, for the `hunt render DIR` test (#490, #119).
 
-Same rule as toy_finder.py (random 4x4 shadings, even-count verifier), plus
-a `render` that draws the shading onto a GridCanvas -- so
-test_render_hook.py can prove `render DIR` writes one PNG per accepted
-example. toy_finder.py itself stays render-less, to prove the driver writes
-none when a finder doesn't offer one.
+Same rule as toy_finder.py, plus a `render` that draws the shading.
+toy_finder.py stays render-less to prove the driver writes no renders/ for it.
 
     uv run finders/hunt/toy_render_finder.py --out DIR --seeds START:END
     uv run finders/hunt/toy_render_finder.py render DIR

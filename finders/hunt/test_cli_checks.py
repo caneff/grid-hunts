@@ -1,7 +1,3 @@
-"""Tests for cli_checks, the shared check/finish/read_jsonl/run_cli helpers.
-
-Run by name: `uv run finders/hunt/test_cli_checks.py`."""
-
 import os
 import sys
 import tempfile
