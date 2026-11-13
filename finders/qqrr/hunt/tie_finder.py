@@ -157,7 +157,6 @@ class TieFinder:
                 q.m,
                 cells,
                 {rc: int(g[rc[0] * N + rc[1]]) for rc in cells},
-                tag=f"found{i}",
             )
         s = cpsat.solver(c["timeout"], reproducible=False, seed=rng.randrange(2**31))
         s.parameters.num_workers = self.workers
