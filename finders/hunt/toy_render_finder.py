@@ -1,12 +1,13 @@
-"""Toy finder with `render`, for the hunt driver's render-hook test (#490).
+"""Toy finder with `render`, for the `hunt render DIR` test (#490, #119).
 
 Same rule as toy_finder.py (random 4x4 shadings, even-count verifier), plus
-an optional `render` that draws the shading onto a GridCanvas -- so
-test_render_hook.py can prove the driver writes one PNG per accepted
+a `render` that draws the shading onto a GridCanvas -- so
+test_render_hook.py can prove `render DIR` writes one PNG per accepted
 example. toy_finder.py itself stays render-less, to prove the driver writes
 none when a finder doesn't offer one.
 
     uv run finders/hunt/toy_render_finder.py --out DIR --seeds START:END
+    uv run finders/hunt/toy_render_finder.py render DIR
 """
 
 import os
@@ -40,9 +41,8 @@ class ToyRenderFinder:
         return candidate
 
     def render(self, candidate):
-        # TOY_RENDER_FAIL simulates a transient render failure (a full disk,
-        # a bug since fixed) for test_render_hook.py's resume-repair test:
-        # set for a fresh run, unset for the resume that repairs it.
+        # TOY_RENDER_FAIL simulates a render failure for test_render_hook.py's
+        # test that a failed `render DIR` leaves the previous set.
         if os.environ.get("TOY_RENDER_FAIL"):
             raise RuntimeError("simulated transient render failure")
         canvas = GridCanvas(SIDE, SIDE, cell=20, margin=4)
