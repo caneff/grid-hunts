@@ -148,7 +148,6 @@ def build(hunt, ten_s, corner, flags, hits=None):
                 m,
                 _cells,
                 {(r, c): int(g.split("/")[r][c]) for r in range(n) for c in range(n)},
-                tag=f"known{known}",
             )
     tens, units = {}, {}
     for wr in range(n - 1):
@@ -279,7 +278,6 @@ def main(argv):
                     m,
                     cells,
                     {rc: grid[rc[0]][rc[1]] for rc in cells},
-                    tag=f"rej{rejected}",
                 )
                 break
             witness[name] = w
@@ -301,7 +299,7 @@ def main(argv):
             )
         )
         out(hc.grid_line(grid))
-        cpsat.forbid(m, cells, {rc: grid[rc[0]][rc[1]] for rc in cells}, tag=str(found))
+        cpsat.forbid(m, cells, {rc: grid[rc[0]][rc[1]] for rc in cells})
     if status is None:
         status = "multiple"
     out(
