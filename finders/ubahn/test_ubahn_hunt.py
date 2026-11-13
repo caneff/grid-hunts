@@ -211,6 +211,12 @@ with tempfile.TemporaryDirectory() as d:
     (out / "examples.jsonl").write_text(
         "".join(json.dumps(rec) + "\n" for _, rec, _, _ in cases)
     )
+    (out / "progress.jsonl").write_text(
+        "".join(
+            json.dumps({"event": "seed_done", "seed": k, "outcome": "example"}) + "\n"
+            for k in range(len(cases))
+        )
+    )
     r = run_cli(FINDER, "verify", str(out))
     check(f"hunt verify exits 0 (stderr: {r.stderr[-500:]})", r.returncode == 0)
     _, verdicts = read_verified(out / "verified.jsonl")
@@ -242,6 +248,9 @@ with tempfile.TemporaryDirectory() as d:
         out.mkdir()
         (out / "examples.jsonl").write_text(
             json.dumps({**record(good), **damage}) + "\n"
+        )
+        (out / "progress.jsonl").write_text(
+            json.dumps({"event": "seed_done", "seed": 0, "outcome": "example"}) + "\n"
         )
         r = run_cli(FINDER, "verify", str(out))
         check(

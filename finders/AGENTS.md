@@ -1,7 +1,7 @@
 # finders/AGENTS.md
 
-Grid finders: JavaScript-adjacent Python code that hunts, verifies, and
-renders candidate grids for constraint prototypes. The `.py` finder code
+Grid finders: Python code that hunts, verifies, and
+renders candidate grids. The `.py` finder code
 lives here; notes, hunt outputs, precomputed catalogues, and the `.sh`
 drivers that launch a hunt overnight stay under `docs/research/` (#469).
 A finder's own input fixture stays beside its code: `finders/qqrr/` holds
@@ -22,10 +22,23 @@ README before reusing anything there.
 - Before writing a new finder, start from `finders/hunt/`: the shared hunt
   protocol (a `typing.Protocol` of `propose`/`verify`/`record`/`key`/
   `symmetry`, and the `hunt` CLI's `run(finder, argv)`) that gives a fresh
-  hunt its output directory and dedupe for free. `finders/hunt/toy_finder.py`
-  is a minimal worked example; `finders/qqrr/hunt/tie_finder.py`, a new finder
-  over `chan_big.py`'s model, is the first real one. Other existing finders
-  are not ported onto it. A new finder folder needs a BUILD file before
+  hunt its output directory and dedupe for free. A hunt and its resume draw
+  no pictures: `render DIR`, a driver subcommand beside `verify DIR`, does,
+  for a finder that has `render(candidate)` (swap mechanics: `hunt_files.swap_dir`).
+  `summary DIR` and `links DIR` are driver subcommands too (#121); the split
+  between driver and finder, including `describe_hit`, `link_document` and
+  `finish`, is stated in `finders/hunt/protocol.py`.
+  `toy_summary_finder.py` is the worked example. `finders/hunt/toy_finder.py`
+  is a minimal worked example. `finders/hunt/hunt_files.py` owns every file a
+  hunt writes and every read of one: the lock, JSONL logs whose read drops a
+  torn last line and refuses any other bad line, atomic writes, `swap_dir`
+  and `run_log(path, config)`, a locked resumable log for any search; finder
+  code reads and writes hunt files only through it (a test may read them with
+  `cli_checks.read_jsonl`). `finders/qqrr/hunt/tie_finder.py`, a new finder
+  over `chan_big.py`'s model, is the first real one. On the protocol (they
+  call `driver.run`): halver, doppelganger_rank, ubahn, hybrid and qqrr's
+  `tie_finder`. Not on it: counting_shaded and qqrr's checker and sweep
+  scripts. A new finder folder needs a BUILD file before
   the gate passes: `docs/pants.md`.
 - `finders/query/` is the board-question driver (spec #65), CP-SAT only:
   `query.py FINDER BOARD QUESTION... --out DIR`, run under `job-run`, asks
@@ -44,8 +57,8 @@ README before reusing anything there.
 - `finders/ubahn/` is the U-Bahn finder (a pencil puzzle, no sudoku), on the
   hunt protocol: `ubahn_finder.py` its docstring and flags, `model.py` the
   CP-SAT model, `network.py` the solver-free rules `verify` reads;
-  `sat_model.py` is a prototype second uniqueness check on PySAT (#776), which
-  the plain finder does not call. `measure_baseline.py` times a hunt's proposal
+  `sat_model.py` is the PySAT base (#776) both PySAT engines build on
+  (`hybrid_sat.py` imports it); the plain finder does not call it. `measure_baseline.py` times a hunt's proposal
   step per seed and cause (#777; by hand, outside both gates). Conditions
   arrive one at a time as finder rules. Preflight answers and measurements:
   `docs/research/2026-10-10-u-bahn-finder-decision-log.md`. The five

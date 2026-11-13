@@ -1,10 +1,7 @@
 """Slow, stateful toy finder for the hunt resume tests (#487).
 
-Subclasses toy_slow_finder.SlowToyFinder, adding a counter of seeds seen so
-far that `save_state`/`load_state` round-trip through state.json. `record`
-stamps each example with the counter's value at the time it was found, so a
-test can tell a resumed run picked the counter back up instead of
-restarting it at zero.
+Counts seeds seen through `save_state`/`load_state`; `record` stamps the count
+so a test can tell a resume continued it.
 
     uv run finders/hunt/toy_stateful_finder.py --out DIR --seeds START:END
 """

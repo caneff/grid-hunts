@@ -211,6 +211,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 # isort: split
+import hunt_files
 import hybrid
 import hybrid_model
 import hybrid_render
@@ -218,8 +219,8 @@ import hybrid_sat
 import network
 import penpa
 from dedupe import IDENTITY
-from driver import run, save_render_atomic
-from hunt_dir import replace_links, seeded_examples
+from driver import run
+from hunt_dir import replace_links
 from protocol import Empty, Verdict
 from ubahn_finder import DEFAULT_SIDE, DEFAULT_TIMEOUT, UbahnFinder
 from ubahn_finder import Candidate as PlainCandidate
@@ -529,7 +530,7 @@ def _step(finder, seed, out):
         raise ValueError(f"the hunt in {out} was refused")
     event = json.loads((out / "progress.jsonl").read_text().splitlines()[-1])
     if event["outcome"] == "example":
-        ((_, record),) = seeded_examples(out)
+        ((_, record),) = hunt_files.read_examples(out)
         return "found", len(record["number_cell_circles"])
     status = {EMPTY_INFEASIBLE: "infeasible", EMPTY_TIMEOUT: "timeout"}.get(
         event.get("empty_reason")
@@ -883,14 +884,14 @@ def fewest_markings(conditions, engine, timeout, out, max_size, workers):
 
 def write_pictures(out, blank_strip=False, seed=None, png=None):
     """Draw the examples of the hunt in `out`, each under its seed
-    (`hunt_dir.seeded_examples`): all of them to `out/renders/<seed>.png`,
+    (`hunt_files.read_examples`): all of them to `out/renders/<seed>.png`,
     or the one at `seed` to `png`. The fifth strip is drawn when
     `blank_strip` is set or the record's own is. Returns the lines to print.
     Raises ValueError, naming the seed, on a record the finder refuses or a
     grid `hybrid_render.Picture` refuses, and names a missing or unpaired
     log or a seed with no example."""
     out = Path(out)
-    examples = seeded_examples(out)
+    examples = hunt_files.read_examples(out)
     if seed is not None:
         examples = [(s, record) for s, record in examples if s == seed]
         if not examples:
@@ -913,17 +914,17 @@ def write_pictures(out, blank_strip=False, seed=None, png=None):
         except ValueError as e:
             raise ValueError(f"seed {s}: {e}") from e
     if seed is not None:
-        save_render_atomic(drawn[seed], Path(png))
+        hunt_files.write_image_atomic(Path(png), drawn[seed])
         return [f"wrote the picture of seed {seed} to {png}"]
     renders = out / "renders"
-    renders.mkdir(exist_ok=True)
-    for s, image in drawn.items():
-        save_render_atomic(image, renders / f"{s}.png")
-    # A rerun replaces the whole set, so a picture left by an earlier
-    # example list never stays.
-    for stale in renders.glob("*.png"):
-        if stale.name not in {f"{s}.png" for s in drawn}:
-            stale.unlink()
+
+    def save_all(directory):
+        for s, image in drawn.items():
+            hunt_files.write_image_atomic(directory / f"{s}.png", image)
+
+    # The whole set is swapped in, so a picture left by an earlier example
+    # list never stays.
+    hunt_files.swap_dir(renders, save_all)
     return [f"wrote {len(drawn)} pictures to {renders}"]
 
 
@@ -940,7 +941,7 @@ def write_links(
     out, circles, numbers, blank_strip, battenberg=frozenset(), battenberg_only=False
 ):
     """Write `out/links/<seed>.txt`, one Penpa+ link per example of the hunt
-    in `out` (`hunt_dir.seeded_examples`), showing the `circles`, the
+    in `out` (`hunt_files.read_examples`), showing the `circles`, the
     `numbers` and the Battenberg markings on the windows of `battenberg`, and
     no other circle, number or marking. With `battenberg_only` the rules text
     says every checkerboard window is marked. The fifth strip is drawn
@@ -952,7 +953,7 @@ def write_links(
     `battenberg_only`, or a grid that is no hybrid grid on the board drawn;
     names a missing or unpaired log."""
     out = Path(out)
-    examples = seeded_examples(out)
+    examples = hunt_files.read_examples(out)
     finder = HybridFinder(hybrid.Conditions(DEFAULT_SIDE, DEFAULT_SIDE))
     # Every link is built before any file is touched: a refusal leaves
     # links/ as it was, and a rerun replaces the whole set.

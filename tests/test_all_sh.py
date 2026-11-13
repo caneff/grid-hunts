@@ -1,19 +1,6 @@
-"""`tests/all.sh`: the gate's runner, on a throwaway tree of fake suites.
+"""`tests/all.sh` on a throwaway tree of fake suites, so the real suites never run.
 
-A copy of the runner sits in a temp tree with fake suites, so the real suites
-are never run. The checks: with no flag and no `GATE_JOBS` suites run one at a
-time; `--jobs 2` and `GATE_JOBS=2` run two at once; a failure is named with
-its output, starts no further suite and still lets the running one finish
-before the count line; a suite whose shell is killed fails the run; an empty
-selection is `0 of 0`; a `--jobs` that is not a positive integer is refused.
-`--changed <base>` narrows to the diff `<base>...HEAD` through a stand-in
-`pants` on the PATH: the suites it lists among the changed files' dependents
-run, with lint, this test and the edge check; a shared path, a deleted file, a
-file it does not place, a failed or unreadable answer and no `pants` at all
-widen the run to every suite and the count line names why; a docs-only diff
-asks nothing; `--list --changed` prints the selection.
-
-    uv run tests/test_all_sh.py
+uv run tests/test_all_sh.py
 """
 
 import os
@@ -22,21 +9,29 @@ import sys
 import tempfile
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "finders" / "hunt"))
+from cli_checks import check, finish
+
 ALL = Path(__file__).resolve().parent / "all.sh"
 
-ok = True
-
-# A suite that logs its start and its end, with a pause between, to the file
-# `log` at the tree's root: one at a time reads start end start end, two at
-# once start start.
+# With `LOGGER_RENDEZVOUS` set the suite waits until both starts are logged, so
+# the order is decided by the runner starting both, not by a sleep; a runner
+# that starts one at a time gives up after 20 s. Otherwise it pauses 0.5 s,
+# long enough for a wrongly concurrent second suite to log its start.
 LOGGER = """\
+import os
 import time
 from pathlib import Path
 
 log = Path(__file__).resolve().parents[2] / "log"
 with log.open("a") as f:
     f.write("start {name}\\n")
-time.sleep(0.5)
+if os.environ.get("LOGGER_RENDEZVOUS"):
+    deadline = time.time() + 20
+    while log.read_text().count("start") < 2 and time.time() < deadline:
+        time.sleep(0.01)
+else:
+    time.sleep(0.5)
 with log.open("a") as f:
     f.write("end {name}\\n")
 """
@@ -70,17 +65,7 @@ if len(chain) >= 2:
 """
 
 
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
-
 def tree(root, suites):
-    """A copy of the runner over `suites`, {file name: script body}, without
-    its line that lists this test; returns the copy's path."""
     (root / "tests").mkdir(parents=True)
     lines = ALL.read_text().splitlines(keepends=True)
     (root / "tests" / "all.sh").write_text(
@@ -96,8 +81,10 @@ def tree(root, suites):
     return root / "tests" / "all.sh"
 
 
-def run(script, *args, gate_jobs=None):
+def run(script, *args, gate_jobs=None, rendezvous=False):
     env = {k: v for k, v in os.environ.items() if k != "GATE_JOBS"}
+    if rendezvous:
+        env["LOGGER_RENDEZVOUS"] = "1"
     if gate_jobs is not None:
         env["GATE_JOBS"] = gate_jobs
     return subprocess.run(
@@ -129,7 +116,7 @@ with tempfile.TemporaryDirectory() as d:
         ("GATE_JOBS=2", (), "2", ["start", "start", "end", "end"]),
         ("--jobs 1 over GATE_JOBS=2", ("--jobs", "1"), "2", ["start", "end"] * 2),
     ):
-        r = run(script, *args, gate_jobs=env)
+        r = run(script, *args, gate_jobs=env, rendezvous=want[1] == "start")
         check(
             f"{label}: both suites pass, run as {want} ({r.stdout.splitlines()[-1:]})",
             r.returncode == 0
@@ -211,10 +198,6 @@ def git(root, *args):
     )
 
 
-# A stand-in for Pants, put first on the PATH: it logs its arguments to
-# `pants-calls` at the tree's root and answers each spec from `pants-answer`
-# there, one `<spec>\t<address>` line per target, as `pants dependents
-# --transitive --closed` would. A `pants-fails` file makes it fail.
 STUB_PANTS = """\
 #!/usr/bin/env bash
 echo "$*" >>pants-calls
@@ -223,9 +206,6 @@ for spec in "$@"; do
   awk -F'\\t' -v s="$spec" '$1 == s { print $2 }' pants-answer
 done | sort -u
 """
-# What the stand-in knows: each test file is its own target; the shared
-# helper, the fixture and finders/fake/BUILD reach finders/fake/test_a.py; the
-# shared paths are placed too.
 ANSWER = {
     "finders/fake/test_a.py": ["finders/fake/test_a.py:py"],
     "finders/fake-two/test_f.py": ["finders/fake-two/test_f.py:py"],
@@ -257,9 +237,6 @@ ANSWER = {
 
 
 def changed_tree(root):
-    """A git tree holding the whole runner, stub runner tests, three fake
-    finder folders and one file at each shared path, committed as `main`,
-    with the stand-in Pants in `<root>/../bin`."""
     files = {
         "tests/all.sh": ALL.read_text(),
         "tests/test_all_sh.py": "pass\n",
@@ -317,7 +294,6 @@ def changed(script, *args, path=None):
         capture_output=True,
         text=True,
         timeout=120,
-        # The fake tree's pyproject.toml and uv.lock are empty files.
         env={
             **BASE_ENV,
             "UV_NO_PROJECT": "1",
@@ -449,10 +425,11 @@ with tempfile.TemporaryDirectory() as d:
     )
 
     touch_on_branch(root, "docs/note.md", "pyproject.toml")
+    got = count_line(script)
     calls = pants_calls(root)
     check(
-        f"a shared path widens without asking Pants ({calls})",
-        calls == [],
+        f"a shared path widens without asking Pants (ran: {got}, calls: {calls})",
+        got[0] == 0 and calls == [],
     )
 
     # A path git quotes when core.quotepath is on must still be seen, by the
@@ -475,9 +452,6 @@ with tempfile.TemporaryDirectory() as d:
         ),
     )
 
-    # A file moved out of shared code is both a deletion and an addition:
-    # Pants answers from the tree as it is now, where nothing imports the old
-    # path, so its importers would go unlisted.
     git(root, "checkout", "-q", "-B", "work", "main")
     git(root, "mv", "finders/hunt/helper.py", "finders/fake/helper.py")
     git(root, "commit", "-q", "-m", "move")
@@ -491,7 +465,6 @@ with tempfile.TemporaryDirectory() as d:
         ),
     )
 
-    # `main` moving on after the branch was cut is not the branch's change.
     touch_on_branch(root, "finders/other-one/test_b.py")
     git(root, "checkout", "-q", "main")
     (root / "justfile").write_text("# main moved\n")
@@ -505,7 +478,6 @@ with tempfile.TemporaryDirectory() as d:
         got == (0, [*LINT, *ALWAYS, "uv run finders/other-one/test_b.py"]),
     )
 
-    # Retired finders' data stays under docs/research/, which no target owns.
     touch_on_branch(root, "docs/research/renbanana/CIRCLES.json")
     got = count_line(script)
     check(
@@ -613,8 +585,6 @@ with tempfile.TemporaryDirectory() as d:
         r.returncode == 2 and "--changed needs a value" in r.stderr,
     )
 
-# The real tree: retired finders live under archive/finders/ with a README and
-# no suite under archive/ is in the gate.
 REPO = ALL.parent.parent
 r = subprocess.run(
     ["bash", str(ALL), "--list"], capture_output=True, text=True, cwd=REPO
@@ -631,15 +601,18 @@ RETIRED = (
     "lmd-hybrid-scan",
 )
 for name in RETIRED:
-    tracked = subprocess.run(
+    listed = subprocess.run(
         ["git", "ls-files", f"finders/{name}"],
         capture_output=True,
         text=True,
         cwd=REPO,
-    ).stdout
+    )
     check(
-        f"{name} is archived with a README and no file of it is left in finders/",
-        (REPO / "archive" / "finders" / name / "README.md").is_file() and not tracked,
+        f"{name} is archived with a README and no file of it is left in finders/ "
+        f"(git ls-files exit {listed.returncode}, stderr: {listed.stderr[-200:]})",
+        listed.returncode == 0
+        and (REPO / "archive" / "finders" / name / "README.md").is_file()
+        and not listed.stdout,
     )
 
-sys.exit(0 if ok else 1)
+finish()

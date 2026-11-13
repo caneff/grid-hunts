@@ -1,8 +1,4 @@
-"""strip() removes at least one item from an over-clued puzzle and keeps
-uniqueness (#486).
-
-    uv run finders/hunt/test_minimizer.py
-"""
+"""Pins `minimizer.strip`: it removes givens while the puzzle stays unique and keeps the ones it must."""
 
 import sys
 from pathlib import Path
@@ -10,23 +6,10 @@ from pathlib import Path
 from ortools.sat.python import cp_model
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cli_checks import check, finish
 from minimizer import strip
 from sudoku_kit.uniqueness import check_uniqueness
 
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
-
-# A 2x2 Latin square (digits 1/2, each row and column distinct) with all
-# four cells given -- more clues than a unique Latin square needs, since
-# fixing any one cell forces the rest.
 SOLUTION = {(0, 0): 1, (0, 1): 2, (1, 0): 2, (1, 1): 1}
 CELLS = list(SOLUTION)
 
@@ -62,9 +45,7 @@ check(
     len(stripped) == 1,
 )
 
-# A `keep` cell is never removed even when the puzzle would stay unique
-# without it.
 kept = strip(SOLUTION, keep={(0, 0)}, test=is_unique)
 check("a kept item survives stripping", (0, 0) in kept)
 
-sys.exit(0 if ok else 1)
+finish()

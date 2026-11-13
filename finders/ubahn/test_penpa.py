@@ -410,22 +410,24 @@ with tempfile.TemporaryDirectory() as tmp:
         r.returncode == 2 and "has no examples.jsonl: not a hunt directory" in r.stderr,
     )
 
-    # A progress log with one example event too many: refused before any file.
-    bad = Path(tmp) / "bad"
-    bad.mkdir()
-    (bad / "examples.jsonl").write_text((out / "examples.jsonl").read_text())
-    (bad / "progress.jsonl").write_text(
+    # A progress log with one example event too many is a kill between the
+    # event and its example line: the resume reruns that seed, so `links`
+    # writes the links of the examples that are there, as the resume reads them.
+    ahead = Path(tmp) / "ahead"
+    ahead.mkdir()
+    (ahead / "examples.jsonl").write_text((out / "examples.jsonl").read_text())
+    (ahead / "progress.jsonl").write_text(
         (out / "progress.jsonl").read_text()
         + json.dumps({"seed": 99, "outcome": "example"})
         + "\n"
     )
-    r = run_cli(FINDER, "links", str(bad))
+    r = run_cli(FINDER, "links", str(ahead))
     check(
-        "`links` refuses an example count that disagrees with progress.jsonl, "
-        "naming it, and writes no links directory",
-        r.returncode == 2
-        and "example events in progress.jsonl" in r.stderr
-        and not (bad / "links").exists(),
+        "`links` reads an event with no example line as a resume does: "
+        "the links of the examples there",
+        r.returncode == 0
+        and sorted(p.name for p in (ahead / "links").iterdir())
+        == sorted(p.name for p in (out / "links").iterdir()),
     )
 
 finish()

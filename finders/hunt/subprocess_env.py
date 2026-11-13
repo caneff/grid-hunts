@@ -1,16 +1,10 @@
 """Shared subprocess env for the hunt CLI test suites (#526).
 
-The load gate (#488) refuses to start above a 1-minute load of 24 unless
-`HUNT_FAKE_LOAD1` overrides it. A subprocess test that starts the `hunt`
-CLI without setting it inherits whatever the real box's load is, so a
-success-directed test fails whenever the box happens to be busy. Every
-subprocess launch that expects the hunt to actually run uses `success_env`
-so the gate always reads idle regardless of the real machine; a test that
-means to exercise the gate itself passes its own `HUNT_FAKE_LOAD1` through
-`overrides` instead. A test file that runs hunts in-process, or launches one
-with no `env=`, calls `pin_idle_load` once at import (#669). An override
-value of `None` deletes that key instead of setting it -- the way to ask for
-a truly unset var rather than an empty one."""
+The load gate (#488) refuses above a 1-minute load of 24 unless
+`HUNT_FAKE_LOAD1` overrides it; a success-directed subprocess test uses
+`success_env` so a busy box cannot fail it. A test file that runs hunts
+in-process, or launches one with no `env=`, calls `pin_idle_load` once at
+import (#669). An override of `None` deletes the key."""
 
 import os
 
@@ -18,6 +12,7 @@ IDLE_LOAD = "0"
 
 
 def success_env(overrides=None):
+    """`os.environ` with the load gate pinned idle, then `overrides` applied."""
     env = {**os.environ, "HUNT_FAKE_LOAD1": IDLE_LOAD}
     for key, value in (overrides or {}).items():
         if value is None:
@@ -28,10 +23,5 @@ def success_env(overrides=None):
 
 
 def pin_idle_load():
-    """Pin the load gate idle for this process and every child it starts.
-
-    A test file that launches hunts in-process (`driver.run`) or through a
-    bare `dict(os.environ, ...)` calls this once at import, so a launch
-    cannot inherit the box's real load (#669). A test of the gate itself
-    still passes its own `HUNT_FAKE_LOAD1` through `success_env`."""
+    """Pin the load gate idle for this process and every child it starts."""
     os.environ["HUNT_FAKE_LOAD1"] = IDLE_LOAD
