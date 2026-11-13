@@ -37,6 +37,8 @@ import tempfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO / "finders" / "hunt"))
+from cli_checks import check, finish
 
 # (file, why it is read, suites its change must select, suites it must not)
 KNOWN_EDGES = [
@@ -82,14 +84,6 @@ KNOWN_EDGES = [
 
 PY_NAME = re.compile(r"""["']([\w./-]*\w\.py)["']""")
 
-ok = True
-
-
-def check(name, cond):
-    global ok
-    print(f"{'ok' if cond else 'FAIL'}: {name}")
-    ok = ok and cond
-
 
 def graph():
     """{address: [direct dependency addresses]} for every target under finders/,
@@ -133,6 +127,8 @@ def tracked(*patterns):
     out = subprocess.run(
         ["git", "ls-files", *patterns], capture_output=True, text=True, cwd=REPO
     )
+    if out.returncode != 0:
+        sys.exit(f"git ls-files {patterns} failed ({out.returncode}): {out.stderr}")
     return out.stdout.split()
 
 
@@ -232,4 +228,4 @@ if __name__ == "__main__":
             not lost and not extra,
         )
 
-    sys.exit(0 if ok else 1)
+    finish()

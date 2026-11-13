@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cli_checks import check, finish
 from dedupe import D4, IDENTITY, canonical_key
 
 N = 4
@@ -38,17 +39,6 @@ def eight_images(rows):
         out.append(flip_h(cur))
         cur = rotate90(cur)
     return out
-
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
 
 
 # An asymmetric L-tetromino-ish shape: no image of it equals another image
@@ -164,4 +154,4 @@ except ValueError:
 except TypeError:
     check("a non-closed custom group given as a set is rejected", False)
 
-sys.exit(0 if ok else 1)
+finish()
