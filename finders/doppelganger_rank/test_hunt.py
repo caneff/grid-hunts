@@ -251,6 +251,12 @@ with short_link.fake_mint(), tempfile.TemporaryDirectory() as tmp:
     with (planted / "examples.jsonl").open("a") as f:
         for bad in (broken_rule, broken_clue, loose):
             f.write(json.dumps(bad) + "\n")
+    with (planted / "progress.jsonl").open("a") as f:
+        for seed in (90, 91, 92):  # each planted record is confirmed, as a hunt does
+            f.write(
+                json.dumps({"event": "seed_done", "seed": seed, "outcome": "example"})
+                + "\n"
+            )
     result = run("verify", planted)
     assert result.returncode == 0, result.stderr
     stamp, *verdicts = read_jsonl(planted / "verified.jsonl")

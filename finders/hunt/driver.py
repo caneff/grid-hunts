@@ -47,18 +47,17 @@ ahead of anything, before resume rebuilds anything from the logs.
 
 import argparse
 import contextlib
-import fcntl
 import json
 import math
 import os
 import random
-import shutil
 import subprocess
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import hunt_files
 from dedupe import D4, IDENTITY, canonical_key, validate_group
 from protocol import DEFAULT_WORKERS, Empty, Verdict
 
@@ -193,18 +192,6 @@ def _git_sha():
         return None
 
 
-def _write_json_atomic(path, data):
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(data))
-    tmp.replace(path)
-
-
-def _write_text_atomic(path, text):
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(text)
-    tmp.replace(path)
-
-
 def _resume_key(argv):
     """The parts of `argv` that define a hunt's search space and how its
     results are trustworthy: `--out`, `--seeds`, and `--no-verify` (#527 --
@@ -258,7 +245,7 @@ def _cleanup_partial_output(out):
     behind never blocks a later run -- the same state a normal completed
     hunt already leaves `--out` in.
 
-    Since `.lock` always exists here (`_acquire_lock` created it before
+    Since `.lock` always exists here (`hunt_files.acquire_lock` created it before
     any call to this function), `out` itself is therefore never removed
     on this path -- only its OUTPUT_FILES contents.
 
@@ -283,60 +270,12 @@ def _cleanup_partial_output(out):
         )
 
 
-def _acquire_lock(out):
-    """Exclusive, non-blocking flock on out/.lock -- the one lock a hunt
-    and `hunt verify` (#489) both take, so `hunt verify`
-    can't read examples.jsonl mid-write by a running hunt and publish a
-    verified.jsonl that silently omits the tail, and two verify runs can't
-    race on the same verified.jsonl.tmp. `flock` is tied to the open fd, so
-    a SIGKILLed holder releases it the instant the process dies -- no stale
-    lock to clean up before the next run. Returns the lock fd, or None if
-    another process already holds it."""
-    out.mkdir(parents=True, exist_ok=True)
-    lock_fd = os.open(out / ".lock", os.O_CREAT | os.O_RDWR)
-    try:
-        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except OSError:
-        os.close(lock_fd)
-        return None
-    return lock_fd
-
-
-def _release_lock(lock_fd):
-    fcntl.flock(lock_fd, fcntl.LOCK_UN)
-    os.close(lock_fd)
-
-
 def _to_hashable(value):
     """Undo JSON's list-ifying of a dedupe key's tuple(s) on the way back
     in, so a key nested more than one level deep still hashes."""
     if isinstance(value, list):
         return tuple(_to_hashable(v) for v in value)
     return value
-
-
-def _read_valid_lines(path):
-    """Every complete, parseable line in `path`, plus its raw text.
-
-    A kill can only ever leave the last line half-written -- every earlier
-    line was already flushed whole -- so this stops at the first line that
-    fails to parse and treats it and everything after it as the casualty.
-    """
-    if not path.exists():
-        return [], []
-    valid_lines = []
-    parsed = []
-    with path.open() as f:
-        for line in f:
-            if not line.strip():
-                continue
-            try:
-                obj = json.loads(line)
-            except json.JSONDecodeError:
-                break
-            valid_lines.append(line if line.endswith("\n") else line + "\n")
-            parsed.append(obj)
-    return valid_lines, parsed
 
 
 def _validate_symmetry(finder):
@@ -356,9 +295,8 @@ def _validate_symmetry(finder):
 
 
 def _truncate_to_valid(path, valid_lines):
-    if not path.exists():
-        return
-    _write_text_atomic(path, "".join(valid_lines))
+    if path.exists():
+        hunt_files.rewrite_log(path, valid_lines)
 
 
 def _state_seed(finder, out):
@@ -371,7 +309,7 @@ def _state_seed(finder, out):
     state_path = out / "state.json"
     if not state_path.exists():
         return None
-    return json.loads(state_path.read_text()).get("seed")
+    return hunt_files.read_json(state_path).get("seed")
 
 
 def _reconcile(
@@ -411,7 +349,7 @@ def _reconcile(
         examples_ok = example_confirmed <= len(examples_records)
         # A seed_done event always carries "seed" (_process_seed sets it
         # unconditionally); this default only guards a line corrupted in a
-        # way _read_valid_lines still parses. It must not default to a
+        # way `hunt_files.read_log` still parses. It must not default to a
         # numeric sentinel -- that's the exact collision #516 fixed for
         # state_seed -- so an event missing "seed" reads as "always ahead
         # of any real state_seed," never confirmed, always rerun.
@@ -485,29 +423,16 @@ def _restoring_state(finder):
 def _save_state(finder, out, seed):
     if not _is_stateful(finder):
         return
-    _write_json_atomic(out / "state.json", {"seed": seed, "state": finder.save_state()})
+    hunt_files.write_json_atomic(
+        out / "state.json", {"seed": seed, "state": finder.save_state()}
+    )
 
 
 def _load_state(finder, out):
     state_path = out / "state.json"
     if not _is_stateful(finder) or not state_path.exists():
         return
-    finder.load_state(json.loads(state_path.read_text())["state"])
-
-
-def save_render_atomic(image, dest):
-    """Save to a temp file beside `dest`, then `Path.replace` it into place, so
-    `dest` only ever exists complete (#537): a save that dies partway (a full
-    disk) leaves the temp file, which is removed, and never a half-written
-    picture. The temp name ends in `.png` (the image's save infers the format
-    from it)."""
-    tmp = dest.with_name(f"{dest.stem}.tmp-{os.getpid()}.png")
-    try:
-        image.save(tmp)
-        tmp.replace(dest)
-    except BaseException:
-        tmp.unlink(missing_ok=True)
-        raise
+    finder.load_state(hunt_files.read_json(state_path)["state"])
 
 
 def _propose_and_key(finder, seed, symmetry, no_verify=False):
@@ -549,7 +474,7 @@ def _is_empty(candidate):
 
 
 def _process_seed(
-    finder, seed, seen, symmetry, examples_f, progress_f, counts, out, no_verify
+    finder, seed, seen, symmetry, append_example, append_event, counts, out, no_verify
 ):
     """Run one seed and append its outcome to examples.jsonl/progress.jsonl,
     updating `seen` and `counts` in place. Shared by the fresh and resumed
@@ -573,13 +498,11 @@ def _process_seed(
         seen.add(key)
         record = dict(finder.record(candidate))
         record[_DEDUPE_KEY_FIELD] = list(key)
-        examples_f.write(json.dumps(record) + "\n")
-        examples_f.flush()
+        append_example(record)
         counts["examples"] += 1
         event["outcome"] = "example"
 
-    progress_f.write(json.dumps(event) + "\n")
-    progress_f.flush()
+    append_event(event)
     counts["seeds_done"] += 1
 
 
@@ -588,8 +511,8 @@ def _hunt_loop(
 ):
     symmetry = getattr(finder, "symmetry", D4)
     with (
-        (out / "examples.jsonl").open("a") as examples_f,
-        (out / "progress.jsonl").open("a") as progress_f,
+        hunt_files.open_log(out / "examples.jsonl") as append_example,
+        hunt_files.open_log(out / "progress.jsonl") as append_event,
     ):
         for seed in range(seed_start, seed_end):
             if seed in skip:
@@ -599,19 +522,19 @@ def _hunt_loop(
                 seed,
                 seen,
                 symmetry,
-                examples_f,
-                progress_f,
+                append_example,
+                append_event,
                 counts,
                 out,
                 no_verify=no_verify,
             )
-            _write_json_atomic(out / "summary.json", dict(counts))
+            hunt_files.write_json_atomic(out / "summary.json", dict(counts))
             _save_state(finder, out, seed)
 
 
 def _fresh(finder, argv, args, out):
     seed_start, seed_end = args.seeds
-    _write_json_atomic(
+    hunt_files.write_json_atomic(
         out / "run.json",
         {
             "argv": list(argv),
@@ -628,7 +551,7 @@ def _fresh(finder, argv, args, out):
         "duplicates": 0,
         "empty": 0,
     }
-    _write_json_atomic(out / "summary.json", dict(counts))
+    hunt_files.write_json_atomic(out / "summary.json", dict(counts))
 
     _hunt_loop(
         finder, out, seed_start, seed_end, set(), counts, no_verify=args.no_verify
@@ -706,8 +629,12 @@ def _resume(finder, argv, args, out, prior):
 
     seed_start, seed_end = args.seeds
 
-    progress_lines, progress_events = _read_valid_lines(out / "progress.jsonl")
-    examples_lines, examples_records = _read_valid_lines(out / "examples.jsonl")
+    progress_lines, progress_events = hunt_files.read_log(
+        out / "progress.jsonl", missing_ok=True
+    )
+    examples_lines, examples_records = hunt_files.read_log(
+        out / "examples.jsonl", missing_ok=True
+    )
 
     raw_examples_count = len(examples_lines)
 
@@ -761,7 +688,7 @@ def _resume(finder, argv, args, out, prior):
         count_key = _OUTCOME_COUNT_KEY.get(e.get("outcome"))
         if count_key:
             counts[count_key] += 1
-    _write_json_atomic(out / "summary.json", dict(counts))
+    hunt_files.write_json_atomic(out / "summary.json", dict(counts))
 
     _hunt_loop(
         finder,
@@ -783,8 +710,8 @@ def _run_verify(finder, argv):
     -- the deferred half of a `--no-verify` hunt. Returns the process exit
     code: 0 on success, 2 when DIR has no examples.jsonl to verify.
 
-    Reads examples.jsonl through `_read_valid_lines` -- the same kill
-    tolerance `run`'s own resume gives progress.jsonl/examples.jsonl. Each
+    Reads the logs through `hunt_files.read_logs` -- the same kill
+    tolerance `run`'s own resume gives them. Each
     verdict line carries its own record, not just position, so it joins back
     to examples.jsonl by content.
     A record that fails to turn into a candidate and verify (most likely a
@@ -796,7 +723,7 @@ def _run_verify(finder, argv):
     scratch verdicts and the .tmp file, leaving whatever verified.jsonl
     already existed (absent, or a previously complete file) untouched (#527).
 
-    Takes the same out/.lock a hunt takes (`_acquire_lock`), before
+    Takes the same out/.lock a hunt takes (`hunt_files.acquire_lock`), before
     examples.jsonl is even opened -- so this can't read a hunt's
     still-being-written examples.jsonl and publish a verified.jsonl that
     silently omits the tail, and two `hunt verify` runs can't race on the
@@ -804,7 +731,7 @@ def _run_verify(finder, argv):
     args = _parse_verify_args(argv)
     out = Path(args.dir)
 
-    lock_fd = _acquire_lock(out)
+    lock_fd = hunt_files.acquire_lock(out)
     if lock_fd is None:
         print(
             f"hunt verify: refusing -- {args.dir} is locked (a hunt or "
@@ -813,50 +740,40 @@ def _run_verify(finder, argv):
         )
         return 2
     try:
-        examples_path = out / "examples.jsonl"
-        if not examples_path.exists():
-            print(
-                f"hunt verify: refusing -- {args.dir} has no examples.jsonl",
-                file=sys.stderr,
-            )
-            return 2
-
         to_candidate = getattr(finder, "candidate_from_record", lambda record: record)
-        _, records = _read_valid_lines(examples_path)
-        verified_path = out / "verified.jsonl"
-        tmp = verified_path.with_suffix(verified_path.suffix + ".tmp")
-        verified_count = 0
-        with tmp.open("w") as verified_f:
-            # The stamp (#517): how many examples this pass verified, so a
-            # reader can compare it to the count of valid examples.jsonl lines.
-            verified_f.write(json.dumps({"verified_examples": len(records)}) + "\n")
-            for record in records:
-                try:
-                    verdict = finder.verify(to_candidate(record))
-                except Exception as e:
-                    print(
-                        "hunt verify: refusing -- turning a record from "
-                        "examples.jsonl into a candidate and verifying it "
-                        f"raised ({type(e).__name__}: {e}). Either record() "
-                        "isn't itself a verify-able candidate and the finder "
-                        "needs a candidate_from_record, or this is a bug in "
-                        f"verify() itself -- {verified_count} verdict(s) "
-                        "already computed this run were discarded, and any "
-                        "previously published verified.jsonl was left "
-                        "untouched.",
-                        file=sys.stderr,
-                    )
-                    tmp.unlink(missing_ok=True)
-                    return 2
-                entry = {"record": record, "ok": verdict.ok}
-                if verdict.reason:
-                    entry["reason"] = verdict.reason
-                verified_f.write(json.dumps(entry) + "\n")
-                verified_count += 1
-        tmp.replace(verified_path)
+        try:
+            _, records = hunt_files.read_logs(out)
+        except hunt_files.HuntFileError as error:
+            print(f"hunt verify: refusing -- {error}", file=sys.stderr)
+            return 2
+        # The stamp (#517): how many examples this pass verified, so a
+        # reader can compare it to the count of examples.jsonl.
+        lines = [json.dumps({"verified_examples": len(records)}) + "\n"]
+        for record in records:
+            try:
+                verdict = finder.verify(to_candidate(record))
+            except Exception as e:
+                print(
+                    "hunt verify: refusing -- turning a record from "
+                    "examples.jsonl into a candidate and verifying it "
+                    f"raised ({type(e).__name__}: {e}). Either record() "
+                    "isn't itself a verify-able candidate and the finder "
+                    "needs a candidate_from_record, or this is a bug in "
+                    f"verify() itself -- {len(lines) - 1} verdict(s) "
+                    "already computed this run were discarded, and any "
+                    "previously published verified.jsonl was left "
+                    "untouched.",
+                    file=sys.stderr,
+                )
+                return 2
+            entry = {"record": record, "ok": verdict.ok}
+            if verdict.reason:
+                entry["reason"] = verdict.reason
+            lines.append(json.dumps(entry) + "\n")
+        hunt_files.rewrite_log(out / "verified.jsonl", lines)
         return 0
     finally:
-        _release_lock(lock_fd)
+        hunt_files.release_lock(lock_fd)
 
 
 def _run_render(finder, argv):
@@ -882,7 +799,7 @@ def _run_render(finder, argv):
         print("hunt render: refusing -- the finder has no render", file=sys.stderr)
         return 2
 
-    lock_fd = _acquire_lock(out)
+    lock_fd = hunt_files.acquire_lock(out)
     if lock_fd is None:
         print(
             f"hunt render: refusing -- {args.dir} is locked (a hunt or "
@@ -890,45 +807,41 @@ def _run_render(finder, argv):
             file=sys.stderr,
         )
         return 2
-    tmp_dir = out / "renders.tmp"
-    old_dir = out / "renders.old"
     try:
-        if not (out / "examples.jsonl").exists():
+        try:
+            seeded = hunt_files.read_examples(out)
+        except hunt_files.HuntFileError as error:
+            print(f"hunt render: refusing -- {error}", file=sys.stderr)
+            return 2
+        to_candidate = getattr(finder, "candidate_from_record", lambda record: record)
+        drawn = {}
+        for seed, record in seeded:
+            try:
+                drawn[seed] = render(to_candidate(record))
+            except Exception as e:
+                print(
+                    f"hunt render: refusing -- seed {seed} did not draw "
+                    f"({type(e).__name__}: {e}); renders/ was left as it was",
+                    file=sys.stderr,
+                )
+                return 2
+
+        def save_all(directory):
+            for seed, image in drawn.items():
+                hunt_files.write_image_atomic(directory / f"{seed}.png", image)
+
+        try:
+            hunt_files.swap_dir(out / "renders", save_all)
+        except Exception as e:
             print(
-                f"hunt render: refusing -- {args.dir} has no examples.jsonl",
+                f"hunt render: refusing -- {type(e).__name__}: {e}; renders/ "
+                "was left as it was",
                 file=sys.stderr,
             )
             return 2
-        shutil.rmtree(tmp_dir, ignore_errors=True)
-        shutil.rmtree(old_dir, ignore_errors=True)
-
-        to_candidate = getattr(finder, "candidate_from_record", lambda record: record)
-        _, records = _read_valid_lines(out / "examples.jsonl")
-        _, events = _read_valid_lines(out / "progress.jsonl")
-        seeds = [e["seed"] for e in events if e.get("outcome") == "example"]
-        tmp_dir.mkdir()
-        try:
-            for seed, record in zip(seeds, records, strict=False):
-                try:
-                    image = render(to_candidate(record))
-                    image.save(tmp_dir / f"{seed}.png")
-                except Exception as e:
-                    print(
-                        f"hunt render: refusing -- seed {seed} did not draw "
-                        f"({type(e).__name__}: {e}); renders/ was left as it was",
-                        file=sys.stderr,
-                    )
-                    return 2
-            renders = out / "renders"
-            if renders.exists():
-                renders.rename(old_dir)
-            tmp_dir.rename(renders)
-        finally:
-            shutil.rmtree(tmp_dir, ignore_errors=True)
-        shutil.rmtree(old_dir, ignore_errors=True)
         return 0
     finally:
-        _release_lock(lock_fd)
+        hunt_files.release_lock(lock_fd)
 
 
 def run(finder, argv):
@@ -982,7 +895,7 @@ def run(finder, argv):
     # Acting on that stale "no run.json" belief overwrites the finished
     # hunt and replays every seed. Locking first makes every read below an
     # authoritative one.
-    lock_fd = _acquire_lock(out)
+    lock_fd = hunt_files.acquire_lock(out)
     if lock_fd is None:
         return _refuse(args.out, "an active hunt (locked)")
 
@@ -991,7 +904,7 @@ def run(finder, argv):
         run_path = out / "run.json"
         if run_path.exists():
             is_resume = True
-            prior = json.loads(run_path.read_text())
+            prior = hunt_files.read_json(run_path)
             prior_argv = prior.get("argv")
             if prior_argv is None or _resume_key(prior_argv) != _resume_key(argv):
                 print(
@@ -1017,6 +930,9 @@ def run(finder, argv):
         if other_files:
             return _refuse(args.out, ", ".join(other_files))
         return _fresh(finder, argv, args, out)
+    except hunt_files.HuntFileError as e:
+        print(f"hunt: refusing to resume -- {e}", file=sys.stderr)
+        return 2
     except SymmetryMismatch as e:
         # Same clean refusal `_validate_symmetry`'s pre-flight gives a
         # structurally-broken group -- this one only surfaces once a real
@@ -1033,4 +949,4 @@ def run(finder, argv):
             _cleanup_partial_output(out)
         return 2
     finally:
-        _release_lock(lock_fd)
+        hunt_files.release_lock(lock_fd)

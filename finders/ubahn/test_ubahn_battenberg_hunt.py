@@ -153,6 +153,9 @@ for engine in ENGINES:
         for field in ("battenberg", "battenberg_only", "checkerboard_windows"):
             del record[field]
         (old / "examples.jsonl").write_text(json.dumps(record) + "\n")
+        (old / "progress.jsonl").write_text(
+            json.dumps({"event": "seed_done", "seed": 0, "outcome": "example"}) + "\n"
+        )
         r = run_cli(FINDER, "verify", str(old))
         asked = READER.candidate_from_record(record).conditions
         check(
@@ -195,6 +198,13 @@ for engine in ENGINES:
             + "\n"
             + json.dumps({**examples[0], "battenberg_only": True})
             + "\n"
+        )
+        (bad / "progress.jsonl").write_text(
+            "".join(
+                json.dumps({"event": "seed_done", "seed": k, "outcome": "example"})
+                + "\n"
+                for k in range(2)
+            )
         )
         r = run_cli(FINDER, "verify", str(bad))
         verdicts = read_verified(bad / "verified.jsonl")[1]

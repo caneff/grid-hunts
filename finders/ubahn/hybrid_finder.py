@@ -211,6 +211,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 # isort: split
+import hunt_files
 import hybrid
 import hybrid_model
 import hybrid_render
@@ -218,7 +219,7 @@ import hybrid_sat
 import network
 import penpa
 from dedupe import IDENTITY
-from driver import run, save_render_atomic
+from driver import run
 from hunt_dir import replace_links, seeded_examples
 from protocol import Empty, Verdict
 from ubahn_finder import DEFAULT_SIDE, DEFAULT_TIMEOUT, UbahnFinder
@@ -913,17 +914,17 @@ def write_pictures(out, blank_strip=False, seed=None, png=None):
         except ValueError as e:
             raise ValueError(f"seed {s}: {e}") from e
     if seed is not None:
-        save_render_atomic(drawn[seed], Path(png))
+        hunt_files.write_image_atomic(Path(png), drawn[seed])
         return [f"wrote the picture of seed {seed} to {png}"]
     renders = out / "renders"
-    renders.mkdir(exist_ok=True)
-    for s, image in drawn.items():
-        save_render_atomic(image, renders / f"{s}.png")
-    # A rerun replaces the whole set, so a picture left by an earlier
-    # example list never stays.
-    for stale in renders.glob("*.png"):
-        if stale.name not in {f"{s}.png" for s in drawn}:
-            stale.unlink()
+
+    def save_all(directory):
+        for s, image in drawn.items():
+            hunt_files.write_image_atomic(directory / f"{s}.png", image)
+
+    # The whole set is swapped in, so a picture left by an earlier example
+    # list never stays.
+    hunt_files.swap_dir(renders, save_all)
     return [f"wrote {len(drawn)} pictures to {renders}"]
 
 

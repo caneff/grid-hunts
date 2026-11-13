@@ -7,14 +7,15 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import hunt_files
 from driver import _parse_args as driver_args
 
 
 def read_verified(path):
     """(stamp, verdicts): verified.jsonl's first line is the stamp
     {"verified_examples": N} (#517), every later line one verdict."""
-    lines = [json.loads(line) for line in path.read_text().splitlines() if line]
-    return lines[0], lines[1:]
+    _, records = hunt_files.read_log(path)
+    return records[0], records[1:]
 
 
 def example_verdicts(out, run_argv, examples):

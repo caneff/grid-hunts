@@ -370,6 +370,28 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
+    # An unreadable line that is not the last is no kill's work: the resume
+    # refuses it by file and line and leaves the directory as it was.
+    out = Path(tmp) / "bad-middle"
+    check(
+        "base hunt for the bad-middle test exits 0",
+        run_cli(TOY_FINDER, out, "0:30").returncode == 0,
+    )
+    examples_path = out / "examples.jsonl"
+    kept = examples_path.read_text().splitlines()
+    examples_path.write_text("\n".join([kept[0], "{not json", *kept[1:]]) + "\n")
+    before = {p.name: p.read_bytes() for p in out.iterdir() if p.is_file()}
+    rerun = run_cli(TOY_FINDER, out, "0:30")
+    check("a bad middle line refuses the resume, exit 2", rerun.returncode == 2)
+    check(
+        "the refusal names the file and line", "examples.jsonl line 2" in rerun.stderr
+    )
+    check(
+        "a refused resume changes no file",
+        before == {p.name: p.read_bytes() for p in out.iterdir() if p.is_file()},
+    )
+
+with tempfile.TemporaryDirectory() as tmp:
     # A half-written trailing line in examples.jsonl, as a real kill
     # mid-write() can leave -- not reproducible via timing, so it's
     # hand-corrupted here. progress.jsonl still confirms the seed as an
@@ -563,7 +585,9 @@ with tempfile.TemporaryDirectory() as tmp:
 
     b_ready = threading.Event()
     release_b = threading.Event()
-    real_flock = driver_module.fcntl.flock
+    import hunt_files
+
+    real_flock = hunt_files.fcntl.flock
 
     def _patched_flock(fd, op):
         if threading.current_thread().name == "hunt-B":
@@ -571,7 +595,7 @@ with tempfile.TemporaryDirectory() as tmp:
             release_b.wait(timeout=10)
         return real_flock(fd, op)
 
-    driver_module.fcntl.flock = _patched_flock
+    hunt_files.fcntl.flock = _patched_flock
     b_result = {}
     # This drives driver.run() in-process, so it reads the real
     # HUNT_FAKE_LOAD1/os.environ at call time, not a subprocess env dict --
@@ -601,7 +625,7 @@ with tempfile.TemporaryDirectory() as tmp:
             release_b.set()
             b_thread.join(timeout=15)
     finally:
-        driver_module.fcntl.flock = real_flock
+        hunt_files.fcntl.flock = real_flock
 
     check("thread B's call returned", "code" in b_result)
     final_progress = read_jsonl(out / "progress.jsonl")

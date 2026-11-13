@@ -28,7 +28,11 @@ README before reusing anything there.
   example with `candidate_from_record`, draws it and swaps `renders/` for the
   full set of `<seed>.png` in one step, so a kill leaves the previous set or
   none and a re-run converges. `finders/hunt/toy_finder.py`
-  is a minimal worked example; `finders/qqrr/hunt/tie_finder.py`, a new finder
+  is a minimal worked example. `finders/hunt/hunt_files.py` owns every file a
+  hunt writes and every read of one: the lock, JSONL logs whose read drops a
+  torn last line and refuses any other bad line, atomic writes, `swap_dir`
+  and `run_log(path, config)`, a locked resumable log for any search; read and
+  write hunt files only through it. `finders/qqrr/hunt/tie_finder.py`, a new finder
   over `chan_big.py`'s model, is the first real one. Other existing finders
   are not ported onto it. A new finder folder needs a BUILD file before
   the gate passes: `docs/pants.md`.
