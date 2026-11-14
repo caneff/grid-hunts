@@ -35,7 +35,6 @@ def load(board_path):
 
 
 def doc_of(names):
-    """`board.json` with its between lines replaced by `names`' lines."""
     doc = json.loads((HERE / "board.json").read_text())
     (group,) = [
         c for c in doc["puzzle"]["constraints"] if c.get("type") == rules.BETWEEN_LINE

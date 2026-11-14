@@ -36,10 +36,8 @@ def solutions(lines, n, box, limit, deadline=None):
 
 
 def between_narrowing(body, houses, n):
-    """The between line's narrowing step for one line with these body cells."""
+    """Narrowing step for between lines with these body cells."""
     crowd = max(sum(1 for p in body if p in house) for house in houses)
-    # room[lo][hi]: whether the open interval (lo, hi) of doubled values
-    # holds `crowd` distinct digits, at most one of them halved.
     room = [[False] * (2 * n + 2) for _ in range(2 * n + 2)]
     for lo in range(1, 2 * n + 1):
         for hi in range(lo + 1, 2 * n + 1):

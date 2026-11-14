@@ -56,7 +56,6 @@ assert marks == [
     "held      9 in r7c7 or r7c8 or r7c9 or r9c7 or r9c8 or r9c9",
 ], "\n".join(marks)
 
-# A false mark is reported as not held, with a solution that breaks it.
 with tempfile.TemporaryDirectory() as tmp:
     wrong = Path(tmp) / "marks.json"
     wrong.write_text(json.dumps([{"kind": "digit", "cell": "r1c1", "digit": 2}]))
@@ -67,8 +66,6 @@ with tempfile.TemporaryDirectory() as tmp:
     assert out[1] == "NOT HELD  r1c1 = 2", out
     assert out[2].startswith("  broken by: r1 "), out
 
-# No time to decide the board's own status: no mark is checked, so none is
-# read as held, and the report exits 1 with the reason.
 done = run("--time-limit", "1e-6")
 assert done.returncode == 1, (done.returncode, done.stdout, done.stderr)
 assert done.stdout.splitlines() == [

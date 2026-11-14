@@ -77,7 +77,7 @@ assert "b1 holds 0 twice" in k.violations, k.violations
 assert "b1 holds 1 twice" in k.violations, k.violations
 assert "r1 and r2 both miss 4" in k.violations, k.violations
 assert "c1 and c2 both miss 4" in k.violations, k.violations
-assert k.missing["b1"] is None, k.missing  # two 0s: no single missing digit
+assert k.missing["b1"] is None, k.missing
 
 GRID_Z = ((0, 1, 2, 3), (2, 3, 0, 4), (1, 0, 4, 2), (3, 4, 1, 0))
 z = rules.read(GRID_Z, BOX)

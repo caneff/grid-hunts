@@ -32,7 +32,6 @@ from halver_query import uniqueness
 
 
 def call(*argv):
-    """(exit status, stdout, stderr) of hunt.py's main, in process."""
     out, err = io.StringIO(), io.StringIO()
     with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
         status = hunt.main(list(argv))
@@ -40,8 +39,6 @@ def call(*argv):
 
 
 def hunt_dir(path, argv, records, outcomes):
-    """A hunt directory as the driver leaves one: run.json, one seed_done
-    event per outcome, and examples.jsonl."""
     path.mkdir()
     run = {"argv": argv, "start_time": datetime.now(UTC).isoformat()}
     (path / "run.json").write_text(json.dumps(run))
@@ -62,7 +59,6 @@ finder = hunt.HalverBetweenFinder(
 solution = uniqueness(rules.RuleModel(hunt.BOARD + list(hit_fixture.ADDED)), 60).first
 with short_link.fake_mint():
     good = finder.record(hunt.Hit(hit_fixture.ADDED, solution))
-    # The same hit with one more line whose body cell r5c2 is already on a line.
     reused = rules.Line((4, 0), ((4, 1),), (3, 1))
     bad = finder.record(hunt.Hit((*hit_fixture.ADDED, reused), solution))
 examples = [{"seed": 0, "outcome": "example"}, {"seed": 1, "outcome": "example"}]
@@ -70,7 +66,6 @@ examples = [{"seed": 0, "outcome": "example"}, {"seed": 1, "outcome": "example"}
 with tempfile.TemporaryDirectory() as tmp:
     tmp = Path(tmp)
 
-    # Verified inline: both examples are hits.
     inline = tmp / "inline"
     hunt_dir(inline, ["--out", str(inline), "--seeds", "0:2"], [good, good], examples)
     status, text, err = call("summary", str(inline))
@@ -78,7 +73,6 @@ with tempfile.TemporaryDirectory() as tmp:
     assert text.startswith("2 hits in 2 seeds (0..1), wall clock"), text
     assert f"hit, 11 added lines: {good['link']}" in text, text
 
-    # --no-verify, before `hunt.py verify`: unchecked, no hit.
     deferred = tmp / "deferred"
     argv = ["--out", str(deferred), "--seeds", "0:2", "--no-verify"]
     hunt_dir(deferred, argv, [good, bad], examples)
@@ -90,7 +84,6 @@ with tempfile.TemporaryDirectory() as tmp:
     assert "\nhit," not in text, text
     assert f"unchecked candidate, 11 added lines: {good['link']}" in text, text
 
-    # After `hunt.py verify`: the good one is a hit, the bad one rejected.
     status, _, err = call("verify", str(deferred))
     assert status == 0, err
     status, text, err = call("summary", str(deferred))
@@ -105,7 +98,6 @@ with tempfile.TemporaryDirectory() as tmp:
     ) in text, text
     assert "unchecked" not in text, text
 
-    # A verified.jsonl that no longer covers examples.jsonl is refused.
     with (deferred / "examples.jsonl").open("a") as f:
         f.write(json.dumps(good) + "\n")
     with (deferred / "progress.jsonl").open("a") as f:
@@ -116,7 +108,6 @@ with tempfile.TemporaryDirectory() as tmp:
     assert status == 2, (status, text)
     assert "covers 2 examples and examples.jsonl holds 3" in err, err
 
-    # A rejected seed with no reason recorded says so.
     rejected = tmp / "rejected"
     argv = ["--out", str(rejected), "--seeds", "0:1"]
     hunt_dir(rejected, argv, [], [{"seed": 0, "outcome": "rejected"}])
@@ -145,7 +136,6 @@ with tempfile.TemporaryDirectory() as tmp:
     assert status == 2, (status, text)
     assert "examples.jsonl line 1" in err, err
 
-    # --workers 3 is refused by name, and no hunt directory is made.
     refused = tmp / "refused"
     status, text, err = call("--out", str(refused), "--seeds", "0:1", "--workers", "3")
     assert status == 2, (status, text)

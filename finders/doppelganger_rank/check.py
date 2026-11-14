@@ -79,7 +79,6 @@ def read_board(path):
 
 
 def mark_name(mark):
-    """The mark in words, as the report prints it."""
     if mark["kind"] == "digit":
         return f"{mark['cell']} = {mark['digit']}"
     if mark["kind"] == "missing":
@@ -116,8 +115,6 @@ def one_line(grid):
 
 
 def report(board, box, marks, time_limit):
-    """Print the status, its solutions and each mark's verdict; the exit
-    status."""
     result = board.check(time_limit=time_limit)
     print(f"{len(board.clues)} rank clues: {result.status}")
     if result.status not in ("unique", "not_unique"):

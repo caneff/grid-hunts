@@ -38,7 +38,6 @@ FIXTURES = HERE / "fixtures"
 
 
 def agrees(clues):
-    """The re-proof's status, asserted equal to the key's."""
     want, keep = brute.classify(clues)
     got = reprove(4, brute.BOX, clues, time_limit=30.0)
     assert got.status == want, (clues, got, want)

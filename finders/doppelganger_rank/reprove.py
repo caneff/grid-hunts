@@ -39,7 +39,6 @@ class Reproof(NamedTuple):
 
 
 def _units(n, box):
-    """Each kind's units (rows, columns, boxes), each a list of cells."""
     bh, bw = box
     rows = [[(r, c) for c in range(n)] for r in range(n)]
     cols = [[(r, c) for r in range(n)] for c in range(n)]
@@ -52,8 +51,6 @@ def _units(n, box):
 
 
 def _reading(n, line, end):
-    """The cells a clue's number reads, from its end: `r3` `right` reads
-    row 3 from column n back to column 1."""
     i = int(line[1:]) - 1
     cells = [(i, j) for j in range(n)] if line[0] == "r" else [(j, i) for j in range(n)]
     return cells[::-1] if end in ("right", "bottom") else cells
@@ -99,7 +96,6 @@ class _Board:
                 for d in range(1, n + 1):
                     m.AddAtMostOne(y[r, c, d] for r, c in unit)
                     miss[d] = m.NewBoolVar(f"miss{kind}{u}_{d}")
-                    # At most one cell holds d, so the sum is 0 or 1.
                     m.Add(miss[d] + sum(y[r, c, d] for r, c in unit) == 1)
                 misses.append(miss)
                 for cell in unit:
@@ -113,7 +109,6 @@ class _Board:
             for d in range(1, n + 1):
                 for i in range(3):
                     for j in range(i + 1, 3):
-                        # Not (zero and both miss d).
                         m.AddBoolOr(zero.Not(), three[i][d].Not(), three[j][d].Not())
 
         readings = _all_readings(n)
@@ -136,7 +131,6 @@ class _Board:
         m.AddBoolOr(y[(*a, 0)].Not(), same.Not(), y[(*b, 0)])
         for d in range(1, n + 1):
             at_d = y[(*a, d)].Not()
-            # a holds d: b is below exactly when b's digit is not at least d.
             m.AddBoolOr(at_d, less.Not(), ge[(*b, d)].Not())
             m.AddBoolOr(at_d, ge[(*b, d)], less)
             m.AddBoolOr(at_d, y[(*b, d)].Not(), same)
@@ -144,8 +138,6 @@ class _Board:
         return less, same
 
     def _below(self, theirs, mine, tag):
-        """A boolean true exactly when the number read along `theirs` is
-        strictly below the one read along `mine`."""
         m = self.m
         rest = None
         for i in reversed(range(self.n)):
@@ -154,7 +146,6 @@ class _Board:
                 rest = less
                 continue
             here = m.NewBoolVar(f"below{tag}_{i}")
-            # here <=> less or (same and rest)
             m.AddBoolOr(less.Not(), here)
             m.AddBoolOr(same.Not(), rest.Not(), here)
             m.AddBoolOr(here.Not(), less, same)

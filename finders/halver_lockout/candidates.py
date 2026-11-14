@@ -36,6 +36,8 @@ shape_violation = partial(halver_shapes.shape_violation, end="diamond")
 
 
 def separating_paths(target, second, lines, max_cells, gap=rules.GAP):
+    """Lockout lines of at most `max_cells` cells that hold in `target` and fail in `second`,
+    shortest first, each line once; `gap` is the least difference between a line's diamonds."""
     # The state is (below, above): the largest body value under the first
     # diamond's and the smallest over it. `least` is the diamonds' least
     # difference, in doubled values.

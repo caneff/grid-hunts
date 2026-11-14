@@ -99,13 +99,18 @@ def solutions(
     probe_ends=False,
     clock=time.monotonic,
 ):
+    """Same solutions as `halver_brute.solutions`, found by the C search.
+
+    Raises ValueError past the board and line limits, OutOfTime past `deadline`
+    (`clock` is the time source).
+    """
     if n > MAX_N or len(lines) > MAX_LINES:
         raise ValueError(
             f"the C search takes up to {MAX_N}x{MAX_N} and {MAX_LINES} lines, "
             f"not {n}x{n} and {len(lines)}"
         )
     houses = [[r * n + c for r, c in house] for house in halver_brute._houses(n, box)]
-    every = (1 << (2 * n + 1)) - 2  # doubled values 1..2n
+    every = (1 << (2 * n + 1)) - 2
     flat_lines, flat_pairs, ends = [], [], set()
     for (a, ac), body, (b, bc) in lines:
         end_a, end_b = a * n + ac, b * n + bc

@@ -109,7 +109,6 @@ DEFAULTS = {
 }
 # The subcommands that read a hunt directory, not a board.
 DIR_COMMANDS = (["verify"], ["render"], ["summary"], ["links"])
-# The Empty reason's class, as `summary` names it in the split.
 CLASSES = {
     "infeasible": "proven infeasible",
     "timeout": "timed out",
@@ -195,6 +194,9 @@ class _Seed(Hooks):
 
 
 class DoppelgangerRankFinder:
+    """The hunt's finder for the shared hunt protocol: a target-grid loop that
+    adds rank clues to a board until unique, then minimises them."""
+
     symmetry = IDENTITY
 
     def __init__(

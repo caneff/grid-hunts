@@ -64,7 +64,6 @@ def notespaces(n, box):
 
 
 def text_point(place, n):
-    """The [x, y] of a clue's text, in cell units from the grid's corner."""
     line, end = place
     k = int(line[1:]) - 0.5
     return {

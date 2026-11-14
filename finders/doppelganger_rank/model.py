@@ -64,6 +64,9 @@ class MarkCheck(NamedTuple):
 
 
 class RankModel:
+    """The Doppelganger + Full Rank board as a CP-SAT model, with its rank
+    clues, uniqueness check, target sampler and mark check."""
+
     def __init__(self, n, box, clues):
         self.n = n
         self.model = m = cp_model.CpModel()
@@ -146,8 +149,6 @@ class RankModel:
         self.clues.append(clue)
 
     def _copy(self, hints=None):
-        """A copy of the model and its grid variables, in `self.x`'s order,
-        with no hint but `hints`, one value per variable in that order."""
         m = self.model.clone()
         m.ClearHints()
         x = [m.GetIntVarFromProtoIndex(v.Index()) for v in self.x.values()]

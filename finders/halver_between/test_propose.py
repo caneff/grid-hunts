@@ -49,21 +49,17 @@ def propose(f):
     return f.propose(random.Random(0))
 
 
-# With no budget in reach, seed 0 finishes after k more lines.
 free = propose(finder())
 assert isinstance(free, hunt.Hit), free
 k = len(free.added) - len(START)
 assert k >= 1, free
 
-# The same seed with exactly k lines allowed is the same hit; with k - 1 it
-# ends on the line budget.
 at_limit = propose(finder(max_lines=k))
 assert at_limit == free, at_limit
 short = propose(finder(max_lines=k - 1))
 assert isinstance(short, hunt.Empty), short
 assert short.reason == f"budget: {k - 1} lines added and still not unique", short
 
-# Every sample and check gets at most the seconds the seed has left.
 limits = []
 real_check, real_sample = halver_query.uniqueness, rules.RuleModel.sample
 
@@ -87,8 +83,6 @@ assert isinstance(bounded, hunt.Hit), bounded
 assert limits and all(0 < s <= 5.0 for s in limits), limits
 
 
-# A check that times out ends the seed as Empty, named for the limit that
-# was reached.
 def timed_out(board, time_limit):
     return rules.RuleCheck("timeout")
 

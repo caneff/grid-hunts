@@ -54,6 +54,8 @@ def _extend(start, v, state, lowest, highest):
 
 
 def separating_paths(target, second, lines, max_cells):
+    """Every line of at most `max_cells` cells that holds in `target` and fails
+    in `second`, shortest first; see the module docstring."""
     return halver_shapes.separating_paths(
         target,
         second,

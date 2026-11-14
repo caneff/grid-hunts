@@ -40,16 +40,12 @@ def line_of(path):
 
 
 def crossing(p, q):
-    """The other diagonal of the 2x2 a diagonal step p -> q cuts, or None
-    for an orthogonal step."""
     if p[0] == q[0] or p[1] == q[1]:
         return None
     return frozenset(((p[0], q[1]), (q[0], p[1])))
 
 
 def occupied(lines):
-    """(every cell on a line, every body cell, each diagonal step's cells ->
-    the line it belongs to)."""
     on_line, bodies, diagonals = set(), set(), {}
     for line in lines:
         cells = path_of(line)
@@ -66,6 +62,8 @@ def _king(p, q):
 
 
 def shape_violation(path, lines, end, n=9):
+    """None if `path` may be drawn against `lines` on an n x n board, else the first rule
+    it breaks, as text; `end` names the path's ends in that text."""
     for cell in path:
         if not (0 <= cell[0] < n and 0 <= cell[1] < n):
             return f"{cell_name(cell)} is off the {n}x{n} board"

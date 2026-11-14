@@ -18,7 +18,6 @@ from halver_rules import cell_name, mark_name
 
 
 def describe(solution):
-    """A solution on one line: each row's digits, then the halver cells."""
     rows = " ".join(
         f"r{r + 1} {''.join(map(str, row))}" for r, row in enumerate(solution.digits)
     )

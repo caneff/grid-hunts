@@ -56,8 +56,7 @@ DEFAULTS = {
 
 
 def link_doc(added):
-    """Chris's document with `added` drawn as more between lines in his line's
-    style, and every cell's entered digits, colours and pencil marks cleared."""
+    """Chris's document plus `added` as more between lines, entries cleared."""
     doc = copy.deepcopy(BOARD_DOC)
     doc["puzzle"]["cells"] = [{} for _ in doc["puzzle"]["cells"]]
     (group,) = [
@@ -69,7 +68,7 @@ def link_doc(added):
 
 
 class HalverBetweenFinder(TargetLoopFinder):
-    """The between hunt's finder, from Chris's board."""
+    """The between hunt's finder."""
 
     rules, candidates, brute = rules, candidates, brute
     board = tuple(BOARD)
