@@ -178,12 +178,14 @@ class _HeldGrid(HybridFinder):
         return Candidate(self.conditions, self.found)
 
 
-def _classify_sets(conditions, engine, timeout, sets, mirrored, path, engines):
+def _classify_sets(conditions, engine, timeout, sets, done, path, engines):
     """Classify each set of windows as the conditions' markings and append
     its line to the per-set file at `path` as the answer lands; a unique
-    set's line carries its one grid as a hunt's record. With `mirrored`, a
-    set that is not its own mirror is followed by its mirror's line, copied
-    from it; a kill between the two lines leaves `_mend` to copy it again."""
+    set's line carries its one grid as a hunt's record. `done` is the sets
+    that have a line, or None when the conditions keep no reflection; with
+    it, a set that is not its own mirror and whose mirror has no line is
+    followed by its mirror's line, copied from it. A kill between the two
+    lines leaves the mirror untried: a rerun solves it, and copies nothing."""
     with hunt_files.open_log(path) as append:
         for windows in sets:
             began = time.monotonic()
@@ -204,7 +206,7 @@ def _classify_sets(conditions, engine, timeout, sets, mirrored, path, engines):
                 solved["record"] = finder.record(Candidate(marked, found))
             lines = [solved]
             image = mirror(windows)
-            if mirrored and image != windows:
+            if done is not None and image != windows and frozenset(image) not in done:
                 solved["mirror"] = [hybrid.cell_name(window) for window in image]
                 lines.append(_mirror_line(conditions, engine, timeout, solved, engines))
             for line in lines:
@@ -252,17 +254,6 @@ def _sets_on_file(path):
     return tried
 
 
-def _mend(log, conditions, engine, timeout, engines):
-    """Give every solved set whose mirror's line is missing (a kill between
-    the two writes) that line, copied again. Every other check is the run
-    log's and `_sets_on_file`'s."""
-    tried = _sets_on_file(log.path)
-    for line in list(tried.values()):
-        image = line["mirror"] and frozenset(map(hybrid.parse_cell, line["mirror"]))
-        if line["how"] == "solved" and image and image not in tried:
-            log.append(_mirror_line(conditions, engine, timeout, line, engines))
-
-
 def fewest_markings(
     conditions, engine, timeout, out, max_size, workers, engines=ENGINES
 ):
@@ -293,22 +284,35 @@ def fewest_markings(
     # Held until the answer is printed, as a climb holds its own log. A
     # worker appends to the file itself (`hunt_files.open_log`), so what the
     # run reads after one is the file, not `log.lines`.
-    with hunt_files.run_log(path, asked) as log:
-        _mend(log, conditions, engine, timeout, engines)
+    with hunt_files.run_log(path, asked):
         for size in range(max_size + 1):
             sets = list(itertools.combinations(windows, size))
             tried = _sets_on_file(path)
-            # Of a mirror pair the set that sorts first is the one solved.
+            # Of a mirror pair the set that sorts first is the one solved and
+            # writes both lines. A mirror whose solved partner has a line and
+            # it none (a kill between the two) is solved itself.
             todo = [
                 chosen
                 for chosen in sets
                 if frozenset(chosen) not in tried
-                and not (mirrored and mirror(chosen) < chosen)
+                and not (
+                    mirrored
+                    and mirror(chosen) < chosen
+                    and frozenset(mirror(chosen)) not in tried
+                )
             ]
             crew = [
                 multiprocessing.Process(
                     target=_classify_sets,
-                    args=(conditions, engine, timeout, share, mirrored, path, mine),
+                    args=(
+                        conditions,
+                        engine,
+                        timeout,
+                        share,
+                        frozenset(tried) if mirrored else None,
+                        path,
+                        mine,
+                    ),
                 )
                 for share in (todo[i::workers] for i in range(workers))
                 if share

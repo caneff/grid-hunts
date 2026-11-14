@@ -297,6 +297,18 @@ with tempfile.TemporaryDirectory() as d:
             and len(after) == len(whole)
             and len({frozenset(line["windows"]) for line in tried}) == len(tried),
         )
+        if label == "before a mirror's line":
+            # The lost mirror is an untried set: solved on its own, one solve.
+            lost = json.loads(whole[paired])
+            (again_line,) = [
+                line for line in tried if line["windows"] == lost["windows"]
+            ]
+            check(
+                "stopped before a mirror's line: that set is solved again on "
+                "its own, its answer the one the copy gave",
+                again_line["how"] == "solved"
+                and again_line["status"] == lost["status"],
+            )
 
     # The file of a run killed before its first set, under another time
     # limit: refused before any solve, with no line added.
