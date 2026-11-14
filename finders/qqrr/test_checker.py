@@ -79,15 +79,32 @@ text = checker.render(
 )
 assert text.startswith("unique:"), text
 block = checker.render_solution(checker.Solution(grid, ranks, numbers, cranks), 1)
-assert "window ranks" in block and "cell numbers" in block and "cell ranks" in block
+# Each table is printed under its heading with the oracle's values, one grid
+# row per line: the first row of every table, read back off the block.
+lines = block.splitlines()
 
 
-def refuses(fn, *args, saying="", **kwargs):
-    """True when the call raises the guard's own error, with `saying` in its message."""
+def first_row_under(heading):
+    return lines[lines.index(heading) + 1].split()
+
+
+assert lines[1].split() == [str(d) for d in grid[0]], lines[1]
+assert first_row_under("window ranks (by top-left cell)") == [
+    str(v) for v in ranks[0]
+], block
+assert first_row_under("cell numbers") == [str(v) for v in numbers[0]], block
+assert first_row_under("cell ranks") == [str(v) for v in cranks[0]], block
+
+
+def refuses(fn, *args, error, saying, **kwargs):
+    """True when the call raises exactly `error` (the guard's own, not a crash
+    of another type) with `saying` in its message; `saying` is required, and
+    an empty one would pass on any message."""
+    assert saying, "name the message the refusal must carry"
     try:
         fn(*args, **kwargs)
-    except (ValueError, AssertionError) as e:
-        return saying in str(e)
+    except Exception as e:
+        return type(e) is error and saying in str(e)
     return False
 
 
@@ -101,6 +118,7 @@ assert refuses(
     count=0,
     workers=1,
     timeout=30,
+    error=ValueError,
     saying="count",
 )
 assert refuses(
@@ -111,6 +129,7 @@ assert refuses(
     count=2,
     workers=0,
     timeout=30,
+    error=ValueError,
     saying="workers",
 )
 clued_corner = checker.Opener(9, {}, {(0, 0): 40}, {}, {})
@@ -122,6 +141,7 @@ assert refuses(
     count=2,
     workers=1,
     timeout=30,
+    error=ValueError,
     saying="already carries",
 )
 # The same rank on both is no contradiction.
@@ -137,13 +157,13 @@ assert checker.run(
 doc = json.loads((HERE / "opener.json").read_text())
 
 
-def variant(mutate, saying=""):
+def variant(mutate, saying):
     d = json.loads(json.dumps(doc))
     mutate(d["puzzle"])
     path = HERE / ".variant.json"
     path.write_text(json.dumps(d))
     try:
-        return refuses(checker.load_opener, path, saying=saying)
+        return refuses(checker.load_opener, path, error=ValueError, saying=saying)
     finally:
         path.unlink()
 
@@ -174,12 +194,14 @@ assert variant(
     lambda p: named(p, checker.WINDOW_MARKS)["symbols"][0].__setitem__(1, 0),
     "border intersection",
 )
-assert not variant(lambda p: None)
+assert not variant(lambda p: None, "no refusal")
 
 
 # The oracle check inside run is live: a solver whose readings disagree with
 # the oracle is refused, not reported.
-class Stub:
+class Skewed:
+    """A solver whose reading of the variable named `bad` is one too high."""
+
     def __init__(self, s, bad):
         self.s, self.bad = s, bad
 
@@ -187,16 +209,37 @@ class Stub:
         val = self.s.Value(v)
         return val + 1 if v.Name() == self.bad else val
 
+    def __getattr__(self, name):
+        return getattr(self.s, name)
 
-qm = model.build(9, ranked_cells=[(0, 4)])
-for r in range(9):
-    for c in range(9):
-        qm.m.Add(qm.x[r][c] == grid[r][c])
-solver = cpsat.solver(30)
-assert solver.Solve(qm.m) in cpsat.SOLVED
-assert checker._extract(solver, qm, [(0, 4)]).grid == grid
-for bad in ("rank00", "num44", "q04"):
-    assert refuses(checker._extract, Stub(solver, bad), qm, [(0, 4)]), bad
+
+def run_skewed(bad):
+    """`run` over the fixed grid with the solver `run` builds skewed on `bad`."""
+    real_solver = cpsat.solver
+    cpsat.solver = lambda *a, **kw: Skewed(real_solver(*a, **kw), bad)
+    try:
+        return refuses(
+            checker.run,
+            fixed,
+            corner=None,
+            hypotheses=True,
+            count=1,
+            workers=1,
+            timeout=30,
+            error=AssertionError,
+            saying=saying_for[bad],
+        )
+    finally:
+        cpsat.solver = real_solver
+
+
+saying_for = {
+    "rank00": "window ranks disagree",
+    "num44": "cell numbers disagree",
+    "q04": "model cell rank at (0, 4)",
+}
+for bad in saying_for:
+    assert run_skewed(bad), bad
 
 
 # The tie hunt (#601): on a run fixed to the witness grid the reported pair is
@@ -268,7 +311,15 @@ class Lying:
         return self.s.Value(v)
 
 
-assert refuses(checker._extract, Lying(solver, pairs), qt, [], pairs, saying="tie")
+assert refuses(
+    checker._extract,
+    Lying(solver, pairs),
+    qt,
+    [],
+    pairs,
+    error=AssertionError,
+    saying="is not a tie the oracle finds",
+)
 # `_extract` fills the whole tie report, the cage flag included.
 sol = checker._extract(solver, qt, [], pairs, clued=[(2, 4), (8, 8)])
 assert sol.tie_touches == [(2, 4)]
@@ -287,7 +338,8 @@ try:
         workers=1,
         timeout=60,
         tie=True,
-        saying="tie",
+        error=AssertionError,
+        saying="is not a tie the oracle finds",
     )
 finally:
     checker.oracle.seven_digit_ties = real
@@ -304,23 +356,27 @@ assert "tie=off" in checker.render(
     checker.run(fixed, corner=None, hypotheses=True, count=2, workers=1, timeout=60)
 )
 
-# The CLI hands --tie to the run, and leaves it off without the flag.
+# The CLI hands --tie to the run: the verdict line it prints (the last one, from
+# the Report) says tie=on only when the run was asked for the tie. A zero
+# timeout ends each run at once, so the verdict is a timeout (exit 2).
+import contextlib
+import io
+
 import qqrr_cpsat
 
-seen = []
-real_run = checker.run
-checker.run = lambda op, **kw: (
-    seen.append(kw["tie"]),
-    real_run(op, **{**kw, "timeout": 0}),
-)[1]
-try:
-    for argv in (
-        ["--tie", "--count", "1", "--workers", "1"],
-        ["--count", "1", "--workers", "1"],
-    ):
-        qqrr_cpsat.main(argv)
-finally:
-    checker.run = real_run
-assert seen == [True, False], seen
+
+def cli_verdict(*flags):
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        code = qqrr_cpsat.main(
+            [*flags, "--count", "1", "--workers", "1", "--timeout", "0"]
+        )
+    return code, out.getvalue().splitlines()[-1]
+
+
+code, verdict = cli_verdict("--tie")
+assert code == 2 and verdict.startswith("timeout:") and "tie=on" in verdict, verdict
+code, verdict = cli_verdict()
+assert code == 2 and verdict.startswith("timeout:") and "tie=off" in verdict, verdict
 
 print("ok test_checker")
