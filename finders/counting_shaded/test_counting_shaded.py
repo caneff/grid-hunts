@@ -44,8 +44,14 @@ def default_settings():
     fastclimb.pins()
 
 
-def random_blob(rng, size):
-    shape = {rng.randrange(81)}
+# Connected, admissible, shows an 8, and its givens have exactly two solutions.
+# (No connected shape is unique under sudoku rules: the connected note's exhaustive result.)
+ADMISSIBLE_TWO_SOLUTIONS = frozenset({13, 14, 15, 21, 22, 23, 24, 31, 32, 33, 41})
+
+
+def random_blob(rng, size, start=()):
+    """A connected blob of `size` cells grown from the `start` cells (one random cell if none)."""
+    shape = set(start) or {rng.randrange(81)}
     while len(shape) < size:
         shape.add(
             rng.choice([j for i in shape for j in shapes.ORTH[i] if j not in shape])
@@ -135,13 +141,18 @@ def test_repeated_given_in_a_house_is_rejected():
 
 
 def test_pins_force_and_ban():
-    blob = random_blob(random.Random(4), 6)
-    assert shapes.givens(blob) is not None or True  # shape itself may be inadmissible
+    # An admissible shape, so a rejection below is the pin's doing.
+    blob = set(ADMISSIBLE_TWO_SOLUTIONS)
+    assert shapes.givens(blob) is not None, "control: unpinned, the shape is admissible"
+    assert fastclimb.count(blob, 2) >= 0
     outside = next(i for i in range(81) if i not in blob)
     fastclimb.pins(force=[outside])
     assert shapes.givens(blob) is None, "a shape missing a forced cell must be rejected"
     assert fastclimb.count(blob, 2) == -1
     inside = next(iter(blob))
+    fastclimb.pins(force=[inside])
+    assert shapes.givens(blob) is not None, "control: a forced cell the shape holds"
+    assert fastclimb.count(blob, 2) >= 0
     fastclimb.pins(ban=[inside])
     assert shapes.givens(blob) is None, "a shape using a banned cell must be rejected"
     assert fastclimb.count(blob, 2) == -1
@@ -162,7 +173,7 @@ def test_require_eight_flag_changes_the_verdict():
 
 
 @pytest.mark.parametrize(
-    "eight,force,ban", [(False, (), ()), (True, (), ()), (False, (0, 1), (80,))]
+    "eight,force,ban", [(False, (), ()), (True, (), ()), (False, (30, 31), (0,))]
 )
 def test_c_and_python_filters_agree(eight, force, ban):
     rng = random.Random(11)
@@ -170,15 +181,15 @@ def test_c_and_python_filters_agree(eight, force, ban):
     fastclimb.pins(force, ban)
     admissible = 0
     for _ in range(4000):
-        shape = random_blob(rng, rng.randrange(3, 24))
+        # a forced case grows from its forced cells, else no random blob would hold them
+        shape = random_blob(rng, rng.randrange(max(3, len(force)), 24), start=force)
         if rng.random() < 0.3:
             shape ^= {rng.randrange(81)}
         g = shapes.givens(shape)
         want = shapes.count_solutions(g, 50) if shapes.eight_ok(g) else -1
         assert fastclimb.count(shape, 50) == want, sorted(shape)
         admissible += want >= 0
-    if not force and not eight:
-        assert admissible > 0, "control: the plain filter must accept something"
+    assert admissible > 0, "control: this filter setting must accept something"
 
 
 # --- counter ----------------------------------------------------------------
@@ -197,6 +208,15 @@ def test_bitmask_counter_matches_cpsat():
         assert mine == cpsat_count(g, 2), sorted(shape)
         unique += mine == 1
     assert checked == 25
+    # Random blobs are never unique, so the sample adds stored unique examples (their
+    # givens, since they predate connectivity); the counter must agree on those too.
+    for line in EXAMPLES.read_text().splitlines()[:5]:
+        shape = set(json.loads(line)["shape"])
+        g = {i: sum(j in shape for j in shapes.NEIGH[i]) for i in shape}
+        mine = shapes.count_solutions(g, 2)
+        assert mine == cpsat_count(g, 2), sorted(shape)
+        unique += mine == 1
+    assert unique > 0, "control: the sample must hold a unique shape to compare on"
 
 
 def test_counter_reports_zero_for_contradictory_givens():
@@ -223,22 +243,16 @@ def test_verifier_accepts_every_stored_example():
 
 
 def test_verifier_rejects_a_non_unique_shape():
-    """Build a shape the counter says has 2+ solutions, then demand a rejection."""
-    rng = random.Random(3)
-    row = json.loads(EXAMPLES.read_text().splitlines()[0])
-    base = set(row["shape"])
-    for _ in range(500):
-        trial = set(base)
-        trial ^= {rng.randrange(81)}
-        g = shapes.givens(trial) if shapes.connected(trial) else None
-        if g is None:
-            g = {i: sum(j in trial for j in shapes.NEIGH[i]) for i in trial}
-            if len({(shapes.BOX[i], n) for i, n in g.items()}) != len(g):
-                continue
-        if shapes.count_solutions(g, 2) == 2:
-            assert verify_all.check([divmod(i, 9) for i in trial])[0] is None
-            return
-    pytest.fail("no shape with 2+ solutions found to test the rejection")
+    """An admissible shape with an 8 and two solutions: only the uniqueness
+    re-solve can reject it (a 1-8 or no-8 filter would reject it first)."""
+    shape = ADMISSIBLE_TWO_SOLUTIONS
+    g = shapes.givens(shape)
+    assert g is not None and 8 in g.values(), (
+        "control: passes the admissibility filters"
+    )
+    assert all(1 <= n <= 8 for n in g.values())
+    assert shapes.count_solutions(g, 2) == 2, "control: the shape is not unique"
+    assert verify_all.check([divmod(i, 9) for i in shape])[0] is None
 
 
 def test_verifier_rejects_an_inadmissible_shape():
@@ -296,6 +310,17 @@ def test_gridenum_six_by_six_counter_and_size_12(tmp_path):
         12, (), (), 120, tmp_path, lambda _m: None, symmetry=True
     )
     assert (status, shapes, solvable, unique) == ("exhausted", 66, 19, 2)
+
+
+def test_fastclimb_loads_through_the_shared_loader(tmp_path, monkeypatch):
+    # #144: with no gcc on PATH, a library that has to be built raises the loader's
+    # named error, not a raw FileNotFoundError.
+    monkeypatch.setattr(
+        fastclimb, "SO", tmp_path / "target" / "counting_shaded_fast.so"
+    )
+    monkeypatch.setenv("PATH", str(tmp_path))
+    with pytest.raises(fastclimb.c_library.CBuildError, match="no gcc on PATH"):
+        fastclimb._load()
 
 
 def test_build_dir_is_a_cache_merge_cleanup_sweeps():
@@ -401,13 +426,19 @@ def test_dfs_flags_a_solvable_list_cut_short_by_max_stored():
 
 @pytest.mark.parametrize("cap", [0, 1])
 def test_dfs_refuses_a_cap_that_would_call_every_solvable_shape_unique(cap):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r"^gf_enumerate: cap below 2$"):
         dfs(21, cap=cap)
 
 
 def test_dfs_refuses_symmetry_with_pins():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r"^gf_enumerate: symmetry with pins$"):
         dfs(19, symmetry=True)
+
+
+@pytest.mark.parametrize("size", [0, 82])
+def test_dfs_refuses_a_size_outside_the_board(size):
+    with pytest.raises(ValueError, match=r"^gf_enumerate: size not in 1-81$"):
+        dfs(size)
 
 
 def test_dfs_all_digits_prune_keeps_a_shape_whose_only_eight_is_two_steps_out(tmp_path):
@@ -426,3 +457,54 @@ def test_dfs_all_digits_prune_keeps_a_shape_whose_only_eight_is_two_steps_out(tm
     assert r.exhausted
     assert (r.shapes, r.solvable, r.unique) == (n, solvable, unique)
     assert r.shapes == 3
+
+
+# --- one flow encoding, one neighbour table ---------------------------------
+
+
+def _defined_names(path):
+    import ast
+
+    return {
+        n.name
+        for n in ast.walk(ast.parse(path.read_text()))
+        if isinstance(n, ast.FunctionDef)
+    }
+
+
+def test_flow_connectivity_and_neighbour_table_are_defined_once():
+    owners = {
+        name: [p.name for p in HERE.glob("*.py") if name in _defined_names(p)]
+        for name in ("add_flow_connectivity", "neighbours")
+    }
+    assert owners == {"add_flow_connectivity": ["shapes.py"], "neighbours": []}
+
+
+def _flow_feasible(shape, **kwargs):
+    m = cp_model.CpModel()
+    g = [m.new_bool_var(f"g{i}") for i in range(81)]
+    for i in range(81):
+        m.add(g[i] == (1 if i in shape else 0))
+    shapes.add_flow_connectivity(m, g, **kwargs)
+    s = cp_model.CpSolver()
+    return s.solve(m) in (cp_model.OPTIMAL, cp_model.FEASIBLE)
+
+
+def test_flow_connectivity_matches_the_flood_fill():
+    rng = random.Random(5)
+    seen = set()
+    for _ in range(40):
+        shape = {rng.randrange(81)}
+        while len(shape) < rng.randint(2, 9):
+            shape.add(rng.choice([j for i in shape for j in shapes.ORTH[i]]))
+        if rng.random() < 0.5:
+            shape.add(rng.randrange(81))  # often a stray, disconnected cell
+        want = shapes.connected(shape)
+        seen.add(want)
+        assert _flow_feasible(shape) == want
+    assert seen == {True, False}
+    # The root supplies one unit per shaded cell, so `cap` bounds the shape: a connected
+    # line of 9 fits cap 9 exactly, one of 10 does not, and an ignored cap would let it.
+    assert _flow_feasible(set(range(9)), cap=9)
+    assert not _flow_feasible(set(range(10)), cap=9)
+    assert _flow_feasible(set(range(10)), cap=10)

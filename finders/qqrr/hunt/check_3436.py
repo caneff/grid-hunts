@@ -1,5 +1,6 @@
-"""Usage: check_3436.py; logs from $HUNT_LOGS (default .scratch/place).
-Which found grids already hold a cell of QQRR 34-36 none of whose windows is the QR-1 window."""
+"""Usage: check_3436.py; reads every big-*.log in $HUNT_LOGS (default .scratch/place).
+Prints one line per grid found there, naming the QR-1 windows and the interior cells of
+QQRR 34-36 none of whose windows shares a cell with one (`hunt_common.q34_accept`)."""
 
 import glob
 
@@ -19,7 +20,7 @@ def report(logs=None):
             seen.setdefault(g, p.split("/")[-1])
     lines = []
     for g, src in seen.items():
-        grid = [[int(d) for d in row] for row in g.split("/")]
+        grid = hc.grid_rows(g)
         ranks, _nums, cr = oracle.rank_grid(grid)
         ones = {
             (wr, wc)

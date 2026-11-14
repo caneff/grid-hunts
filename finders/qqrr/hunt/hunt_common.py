@@ -1,6 +1,7 @@
-"""What the hunt scripts share (#605): the hunt table, the log directory, the q34 criterion, the
-HIT-block log lines and their parser. Importing it puts finders/qqrr on sys.path, so a
-script imports it before `checker`, `model` and `oracle`."""
+"""What the hunt scripts share (#605): the tie hunt's rule (the four numbers, `post_rule`) and
+its tens/units digit channel, the hunt table, the log directory, the q34 criterion, the grid
+text reader and writer, the HIT-block log lines and their parser. Importing it puts
+finders/qqrr on sys.path, so a script imports it before `checker`, `model` and `oracle`."""
 
 import os
 import re
@@ -10,8 +11,19 @@ from typing import NamedTuple
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "finders" / "qqrr"))
+# isort: split
+import checker
+import model
 
-# cage cell, bounded cell, seed grid (a found grid satisfying all but the tie)
+# The tie hunt's rule (#146): QR 10 at the window, QQRR 33 at the cage, QQRR 5 at a corner,
+# the bounded cell at most 7. Written here once; every hunt posts and verifies through these.
+WINDOW_RANK = 10
+CAGE_QQRR = 33
+CORNER_RANK = checker.CORNER_RANK
+BOUND_MAX = 7
+
+# cage cell, bounded cell, seed grid. The seed is only a solver hint: r5c1's holds the tie
+# but breaks the bound (r4c1 = 8), r1c5's meets the bound and has no tie.
 HUNTS = {
     # r5c1 seed: the first br grid found with the bands kept; everything but r4c1 <= 7 holds.
     "r5c1": (
@@ -27,6 +39,41 @@ HUNTS = {
     ),
 }
 LOGS = Path(os.environ.get("HUNT_LOGS", ROOT / ".scratch" / "place"))
+
+
+def post_rule(q, ten, cage, target, pin):
+    """Post the tie hunt's rule on the model `q`: the QR-10 window `ten` (its top-left digit
+    limited to the digits that can reach rank 10), the cage's QQRR, the corner `pin`'s QQRR and
+    the bound on `target`. `cage` and `pin` are the `ranked_cells` the model was built with."""
+    m, n = q.m, len(q.x)
+    m.AddLinearConstraint(q.rank[ten[0]][ten[1]], WINDOW_RANK, WINDOW_RANK)
+    m.AddAllowedAssignments(
+        [q.x[ten[0]][ten[1]]],
+        [(d,) for d in model.leading_digits(n, WINDOW_RANK, WINDOW_RANK)],
+    )
+    m.Add(q.q[cage] == CAGE_QQRR)
+    m.Add(q.q[pin] == CORNER_RANK)
+    m.Add(q.x[target[0]][target[1]] <= BOUND_MAX)
+
+
+def digit_channel(q, wr, wc, tables=False):
+    """The tens and units variables of window (wr, wc)'s rank, as `(t, u)`: rank = 10 t + u,
+    and t >= 1 exactly when the window is wide. With `tables` the tens digit also follows the
+    window's top-left digit through the leading-digit band."""
+    m, n = q.m, len(q.x)
+    t = m.NewIntVar(0, (n - 1) ** 2 // 10, f"t{wr}{wc}")
+    u = m.NewIntVar(0, 9, f"u{wr}{wc}")
+    m.Add(q.rank[wr][wc] == 10 * t + u)
+    w = q.wide[wr][wc]
+    m.Add(t >= 1).OnlyEnforceIf(w)
+    m.Add(t == 0).OnlyEnforceIf(w.Not())
+    if tables:
+        allowed = []
+        for d in range(1, n + 1):
+            lo, hi = model.leading_digit_band(n, d)
+            allowed += [(d, tt) for tt in range(lo // 10, hi // 10 + 1)]
+        m.AddAllowedAssignments([q.x[wr][wc], t], allowed)
+    return t, u
 
 
 def q34_zone(n, r, c):
@@ -67,6 +114,11 @@ def tie_line(ta, tb, num, la, lb, qqrr):
 def grid_text(rows):
     """Nine rows as the slash-joined text a HIT block and examples.jsonl carry."""
     return "/".join("".join(map(str, r)) for r in rows)
+
+
+def grid_rows(text):
+    """The nine rows of digits that `grid_text` wrote, as lists of ints."""
+    return [[int(d) for d in row] for row in text.split("/")]
 
 
 def grid_line(grid):

@@ -22,7 +22,7 @@ from pathlib import Path
 
 from harvest import SYMS
 from ortools.sat.python import cp_model
-from shapes import NEIGH, ORTH, count_solutions, givens
+from shapes import NEIGH, add_flow_connectivity, count_solutions, givens
 
 
 def images(shape):
@@ -46,33 +46,6 @@ def is_lex_min(shape):
     """
     imgs = images(shape)
     return imgs[0] == min(imgs)
-
-
-def add_flow_connectivity(m, g, cap=81):
-    """One root shaded cell supplies a unit of flow to every other shaded cell.
-
-    `cap` is the largest possible shaded cell count. Sizing the flow domains to it
-    rather than to 81 matters: `joint.py --maximize` proves no connected
-    all-visible shape exceeds 26 shaded cells, so 0..81 arcs hand the solver three
-    times the range it can ever use.
-    """
-    root = [m.new_bool_var(f"r{i}") for i in range(81)]
-    m.add_exactly_one(root)
-    arcs = {}
-    for i in range(81):
-        m.add_implication(root[i], g[i])
-        for j in ORTH[i]:
-            f = m.new_int_var(0, cap, f"f{i}_{j}")
-            m.add(f <= cap * g[i])
-            m.add(f <= cap * g[j])
-            arcs[i, j] = f
-    for i in range(81):
-        supply = m.new_int_var(0, cap, f"s{i}")
-        m.add(supply <= cap * root[i])
-        m.add(
-            sum(arcs[j, i] for j in ORTH[i]) + supply
-            == sum(arcs[i, j] for j in ORTH[i]) + g[i]
-        )
 
 
 def add_all_digits(m, v, g):

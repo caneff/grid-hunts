@@ -1,24 +1,34 @@
 """counting shaded, all visible and orthogonally connected: do such shapes exist?
 
-    uv run finders/counting_shaded/connected.py --size 20 [--force 72,73,79] [--ban 57]
+    uv run finders/counting_shaded/connected.py [--min 16] [--max 40] [--force 72,73,79] [--ban 57]
 
 Shape-only CP-SAT model: shaded cell booleans, each shaded cell's given is its
 shaded-neighbour count (1-8), givens distinct within every row, column and box,
 pins honoured, and the shaded cell count within --min..--max. --eight also demands a
 given of 8.
 
-Connectivity is enforced by lazy cuts rather than a flow encoding: solve, flood
-fill the shape, and for every component that is not the whole shape add one
-clause — some cell of the component is not a shaded cell, or some boundary cell is,
-or the witness shaded cell outside it is not. Then re-solve. The witness keeps the
-clause sound for a shape that is only that component.
+Connectivity is a flow encoding by default (--conn flow, shapes.add_flow_connectivity).
+--conn lazy uses cuts instead: solve, flood fill the shape, and for every
+component that is not the whole shape add one clause — some cell of the
+component is not a shaded cell, or some boundary cell is, or the witness shaded
+cell outside it is not. Then re-solve. The witness keeps the clause sound for a
+shape that is only that component. Lazy cuts lose badly: 2073 cuts in 120s
+without ever landing a connected shape.
 """
 
 import argparse
 import time
 
 from ortools.sat.python import cp_model
-from shapes import BOX, CELLS, NEIGH, ORTH, count_solutions, givens
+from shapes import (
+    BOX,
+    CELLS,
+    NEIGH,
+    ORTH,
+    add_flow_connectivity,
+    count_solutions,
+    givens,
+)
 
 
 def components(shape):
@@ -40,31 +50,6 @@ def components(shape):
 def boundary(comp):
     cells = set(comp)
     return {j for i in comp for j in ORTH[i] if j not in cells}
-
-
-def add_flow_connectivity(m, g):
-    """Exact connectivity: one root shaded cell supplies one unit of flow to each other.
-
-    Lazy cuts lose badly here -- each cut kills one component layout and the
-    solver finds another, 2073 cuts in 120s without ever landing a connected
-    shape. Flow pays for itself: it is one encoding, solved once.
-    """
-    root = [m.new_bool_var(f"r{i}") for i in range(81)]
-    m.add_exactly_one(root)
-    arcs = {}
-    for i in range(81):
-        m.add_implication(root[i], g[i])
-        for j in ORTH[i]:
-            f = m.new_int_var(0, 81, f"f{i}_{j}")
-            m.add(f <= 81 * g[i])
-            m.add(f <= 81 * g[j])
-            arcs[i, j] = f
-    for i in range(81):
-        supply = m.new_int_var(0, 81, f"s{i}")
-        m.add(supply <= 81 * root[i])
-        into = sum(arcs[j, i] for j in ORTH[i])
-        out = sum(arcs[i, j] for j in ORTH[i])
-        m.add(into + supply == out + g[i])
 
 
 def solve_flow(m, g, seconds, workers, log):

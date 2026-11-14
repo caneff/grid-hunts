@@ -21,9 +21,9 @@ from pathlib import Path
 
 import fastclimb
 from fastclimb import count, pins
-from joint import add_flow_connectivity, add_symmetry_breaking
+from joint import add_symmetry_breaking
 from ortools.sat.python import cp_model
-from shapes import BOX, CELLS, NEIGH, ORTH
+from shapes import BOX, CELLS, NEIGH, ORTH, add_flow_connectivity
 
 LATIN = False  # rows and columns only; set by --latin, mirrored into the C counter
 

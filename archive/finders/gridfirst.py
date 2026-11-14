@@ -1,6 +1,6 @@
 """counting shaded, connected: search the shape inside a fixed solved grid. BROKEN SAMPLER.
 
-    uv run finders/counting_shaded/gridfirst.py --seconds 300 --min-shaded 20
+    uv run archive/finders/gridfirst.py --seconds 300 --min-shaded 20
 
 DO NOT TRUST THIS FILE'S NUMBERS. `random_grid()` below builds grids by
 relabelling, moving rows within bands, swapping bands and stacks and

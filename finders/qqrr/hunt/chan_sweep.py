@@ -82,36 +82,19 @@ def pool(procs, argv):
 def build(pair, ia, ib):
     q = model.build(n, ranked_cells=[CAGE, PIN])
     m = q.m
-    m.AddLinearConstraint(q.rank[TEN[0]][TEN[1]], 10, 10)
-    m.AddAllowedAssignments(
-        [q.x[TEN[0]][TEN[1]]], [(d,) for d in model.leading_digits(n, 10, 10)]
-    )
-    m.Add(q.q[CAGE] == 33)
-    m.Add(q.q[PIN] == 5)
-    m.Add(q.x[TARGET[0]][TARGET[1]] <= 7)
+    hunt_common.post_rule(q, TEN, CAGE, TARGET, PIN)
     if "nohint" not in FLAGS:
-        for row_i, row in enumerate(SEED.split("/")):
+        for row_i, row in enumerate(hunt_common.grid_rows(SEED)):
             for c, d in enumerate(row):
-                m.AddHint(q.x[row_i][c], int(d))
+                m.AddHint(q.x[row_i][c], d)
     # tens/units per window, channelled to the rank and its width literal
     tens, units = {}, {}
 
     def digits(wr, wc):
         if (wr, wc) not in tens:
-            t = m.NewIntVar(0, 6, f"t{wr}{wc}")
-            u = m.NewIntVar(0, 9, f"u{wr}{wc}")
-            m.Add(q.rank[wr][wc] == 10 * t + u)
-            w = q.wide[wr][wc]
-            m.Add(t >= 1).OnlyEnforceIf(w)
-            m.Add(t == 0).OnlyEnforceIf(w.Not())
-            if "tables" in FLAGS:
-                # the tens digit follows the top-left digit through the leading-digit band
-                allowed = []
-                for d in range(1, n + 1):
-                    lo, hi = model.leading_digit_band(n, d)
-                    allowed += [(d, tt) for tt in range(lo // 10, hi // 10 + 1)]
-                m.AddAllowedAssignments([q.x[wr][wc], t], allowed)
-            tens[(wr, wc)], units[(wr, wc)] = t, u
+            tens[(wr, wc)], units[(wr, wc)] = hunt_common.digit_channel(
+                q, wr, wc, tables="tables" in FLAGS
+            )
         return tens[(wr, wc)], units[(wr, wc)]
 
     def seq(cell, narrow):

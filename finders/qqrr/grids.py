@@ -2,6 +2,12 @@
 and digit shuffles. Every grid is a valid 9x9 sudoku, none comes from a solver,
 and the same seed gives the same grid every run."""
 
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "hunt"))
+from hunt_common import grid_rows
+
 
 def random_sudoku(rng):
     base = [[(3 * (r % 3) + r // 3 + c) % 9 + 1 for c in range(9)] for r in range(9)]
@@ -19,15 +25,10 @@ def random_sudoku(rng):
     return [[digits[base[r][c] - 1] for c in cols] for r in rows]
 
 
-def parse(text):
-    """A grid from its rows of digits joined by slashes, as the explorer stores it."""
-    return [[int(d) for d in row] for row in text.split("/")]
-
-
 # A full sudoku grid holding one 7-digit tie between interior cells that see
 # each other (#601): r4c6 reads window ranks 2|25|12|46 and r5c4 reads
 # 22|51|24|6, both 2251246, in the middle box. Found by the model with the tie
 # constraint and no clues, confirmed by `oracle.seven_digit_ties`.
-TIE_WITNESS = parse(
+TIE_WITNESS = grid_rows(
     "645378921/871259634/329614587/953827146/264195378/718463295/537941862/482536719/196782453"
 )

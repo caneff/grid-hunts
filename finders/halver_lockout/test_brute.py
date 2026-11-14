@@ -212,4 +212,22 @@ for n, count in [(10, 1), (9, 257)]:
     else:
         raise AssertionError(f"a {n}x{n} board with {count} lines reached the C search")
 
+# The C search loads through the shared loader (#144): with no gcc on PATH, a library
+# that has to be built raises the loader's named error, not a raw FileNotFoundError.
+import os
+import tempfile
+
+with tempfile.TemporaryDirectory() as tmp:
+    saved_so, saved_path = halver_brute_c.SO, os.environ["PATH"]
+    halver_brute_c.SO = Path(tmp) / "target" / "halver_brute.so"
+    os.environ["PATH"] = tmp
+    try:
+        halver_brute_c._load()
+    except halver_brute_c.c_library.CBuildError as error:
+        assert "no gcc on PATH" in str(error), error
+    else:
+        raise AssertionError("halver_brute_c built a library with no gcc on PATH")
+    finally:
+        halver_brute_c.SO, os.environ["PATH"] = saved_so, saved_path
+
 print("ok", json.dumps(statuses, sort_keys=True))

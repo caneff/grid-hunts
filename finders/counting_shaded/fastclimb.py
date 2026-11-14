@@ -7,12 +7,14 @@ The .so is built on first import into a git-ignored `target/` beside this file.
 
 import ctypes
 import random
-import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "hunt"))
+import c_library
+
 SRC = HERE / "counting_shaded_fast.c"
 REPO = HERE.parents[1]
 DATA = (
@@ -27,24 +29,7 @@ SO = BUILD / "counting_shaded_fast.so"
 
 
 def _load():
-    if not SO.exists() or SO.stat().st_mtime < SRC.stat().st_mtime:
-        BUILD.mkdir(parents=True, exist_ok=True)
-        (BUILD / ".gitignore").write_text("*\n")
-        subprocess.run(
-            [
-                "gcc",
-                "-O2",
-                "-march=native",
-                "-shared",
-                "-fPIC",
-                "-o",
-                str(SO),
-                str(SRC),
-                "-lm",
-            ],
-            check=True,
-        )
-    lib = ctypes.CDLL(str(SO))
+    lib = c_library.load(SRC, SO, flags=("-O2", "-march=native"), libs=("-lm",))
     lib.gf_count.argtypes = [ctypes.c_char_p, ctypes.c_int]
     lib.gf_require_eight.argtypes = [ctypes.c_int]
     lib.gf_set_latin.argtypes = [ctypes.c_int]
@@ -136,6 +121,10 @@ class Enumeration:
         return self.solvable > len(self.solvable_shapes)
 
 
+# gf_enumerate's refusal codes.
+REFUSALS = {-1: "size not in 1-81", -2: "cap below 2", -3: "symmetry with pins"}
+
+
 def enumerate_shapes(
     size, all_digits=True, symmetry=False, cap=2, seconds=0, max_stored=100000
 ):
@@ -153,9 +142,7 @@ def enumerate_shapes(
         size, int(all_digits), int(symmetry), cap, seconds, out, ks, max_stored, stats
     )
     if rc:
-        raise ValueError(
-            "gf_enumerate: size not in 1-81, cap below 2, or symmetry with pins"
-        )
+        raise ValueError(f"gf_enumerate: {REFUSALS[rc]}")
     found = [
         ({i for i in range(81) if out.raw[81 * s + i]}, ks[s]) for s in range(stats[3])
     ]

@@ -1,6 +1,7 @@
-"""Smoke test for the hunt drivers: each compiles, its repo-relative paths resolve, and
-none reads a cwd-relative or absolute log or source path.
-The scripts run a hunt at import (they read sys.argv), so this test never imports them."""
+"""Smoke test for the hunt scripts here (the finder, its drivers and tools): each compiles, its
+repo-relative paths resolve, and none reads a cwd-relative or absolute log or source path.
+Some run a hunt or read sys.argv at import (pair_sweep, measure), so this test compiles the
+scripts and never imports them; the importable ones have their own tests."""
 
 import py_compile
 import re

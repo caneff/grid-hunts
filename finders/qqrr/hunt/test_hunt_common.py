@@ -120,6 +120,69 @@ assert hc.parse_hits("HIT 1 1s\n" + line + "\n" + hc.grid_line(grid))[0]["ties"]
 assert hc.qqrr_line(33, 5, (5, 5), 10, 7) == QQRR
 assert hc.qqrr_line(33, 5, (4, 4), 10, 7) == QQRR.replace("r6c6", "r5c5")
 
+# grid_rows reads what grid_text wrote.
+assert hc.grid_rows(hc.grid_text(grid)) == grid
+assert hc.grid_rows(G1)[0] == [1] * 9 and hc.grid_rows(G2)[8] == [1] * 9
+
+# The rule's four numbers, and the posted rule: a grid fixed cell by cell is feasible exactly
+# when it meets the rule. r1c5's seed meets all of it at (QR 10 at r6c6, corner br) but the tie;
+# r5c1's seed breaks only the bound (r4c1 = 8).
+assert (hc.WINDOW_RANK, hc.CAGE_QQRR, hc.CORNER_RANK, hc.BOUND_MAX) == (10, 33, 5, 7)
+import checker
+import model
+from ortools.sat.python import cp_model
+
+
+def solved_with(hunt, tables=False):
+    cage, target, seed = hc.HUNTS[hunt]
+    pin = checker.CORNERS["br"]
+    q = model.build(9, ranked_cells=[cage, pin])
+    hc.post_rule(q, (5, 5), cage, target, pin)
+    t, u = hc.digit_channel(q, 5, 5, tables=tables)
+    for r, row in enumerate(hc.grid_rows(seed)):
+        for c, d in enumerate(row):
+            q.m.Add(q.x[r][c] == d)
+    s = cp_model.CpSolver()
+    s.parameters.num_workers = 1
+    res = s.Solve(q.m)
+    ok = res in (cp_model.OPTIMAL, cp_model.FEASIBLE)
+    return ok, (s.Value(t), s.Value(u)) if ok else None
+
+
+assert solved_with("r1c5")[0]
+assert not solved_with("r5c1")[0]
+# digit_channel: rank 10 reads as tens 1, units 0, with the band table too.
+assert solved_with("r1c5", tables=True) == (True, (1, 0))
+
+
+# The band table only speeds the search (rank 10 alone forces tens 1), so no solve shows it is
+# posted: read the model. `tables` adds one table over (top-left digit, tens), and for each
+# digit the tens it allows are those of its leading-digit band.
+def band_tables(tables):
+    q = model.build(9)
+    t, _u = hc.digit_channel(q, 5, 5, tables=tables)
+    found = [
+        c.table
+        for c in q.m.Proto().constraints
+        if c.has_table() and [t.Index()] in [list(e.vars) for e in c.table.exprs]
+    ]
+    return q, t, found
+
+
+assert band_tables(False)[2] == []
+q, t, found = band_tables(True)
+assert len(found) == 1 and [list(e.vars) for e in found[0].exprs] == [
+    [q.x[5][5].Index()],
+    [t.Index()],
+]
+values = list(found[0].values)
+pairs = list(zip(values[::2], values[1::2], strict=True))
+for d in range(1, 10):
+    lo, hi = model.leading_digit_band(9, d)
+    assert sorted(tt for dd, tt in pairs if dd == d) == list(
+        range(lo // 10, hi // 10 + 1)
+    ), d
+
 # HUNTS: one table, the seed a 9x9 grid of digits.
 assert hc.HUNTS
 for _cage, _target, seed in hc.HUNTS.values():

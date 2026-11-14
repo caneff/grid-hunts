@@ -5,6 +5,7 @@ neighbours. unshaded cells are unconstrained.
 """
 
 from ortools.sat.python import cp_model
+from shapes import CELLS, NEIGH
 
 N = 9
 m = cp_model.CpModel()
@@ -31,20 +32,11 @@ for d in range(9):
             )
 
 
-def neighbours(r, c):
-    return [
-        (r + a, c + b)
-        for a in (-1, 0, 1)
-        for b in (-1, 0, 1)
-        if (a or b) and 0 <= r + a < N and 0 <= c + b < N
-    ]
-
-
 for r in range(N):
     for c in range(N):
-        m.add(sum(g[i][j] for i, j in neighbours(r, c)) == digit[r][c]).only_enforce_if(
-            g[r][c]
-        )
+        m.add(
+            sum(g[i][j] for i, j in (CELLS[k] for k in NEIGH[r * 9 + c])) == digit[r][c]
+        ).only_enforce_if(g[r][c])
 
 # Some shaded cell holds an 8.
 eight = []
@@ -75,7 +67,7 @@ if st in (cp_model.OPTIMAL, cp_model.FEASIBLE):
     ]
     gh = [[s.value(g[r][c]) for c in range(N)] for r in range(N)]
     ok = all(
-        sum(gh[i][j] for i, j in neighbours(r, c)) == grid[r][c]
+        sum(gh[i][j] for i, j in (CELLS[k] for k in NEIGH[r * 9 + c])) == grid[r][c]
         for r in range(N)
         for c in range(N)
         if gh[r][c]

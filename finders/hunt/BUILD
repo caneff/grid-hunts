@@ -9,5 +9,13 @@ code_dir(
             "./toy_summary_finder.py:py",
         ],
         "test_toy_hunt.py": ["./toy_finder.py:py", "./toy_slow_finder.py:py"],
+        # Spec #118's end-to-end test starts or loads these in fresh processes.
+        "test_spec_118_e2e.py": [
+            "//finders/counting_shaded/connected.py:py",
+            "//finders/counting_shaded/fastclimb.py:py",
+            "//finders/halver/halver_brute_c.py:py",
+            "//finders/qqrr/hunt/hunt_common.py:py",
+            "//finders/qqrr/hunt/tie_finder.py:py",
+        ],
     }
 )

@@ -21,13 +21,12 @@ between narrowing on the C search, and `halver_between` does not use it.
 
 The library is built with the system `gcc` on first import, or when
 `halver_brute.c` is newer, into the git-ignored `target/` beside this file.
-No `gcc`, or a build that fails, raises `RuntimeError`: there is no fallback
-to the slow search.
+No `gcc`, or a build that fails, raises `c_library.CBuildError` (a
+`RuntimeError`): there is no fallback to the slow search.
 """
 
 import ctypes
-import os
-import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -37,6 +36,9 @@ from halver_brute import OutOfTime
 __all__ = ["OutOfTime", "solutions"]
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "hunt"))
+import c_library
+
 SRC = HERE / "halver_brute.c"
 # A committed `*` .gitignore keeps the build out of git, and merge-cleanup
 # sweeps `target/` with the worktree (as `finders/counting_shaded/target/`).
@@ -48,23 +50,7 @@ _IP = ctypes.POINTER(ctypes.c_int)
 
 
 def _load():
-    if not SO.exists() or SO.stat().st_mtime < SRC.stat().st_mtime:
-        # Suites run side by side, so each build writes its own file and
-        # renames it into place.
-        partial = BUILD / f"halver_brute.{os.getpid()}.so"
-        command = ["gcc", "-O2", "-shared", "-fPIC", "-o", str(partial), str(SRC)]
-        try:
-            subprocess.run(command, check=True, capture_output=True, text=True)
-        except FileNotFoundError as error:
-            raise RuntimeError(
-                "halver_brute_c: no gcc on PATH; the C search needs the system gcc"
-            ) from error
-        except subprocess.CalledProcessError as error:
-            raise RuntimeError(
-                f"halver_brute_c: building {SRC.name} failed:\n{error.stderr}"
-            ) from error
-        partial.replace(SO)
-    lib = ctypes.CDLL(str(SO))
+    lib = c_library.load(SRC, SO)
     lib.hb_solutions.argtypes = [
         ctypes.c_int,
         ctypes.c_int,
