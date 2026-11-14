@@ -5,8 +5,8 @@ The board is the grid plus strips of number cells above it and to its left,
 one strip per kind. A cell is `(r, c)`: a grid cell has both at 0 or more, as
 in `network.py`; `(r, -k)` is row r's number cell in strip k and `(-k, c)` is
 column c's, strip 1 the innermost. From the inside out the strips count turn,
-straight, branch, cross, which is `network.KINDS` order, so strip k counts
-kind k - 1; the blank strip is the optional fifth. The corner where both are
+straight, branch, cross, the reverse of `STRIP_ORDER`, so strip k counts
+`STRIP_KIND[k - 1]`; the blank strip is the optional fifth. The corner where both are
 negative holds the icon cells and the area off the board, and no cell of it
 is on the board.
 
@@ -33,10 +33,14 @@ KIND_VALUE = {
 
 
 # The strip-kind order of the link and the fixture: the kinds outermost
-# strip first (Chris's ruling, #774). The one statement of it.
+# strip first (Chris's ruling, #774). The one statement of it: everything
+# that maps a strip to a kind reads it, through `STRIP_KIND`.
 STRIP_ORDER = (network.CROSS, network.BRANCH, network.STRAIGHT, network.TURN)
+# The kind each strip counts, strip 1 (innermost) first; the blank strip is
+# the optional fifth.
+STRIP_KIND = (*reversed(STRIP_ORDER), network.BLANK)
 
-# The cross icon's four flags are [right, down, left, up] (penpa.py § 1.5).
+# The cross icon's four flags are [right, down, left, up] (docs/research/2026-10-10-u-bahn-penpa-link.md § 1.5).
 # Per kind, the icon beside a row of outside numbers and beside a column of
 # them. The turn's icon sits in the one cell the innermost row and column
 # share.
@@ -112,9 +116,9 @@ def number_cells(rows, cols, blank_strip=False):
     lines = {}
     for k in range(1, strips(blank_strip) + 1):
         for r in range(rows):
-            lines[r, -k] = (k - 1, [(r, c) for c in range(cols)])
+            lines[r, -k] = (STRIP_KIND[k - 1], [(r, c) for c in range(cols)])
         for c in range(cols):
-            lines[-k, c] = (k - 1, [(r, c) for r in range(rows)])
+            lines[-k, c] = (STRIP_KIND[k - 1], [(r, c) for r in range(rows)])
     return lines
 
 
@@ -131,8 +135,8 @@ def values(net, rows, cols, blank_strip=False):
         for c in range(cols)
     }
     for k in range(1, depth + 1):
-        board.update({(r, -k): row_numbers[r][k - 1] for r in range(rows)})
-        board.update({(-k, c): col_numbers[c][k - 1] for c in range(cols)})
+        board.update({(r, -k): row_numbers[r][STRIP_KIND[k - 1]] for r in range(rows)})
+        board.update({(-k, c): col_numbers[c][STRIP_KIND[k - 1]] for c in range(cols)})
     return board
 
 
@@ -141,9 +145,9 @@ def cell_name(cell):
     row 2's turn number cell, `c3:cross` for column 3's cross number cell."""
     r, c = cell
     if r < 0:
-        return f"c{c + 1}:{network.KIND_NAMES[-r - 1]}"
+        return f"c{c + 1}:{network.KIND_NAMES[STRIP_KIND[-r - 1]]}"
     if c < 0:
-        return f"r{r + 1}:{network.KIND_NAMES[-c - 1]}"
+        return f"r{r + 1}:{network.KIND_NAMES[STRIP_KIND[-c - 1]]}"
     return f"r{r + 1}c{c + 1}"
 
 
@@ -162,7 +166,7 @@ def parse_cell(text):
             f"no kind named {name!r}: a number cell counts "
             f"{', '.join(network.KIND_NAMES)}"
         )
-    strip = -network.KIND_NAMES.index(name) - 1
+    strip = -STRIP_KIND.index(network.KIND_NAMES.index(name)) - 1
     return (int(number) - 1, strip) if axis == "r" else (strip, int(number) - 1)
 
 
@@ -290,16 +294,30 @@ def parse_windows(text, rows, cols, blank_strip=False):
 def parse_circles(text, rows, cols, blank_strip=False):
     """The circled cells `text` names, a frozenset. Raises ValueError on a
     name `parse_cell` refuses, and on a cell that is not on the board, naming
-    it: the one refusal of an off-board circle, for every finder and brute."""
+    it (see `check_circles`)."""
+    found = frozenset(parse_cell(name) for name in text.split())
+    check_circles(found, rows, cols, blank_strip)
+    return found
+
+
+def check_circles(circles, rows, cols, blank_strip=False):
+    """Raises ValueError naming the first of `circles` that is not on the
+    board: the one refusal of an off-board circle, for every finder and
+    brute."""
     board = board_cells(rows, cols, blank_strip)
-    found = set()
-    for name in text.split():
-        cell = parse_cell(name)
+    for cell in sorted(circles):
         if cell not in board:
             strip = "" if blank_strip else ", no blank strip"
-            raise ValueError(f"circle {name} is off the {rows}x{cols} board{strip}")
-        found.add(cell)
-    return frozenset(found)
+            raise ValueError(
+                f"circle {cell_name(cell)} is off the {rows}x{cols} board{strip}"
+            )
+
+
+def check_min_bananas(asked):
+    """Raises ValueError unless `asked`, a `--min-bananas` value, is None or
+    1 or more: the one refusal of it, for the hybrid finder and brute."""
+    if asked is not None and asked < 1:
+        raise ValueError(f"--min-bananas takes 1 or more, got {asked}")
 
 
 def _box(region):
@@ -381,7 +399,7 @@ def failures(net, asked):
             if window not in battenberg
         ]
     if exactly:
-        reasons += [why for why in [exactly.why_not(net, rows, cols)] if why]
+        reasons += filter(None, [exactly.why_not(net, rows, cols)])
     return reasons
 
 
@@ -399,7 +417,7 @@ def icon_arms(cell):
     r, c = cell
     if -1 not in (r, c) or max(r, c) >= 0:
         return None
-    name = network.KIND_NAMES[-min(r, c) - 1]
+    name = network.KIND_NAMES[STRIP_KIND[-min(r, c) - 1]]
     if name == "blank":
         return (0, 0, 0, 0)
     right, down, left, up = ICONS[name][0 if c == -1 else 1]

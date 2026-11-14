@@ -171,7 +171,7 @@ def test_larger_board(name, exactly, total):
     kept = {}
     for n in range(1, most + 2):
         want = kept[n] = {net for net in count if count[net] >= n}
-        for connectivity in (hybrid_sat.LAZY, hybrid_sat.PROPAGATOR):
+        for connectivity in hybrid_engines.PYSAT_CONNECTIVITIES:
             got = hybrid_sat.listing(
                 asked(5, n, exactly=exactly),
                 connectivity,
@@ -342,6 +342,13 @@ def test_cli(engine, d):
         )
 
 
+def reason(stderr):
+    """A refusal's last line from the flag's name on, less the program's
+    name and argparse's "error:" in front of it."""
+    line = stderr.strip().splitlines()[-1]
+    return line[line.index("--min-bananas") :] if "--min-bananas" in line else line
+
+
 def test_flag():
     for bad in ("0", "-1"):
         r = run_cli(FINDER, *BOARD, "--min-bananas", bad, "classify")
@@ -353,9 +360,12 @@ def test_flag():
         )
     for bad in ("0", "-1"):
         r = run_cli(HERE / "brute.py", "4", "4", "--min-bananas", bad)
+        hybrid_r = run_cli(FINDER, *BOARD, "--min-bananas", bad, "classify")
         check(
             f"brute.py --min-bananas {bad} is refused the same way",
-            r.returncode == 2 and "--min-bananas" in r.stderr,
+            r.returncode == 2
+            and reason(r.stderr) == reason(hybrid_r.stderr)
+            and "--min-bananas" in reason(r.stderr),
         )
     check(
         "the usage text names the flag",

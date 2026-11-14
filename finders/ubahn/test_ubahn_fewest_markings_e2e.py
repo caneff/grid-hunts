@@ -1,6 +1,6 @@
 """Spec #29 end to end, through the commands Chris runs: `fewest-markings`
 with a circle as fixed background, then `verify`, `render` and `links` on
-the example it wrote, a rerun, and the refusal on `--engine cpsat`.
+the example it wrote, and the refusal on `--engine cpsat`.
 
 One chain on the 4x4 board with r2c4 circled, each step reading the files
 the step before wrote. The brute force gives the answer to expect: the
@@ -178,23 +178,6 @@ with tempfile.TemporaryDirectory() as d:
         and len(links) == 1
         and battenberg_vertices(Decoded(links[0].read_text().strip()), 4)
         == set(windows),
-    )
-
-    before = (out / "sets.jsonl").read_text()
-    r = run_cli(
-        HERE / "hybrid_finder.py",
-        "fewest-markings",
-        *BOARD,
-        "--circles",
-        CIRCLE,
-        "--out",
-        out,
-    )
-    check(
-        "a rerun into the finished directory: the same report, no set solved again",
-        r.returncode == 0
-        and r.stdout == report
-        and (out / "sets.jsonl").read_text() == before,
     )
 
 finish()

@@ -197,8 +197,10 @@ def main(argv):
         "checkerboard window but the marked ones",
     )
     args = parser.parse_args(argv)
-    if args.min_bananas is not None and args.min_bananas < 1:
-        parser.error(f"--min-bananas takes 1 or more, got {args.min_bananas}")
+    try:
+        hybrid.check_min_bananas(args.min_bananas)
+    except ValueError as e:
+        parser.error(str(e))
     rows, cols, blank_strip = args.rows, args.cols, args.blank_strip
     try:
         marked = [

@@ -66,8 +66,10 @@ class Built(NamedTuple):
 
 
 def _add_kinds(m, edge, cells):
-    """An arm that would leave the board has no variable, so only the
-    patterns without it are listed."""
+    """Channel each cell's kind from its arms. Returns `kind[cell, k]`
+    booleans and `used[cell]`, the cell is not blank. An arm that would
+    leave the board has no variable, so only the patterns without it are
+    listed."""
     kind, used = {}, {}
     for cell in cells:
         on_board = arms_on_board(cell, edge)

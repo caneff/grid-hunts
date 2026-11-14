@@ -15,7 +15,8 @@ import re
 from typing import NamedTuple
 
 # What a cell can be, in the order a row's or column's outside numbers are
-# given: the four pieces, then blank. This is the one statement of the order.
+# given: the four pieces, then blank. The order of the number-cell strips is
+# not this one: `hybrid.STRIP_ORDER`.
 KIND_NAMES = ("turn", "straight", "branch", "cross", "blank")
 TURN, STRAIGHT, BRANCH, CROSS, BLANK = KINDS = range(len(KIND_NAMES))
 
@@ -167,11 +168,8 @@ class Exactly(NamedTuple):
     axis: str
     index: int
 
-    def on_board(self, rows, cols):
-        return self.index < (rows if self.axis == "r" else cols)
-
     def why_off_board(self, rows, cols):
-        if self.on_board(rows, cols):
+        if self.index < (rows if self.axis == "r" else cols):
             return ""
         return f"condition {self.text()} is off the {rows}x{cols} board"
 

@@ -411,7 +411,7 @@ def classified(found):
 
 
 class Engine(NamedTuple):
-    """A PySAT engine as `hybrid_finder.ENGINES` holds one: `connectivity`
+    """A PySAT engine as `hybrid_engines.ENGINES` holds one: `connectivity`
     says how it keeps the network in one part."""
 
     connectivity: str
@@ -429,8 +429,13 @@ class Engine(NamedTuple):
         return listing(conditions, self.connectivity, cap=2, time_limit=time_limit)
 
     def grid(self, conditions, rng, *, time_limit):
+        """One grid that meets the conditions, steered by `rng`: the same
+        grid on every run of a seed."""
         return sampled(self.grid_listing(conditions, rng, time_limit=time_limit))
 
     def classify(self, conditions, *, time_limit, workers):
-        """`workers` is unused: CaDiCaL runs on one thread."""
+        """Whether the conditions have no grid, exactly one, or more than
+        one. A time limit reached is "timeout", never one of the other
+        three, and one limit covers the whole answer. `workers` is unused:
+        CaDiCaL runs on one thread."""
         return classified(self.classify_listing(conditions, time_limit=time_limit))

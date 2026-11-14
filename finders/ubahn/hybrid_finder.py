@@ -250,8 +250,7 @@ def parse_conditions(args):
             exactly = network.Exactly.parse_on(args.exactly, rows, cols)
         except ValueError as e:
             raise ValueError(f"--exactly: {e}") from e
-    if args.min_bananas is not None and args.min_bananas < 1:
-        raise ValueError(f"--min-bananas takes 1 or more, got {args.min_bananas}")
+    hybrid.check_min_bananas(args.min_bananas)
     if args.number_circles < 0:
         raise ValueError(f"--number-circles is 0 or more, got {args.number_circles}")
     try:

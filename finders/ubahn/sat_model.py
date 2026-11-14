@@ -160,11 +160,13 @@ def _add_rules(solver, rows, cols, numbers):
 
 
 def edges_on(solver, edge):
+    """The edges the solver's model turns on."""
     true = {lit for lit in solver.get_model() if lit > 0}
     return frozenset(e for e, var in edge.items() if var in true)
 
 
 def forbid(solver, edge, found):
+    """Rule out exactly this set of edges."""
     solver.add_clause([-var if e in found else var for e, var in edge.items()])
 
 

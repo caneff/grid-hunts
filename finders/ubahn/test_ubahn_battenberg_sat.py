@@ -61,17 +61,17 @@ def listed(engine, side, marked, only, cap):
 grids = brute.hybrid_grids(4, 4)
 ONE_GRID = ("c1:turn", "c2:turn", "r3c1", "r1:turn", "r2:turn", "r1c3")
 TABLE = (
-    ((), False, "not_unique", 18),
-    ((), True, "not_unique", 16),
-    *(((name,), False, "unique", 1) for name in ONE_GRID),
-    (("c1:turn", "c2:turn", "r3c1"), True, "unique", 1),
-    (("r1:turn", "r2:turn", "r1c3"), True, "unique", 1),
-    (("c1:turn",), True, "infeasible", 0),
-    (("c1:turn", "r1:turn"), False, "infeasible", 0),
-    (("r1c1",), False, "infeasible", 0),
+    ((), False, 18),
+    ((), True, 16),
+    *(((name,), False, 1) for name in ONE_GRID),
+    (("c1:turn", "c2:turn", "r3c1"), True, 1),
+    (("r1:turn", "r2:turn", "r1c3"), True, 1),
+    (("c1:turn",), True, 0),
+    (("c1:turn", "r1:turn"), False, 0),
+    (("r1c1",), False, 0),
 )
 for engine in hybrid_engines.PYSAT_CONNECTIVITIES:
-    for names, only, _word, count in TABLE:
+    for names, only, count in TABLE:
         label = (
             f"{engine}, 4x4 markings {' '.join(names) or 'none'}"
             f"{', negative constraint' if only else ''}"

@@ -28,7 +28,6 @@ A slow test, outside the gate: `just test-slow` runs it (tests/all.sh's
 
 import contextlib
 import io
-import subprocess
 import sys
 from pathlib import Path
 
@@ -39,7 +38,7 @@ import brute
 import hybrid
 import model
 import network
-from cli_checks import check, finish
+from cli_checks import check, finish, run_cli
 from ortools.sat.python import cp_model
 
 ROWS = COLS = 4
@@ -250,12 +249,7 @@ check(
         "unique (1)",
     ],
 )  # fmt: skip
-r = subprocess.run(
-    [sys.executable, str(Path(__file__).with_name("brute.py")), "4", "4",
-     "--battenberg", "r4c4"],
-    capture_output=True,
-    text=True,
-)  # fmt: skip
+r = run_cli(HERE / "brute.py", "4", "4", "--battenberg", "r4c4")
 check(
     f"a window off the board is refused, exit 2, naming r4c5 ({r.stderr[-200:]!r})",
     r.returncode == 2
@@ -266,12 +260,9 @@ check(
 
 def refusal(script, *argv):
     """(exit code, stderr's last line, minus the program's name) of a run."""
-    r = subprocess.run(
-        [sys.executable, str(Path(__file__).with_name(script)), *argv],
-        capture_output=True,
-        text=True,
-    )
-    return r.returncode, r.stderr.strip().splitlines()[-1].split(": ", 1)[-1]
+    r = run_cli(HERE / script, *argv)
+    lines = r.stderr.strip().splitlines()
+    return r.returncode, lines[-1].split(": ", 1)[-1] if lines else "(no stderr)"
 
 
 # An off-board circle is refused in the same words, exit 2, by brute and by the

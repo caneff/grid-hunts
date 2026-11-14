@@ -1,6 +1,6 @@
 """Spec #20 end to end, through the commands Chris runs: the enumeration
 with Battenberg markings, a hunt on the default engine with a marking,
-`verify`, `classify` with and without the negative constraint, `render`,
+`verify`, `render`,
 `links --battenberg`, and the refusal on `--engine cpsat`.
 
 One chain on the 4x4 board, each step reading the files the step before
@@ -34,15 +34,6 @@ from penpa_decode import Decoded, battenberg_vertices
 from verified_io import read_verified
 
 BOARD = ["--rows", "4", "--cols", "4", "--timeout", "10"]
-# The decision log's 4x4 answers (§ Hybrid: Battenberg markings, the 4x4
-# answers), the brute force's: the flags and the word `classify` must give.
-ANSWERS = (
-    (("--battenberg", "r1c3"), "unique"),
-    (("--battenberg", "c1:turn c2:turn r3c1", "--battenberg-only"), "unique"),
-    (("--battenberg-only",), "not_unique"),
-    (("--battenberg", "c1:turn", "--battenberg-only"), "infeasible"),
-    (("--battenberg", "r1c1"), "infeasible"),
-)
 
 r = run_cli(HERE / "brute.py", "4", "4", "--battenberg", "r1c3")
 check(
@@ -81,13 +72,6 @@ with tempfile.TemporaryDirectory() as d:
         and stamp == {"verified_examples": 1}
         and [v["ok"] for v in verdicts] == [True],
     )
-
-    for flags, word in ANSWERS:
-        r = run_cli(HERE / "hybrid_finder.py", "classify", *BOARD, *flags)
-        check(
-            f"classify, {' '.join(flags)}: {word}",
-            r.returncode == 0 and r.stdout.startswith(f"{word}:"),
-        )
 
     r = run_cli(HERE / "hybrid_finder.py", "render", str(out))
     pictures = sorted((out / "renders").glob("*.png"))

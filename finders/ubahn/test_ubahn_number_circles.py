@@ -83,7 +83,7 @@ check(
     and verdict.reason == "0 valid circles on number cells, fewer than 1",
 )
 
-for connectivity in (hybrid_sat.LAZY, hybrid_sat.PROPAGATOR):
+for connectivity in hybrid_engines.PYSAT_CONNECTIVITIES:
     for k in range(MOST + 2):
         found = hybrid_sat.listing(
             hybrid.Conditions(ROWS, COLS, number_circles=k),

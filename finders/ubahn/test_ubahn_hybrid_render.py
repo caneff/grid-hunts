@@ -23,6 +23,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import hybrid
+import hybrid_engines
 import hybrid_render
 import network
 from cli_checks import check, finish, run_cli
@@ -262,24 +263,18 @@ check(
 
 # FULL, every edge on, is a hybrid grid with four strips and with five.
 FULL = network.from_drawing(["┌┬┬┐", "├┼┼┤", "├┼┼┤", "└┴┴┘"])
-GRID_RECORD = {
-    "rows": 4,
-    "cols": 4,
-    "exactly": None,
-    "h": ["111", "110", "110", "011"],
-    "v": ["1011", "1111", "0111"],
-    "circles": ["c1:turn", "r2c4"],
-    "blank_strip": False,
-}
-FULL_RECORD = {
-    "rows": 4,
-    "cols": 4,
-    "exactly": None,
-    "h": ["111", "111", "111", "111"],
-    "v": ["1111", "1111", "1111"],
-    "circles": [],
-    "blank_strip": False,
-}
+FINDER_READER = hybrid_engines.HybridFinder(hybrid.Conditions(4, 4))
+
+
+def record_of(net, circles=()):
+    conditions = hybrid.Conditions(
+        4, 4, frozenset(hybrid.parse_cell(c) for c in circles)
+    )
+    return FINDER_READER.record(hybrid_engines.Candidate(conditions, net))
+
+
+GRID_RECORD = record_of(GRID, ("c1:turn", "r2c4"))
+FULL_RECORD = record_of(FULL)
 
 
 def hunt_dir(parent, name, records):

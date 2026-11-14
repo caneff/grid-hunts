@@ -36,12 +36,13 @@ def cells(*names):
     return frozenset(hybrid.parse_cell(name) for name in names)
 
 
-def cond(circles=(), exactly=None, marks=(), only=False):
+def cond(circles=(), exactly=None, marks=(), only=False, strip=False):
     return hybrid.Conditions(
         4,
         4,
         cells(*circles),
         exactly,
+        strip,
         battenberg=hybrid.parse_windows(" ".join(marks), 4, 4),
         battenberg_only=only,
     )
@@ -55,14 +56,30 @@ CASES = (
     ("circles c1:turn r2c4", cond(("c1:turn", "r2c4")), "unique"),
     ("circles r1:turn r4c2", cond(("r1:turn", "r4c2")), "unique"),
     ("circles r2c2 r2c4", cond(("r2c2", "r2c4")), "infeasible"),
+    ("circles c4:turn r4:turn", cond(("c4:turn", "r4:turn")), "infeasible"),
     ("circles r1c1", cond(("r1c1",)), "infeasible"),
     (
         "2 crosses in r2, circles c1:turn c4:turn",
         cond(("c1:turn", "c4:turn"), network.Exactly.parse("2:cross:r2")),
         "not_unique",
     ),
-    ("marking c1:turn", cond(marks=("c1:turn",)), "unique"),
-    ("marking r1c3", cond(marks=("r1c3",)), "unique"),
+    *(
+        (f"marking {mark}", cond(marks=(mark,)), "unique")
+        for mark in ("c1:turn", "c2:turn", "r3c1", "r1:turn", "r2:turn", "r1c3")
+    ),
+    ("marking r1c1", cond(marks=("r1c1",)), "infeasible"),
+    ("blank strip", cond(strip=True), "not_unique"),
+    ("blank strip, negative constraint", cond(only=True, strip=True), "not_unique"),
+    (
+        "markings c1:turn c2:turn r3c1, negative constraint",
+        cond(marks=("c1:turn", "c2:turn", "r3c1"), only=True),
+        "unique",
+    ),
+    (
+        "markings r1:turn r2:turn r1c3, negative constraint",
+        cond(marks=("r1:turn", "r2:turn", "r1c3"), only=True),
+        "unique",
+    ),
     ("negative constraint", cond(only=True), "not_unique"),
     ("negative constraint, marking c1:turn", cond(marks=("c1:turn",), only=True), "infeasible"),
     ("markings c1:turn r1:turn", cond(marks=("c1:turn", "r1:turn")), "infeasible"),
@@ -93,7 +110,9 @@ def conform(name, engine, label, conditions, word):
     def grid(seed):
         return engine.grid(conditions, random.Random(seed), time_limit=TIME_LIMIT)
 
-    if name == "cpsat" and (conditions.battenberg or conditions.battenberg_only):
+    if name not in hybrid_engines.PYSAT_ENGINES and (
+        conditions.battenberg or conditions.battenberg_only
+    ):
         for what, call in (("classify", classify), ("grid", lambda: grid(0))):
             text = refused(call)
             check(

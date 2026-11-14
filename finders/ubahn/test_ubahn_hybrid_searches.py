@@ -98,6 +98,32 @@ def main():
             [s["status"] for s in steps] == ["found", "infeasible"],
         )
 
+    # A climb log from before the run log (#134) has no heading: its first
+    # line is a step. A rerun refuses it for that cause and leaves it as it is.
+    with tempfile.TemporaryDirectory() as d:
+        out = Path(d) / "old"
+        out.mkdir()
+        old_log = json.dumps(
+            {"at_least": 0, "status": "found", "count": 1, "seconds": 0.1,
+             "dir": "at-least-0", "config": {"rows": ROWS}}
+        ) + "\n"  # fmt: skip
+        (out / "climb.jsonl").write_text(old_log)
+        try:
+            hybrid_searches.climb(
+                hybrid.Conditions(ROWS, COLS), "fake", 5, out, engines={"fake": Fake()}
+            )
+            message = None
+        except ValueError as e:
+            message = str(e)
+        check(
+            f"climb: a log from before the run log is refused, naming the cause "
+            f"({message!r})",
+            message is not None
+            and "predates the run log" in message
+            and "new --out" in message
+            and (out / "climb.jsonl").read_text() == old_log,
+        )
+
     # --- fewest_markings -------------------------------------------------------
     fake = Fake()
     with tempfile.TemporaryDirectory() as d:

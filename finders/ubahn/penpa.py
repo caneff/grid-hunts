@@ -117,7 +117,8 @@ _LAYER_EMPTY = {
     "nobulbthermo": [],
 }
 
-# (§ 3)
+# The answer check's flags: the "all constraints" checkbox ids, all twenty,
+# of which a link switches on one, `sol_loopline` (§ 3).
 CHECK_FLAGS = (
     "sol_surface_exact",
     "sol_surface",
@@ -195,6 +196,8 @@ _MODE = {
     },
 }
 
+# A symbol: the large ring, white with a black outline, drawn under the lines
+# (§ 9).
 CIRCLE = [1, "circle_L", 1]
 # A symbol: Penpa+'s 2x2 checkerboard, in the layer drawn over the grid
 # lines, as Penpa+'s own Battenberg import writes it (§ 10).
@@ -242,6 +245,7 @@ BATTENBERG_ONLY_RULE = (
     "All possible checkerboard symbols are given: no other 2x2 group of "
     "cells, grid cells or clue cells, forms such a checkerboard."
 )
+# The `grid` value for dotted inner gridlines and a thick frame (§ 9).
 DOTTED_GRID = ["2", "2", "1"]
 _ESCAPES = ((",", "%2C"), ("\n", "%2D"), ("&", "%2E"), ("=", "%2F"))
 _KIND_WORDS = {"blank": "no arm at all"}
@@ -501,6 +505,7 @@ def answer(rows, cols, found, blank_number=False):
 
 
 def abbreviate(text):
+    """`COMPRESS_SUB` applied to the whole payload text, in order (§ 1.2)."""
     for plain, token in COMPRESS_SUB:
         text = text.replace(plain, token)
     return text

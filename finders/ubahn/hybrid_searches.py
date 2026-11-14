@@ -78,6 +78,31 @@ def _steps_on_file(out, steps, asked, start):
     return steps
 
 
+def _refuse_pre_run_log(path):
+    """Raise ValueError when `path` is a log from before the run log (#134):
+    its first line is a step or a set's line carrying a `config`, not the
+    run log's `run_config` heading. Such a log is not migrated, and
+    `hunt_files.run_log` would call it "not a run log"."""
+    path = Path(path)
+    if not path.is_file():
+        return
+    with path.open() as f:
+        first = f.readline()
+    try:
+        head = json.loads(first)
+    except ValueError:
+        return
+    if (
+        isinstance(head, dict)
+        and "config" in head
+        and hunt_files.CONFIG_KEY not in head
+    ):
+        raise ValueError(
+            f"{path} predates the run log (it has no {hunt_files.CONFIG_KEY} "
+            f"heading): rerun into a new --out"
+        )
+
+
 def climb(conditions, engine, timeout, out, start=None, engines=ENGINES):
     """Raise K in "at least K valid circles on number cells" from `start`
     (0 when None) until no grid reaches it or a step reaches the time limit,
@@ -85,7 +110,8 @@ def climb(conditions, engine, timeout, out, start=None, engines=ENGINES):
     seed `CLIMB_SEED` in `out/at-least-K` and a line of `out/climb.jsonl`; a
     rerun goes on from the last line written. One climb at a time holds
     `out` (`hunt_files.run_log`, which drops a torn last line and refuses a
-    log under another config). Raises ValueError on a step `_step` refuses,
+    log under another config); a log from before the run log is refused
+    (`_refuse_pre_run_log`). Raises ValueError on a step `_step` refuses,
     when another run holds `out`, or when its log is not this climb's
     (`_steps_on_file`)."""
     out = Path(out)
@@ -108,6 +134,7 @@ def climb(conditions, engine, timeout, out, start=None, engines=ENGINES):
         )
         print(f"at least {k}: {status}, {what}, {took}", flush=True)
 
+    _refuse_pre_run_log(out / "climb.jsonl")
     # The lock is on the log, held until the answer is printed: two climbs
     # in one directory would each write steps the other then reads as its own.
     with hunt_files.run_log(out / "climb.jsonl", asked) as log:
@@ -225,7 +252,7 @@ def _mirror_line(conditions, engine, timeout, solved, engines):
         image = conditions.asking(battenberg=map(hybrid.parse_cell, line["windows"]))
         finder = HybridFinder(image, engine, timeout, engines)
         found = finder.candidate_from_record(solved["record"]).network
-        reflected = frozenset((mirror([a])[0], mirror([b])[0]) for a, b in found)
+        reflected = frozenset(mirror(edge) for edge in found)
         line["record"] = finder.record(Candidate(image, reflected))
     return line
 
@@ -281,6 +308,7 @@ def fewest_markings(
     timed, unique, size = [], [], 0
     # A worker appends to the file itself (`hunt_files.open_log`), so what the
     # run reads after one is the file, not `log.lines`.
+    _refuse_pre_run_log(path)
     with hunt_files.run_log(path, asked):
         for size in range(max_size + 1):
             sets = list(itertools.combinations(windows, size))

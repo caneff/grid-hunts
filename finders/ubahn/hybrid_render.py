@@ -105,6 +105,8 @@ class Picture(GridCanvas):
             self._symbol(window, window in marked)
 
     def box(self, cell):
+        """The (x0, y0, x1, y1) pixel box of a cell of the board, or of an
+        icon cell."""
         r, c = cell
         return self._cell_box(r + self.depth, c + self.depth)
 

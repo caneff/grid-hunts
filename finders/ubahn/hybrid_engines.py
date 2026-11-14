@@ -120,8 +120,8 @@ class HybridFinder:
         """`engine` names one of `engines`, a mapping of the engines a hunt
         may use: a test passes its own to hunt with a fake. `shown` is what
         `link_text` puts on a link, and `conditions.blank_strip` forces the
-        fifth strip in `render` and `link_text`: neither is a rule of the hunt,
-        so neither is in `config`."""
+        fifth strip in `render` and `link_text`. `shown` is no rule of the hunt,
+        so it is not in `config`; `blank_strip` is one, and is."""
         self.conditions, self.engine, self.timeout = conditions, engine, timeout
         self.engines = engines
         self.shown = shown or LinkShown()
@@ -233,13 +233,7 @@ class HybridFinder:
         circles, numbers, battenberg, battenberg_only = self.shown
         rows, cols = asked.rows, asked.cols
         strip = self.conditions.blank_strip or asked.blank_strip
-        board = hybrid.board_cells(rows, cols, strip)
-        for cell in sorted(circles):
-            if cell not in board:
-                raise ValueError(
-                    f"circle {hybrid.cell_name(cell)} is off the "
-                    f"{rows}x{cols} board" + ("" if strip else ", no blank strip")
-                )
+        hybrid.check_circles(circles, rows, cols, strip)
         for cell in sorted(numbers):
             if cell not in hybrid.number_cells(rows, cols, strip):
                 raise ValueError(

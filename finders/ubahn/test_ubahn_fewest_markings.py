@@ -348,6 +348,23 @@ with tempfile.TemporaryDirectory() as d:
             and "Traceback" not in r.stderr
             and not r.stdout,
         )
+    # A log from before the run log (#134) opens with {"config": ...}, not
+    # {"run_config": ...}: refused for that cause, not as "not a run log".
+    old_log = Path(d) / "pre-134"
+    old_log.mkdir()
+    old_head = json.dumps({"config": json.loads(whole[0])["run_config"]}) + "\n"
+    (old_log / "sets.jsonl").write_text(old_head + "".join(whole[1:]))
+    r = run_cli(FINDER, "fewest-markings", *BOARD, "--engine", engine, "--out", old_log)
+    check(
+        f"a log from before the run log: refused, exit 2, naming the cause "
+        f"and a new --out ({r.stderr.strip()[-90:]!r})",
+        r.returncode == 2
+        and "predates the run log" in r.stderr
+        and "new --out" in r.stderr
+        and "not a run log" not in r.stderr
+        and not r.stdout
+        and (old_log / "sets.jsonl").read_text() == old_head + "".join(whole[1:]),
+    )
     r = run_cli(FINDER, "fewest-markings", *BOARD, "--engine", engine, "--out", done)
     check(
         "a rerun into a finished directory: the same report, no line added",
