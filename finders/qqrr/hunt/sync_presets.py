@@ -32,9 +32,9 @@ def sync(explorer, logs=None):
                 int(a[3]) - 1
             ) // 3 == (int(b[3]) - 1) // 3
             boxonly = ", box only" if box and a[1] != b[1] and a[3] != b[3] else ""
-            label = f"33 at {hunt}, {BOUND[hunt][0]} < 8, QR 10 at {ten} · tie {a} = {b} ({tie.number}, QQRR {tie.qqrr}{boxonly}) · {corner} #{n} · 34–36 hunt"
+            label = f"{hc.CAGE_QQRR} at {hunt}, {BOUND[hunt][0]} < {hc.BOUND_MAX + 1}, QR {hc.WINDOW_RANK} at {ten} · tie {a} = {b} ({tie.number}, QQRR {tie.qqrr}{boxonly}) · {corner} #{n} · 34–36 hunt"
             new.append(
-                f'["{label}","{grid}","{corner}","{BOUND[hunt][1]}",{{"{wkey}":"10"}}],'
+                f'["{label}","{grid}","{corner}","{BOUND[hunt][1]}",{{"{wkey}":"{hc.WINDOW_RANK}"}}],'
             )
     if new:
         s = s.replace(

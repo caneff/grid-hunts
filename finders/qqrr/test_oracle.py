@@ -12,11 +12,13 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent / "hunt"))
 import oracle
-from grids import TIE_WITNESS, parse
+from grids import TIE_WITNESS
+from hunt_common import grid_rows
 
 # The first tie-sample preset in docs/research/2026-09-22-qqrr-explorer.html.
-TIE_SAMPLE_TR7 = parse(
+TIE_SAMPLE_TR7 = grid_rows(
     "365741298/947286513/128395467/216938754/483517629/579462831/651873942/734629185/892154376"
 )
 

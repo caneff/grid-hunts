@@ -154,6 +154,35 @@ assert not solved_with("r5c1")[0]
 # digit_channel: rank 10 reads as tens 1, units 0, with the band table too.
 assert solved_with("r1c5", tables=True) == (True, (1, 0))
 
+
+# The band table only speeds the search (rank 10 alone forces tens 1), so no solve shows it is
+# posted: read the model. `tables` adds one table over (top-left digit, tens), and for each
+# digit the tens it allows are those of its leading-digit band.
+def band_tables(tables):
+    q = model.build(9)
+    t, _u = hc.digit_channel(q, 5, 5, tables=tables)
+    found = [
+        c.table
+        for c in q.m.Proto().constraints
+        if c.has_table() and [t.Index()] in [list(e.vars) for e in c.table.exprs]
+    ]
+    return q, t, found
+
+
+assert band_tables(False)[2] == []
+q, t, found = band_tables(True)
+assert len(found) == 1 and [list(e.vars) for e in found[0].exprs] == [
+    [q.x[5][5].Index()],
+    [t.Index()],
+]
+values = list(found[0].values)
+pairs = list(zip(values[::2], values[1::2], strict=True))
+for d in range(1, 10):
+    lo, hi = model.leading_digit_band(9, d)
+    assert sorted(tt for dd, tt in pairs if dd == d) == list(
+        range(lo // 10, hi // 10 + 1)
+    ), d
+
 # HUNTS: one table, the seed a 9x9 grid of digits.
 assert hc.HUNTS
 for _cage, _target, seed in hc.HUNTS.values():

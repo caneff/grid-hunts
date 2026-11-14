@@ -62,7 +62,7 @@ class Candidate(NamedTuple):
     warm: str = None  # the grid its solve was hinted with, when --warm-from gave one
 
 
-def grid_rows(grid):
+def flat_rows(grid):
     """The flat row-major grid as nine lists."""
     return [list(grid[r * N : (r + 1) * N]) for r in range(N)]
 
@@ -74,8 +74,8 @@ def read_warm_hits(dirs, hunt):
     for d in dirs:
         path = Path(d) / "examples.jsonl"
         # The hunt-files reader: a last line cut short by a kill is dropped, any other
-        # unreadable line or a missing file raises HuntFileError. Blank lines do not count,
-        # so `path:k` names the k-th record.
+        # unreadable line or a missing file raises HuntFileError naming its line. Blank lines
+        # do not count, so a bad example is named by its record number, not a line number.
         _, records = hunt_files.read_log(path)
         for k, rec in enumerate(records, 1):
             try:
@@ -86,7 +86,7 @@ def read_warm_hits(dirs, hunt):
                     hits.append((ten, corner, grid))
             except (ValueError, KeyError, TypeError, AttributeError):
                 raise hunt_files.HuntFileError(
-                    f"{path}:{k} is not a hunt example"
+                    f"{path} record {k} is not a hunt example"
                 ) from None
     return hits
 
@@ -175,7 +175,7 @@ class TieFinder:
         return Candidate(grid, c["hunt"], c["ten"], c["corner"], c["q34"], warm)
 
     def verify(self, candidate):
-        rows = grid_rows(candidate.grid)
+        rows = flat_rows(candidate.grid)
         if not is_sudoku(rows):
             return Verdict(False, "not a sudoku")
         cage, target, _ = hc.HUNTS[candidate.hunt]
@@ -200,7 +200,7 @@ class TieFinder:
         return Verdict(not why, "; ".join(why))
 
     def record(self, candidate):
-        rows = grid_rows(candidate.grid)
+        rows = flat_rows(candidate.grid)
         ranks, _nums, cr = oracle.rank_grid(rows)
         rec = {
             "grid": hc.grid_text(rows),
@@ -226,7 +226,7 @@ class TieFinder:
 
     def candidate_from_record(self, record):
         return Candidate(
-            tuple(int(d) for d in record["grid"] if d != "/"),
+            tuple(d for row in hc.grid_rows(record["grid"]) for d in row),
             record["hunt"],
             record["ten"],
             record["corner"],

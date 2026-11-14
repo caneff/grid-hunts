@@ -47,7 +47,7 @@ with tempfile.TemporaryDirectory() as d:
             "the found grid filed under another corner",
             record(GOOD, corner="tl"),
             False,
-            "not 5",
+            ("corner QQRR", "not 5"),
         ),
         (
             "the found grid filed under another QR-10 window",
@@ -60,7 +60,7 @@ with tempfile.TemporaryDirectory() as d:
             "the found grid filed under the other cage",
             record(GOOD, hunt="r5c1"),
             False,
-            "not 33",
+            ("cage QQRR", "not 33"),
         ),
         (
             "a grid with no tie",
@@ -72,7 +72,7 @@ with tempfile.TemporaryDirectory() as d:
             "a grid over the bound",
             record(BR1, hunt="r5c1", ten="r6c6", corner="br", q34=False),
             False,
-            "> 7",
+            ("bounded cell", "> 7"),
         ),
         (
             "a grid with no 34-36 cell",
@@ -101,8 +101,10 @@ with tempfile.TemporaryDirectory() as d:
     check("verified.jsonl starts with the stamp", "verified_examples" in stamp)
     for (name, _, want, reason), v in zip(cases, verdicts, strict=True):
         check(f"verify: {name} -> {want}", v["ok"] is want)
-        if reason:
-            check(f"verify: {name} says why ({reason})", reason in v.get("reason", ""))
+        # A refusal names the rule part and its number: both, so a reworded part or a
+        # moved number each fails here.
+        for part in (reason,) if isinstance(reason, str) and reason else reason or ():
+            check(f"verify: {name} says why ({part})", part in v.get("reason", ""))
 
 with tempfile.TemporaryDirectory() as d:
     out = Path(d) / "hunt"
@@ -174,7 +176,10 @@ with tempfile.TemporaryDirectory() as d:
             str(src),
         )
         check(f"--warm-from over {name} refuses (exit 2)", r.returncode == 2)
-        check(f"... naming the file and line ({name})", "examples.jsonl:2" in r.stderr)
+        check(
+            f"... naming the file and record ({name})",
+            "examples.jsonl record 2" in r.stderr,
+        )
     src = Path(d) / "edited"
     src.mkdir()
     low = record(SEED_R1C5, ten="r1c1", corner="tl")
