@@ -53,7 +53,6 @@ with short_link.fake_mint() as fake, tempfile.TemporaryDirectory() as tmp:
     assert event["outcome"] == "example", event
     (record,) = [json.loads(line) for line in (out / "examples.jsonl").open()]
 
-    # The link holds Chris's six lines, then the hit's, and nothing entered.
     finder = hunt.HalverBetweenFinder(
         max_cells=8,
         pool=20,
@@ -76,13 +75,10 @@ with short_link.fake_mint() as fake, tempfile.TemporaryDirectory() as tmp:
         if c.get("type") == rules.BETWEEN_LINE
     ]
     assert group["style"] == board_group["style"], group["style"]
-    # The table is the same lines in rNcM form, numbered on from L6.
     assert record["table"] == [
         f"L{i} | {rules.line_name(line)}" for i, line in enumerate(hit.added, start=7)
     ]
 
-    # The hit's solution obeys every line, and without its last line the
-    # backtracking check finds a second solution, so verify refuses it.
     assert all(
         rules.line_holds(hit.solution, line) for line in hunt.BOARD + list(hit.added)
     )
@@ -95,8 +91,6 @@ with short_link.fake_mint() as fake, tempfile.TemporaryDirectory() as tmp:
     assert summary.stdout.startswith("1 hits in 1 seeds (0..0)"), summary.stdout
     assert record["link"] in summary.stdout
 
-    # No time to sample a target: the seed is Empty with its reason, and the
-    # summary says "none found" with the seeds and time, not a proof.
     none = Path(tmp) / "none"
     result = run("--out", str(none), "--seeds", "0:2", "--time-limit", "1e-6")
     assert result.returncode == 0, result.stderr
@@ -110,7 +104,6 @@ with short_link.fake_mint() as fake, tempfile.TemporaryDirectory() as tmp:
     assert "not a proof" in first, first
     assert "seed 1: timeout" in summary.stdout, summary.stdout
 
-    # A directory with no hunt in it is refused by name, not read as empty.
     missing = run("summary", str(Path(tmp) / "nothing"))
     assert missing.returncode == 2, missing
     assert "holds no hunt" in missing.stderr, missing.stderr

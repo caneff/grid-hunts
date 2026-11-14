@@ -56,7 +56,6 @@ assert marks == [
     "held      9 in r7c7 or r7c8 or r7c9 or r9c7 or r9c8 or r9c9",
 ], "\n".join(marks)
 
-# A false mark is reported as not held, with a solution that breaks it.
 with tempfile.TemporaryDirectory() as tmp:
     wrong = Path(tmp) / "marks.json"
     wrong.write_text(json.dumps([{"kind": "digit", "cell": "r1c1", "digit": 2}]))
@@ -67,13 +66,56 @@ with tempfile.TemporaryDirectory() as tmp:
     assert out[1] == "NOT HELD  r1c1 = 2", out
     assert out[2].startswith("  broken by: r1 "), out
 
-# No time to decide the board's own status: no mark is checked, so none is
-# read as held, and the report exits 1 with the reason.
 done = run("--time-limit", "1e-6")
 assert done.returncode == 1, (done.returncode, done.stdout, done.stderr)
 assert done.stdout.splitlines() == [
     "L1-L6: timeout",
     "no mark checked: the board's status is timeout",
 ], done.stdout
+
+
+# A marks file the report cannot read is refused with the reason, exit 2,
+# nothing on stdout: never the 1 of "a mark did not hold".
+def refused(text, why):
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "marks.json"
+        if text is not None:
+            path.write_text(text)
+        done = run("--marks", str(path))
+    assert done.returncode == 2, (why, done.returncode, done.stdout, done.stderr)
+    assert done.stdout == "", (why, done.stdout)
+    assert why in done.stderr, (why, done.stderr)
+
+
+refused(None, "marks.json")
+refused("{not json", "marks.json")
+refused('{"kind": "digit"}', "not a list of marks")
+refused('[{"kind": "parity", "cell": "r1c1"}]', "unknown mark kind 'parity'")
+refused('[{"kind": "digit", "digit": 5}]', "mark 0 has no 'cell'")
+refused('[{"kind": "digit", "cell": "r0c1", "digit": 5}]', "r0c1")
+refused('[{"kind": "digit", "cell": 5, "digit": 5}]', "no cell 5")
+refused('[{"kind": "digit", "cell": null, "digit": 5}]', "no cell None")
+
+# The verdict lines come from halver_report.report_marks, which the
+# Doppelganger rank check prints through too: a mark with no verdict in the
+# time limit reads TIMEOUT, never held, and the exit is 1.
+sys.path.insert(0, str(HERE.parent / "halver"))
+
+# isort: split
+import contextlib
+import io
+
+from halver_report import report_marks
+from halver_rules import MarkCheck, mark_name
+
+printed = io.StringIO()
+timed = [{"kind": "digit", "cell": "r1c1", "digit": 5}]
+with contextlib.redirect_stdout(printed):
+    code = report_marks(timed, lambda m: MarkCheck("timeout"), mark_name, str, 5)
+assert printed.getvalue() == "TIMEOUT   r1c1 = 5 (no verdict in 5s)\n", (
+    printed.getvalue()
+)
+assert code == 1, code
+
 
 print("ok")

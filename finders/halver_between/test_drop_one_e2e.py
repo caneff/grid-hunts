@@ -54,7 +54,6 @@ def centre_of(name):
 
 
 def distance(p, a, b):
-    """From point `p` to the segment from `a` to `b`."""
     (px, py), (ax, ay), (bx, by) = p, a, b
     dx, dy = bx - ax, by - ay
     t = max(0, min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)))

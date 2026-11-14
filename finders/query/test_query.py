@@ -62,7 +62,6 @@ def cli(board_path, out, *questions, extra=()):
 
 
 def start(board_path, out, *questions, extra=()):
-    """The run, started and left running, for a test that kills it."""
     return subprocess.Popen(
         argv(board_path, out, questions, extra),
         stdout=subprocess.PIPE,
@@ -71,7 +70,6 @@ def start(board_path, out, *questions, extra=()):
 
 
 def wait_for_lines(out, k, deadline_s=30):
-    """Returns once answers.jsonl holds `k` lines; fails at the deadline."""
     lines = out / "answers.jsonl"
     deadline = time.monotonic() + deadline_s
     while time.monotonic() < deadline:
@@ -88,8 +86,6 @@ def answers(out):
 
 
 def corner(image, board_index, col):
-    """A pixel near the top-left corner of cell (0, col) of the board drawn
-    `board_index`-th from the left: off the digit, inside the cell."""
     board_width = 3 * CELL + 2 * MARGIN
     x = board_index * (board_width + MARGIN) + MARGIN + col * CELL + 6
     return image.getpixel((x, MARGIN + 6))
@@ -138,7 +134,9 @@ def test_unique_and_infeasible_boards():
         out = Path(tmp) / "infeasible"
         r = cli(board(tmp, width=3, clues=[[0, 1], [1, 1]]), out, "feasible", "unique")
         assert r.returncode == 0, r.stderr
-        for answer in answers(out):
+        infeasible = answers(out)
+        assert len(infeasible) == 2, infeasible  # feasible and unique, one line each
+        for answer in infeasible:
             assert answer["status"] == "infeasible", answer
             assert answer["label"] == "complete", answer
             assert answer["solutions"] == [], answer
@@ -151,15 +149,15 @@ def test_time_limit_is_capped():
         b = board(tmp, width=3, clues=[])
         r = cli(b, out, "feasible", "unique", extra=["--time-limit", "1e-9"])
         assert r.returncode == 0, r.stderr
-        for answer in answers(out):
+        capped = answers(out)
+        assert len(capped) == 2, capped  # feasible and unique, one line each
+        for answer in capped:
             assert answer["status"] == "timeout", answer
             assert answer["label"] == "capped", answer
             assert (out / answer["picture"]).is_file(), answer
 
 
 def test_killed_run_keeps_answers_found():
-    """The second question's build holds for a minute; the first answer's
-    line and picture are on disk before the kill."""
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "out"
         b = board(tmp, width=3, clues=[[0, 1]], hold_after_builds=1)
@@ -174,8 +172,6 @@ def test_killed_run_keeps_answers_found():
 
 
 def test_a_failed_mint_is_recorded_and_the_run_goes_on():
-    """The toy's link hook raises: each answer's line and picture are still
-    written, the line naming the failure, and every question is answered."""
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "out"
         b = board(tmp, width=3, clues=[[0, 1]], mint_fails=True)
@@ -230,16 +226,11 @@ def condition(tmp, name, cond):
 
 
 def ring(image, col):
-    """A pixel on the left of the mark ring of cell (0, col): off the digit."""
     x = MARGIN + col * CELL + CELL // 2 - round(MARK_RADIUS * CELL) + 1
     return image.getpixel((x, MARGIN + CELL // 2))
 
 
 def test_forced_conditions():
-    """Each condition file is one answer, in the order given. On the board
-    c0 = 1 the row is 1 2 3 or 1 3 2: every condition kind compiles, the
-    held ones are held, and the one that fails shows a counterexample that
-    breaks it, its cell ringed."""
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "out"
         b = board(tmp, width=3, clues=[[0, 1]])
@@ -287,32 +278,40 @@ def test_forced_time_limit_is_capped():
 def test_forced_refusals():
     with tempfile.TemporaryDirectory() as tmp:
         b = board(tmp, width=3, clues=[])
-        r = cli(b, Path(tmp) / "none", "forced")
+        refused = []
+
+        def refuse(name, *question, extra=()):
+            out = Path(tmp) / name
+            refused.append(out)
+            return cli(b, out, *question, extra=list(extra))
+
+        r = refuse("none", "forced")
         assert r.returncode == 2, r.stderr
         assert "forced needs --condition or --marks" in r.stderr, r.stderr
 
-        r = cli(b, Path(tmp) / "unused", "unique", extra=["--condition", str(b)])
+        r = refuse("unused", "unique", extra=["--condition", str(b)])
         assert r.returncode == 2, r.stderr
         assert "--condition and --marks need the forced question" in r.stderr
 
         bad = condition(tmp, "bad", {"eq": ["c9", 1]})
-        r = cli(b, Path(tmp) / "key", "forced", extra=["--condition", str(bad)])
+        r = refuse("key", "forced", extra=["--condition", str(bad)])
         assert r.returncode == 2 and "no variable 'c9'" in r.stderr, r.stderr
 
         bad = condition(tmp, "kind", {"lt": ["c0", 1]})
-        r = cli(b, Path(tmp) / "kind", "forced", extra=["--condition", str(bad)])
+        r = refuse("kind", "forced", extra=["--condition", str(bad)])
         assert r.returncode == 2 and "unknown condition" in r.stderr, r.stderr
 
         marks = condition(tmp, "marks", [{"kind": "digit", "cell": "r1c1", "digit": 1}])
-        r = cli(b, Path(tmp) / "marks", "forced", extra=["--marks", str(marks)])
+        r = refuse("marks", "forced", extra=["--marks", str(marks)])
         assert r.returncode == 2, r.stderr
         assert "has no mark hook" in r.stderr, r.stderr
-        assert not (Path(tmp) / "key").exists(), "a refused run writes nothing"
+
+        assert len(refused) == 5, refused
+        written = [out.name for out in refused if out.exists()]
+        assert not written, f"a refused run wrote its --out: {written}"
 
 
 def test_enumerate_lists_every_solution_then_complete():
-    """c0 = 1 leaves 1 2 3 and 1 3 2: one line and picture per solution, then
-    a closing line that is complete because a further solve was infeasible."""
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "out"
         r = cli(board(tmp, width=3, clues=[[0, 1]]), out, "enumerate")
@@ -338,8 +337,6 @@ def test_enumerate_lists_every_solution_then_complete():
 
 
 def test_enumerate_at_its_cap_is_capped():
-    """A free row of 4 has 24 solutions: the default cap stops at 10, a
-    `--limit` at its own number, and either is capped, never exhausted."""
     with tempfile.TemporaryDirectory() as tmp:
         b = board(tmp, width=4, clues=[])
         for limit, extra in ((10, ()), (3, ("--limit", "3"))):
@@ -376,8 +373,6 @@ def test_enumerate_time_limit_is_capped():
 
 
 def test_enumerate_writes_each_solution_as_found():
-    """Every build after the first holds for a minute: the first solution's
-    line and picture are on disk before the kill."""
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "out"
         b = board(tmp, width=3, clues=[[0, 1]], hold_after_builds=1)
@@ -398,7 +393,7 @@ def caption_strip(image):
 
 def test_max_climbs_to_the_true_maximum():
     """A row of 4 with c3 = 4: each of c0, c1, c2 reaches 3 and no higher.
-    One solution puts 1, 2 and 3 in those cells, so a run that stops at its
+    One solution puts 1, 2 and 3 in c0..c2, so a run that stops at its
     first solve gets 3 on at most one of them. Each improving witness is a
     capped answer as it is found; the closing answer is complete, with a
     witness that reaches the maximum, drawn with the value in a caption
@@ -433,7 +428,6 @@ def test_max_climbs_to_the_true_maximum():
 
 
 def test_max_time_limit_is_capped():
-    """A climb cut short by its time limit is capped, never complete."""
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "out"
         b = board(tmp, width=4, clues=[])
@@ -445,9 +439,7 @@ def test_max_time_limit_is_capped():
 
 
 def test_max_writes_each_witness_as_found():
-    """Every build after the first climbing step holds for a minute (the
-    first build checks `--max`): the first witness's line and picture are
-    on disk, capped, before the kill."""
+    """The first build checks `--max`, so the hold starts after two builds."""
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "out"
         b = board(tmp, width=4, clues=[[3, 4]], hold_after_builds=2)
@@ -463,8 +455,6 @@ def test_max_writes_each_witness_as_found():
 
 
 def test_max_timeout_after_a_best_is_capped():
-    """The second climbing solve reaches its time limit: the closing answer
-    is `timeout`, capped, with the best found so far, never `max`."""
     real_solve = query.solve
     calls = []
 
@@ -523,11 +513,6 @@ def test_enumerate_and_max_refusals():
 
 
 def test_drop_one_names_the_droppable_clues():
-    """Clues c0 = 1, c1 = 2, c0 = 1 again: dropping either copy of c0 = 1
-    leaves the row unique, dropping c1 = 2 leaves 1 2 3 and 1 3 2. One
-    answer per clue, in order, then a closing answer naming the droppable
-    clues, its picture the board with each droppable clue's cell in a second
-    colour."""
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "out"
         b = board(tmp, width=3, clues=[[0, 1], [1, 2], [0, 1]])
@@ -555,8 +540,6 @@ def test_drop_one_names_the_droppable_clues():
 
 
 def test_drop_one_time_limit_is_capped():
-    """A tiny time limit gives every clue a timeout: capped, and no clue is
-    called droppable on that evidence."""
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "out"
         b = board(tmp, width=3, clues=[[0, 1], [1, 2], [0, 1]])
@@ -573,8 +556,6 @@ def test_drop_one_time_limit_is_capped():
 
 
 def test_drop_one_writes_each_clue_as_found():
-    """Every build after the first holds for a minute: the first clue's line
-    and picture are on disk before the kill."""
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "out"
         b = board(tmp, width=3, clues=[[0, 1], [1, 2]], hold_after_builds=1)
@@ -615,7 +596,6 @@ def test_an_out_already_answered_is_refused():
 
 
 def test_unique_on_an_invalid_model_raises():
-    """`unique_on` never turns an invalid model into a status."""
     model = cp_model.CpModel()
     x = model.NewIntVar(0, 5, "x")
     model.proto.constraints.add().linear.vars.append(99)  # no variable 99

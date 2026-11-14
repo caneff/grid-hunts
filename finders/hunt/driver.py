@@ -18,7 +18,7 @@ finder's `candidate_from_record` (or the record itself without one), draws it
 with the finder's `render` and replaces renders/ with the set of
 renders/<seed>.png (`hunt_files.swap_dir` owns the swap). `hunt summary DIR`
 and `hunt links DIR` (#121) report on the hunt and write the short link of each verified hit; a completed hunt calls
-the finder's `finish(out)`. A finder supplies only `describe_hit`,
+the finder's `finish(out)`. A finder supplies only `describe_hit` (or `summary_lines`),
 `link_document` and `finish` (protocol.py). `--workers` (default 3,
 set on the finder before the first seed) and the 1-minute load gate
 (refuses above 24 unless `--force-load`) are box knobs (#488). A
@@ -747,13 +747,15 @@ def _run_render(finder, argv):
 def _run_summary(finder, argv):
     """`hunt summary DIR`: print the seed span, outcome counts and verified
     hits of the hunt in DIR (`hunt_dir.hunt_summary`), each hit worded by the
-    finder's optional `describe_hit(record)`. Exit 2 on a bad argument list or
+    finder's optional `describe_hit(record)`, or the finder's own
+    `summary_lines(out)` when it has one. Exit 2 on a bad argument list or
     a directory with no hunt."""
     import hunt_dir  # hunt_dir -> verified_io -> driver: imported late
 
     describe = getattr(finder, "describe_hit", None)
+    own = getattr(finder, "summary_lines", None)
     return hunt_dir.summary_command(
-        ["summary", *argv], lambda out: hunt_dir.hunt_summary(out, describe)
+        ["summary", *argv], own or (lambda out: hunt_dir.hunt_summary(out, describe))
     )
 
 
@@ -791,6 +793,7 @@ def _run_links(finder, argv):
                 if verdict == "hit"
             }
             hunt_dir.replace_links(out, built)
+            skipped = len(seeded) - len(built)
         except Exception as e:
             print(
                 f"hunt links: refusing -- {type(e).__name__}: {e}; links/ was "
@@ -798,6 +801,9 @@ def _run_links(finder, argv):
                 file=sys.stderr,
             )
             return 2
+        print(f"wrote {len(built)} links to {out / 'links'}")
+        if skipped:
+            print(f"{skipped} candidates skipped: not verified hits (`summary {out}`)")
         return 0
 
 

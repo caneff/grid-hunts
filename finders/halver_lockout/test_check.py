@@ -136,5 +136,10 @@ refused(changed(lines=[[66, 57, 80 + 67]]), "has cell 147 off the board")
 refused(changed(extra={"type": 403, "lines": [[0, 1, 2]]}), "constraint type 403")
 refused(changed(given=4), "given digit in r1c5")
 refused(board, "unknown mark kind", marks=[{"kind": "parity", "cell": "r1c1"}])
+refused(board, "r0c1", marks=[{"kind": "digit", "cell": "r0c1", "digit": 5}])
+refused(board, "r10c1", marks=[{"kind": "digit", "cell": "r10c1", "digit": 5}])
+refused(
+    board, "r1c10", marks=[{"kind": "digit_in", "cells": ["r1c1", "r1c10"], "digit": 5}]
+)
 
 print("ok")

@@ -42,6 +42,11 @@ GAP = 4
 def solutions(
     lines, n, box, limit, deadline=None, gap=GAP, search=halver_brute_c.solutions
 ):
+    """Up to `limit` solutions of the lockout board, each (digits, halver cells), via `search`.
+
+    Raises OutOfTime past `deadline`; `gap` is the least difference between a line's diamonds.
+    """
+
     def narrowing(body, houses, n):
         return lockout_narrowing(body, houses, n, gap)
 

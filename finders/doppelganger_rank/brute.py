@@ -27,6 +27,9 @@ BOX = (2, 2)
 
 @cache
 def grids():
+    """Every 4x4 Doppelganger grid, each with its `rules.Reading`: the
+    row-by-row search of digits 0..4, keeping grids the rule reader finds no
+    violation in."""
     rows = [row for row in permutations(range(N + 1), N) if 0 in row]
     found = []
 

@@ -25,6 +25,7 @@ unique fixture's first 23 lines, is in `test_unique_23.py`, which is slow.
     uv run finders/halver_lockout/test_brute.py
 """
 
+import functools
 import json
 import sys
 import time
@@ -183,18 +184,23 @@ else:
 # A search that ends after its deadline, between two of the C search's clock
 # reads, returns no count either: the clock read after the call says the
 # deadline has passed.
-clock = halver_brute_c.time.monotonic
-start = clock()
+start = time.monotonic()
 reads = iter([start, start + 10])
-halver_brute_c.time.monotonic = lambda: next(reads, start + 10)
 try:
-    brute.solutions(four, 9, (3, 3), limit=2, deadline=start + 5)
+    brute.solutions(
+        four,
+        9,
+        (3, 3),
+        limit=2,
+        deadline=start + 5,
+        search=functools.partial(
+            halver_brute_c.solutions, clock=lambda: next(reads, start + 10)
+        ),
+    )
 except brute.OutOfTime:
     pass
 else:
     raise AssertionError("a search that ended past its deadline returned a count")
-finally:
-    halver_brute_c.time.monotonic = clock
 
 # The C search's arrays hold a 9x9 board and 256 lines: anything larger is
 # refused before the C code is called.

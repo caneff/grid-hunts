@@ -38,7 +38,6 @@ from halver_query import holds, uniqueness
 ADDED = hit_fixture.ADDED
 LINES = hunt.BOARD + list(ADDED)
 
-# Unique, and Chris's marks hold in the one solution.
 board = rules.RuleModel(LINES)
 check = uniqueness(board, time_limit=60)
 assert check.status == "unique", check.status
@@ -48,15 +47,12 @@ for mark in marks:
     held = holds(board, mark, time_limit=60)
     assert held.status == "held", (rules.mark_name(mark), held)
 
-# Each added line is a legal shape on the lines drawn before it.
 drawn = list(hunt.BOARD)
 for line in ADDED:
     reason = candidates.shape_violation(candidates.path_of(line), drawn)
     assert reason is None, (rules.line_name(line), reason)
     drawn.append(line)
 
-# The record: the published link, decoding to the board's lines plus the
-# hit's, in Chris's style, nothing entered; the table numbered on from L7.
 finder = hunt.HalverBetweenFinder(
     max_cells=8,
     pool=20,
@@ -85,10 +81,9 @@ assert record["table"] == [
 ], record["table"]
 assert finder.candidate_from_record(record) == hit
 
-# verify passes the hit, and refuses each kind of bad hit with its reason.
 assert finder.verify(hit) == hunt.Verdict(True), finder.verify(hit)
 
-reused = rules.Line((4, 0), ((4, 1),), (3, 1))  # r5c2 is the first line's body
+reused = rules.Line((4, 0), ((4, 1),), (3, 1))
 illegal = finder.verify(hunt.Hit((*ADDED, reused), check.first))
 assert not illegal.ok, illegal
 assert illegal.reason.endswith("body cell r5c2 is already on a line"), illegal

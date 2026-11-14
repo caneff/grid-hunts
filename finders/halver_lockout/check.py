@@ -29,8 +29,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import rules
 
 # isort: split
+from halver_query import load_marks
 from halver_report import report
-from halver_rules import mark_name
 
 
 def read_board(path):
@@ -50,12 +50,7 @@ def main(argv):
             board = rules.RuleModel(lines)
         except (OSError, ValueError, KeyError) as error:
             raise ValueError(f"{args.board}: {error}") from error
-        try:
-            marks = json.loads(args.marks.read_text()) if args.marks else []
-            for mark in marks:
-                mark_name(mark)
-        except (OSError, ValueError, KeyError) as error:
-            raise ValueError(f"{args.marks}: {error}") from error
+        marks = load_marks(args.marks, board.n) if args.marks else []
     except ValueError as error:
         print(f"check.py: {error}", file=sys.stderr)
         return 2

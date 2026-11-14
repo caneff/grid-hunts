@@ -148,7 +148,6 @@ class Answer(NamedTuple):
 
 
 def load_finder(name, board_path):
-    """The finder FINDER names, loaded on BOARD."""
     path = Path(name)
     if path.suffix != ".py":
         path = HERE.parent / name / "query_finder.py"
@@ -161,7 +160,6 @@ def load_finder(name, board_path):
 
 
 def solve(question, model, variables, time_limit):
-    """`found` with one solution, `infeasible`, or `timeout`."""
     solver = cpsat.solver(time_limit)
     status = solver.Solve(model)
     if status in cpsat.SOLVED:
@@ -181,7 +179,7 @@ def feasible(finder, time_limit):
 def forced_on(model, variables, cond, time_limit):
     """`forced` on a model the caller built: `held`, `not_held` with the
     solution that breaks `cond`, or `timeout`. Puts `cond`'s negation on
-    `model`, so the caller hands over a fresh model or a clone."""
+    `model`: hand over a fresh model or a clone."""
     model.AddBoolAnd([conditions.literal(model, variables, conditions.Not(cond))])
     status, solutions = solve("forced", model, variables, time_limit)
     return {"found": "not_held", "infeasible": "held"}.get(status, status), solutions
@@ -194,9 +192,8 @@ def forced(finder, cond, fields, time_limit):
 
 
 def unique_on(model, variables, time_limit):
-    """`unique` on a model the caller built, its hints and all: the five
-    statuses of `sudoku_kit.uniqueness` but `invalid`, which raises, with
-    the solutions found. Leaves `model` unchanged."""
+    """`unique` on a caller-built model: `sudoku_kit.uniqueness`'s statuses
+    with the solutions found; `invalid` raises. Leaves `model` unchanged."""
     result = check_uniqueness(model, variables, time_limit=time_limit, workers=1)
     if result.status == "invalid":
         raise ValueError("unique: the finder's model is invalid")
@@ -208,7 +205,6 @@ def unique(finder, time_limit):
 
 
 def build_with(finder, conds):
-    """A fresh model of the board with every condition in `conds` required."""
     model, variables = finder.build(finder.clues)
     for cond in conds:
         model.AddBoolAnd([conditions.literal(model, variables, cond)])
@@ -216,9 +212,6 @@ def build_with(finder, conds):
 
 
 def enumerate_solutions(finder, limit, time_limit):
-    """Each solution as found, a `solution` answer, then the closing answer
-    carrying the `count` found. Each step rebuilds the board with every
-    solution found so far excluded."""
     found = []
     while len(found) < limit:
         excluded = [
@@ -240,11 +233,6 @@ def enumerate_solutions(finder, limit, time_limit):
 
 
 def climb(finder, key, time_limit):
-    """Each improving witness of `key` as found, a capped `witness` answer,
-    then the closing answer: `max` once a step came back infeasible above
-    the best, `timeout` with the best so far, `infeasible` with none. Each
-    carries the value in a caption."""
-
     def answer(status, best):
         value = best[0][key] if best else None
         caption = None
@@ -270,10 +258,6 @@ DROP_VERDICT = {"unique": "droppable", "not_unique": "needed", "infeasible": "ne
 
 
 def drop_one(finder, time_limit):
-    """Each clue's answer as found, the clue in the second colour when
-    droppable, then the closing answer naming the droppable and capped
-    clues, every droppable clue in the second colour. Each step rebuilds the
-    board without one clue."""
     droppable, capped = [], []
     for i in range(len(finder.clues)):
         rest = finder.clues[:i] + finder.clues[i + 1 :]
@@ -316,7 +300,6 @@ def board_image(finder, solution, shaded=(), ringed=(), marked=()):
 
 
 def captioned(image, caption):
-    """`image` over a strip carrying `caption`, centred."""
     out = Image.new("RGB", (image.width, image.height + CAPTION_HEIGHT), "white")
     out.paste(image, (0, 0))
     font = ImageFont.truetype(DEFAULT_FONT, CAPTION_FONT_SIZE)
@@ -326,9 +309,6 @@ def captioned(image, caption):
 
 
 def picture(finder, solutions, ringed=(), caption=None, marked=()):
-    """One board with the `ringed` cells ringed and the `marked` clues in the
-    second colour, or two side by side with the cells that differ shaded;
-    `caption`, when given, in a strip below."""
     if caption is not None:
         return captioned(picture(finder, solutions, ringed, marked=marked), caption)
     if len(solutions) < 2:
@@ -345,9 +325,6 @@ def picture(finder, solutions, ringed=(), caption=None, marked=()):
 
 
 def write_answer(out, k, question, answer, finder, time_limit):
-    """`answer`'s picture, links, then its answers.jsonl line, which carries
-    its fields too, or `link_error` when the links failed to mint; the
-    picture's path."""
     stem = f"{k}-{question}"
     picture_path = out / f"{stem}.png"
     image = picture(
@@ -457,10 +434,6 @@ def main(argv):
 
 
 def read_marks(finder, condition_files, marks_file):
-    """Each forced condition, as (condition, its line's fields): the
-    condition files', then the marks file's entries through the finder's
-    `mark` hook. Raises a ValueError naming a file that does not read, and
-    why, before any question is asked."""
     marks = []
     for path in condition_files:
         try:
@@ -480,9 +453,6 @@ def read_marks(finder, condition_files, marks_file):
 
 
 def read_entries(hook, marks_file):
-    """Each `marks.json` entry through `hook`, as (condition, its line's
-    fields); a ValueError naming what does not read: not JSON, not a list,
-    an entry that is not an object or lacks a field the hook reads."""
     entries = json.loads(marks_file.read_text())
     if not isinstance(entries, list):
         raise ValueError("not a list of marks")
@@ -497,7 +467,6 @@ def read_entries(hook, marks_file):
 
 
 def answers(question, finder, marks, limit, max_key, time_limit):
-    """Each answer to `question`, as it is found."""
     if question == "feasible":
         yield feasible(finder, time_limit)
     elif question == "unique":

@@ -57,22 +57,17 @@ def brute_status(lines, n, box, limit=2):
     return {0: "infeasible", 1: "unique"}.get(len(found), "not_unique"), found
 
 
-# The known case: one answer, the same one from both checks.
 cpsat_result = uniqueness(rules.RuleModel([A, B], n=4, box=(2, 2)))
 assert cpsat_result.status == "unique", cpsat_result
 assert cpsat_result.first == KNOWN, cpsat_result.first
 found = brute.solutions([A, B], 4, (2, 2), limit=2)
 assert [as_solution(f) for f in found] == [KNOWN], found
 
-# Equal circles leave E no body value: no solution from either check, though
-# E alone has solutions.
 assert uniqueness(rules.RuleModel([A, B, E], n=4, box=(2, 2))).status == "infeasible"
 assert brute.solutions([A, B, E], 4, (2, 2), limit=2) == []
 assert uniqueness(rules.RuleModel([E], n=4, box=(2, 2))).status == "not_unique"
 assert len(brute.solutions([E], 4, (2, 2), limit=2)) == 2
 
-# A deadline already past stops the search before its first node: no count,
-# never a short one read as a count.
 try:
     brute.solutions([E], 4, (2, 2), limit=2, deadline=time.monotonic() - 1)
 except brute.OutOfTime:
@@ -80,8 +75,6 @@ except brute.OutOfTime:
 else:
     raise AssertionError("a search past its deadline returned a count")
 
-# Random 4x4 king-step line sets: both checks give the same status, and the
-# same answer when it is unique.
 rng = random.Random(39)
 cells = [(r, c) for r in range(4) for c in range(4)]
 
@@ -115,7 +108,6 @@ for _ in range(150):
     statuses.add(status)
 assert statuses == {"infeasible", "unique", "not_unique"}, statuses
 
-# Chris's 9x9 board: more than one solution, found in well under a second.
 HERE = Path(__file__).resolve().parent
 board = rules.load_lines(HERE / "board.json")
 started = time.monotonic()
@@ -125,11 +117,11 @@ for f in found:
     assert all(rules.line_holds(as_solution(f), ln) for ln in board)
 assert time.monotonic() - started < 10, time.monotonic() - started
 
-# A unique 9x9: the five lines of Chris's first board (BGHKnjgkHd, before the
-# switch on #39) plus 14 lines, each chosen to hold in one CP-SAT
-# solution and break the next. A test case only, not a hit: its lines were
-# never checked against #39's shape rules. The backtracking check must
-# exhaust the tree to call it unique, in seconds, and agree with CP-SAT.
+# A unique 9x9: the five lines of Chris's first board (before the switch on
+# #39) plus 14 lines, each chosen to hold in one CP-SAT solution and break
+# the next. A test case only, not a hit: its lines were never checked against
+# #39's shape rules. The backtracking check must exhaust the tree to call it
+# unique, in seconds, and agree with CP-SAT.
 unique_lines = [
     line(*names) for names in json.loads((HERE / "unique_9x9.json").read_text())
 ]

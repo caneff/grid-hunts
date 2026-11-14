@@ -26,8 +26,9 @@ README before reusing anything there.
   no pictures: `render DIR`, a driver subcommand beside `verify DIR`, does,
   for a finder that has `render(candidate)` (swap mechanics: `hunt_files.swap_dir`).
   `summary DIR` and `links DIR` are driver subcommands too (#121); the split
-  between driver and finder, including `describe_hit`, `link_document` and
-  `finish`, is stated in `finders/hunt/protocol.py`.
+  between driver and finder, including `describe_hit` (or `summary_lines`, a
+  finder's whole summary wording, which the halver and Doppelganger rank hunts
+  supply), `link_document` and `finish`, is stated in `finders/hunt/protocol.py`.
   `toy_summary_finder.py` is the worked example. `finders/hunt/toy_finder.py`
   is a minimal worked example. `finders/hunt/hunt_files.py` owns every file a
   hunt writes and every read of one: the lock, JSONL logs whose read drops a
@@ -175,15 +176,18 @@ README before reusing anything there.
   `halver_brute_c.py` the same search in C (`halver_brute.c`, built with
   the system gcc into a git-ignored `target/`), which the lockout check
   runs on (#59); `halver_shapes.py` the drawing rules every line type
-  shares and the cell counts a hunt ranks lines by, which each finder's
-  `candidates.py` re-exports beside its own separating-line walk. A line
+  shares, the cell counts a hunt ranks lines by, and the one separating-line
+  walk (`separating_paths`, #126), which each finder's `candidates.py` calls
+  with its line type's `closes` and `extend` rules. A line
   type plugs
   in through three pieces: a `post` that puts one line on the model, a plain
   `line_holds` reading of one line on a solution, and a `narrowing` step for
   the search. `halver_report.py` prints a board's status and its marks'
   verdicts. `halver_hunt.py` is the target-grid hunt both finders run
-  (#56): the loop, its ranking, `verify` on the line type's backtracking
-  check, the record, `summary` and the CLI; a finder's `hunt.py` names its
+  (#56): the hooks it gives the shared loop (`finders/hunt/target_loop.py`,
+  #130), its ranking, `verify` on the line type's backtracking
+  check, the record, its `summary_lines` wording, the `link_document` and the
+  `finish` that stamps `ended.json`; the CLI is the driver's; a finder's `hunt.py` names its
   line type's modules, its starting board and its link. A change here
   runs the suites that import it, both finders' among them (Pants,
   `docs/pants.md`).
@@ -206,8 +210,9 @@ README before reusing anything there.
   lockout pieces of the CP-SAT model (diamonds at least 4 apart in value,
   each body cell below the smaller or above the larger) and the reader of
   SudokuMaker's type-407 lines, `brute.py` the lockout narrowing of the
-  backtracking check, `candidates.py` the separating-line walk (#55): every
-  legal line that holds in a target and fails in a second solution.
+  backtracking check, `candidates.py` the lockout rules for the shared
+  separating-line walk (#55, #126): every legal line that holds in a target
+  and fails in a second solution.
   `hunt.py` is its hunt (#56), on the shared `halver_hunt.py`, from an
   empty 9x9 with no givens: the target-grid loop adds lockout lines until
   the board is unique, `verify` re-reads each hit with `brute.py` (a search
@@ -242,7 +247,8 @@ README before reusing anything there.
   file format. `fixtures/` holds the test boards, among them
   `opening_9x9.json`, Chris's opening, which `test_opening.py` checks in the
   gate (#68). `hunt.py --board BOARD --out DIR --seeds A:B` is its hunt
-  on the hunt protocol (#69): the halver hunt's target-grid loop adds rank
+  on the hunt protocol (#69): the target-grid loop the halver hunts run
+  (`finders/hunt/target_loop.py`, #130) adds rank
   clues from `separating`'s list until the board is unique, each check
   hinted with the target (#72), picked uniformly (`--pool 0`, the default
   since #72) or the most restricting first by a sample of the board's
@@ -254,8 +260,8 @@ README before reusing anything there.
   compared digit by digit in clauses; #70), refusing a second grid or a
   time limit reached, and `hunt.py summary DIR` lists hits fewest clues
   first and splits the seeds into found, proven infeasible, timed out and
-  capped; `test_hunt.py` runs it at 4x4 in the gate. The 9x9 hunt of
-  record, 16 hits in 120 seeds, is
+  budget (the loop's `budget:` reason); `test_hunt.py` runs it at 4x4 in
+  the gate. The 9x9 hunt of record, 16 hits in 120 seeds, is
   `docs/research/2026-10-22-doppelganger-rank-9x9-hunt/`; its fewest-clue
   hit is `fixtures/hit_9x9.json`, which `test_spec_66_e2e.py` re-checks in
   the gate and `test_hunt_9x9.py` hunts again in `just test-slow` (#72).

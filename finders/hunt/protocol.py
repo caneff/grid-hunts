@@ -110,6 +110,12 @@ class Finder(Protocol):
         """One line of `summary DIR` for a verified hit's record."""
         ...
 
+    def summary_lines(self, out: Path) -> list[str]:
+        """Instead of `describe_hit`: the whole of `summary DIR` as lines, for
+        a finder whose headline and counts have wording of their own. It reads
+        the hunt with `hunt_dir.read_hunt`."""
+        ...
+
     def link_document(self, candidate: Any) -> dict:
         """The SudokuMaker document of a verified hit, rebuilt with
         `candidate_from_record` (or the record itself without that hook)."""

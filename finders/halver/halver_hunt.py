@@ -2,8 +2,9 @@
 spec #52 #56): add lines to a board until it has exactly one (digits,
 halvers) solution, then re-read the hit with the backtracking check.
 
-One seed is the target-grid loop. Sample a target solution of the board's
-lines (random digit hints on a one-worker solve). Then, while the rule check
+One seed is the target-grid loop (`finders/hunt/target_loop.py`, #130) on
+this module's hooks. Sample a target solution of the board's lines (random
+digit hints on a one-worker solve). Then, while the rule check
 (the board-question driver's `unique`, through `halver_query.uniqueness`)
 says `not_unique`, add one line that holds in the target and fails in the
 second solution, from the line type's `separating_paths`. Stop at `unique`,
@@ -37,7 +38,7 @@ shares no code with the CP-SAT model: exactly one solution, the hit's own,
 and every added line a legal shape. The backtracking search stops at
 `--verify-seconds` and then refuses the hit with no verdict, never passes
 it. `record` writes the line table, the solution and the finder's
-SudokuMaker link. `summary DIR` prints the verified hits, or "none found"
+SudokuMaker link. `summary DIR` (the driver's, worded by `summary_lines`) prints the verified hits, or "none found"
 with the seeds, the wall clock (run.json's start to the end a returning
 hunt records in `ended.json`; "not recorded" without one) and each seed's
 reason; a `--no-verify`
@@ -70,12 +71,13 @@ import halver_query
 from dedupe import IDENTITY
 from driver import run
 from halver_rules import Line, Solution, cell_name, line_name, parse_cell
-from hunt_dir import read_hunt, seed_lines, summary_command
+from hunt_dir import read_hunt, seed_lines
 from protocol import Empty, Verdict
 from short_link import mint
+from target_loop import Budget, Hooks, target_loop
 
 N, BOX = 9, (3, 3)
-# The hunt's end, written when a hunt run returns 0; `summary` reads its
+# The hunt's end, written when a hunt run returns 0; `summary_lines` reads its
 # wall clock from run.json's start and this, never a file's modification
 # time, which git does not keep.
 ENDED = "ended.json"
@@ -90,17 +92,13 @@ KNOBS = (
 
 
 class Hit(NamedTuple):
-    """The added lines, in the order the loop added them, and the one
-    solution of the board with them."""
+    """A hit: the added lines in loop order, and the board's one solution."""
 
     added: tuple
     solution: Solution
 
 
 def best_line(paths, lines, target, second, pool, rng, line_holds, candidates):
-    """The best of `paths`: most pool solutions broken per new cell taken,
-    then touching a cell whose halver status differs between target and
-    second, then shortest, then a random tie-break."""
     differs = target.halvers ^ second.halvers
 
     def score(path):
@@ -109,6 +107,98 @@ def best_line(paths, lines, target, second, pool, rng, line_holds, candidates):
         return (-kills / cost, not differs.intersection(path), len(path), rng.random())
 
     return min((*score(path), path) for path in paths)[-1]
+
+
+class _Seed(Hooks):
+    """One seed's hooks for `target_loop`: the board, the lines added and
+    the ranking pool."""
+
+    def __init__(self, finder, rng):
+        self.finder, self.rng = finder, rng
+        self.added = list(finder.start)
+        self.board = finder.rules.RuleModel([*finder.board, *self.added])
+        self.survivors = set()
+
+    def lines(self):
+        return [*self.finder.board, *self.added]
+
+    def sample(self, limit):
+        return self.board.sample(self.rng, limit)
+
+    def check(self, target, limit):
+        self.board.hint(target)
+        return halver_query.uniqueness(self.board, time_limit=limit)
+
+    def no_space(self, target, second, steps):
+        if self.finder.candidates.no_space(target, second, self.lines()):
+            return Empty(
+                f"no space: after {steps} added lines the target and the "
+                "second solution differ only on body cells of drawn lines"
+            )
+        return None
+
+    def separate(self, target, second, steps, limit):
+        finder, candidates, lines = self.finder, self.finder.candidates, self.lines()
+        t0 = time.monotonic()
+        pool = self.survivors - {target}
+        pool_timeouts = 0
+        for _ in range(finder.pool - len(pool)):
+            draw_limit = limit()
+            if draw_limit <= 0:
+                break
+            drawn = self.board.sample(self.rng, draw_limit)
+            if drawn is None:
+                pool_timeouts += 1
+            elif drawn != target:
+                pool.add(drawn)
+        pool.add(second)
+        pool_seconds = time.monotonic() - t0
+        t0 = time.monotonic()
+        paths = candidates.separating_paths(target, second, lines, finder.max_cells)
+        if not paths:
+            return Empty(
+                f"no line of at most {finder.max_cells} cells separates the "
+                f"target from the second solution after {steps} added lines"
+            )
+        best = best_line(
+            paths,
+            lines,
+            target,
+            second,
+            pool,
+            self.rng,
+            finder.rules.line_holds,
+            candidates,
+        )
+        return (
+            best,
+            pool,
+            {
+                "pool_s": round(pool_seconds, 3),
+                "rank_s": round(time.monotonic() - t0, 3),
+                "candidates": len(paths),
+                "pool": len(pool),
+                "pool_timeouts": pool_timeouts,
+            },
+        )
+
+    def add(self, choice):
+        best, pool, fields = choice
+        candidates, lines = self.finder.candidates, self.lines()
+        line = candidates.line_of(best)
+        self.board.add_line(line)
+        self.added.append(line)
+        self.survivors = {s for s in pool if self.finder.rules.line_holds(s, line)}
+        return {
+            **fields,
+            "kills": len(pool) - len(self.survivors),
+            "new_cells": candidates.new_cells(best, lines),
+            "free_left": candidates.free_cell_count([*lines, line], N),
+            "line": line_name(line),
+        }
+
+    def log(self, fields):
+        self.finder._note(**fields)
 
 
 class TargetLoopFinder:
@@ -149,7 +239,7 @@ class TargetLoopFinder:
         return {knob: getattr(self, knob) for knob in KNOBS}
 
     def link_doc(self, added):
-        """The decoded SudokuMaker document `record` encodes for a hit."""
+        """The decoded SudokuMaker document for a hit's added lines; a subclass supplies it."""
         raise NotImplementedError
 
     def _note(self, **fields):
@@ -157,96 +247,13 @@ class TargetLoopFinder:
             self.log.write(json.dumps(fields) + "\n")
             self.log.flush()
 
-    def _ran_out(self, limit, what):
-        """The Empty for a solve that reached `limit`: the seed's budget when
-        that was what was left, the per-solve `--time-limit` otherwise."""
-        if limit < self.time_limit:
-            return Empty(f"budget: {self.max_seconds:g} s ran out during {what}")
-        return Empty(f"timeout: {what} ({self.time_limit:g}s)")
-
     def propose(self, rng):
-        rules, candidates = self.rules, self.candidates
-        deadline = time.monotonic() + self.max_seconds
-
-        def limit():
-            return min(self.time_limit, deadline - time.monotonic())
-
-        added = list(self.start)
-        board = rules.RuleModel([*self.board, *added])
-        sample_limit = limit()
-        target = board.sample(rng, sample_limit)
-        if target is None:
-            return self._ran_out(sample_limit, "sampling a target")
-        survivors = set()  # pool solutions every added line holds in
-        while True:
-            new = len(added) - len(self.start)
-            check_limit = limit()
-            if check_limit <= 0:
-                return Empty(f"budget: {self.max_seconds:g} s after {new} lines")
-            board.hint(target)
-            t0 = time.monotonic()
-            check = halver_query.uniqueness(board, time_limit=check_limit)
-            check_seconds = time.monotonic() - t0
-            if check.status == "unique":
-                self._note(step=new, check_s=check_seconds, status="unique")
-                return Hit(tuple(added), check.first)
-            if check.status == "timeout":
-                return self._ran_out(check_limit, f"the check after {new} lines")
-            if check.status != "not_unique":
-                raise ValueError(
-                    f"check returned {check.status} on lines the target obeys"
-                )
-            if new >= self.max_lines:
-                return Empty(f"budget: {new} lines added and still not unique")
-            second = check.first if check.first != target else check.second
-            t0 = time.monotonic()
-            lines = [*self.board, *added]
-            if candidates.no_space(target, second, lines):
-                return Empty(
-                    f"no space: after {new} added lines the target and the "
-                    "second solution differ only on body cells of drawn lines"
-                )
-            pool = survivors - {target}
-            pool_timeouts = 0
-            for _ in range(self.pool - len(pool)):
-                draw_limit = limit()
-                if draw_limit <= 0:
-                    break
-                drawn = board.sample(rng, draw_limit)
-                if drawn is None:
-                    pool_timeouts += 1
-                elif drawn != target:
-                    pool.add(drawn)
-            pool.add(second)
-            pool_seconds = time.monotonic() - t0
-            t0 = time.monotonic()
-            paths = candidates.separating_paths(target, second, lines, self.max_cells)
-            if not paths:
-                return Empty(
-                    f"no line of at most {self.max_cells} cells separates the "
-                    f"target from the second solution after {new} added lines"
-                )
-            best = best_line(
-                paths, lines, target, second, pool, rng, rules.line_holds, candidates
-            )
-            rank_seconds = time.monotonic() - t0
-            line = candidates.line_of(best)
-            board.add_line(line)
-            added.append(line)
-            survivors = {s for s in pool if rules.line_holds(s, line)}
-            self._note(
-                step=new + 1,
-                check_s=round(check_seconds, 3),
-                pool_s=round(pool_seconds, 3),
-                rank_s=round(rank_seconds, 3),
-                candidates=len(paths),
-                pool=len(pool),
-                pool_timeouts=pool_timeouts,
-                kills=len(pool) - len(survivors),
-                new_cells=candidates.new_cells(best, lines),
-                free_left=candidates.free_cell_count([*lines, line], N),
-                line=line_name(line),
-            )
+        budget = Budget(self.time_limit, self.max_seconds)
+        seed = _Seed(self, rng)
+        found = target_loop(seed, budget, max_steps=self.max_lines, unit="lines")
+        if isinstance(found, Empty):
+            return found
+        return Hit(tuple(seed.added), found.check.first)
 
     def verify(self, hit):
         candidates, brute = self.candidates, self.brute
@@ -300,10 +307,63 @@ class TargetLoopFinder:
         return tuple(sorted(self._canonical(line) for line in hit.added))
 
     def _canonical(self, line):
-        """The line's cells as board indices, read from whichever end is
-        smaller: a line and its reverse are one line."""
         path = tuple(r * N + c for r, c in self.candidates.path_of(line))
         return min(path, path[::-1])
+
+    def link_document(self, hit):
+        return self.link_doc(hit.added)
+
+    def finish(self, out):
+        """Stamp the hunt's end in `ENDED`, which `summary_lines` reads."""
+        stamp = {"end": datetime.now(UTC).isoformat()}
+        (out / ENDED).write_text(json.dumps(stamp) + "\n")
+
+    def summary_lines(self, out):
+        """The summary of the hunt in `out`, as lines of text."""
+        run_json, events, hits, unchecked, rejected = read_hunt(out)
+        clock = "wall clock not recorded"
+        if (out / ENDED).exists():
+            started = datetime.fromisoformat(run_json["start_time"])
+            ended = datetime.fromisoformat(json.loads((out / ENDED).read_text())["end"])
+            clock = f"wall clock {(ended - started).total_seconds():.0f} s"
+        seeds = sorted(e["seed"] for e in events)
+        span = f"{len(seeds)} seeds" + (f" ({seeds[0]}..{seeds[-1]})" if seeds else "")
+        outcomes = Counter(e["outcome"] for e in events)
+        text = []
+        if hits:
+            text.append(f"{len(hits)} hits in {span}, {clock}")
+        elif unchecked or rejected:
+            text.append(f"no verified hit in {span}, {clock}")
+        else:
+            text.append(
+                f"none found in {span}, {clock}: a search result, "
+                "not a proof that no finish exists"
+            )
+        if unchecked:
+            text.append(
+                f"{len(unchecked)} candidates unchecked: the hunt ran with "
+                f"--no-verify and `hunt.py verify {out}` has not run"
+            )
+        if rejected:
+            text.append(f"{len(rejected)} candidates rejected by `hunt.py verify`")
+        text.append(
+            "outcomes: " + ", ".join(f"{k} {v}" for k, v in sorted(outcomes.items()))
+        )
+        text.extend(seed_lines(events))
+        for record in hits:
+            text.append(f"hit, {len(record['lines'])} added lines: {record['link']}")
+            text.extend(f"  {row}" for row in record["table"])
+        for record in unchecked:
+            text.append(
+                f"unchecked candidate, {len(record['lines'])} added lines: {record['link']}"
+            )
+            text.extend(f"  {row}" for row in record["table"])
+        for record, reason in rejected:
+            text.append(
+                f"rejected candidate, {len(record['lines'])} added lines: {reason}"
+            )
+            text.extend(f"  {row}" for row in record["table"])
+        return text
 
     def candidate_from_record(self, record):
         a, b = f"{self.end}_a", f"{self.end}_b"
@@ -320,57 +380,8 @@ class TargetLoopFinder:
         return Hit(added, Solution(digits, halvers))
 
 
-def summary(out):
-    """What a hunt in `out` found, as lines of text."""
-    run_json, events, hits, unchecked, rejected = read_hunt(out)
-    clock = "wall clock not recorded"
-    if (out / ENDED).exists():
-        started = datetime.fromisoformat(run_json["start_time"])
-        ended = datetime.fromisoformat(json.loads((out / ENDED).read_text())["end"])
-        clock = f"wall clock {(ended - started).total_seconds():.0f} s"
-    seeds = sorted(e["seed"] for e in events)
-    span = f"{len(seeds)} seeds" + (f" ({seeds[0]}..{seeds[-1]})" if seeds else "")
-    outcomes = Counter(e["outcome"] for e in events)
-    text = []
-    if hits:
-        text.append(f"{len(hits)} hits in {span}, {clock}")
-    elif unchecked or rejected:
-        text.append(f"no verified hit in {span}, {clock}")
-    else:
-        text.append(
-            f"none found in {span}, {clock}: a search result, "
-            "not a proof that no finish exists"
-        )
-    if unchecked:
-        text.append(
-            f"{len(unchecked)} candidates unchecked: the hunt ran with "
-            f"--no-verify and `hunt.py verify {out}` has not run"
-        )
-    if rejected:
-        text.append(f"{len(rejected)} candidates rejected by `hunt.py verify`")
-    text.append(
-        "outcomes: " + ", ".join(f"{k} {v}" for k, v in sorted(outcomes.items()))
-    )
-    text.extend(seed_lines(events))
-    for record in hits:
-        text.append(f"hit, {len(record['lines'])} added lines: {record['link']}")
-        text.extend(f"  {row}" for row in record["table"])
-    for record in unchecked:
-        text.append(
-            f"unchecked candidate, {len(record['lines'])} added lines: {record['link']}"
-        )
-        text.extend(f"  {row}" for row in record["table"])
-    for record, reason in rejected:
-        text.append(f"rejected candidate, {len(record['lines'])} added lines: {reason}")
-        text.extend(f"  {row}" for row in record["table"])
-    return text
-
-
 def main(finder_class, argv, defaults):
-    """The hunt CLI: `summary DIR`, or the driver's commands with the finder
-    built from its own flags, each defaulting to `defaults[knob]`."""
-    if argv and argv[0] == "summary":
-        return summary_command(argv, summary)
+    """The hunt CLI: the driver's commands, the finder built from `defaults[knob]` flags."""
     parser = argparse.ArgumentParser(add_help=False)
     for knob in KNOBS:
         flag = "--" + knob.replace("_", "-")
@@ -389,11 +400,4 @@ def main(finder_class, argv, defaults):
         return 2
     log = own.step_log.open("a") if own.step_log else None
     finder = finder_class(**{knob: getattr(own, knob) for knob in KNOBS}, log=log)
-    code = run(finder, rest)
-    hunt = argparse.ArgumentParser(add_help=False)
-    hunt.add_argument("--out", type=Path)
-    out = hunt.parse_known_args(rest)[0].out
-    if code == 0 and rest[:1] != ["verify"] and out and (out / "run.json").exists():
-        stamp = {"end": datetime.now(UTC).isoformat()}
-        (out / ENDED).write_text(json.dumps(stamp) + "\n")
-    return code
+    return run(finder, rest)

@@ -24,9 +24,17 @@ type's lines from a decoded SudokuMaker document, and `lines_alone` reads
 them from a board that holds nothing else, refusing one that does.
 """
 
+import sys
+from collections.abc import Callable
+from pathlib import Path
 from typing import NamedTuple
 
 from sudoku_kit import cpsat
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "query"))
+
+# isort: split
+from conditions import All, Any_, Eq
 
 
 class Line(NamedTuple):
@@ -71,9 +79,25 @@ def cell_name(cell):
     return f"r{cell[0] + 1}c{cell[1] + 1}"
 
 
-def parse_cell(name):
+def parse_cell(name, n=None):
+    """The (row, column) from 0 of a cell named rNcM. A ValueError naming the
+    cell when row or column is 0, or past the board when `n`, its size, is
+    given, or anything else that is no rNcM name."""
+    if not isinstance(name, str):
+        raise ValueError(f"no cell {name!r}: a cell is named rNcM")
     row, col = name.lower().removeprefix("r").split("c")
-    return int(row) - 1, int(col) - 1
+    row, col = int(row), int(col)
+    if row < 1 or col < 1 or (n is not None and max(row, col) > n):
+        board = "" if n is None else f" on a {n}x{n} board"
+        raise ValueError(f"no cell {name}{board}")
+    return row - 1, col - 1
+
+
+def check_mark_cells(mark, n):
+    """Raises a ValueError naming the first cell of the `marks.json` entry
+    `mark` that `parse_cell` refuses on an n x n board."""
+    for name in [mark["cell"]] if "cell" in mark else mark.get("cells", []):
+        parse_cell(name, n)
 
 
 def line_name(line):
@@ -219,17 +243,59 @@ class HalverModel:
             self.model.AddHint(self.h[cell], cell in solution.halvers)
 
 
+class MarkKind(NamedTuple):
+    """One kind of `marks.json` entry: `name` puts the mark in words, as the
+    reports print it, and `condition` is what every solution must meet for
+    the mark to hold."""
+
+    name: Callable
+    condition: Callable
+
+
+def _all_halvers_with_digit(mark):
+    return Any_(
+        tuple(All((Eq(f"h_{c}", 1), Eq(c, mark["digit"]))) for c in mark["cells"])
+    )
+
+
+# The one table of mark kinds: a new kind is one entry here.
+MARK_KINDS = {
+    "digit": MarkKind(
+        lambda m: f"{m['cell']} = {m['digit']}",
+        lambda m: Eq(m["cell"], m["digit"]),
+    ),
+    "candidates": MarkKind(
+        lambda m: f"{m['cell']} in {{{','.join(map(str, m['digits']))}}}",
+        lambda m: Any_(tuple(Eq(m["cell"], d) for d in m["digits"])),
+    ),
+    "digit_in": MarkKind(
+        lambda m: f"{m['digit']} in {' or '.join(m['cells'])}",
+        lambda m: Any_(tuple(Eq(c, m["digit"]) for c in m["cells"])),
+    ),
+    "halver": MarkKind(
+        lambda m: f"{m['cell']} is a halver",
+        lambda m: Eq(f"h_{m['cell']}", 1),
+    ),
+    "halver_digit_in": MarkKind(
+        lambda m: f"a halver {m['digit']} in {' or '.join(m['cells'])}",
+        _all_halvers_with_digit,
+    ),
+}
+
+
+def mark_kind(mark):
+    """The `MARK_KINDS` entry of `mark`; a ValueError naming an unknown kind."""
+    kind = mark["kind"]
+    if kind not in MARK_KINDS:
+        raise ValueError(f"unknown mark kind {kind!r}: {mark}")
+    return MARK_KINDS[kind]
+
+
 def mark_name(mark):
     """The mark in words, as the reports print it."""
-    kind = mark["kind"]
-    if kind == "digit":
-        return f"{mark['cell']} = {mark['digit']}"
-    if kind == "candidates":
-        return f"{mark['cell']} in {{{','.join(map(str, mark['digits']))}}}"
-    if kind == "digit_in":
-        return f"{mark['digit']} in {' or '.join(mark['cells'])}"
-    if kind == "halver":
-        return f"{mark['cell']} is a halver"
-    if kind == "halver_digit_in":
-        return f"a halver {mark['digit']} in {' or '.join(mark['cells'])}"
-    raise ValueError(f"unknown mark kind {kind!r}: {mark}")
+    return mark_kind(mark).name(mark)
+
+
+def mark_condition(mark):
+    """A `marks.json` entry as a condition on the board's variables."""
+    return mark_kind(mark).condition(mark)

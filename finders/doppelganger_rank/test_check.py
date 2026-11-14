@@ -53,7 +53,6 @@ def run(*args):
 
 
 def broken_by(line):
-    """The grid on a `  broken by: r1 0231 r2 ...` line."""
     return grid_of(line.removeprefix("  broken by: "))
 
 
@@ -178,7 +177,7 @@ for why, edit in [
     ("two clues at r1 from the left", {"clues": [clue, clue]}),
     ("rank 17 outside 1..16", {"clues": [{**clue, "rank": 17}]}),
     (
-        "mark r5c1 = 0 is off a 4x4 board",
+        "no cell r5c1 on a 4x4 board",
         {"marks": [{**base["marks"][0], "cell": "r5c1"}]},
     ),
     ("mark r1c1 = 5 is off a 4x4 board", {"marks": [{**base["marks"][0], "digit": 5}]}),

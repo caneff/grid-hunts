@@ -46,8 +46,6 @@ VIEWERS = ("xdg-open", "display", "eog", "feh", "wslview", "explorer.exe", "open
 
 
 def run(out, *extra, board=BOARD, fake_bin=None, questions=("feasible", "unique")):
-    """`query.py halver_between BOARD QUESTION... --out OUT EXTRA...`, with
-    no display and, given `fake_bin`, its viewers first on PATH."""
     env = {
         k: v for k, v in os.environ.items() if k not in ("DISPLAY", "WAYLAND_DISPLAY")
     }
@@ -72,7 +70,6 @@ def run(out, *extra, board=BOARD, fake_bin=None, questions=("feasible", "unique"
 
 
 def fake_viewers(tmp):
-    """A bin directory whose every viewer appends its name to `opened`."""
     fake_bin = Path(tmp) / "bin"
     fake_bin.mkdir()
     opened = Path(tmp) / "opened"
@@ -110,8 +107,6 @@ def is_valid(solution, lines):
 
 
 def board_with(values):
-    """board.json with every cell's entries cleared and, given a solution,
-    its digits entered."""
     doc = json.loads(BOARD.read_text())
     doc["puzzle"]["cells"] = [
         {"value": values[f"r{i // 9 + 1}c{i % 9 + 1}"]} if values else {}
@@ -203,7 +198,9 @@ def main():
         out = Path(tmp) / "capped"
         r = run(out, "--time-limit", "1e-9", fake_bin=fake_bin)
         assert r.returncode == 0, r.stderr
-        for answer in answers(out):
+        capped = answers(out)
+        assert len(capped) == 2, capped  # feasible and unique, one line each
+        for answer in capped:
             assert (answer["status"], answer["label"]) == ("timeout", "capped"), answer
             assert (out / answer["picture"]).is_file(), answer
             assert links_of(out, answer, fake) == [board_with(None)], answer

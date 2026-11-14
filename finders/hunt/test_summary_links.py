@@ -79,6 +79,18 @@ with tempfile.TemporaryDirectory() as tmp, short_link.fake_mint() as fake:
             == toy_summary_finder.link_doc(record["grid"]),
         )
 
+    check(
+        "links says how many it wrote",
+        result.stdout.strip() == f"wrote {len(seeds)} links to {out / 'links'}",
+    )
+
+    # a finder that words its own summary replaces the driver's lines whole
+    result = run_cli(TOY, "summary", out, env={"TOY_OWN_SUMMARY": "1"})
+    check(
+        f"a summary_lines hook words summary DIR ({result.stdout!r})",
+        result.returncode == 0 and result.stdout == "own wording for hunt\n",
+    )
+
     # a held lock refuses, and links/ stays as it was
     before = sorted(p.name for p in (out / "links").iterdir())
     lock = os.open(out / ".lock", os.O_RDWR)

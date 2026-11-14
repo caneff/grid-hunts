@@ -31,8 +31,15 @@ sys.path.insert(0, str(FINDERS / "query"))
 
 # isort: split
 import query
-from conditions import All, Any_, Eq
-from halver_rules import HalverModel, MarkCheck, RuleCheck, cell_name, parse_cell
+from halver_rules import (
+    HalverModel,
+    MarkCheck,
+    RuleCheck,
+    cell_name,
+    check_mark_cells,
+    mark_condition,
+    parse_cell,
+)
 from short_link import mint
 
 N = 9
@@ -58,6 +65,8 @@ class HalverQuery:
         return parse_cell(name.removeprefix("h_"))
 
     def draw(self, canvas, solution, marked=()):
+        """Draw the lines (those indexed in `marked` in `DROP_COLOR`), and, given a
+        `solution`, its halver tints and digits, onto `canvas`."""
         cells = [(r, c) for r in range(N) for c in range(N)]
         if solution is not None:
             for cell in cells:
@@ -75,6 +84,8 @@ class HalverQuery:
                 canvas.digit(*cell, solution[cell_name(cell)])
 
     def link(self, solution):
+        """A short link of `doc` with every cell cleared, and `solution`'s digits
+        entered when given."""
         doc = copy.deepcopy(self.doc)
         doc["puzzle"]["cells"] = [
             {"value": solution[cell_name(divmod(i, N))]} if solution else {}
@@ -83,25 +94,23 @@ class HalverQuery:
         return mint(doc)
 
     def mark(self, entry):
-        return condition(entry)
+        """The `marks.json` entry as a condition (`halver_rules.MARK_KINDS`)."""
+        return mark_condition(entry)
 
 
-def condition(entry):
-    """A `marks.json` entry as a condition: what every solution must meet
-    for the mark to hold."""
-    kind = entry["kind"]
-    cells = entry.get("cells", [])
-    if kind == "digit":
-        return Eq(entry["cell"], entry["digit"])
-    if kind == "candidates":
-        return Any_(tuple(Eq(entry["cell"], d) for d in entry["digits"]))
-    if kind == "digit_in":
-        return Any_(tuple(Eq(c, entry["digit"]) for c in cells))
-    if kind == "halver":
-        return Eq(f"h_{entry['cell']}", 1)
-    if kind == "halver_digit_in":
-        return Any_(tuple(All((Eq(f"h_{c}", 1), Eq(c, entry["digit"]))) for c in cells))
-    raise ValueError(f"unknown mark kind {kind!r}: {entry}")
+def load_marks(path, n):
+    """The marks in the JSON file `path` for an n x n board, read by the
+    driver's `read_entries` (a list of objects, each with the fields its
+    kind needs), each kind one of `halver_rules.MARK_KINDS` and each cell on
+    the board. A ValueError names `path` and what is wrong."""
+    try:
+        entries = query.read_entries(mark_condition, Path(path))
+        marks = [fields["mark"] for _, fields in entries]
+        for mark in marks:
+            check_mark_cells(mark, n)
+    except (OSError, ValueError, TypeError) as error:
+        raise ValueError(f"{path}: {error}") from error
+    return marks
 
 
 def uniqueness(board, time_limit=10.0):
@@ -112,11 +121,15 @@ def uniqueness(board, time_limit=10.0):
 
 def holds(board, mark, time_limit=10.0):
     """The driver's `forced` on the `marks.json` entry `mark`, asked on a copy
-    of `board`'s model, which it leaves unchanged."""
+    of `board`'s model, which it leaves unchanged. A ValueError names a cell
+    of `mark` that is not on the board."""
+    check_mark_cells(mark, board.n)
     model = board.model.clone()
     variables = {
         k: model.GetIntVarFromProtoIndex(v.Index())
         for k, v in board.variables().items()
     }
-    status, solutions = query.forced_on(model, variables, condition(mark), time_limit)
+    status, solutions = query.forced_on(
+        model, variables, mark_condition(mark), time_limit
+    )
     return MarkCheck(status, *map(board.solution, solutions))
