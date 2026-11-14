@@ -312,6 +312,17 @@ def test_gridenum_six_by_six_counter_and_size_12(tmp_path):
     assert (status, shapes, solvable, unique) == ("exhausted", 66, 19, 2)
 
 
+def test_fastclimb_loads_through_the_shared_loader(tmp_path, monkeypatch):
+    # #144: with no gcc on PATH, a library that has to be built raises the loader's
+    # named error, not a raw FileNotFoundError.
+    monkeypatch.setattr(
+        fastclimb, "SO", tmp_path / "target" / "counting_shaded_fast.so"
+    )
+    monkeypatch.setenv("PATH", str(tmp_path))
+    with pytest.raises(fastclimb.c_library.CBuildError, match="no gcc on PATH"):
+        fastclimb._load()
+
+
 def test_build_dir_is_a_cache_merge_cleanup_sweeps():
     # merge-cleanup (#559) sweeps an ignored file unasked only when it sits in
     # a cache-named directory (here `target`) whose own .gitignore is `*`.
@@ -415,18 +426,18 @@ def test_dfs_flags_a_solvable_list_cut_short_by_max_stored():
 
 @pytest.mark.parametrize("cap", [0, 1])
 def test_dfs_refuses_a_cap_that_would_call_every_solvable_shape_unique(cap):
-    with pytest.raises(ValueError, match="cap below 2"):
+    with pytest.raises(ValueError, match=r"^gf_enumerate: cap below 2$"):
         dfs(21, cap=cap)
 
 
 def test_dfs_refuses_symmetry_with_pins():
-    with pytest.raises(ValueError, match="symmetry with pins"):
+    with pytest.raises(ValueError, match=r"^gf_enumerate: symmetry with pins$"):
         dfs(19, symmetry=True)
 
 
 @pytest.mark.parametrize("size", [0, 82])
 def test_dfs_refuses_a_size_outside_the_board(size):
-    with pytest.raises(ValueError, match="size not in 1-81"):
+    with pytest.raises(ValueError, match=r"^gf_enumerate: size not in 1-81$"):
         dfs(size)
 
 
@@ -492,6 +503,8 @@ def test_flow_connectivity_matches_the_flood_fill():
         seen.add(want)
         assert _flow_feasible(shape) == want
     assert seen == {True, False}
-    line = set(range(9))
-    assert _flow_feasible(line, cap=9)
-    assert not _flow_feasible(line | {40}, cap=10)
+    # The root supplies one unit per shaded cell, so `cap` bounds the shape: a connected
+    # line of 9 fits cap 9 exactly, one of 10 does not, and an ignored cap would let it.
+    assert _flow_feasible(set(range(9)), cap=9)
+    assert not _flow_feasible(set(range(10)), cap=9)
+    assert _flow_feasible(set(range(10)), cap=10)

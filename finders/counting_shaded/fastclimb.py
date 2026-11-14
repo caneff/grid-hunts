@@ -121,6 +121,10 @@ class Enumeration:
         return self.solvable > len(self.solvable_shapes)
 
 
+# gf_enumerate's refusal codes.
+REFUSALS = {-1: "size not in 1-81", -2: "cap below 2", -3: "symmetry with pins"}
+
+
 def enumerate_shapes(
     size, all_digits=True, symmetry=False, cap=2, seconds=0, max_stored=100000
 ):
@@ -138,9 +142,7 @@ def enumerate_shapes(
         size, int(all_digits), int(symmetry), cap, seconds, out, ks, max_stored, stats
     )
     if rc:
-        raise ValueError(
-            "gf_enumerate: size not in 1-81, cap below 2, or symmetry with pins"
-        )
+        raise ValueError(f"gf_enumerate: {REFUSALS[rc]}")
     found = [
         ({i for i in range(81) if out.raw[81 * s + i]}, ks[s]) for s in range(stats[3])
     ]

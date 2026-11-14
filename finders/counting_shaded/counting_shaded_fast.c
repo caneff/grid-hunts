@@ -80,8 +80,8 @@ static int connected(const uint8_t *sh) {
     return reached == total;
 }
 
-// Fill giv (0 = no given). Returns 1 if admissible and connected (and, under
-// gf_require_eight(1), showing an 8).
+// Fill giv (0 = no given). Returns 1 if the shape keeps every gf_set_pins pin and is
+// admissible and connected (and, under gf_require_eight(1), showing an 8).
 static int givens(const uint8_t *sh, uint8_t *giv) {
     uint16_t rm[9] = {0}, cm[9] = {0}, bm[81] = {0};
     int eight = 0;
@@ -433,7 +433,8 @@ static void grow(Enum *e, const int *untried_in, int cnt) {
 // seconds > 0 stops the search after that long. Solvable shapes (81 bytes each,
 // with their count in out_k) are stored up to out_cap. stats receives shapes,
 // solvable, unique, stored and 1 if the search ran to completion (0 if cut off).
-// Returns 0, or -1 on bad arguments (cap below 2 would call every solvable shape unique).
+// Returns 0, or on bad arguments -1 (size not in 1-81), -2 (cap below 2, which would
+// call every solvable shape unique) or -3 (symmetry with pins).
 int gf_enumerate(int size, int all_digits, int symmetry, int cap, double seconds,
                  uint8_t *out, int *out_k, int64_t out_cap, int64_t *stats) {
     init();
@@ -443,7 +444,9 @@ int gf_enumerate(int size, int all_digits, int symmetry, int cap, double seconds
         pinned |= force_on[i] | force_off[i];
         if (force_on[i] && first_on < 0) first_on = i;
     }
-    if (size < 1 || size > 81 || cap < 2 || (symmetry && pinned)) return -1;
+    if (size < 1 || size > 81) return -1;
+    if (cap < 2) return -2;
+    if (symmetry && pinned) return -3;
     static Enum e;
     memset(&e, 0, sizeof e);
     e.size = size; e.all_digits = all_digits; e.symmetry = symmetry; e.cap = cap;

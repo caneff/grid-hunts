@@ -1,6 +1,7 @@
-"""Pins `c_library.load`: a stale library is rebuilt, two concurrent loads of a
-stale library each get a whole file, and a missing gcc or a failed build raises
-`CBuildError` naming gcc and its stderr.
+"""Pins `c_library.load`: a stale library is rebuilt, concurrent loads of an absent
+library each get a whole file, gcc writes to a temp file that is renamed into place
+(so a build that dies half-way leaves no library behind), and a missing gcc or a
+failed build raises `CBuildError` naming gcc and its stderr.
 
     uv run finders/hunt/test_c_library.py
 """
@@ -57,7 +58,7 @@ with tempfile.TemporaryDirectory() as tmp:
     check("rebuild replaced the file", so.stat().st_mtime >= first_mtime)
     check("no temp file left", [p.name for p in so.parent.iterdir()] == ["lib.so"])
 
-    # Concurrent loads of a stale library: every process gets a working library.
+    # Eight concurrent loads of an absent library: every process gets a working one.
     so.unlink()
     procs = [
         subprocess.Popen(
@@ -103,6 +104,42 @@ with tempfile.TemporaryDirectory() as tmp:
         not (tmp / "target" / "bad.so").exists()
         and [p.name for p in so.parent.iterdir() if p.name.startswith("bad")] == [],
     )
+
+    # A gcc that writes half a library and dies: gcc was handed a temp file beside the
+    # library, not the library's own path, and nothing is left at the library's path.
+    # A build straight into the final path would leave the half-written file there.
+    fake = tmp / "fake-bin"
+    fake.mkdir()
+    seen = tmp / "gcc-output-arg"
+    (fake / "gcc").write_text(
+        "#!/bin/sh\n"
+        'while [ "$1" != "-o" ]; do shift; done\n'
+        f'printf "%s" "$2" > "{seen}"\n'
+        'printf "half a library" > "$2"\n'
+        'echo "gcc: killed half-way" >&2\n'
+        "exit 1\n"
+    )
+    (fake / "gcc").chmod(0o755)
+    halfway = tmp / "target" / "halfway.so"
+    saved = os.environ["PATH"]
+    os.environ["PATH"] = f"{fake}:{saved}"
+    try:
+        c_library.load(src, halfway)
+        check("a build that dies half-way raises", False)
+    except c_library.CBuildError as error:
+        check(
+            f"a build that dies half-way names gcc's stderr ({error})",
+            "half-way" in str(error),
+        )
+    finally:
+        os.environ["PATH"] = saved
+    output = Path(seen.read_text())
+    check(
+        f"gcc writes to a temp file beside the library ({output.name})",
+        output != halfway and output.parent == halfway.parent,
+    )
+    check("a build that dies half-way leaves no library", not halfway.exists())
+    check("... and no temp file", not output.exists())
 
     # Missing gcc: named error, a RuntimeError subclass.
     empty = tmp / "empty-path"

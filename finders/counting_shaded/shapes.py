@@ -98,8 +98,10 @@ def add_flow_connectivity(m, g, cap=81):
 
 
 def givens(shape):
-    """{cell: digit} for a shape (a set of cell indices), or None if inadmissible.
+    """{cell: digit} for a shape (a set of cell indices), or None if it breaks a pin or
+    is inadmissible.
 
+    A pin is broken by a forced cell left out or a banned cell shaded (`pins`).
     Inadmissible covers: an isolated shaded cell, a repeated given in a house, and a
     shaded cell region that is not orthogonally connected."""
     if FORCE - shape or BAN & shape:
