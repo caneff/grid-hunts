@@ -140,7 +140,8 @@ refused: it has no model of a marking.
     unique: c1:turn c2:turn r3c1, mirror r1:turn r1c3 r2:turn: DIR/c1-turn+c2-turn+r3c1 (seed 0)
     unique: r1:turn r1c3 r2:turn, mirror c1:turn c2:turn r3c1: DIR/r1-turn+r1c3+r2-turn (seed 0)
 
-`render DIR` draws every example of the hunt in DIR as a picture,
+`render DIR` is the driver's too (the finder's `render`) and draws every
+example of the hunt in DIR as a picture,
 `DIR/renders/<seed>.png` (`hybrid_render.py`, #791): the board with every
 outside number, the network, chocolate in one colour and a tint per banana,
 and a heavy ring in a second colour on every circle that is one of the
@@ -157,7 +158,8 @@ board drawn is refused and nothing is written.
     uv run finders/ubahn/hybrid_finder.py render DIR [--blank-strip]
     uv run finders/ubahn/hybrid_finder.py render DIR --seed N --png FILE
 
-`links DIR` writes a Penpa+ link per example of the hunt in `DIR` to
+`links DIR` is the driver's (`hunt links DIR`, with this finder's `link_text`)
+and writes a Penpa+ link per verified example of the hunt in `DIR` to
 `DIR/links/<seed>.txt` (`penpa.py`, #795): the grid with the circles and the
 numbers you supply and nothing else shown, drawn in the dotted grid under the
 combined rules. `--circles "CELLS"` are the cells that carry a circle, grid
@@ -208,12 +210,9 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 # isort: split
 import hunt_files
 import hybrid
-import hybrid_render
 import network
-import penpa
 from driver import run
-from hunt_dir import replace_links
-from hybrid_engines import DEFAULT_ENGINE, ENGINES, SAID, HybridFinder
+from hybrid_engines import DEFAULT_ENGINE, ENGINES, SAID, HybridFinder, LinkShown
 from hybrid_searches import climb, fewest_markings
 from ubahn_finder import DEFAULT_SIDE, DEFAULT_TIMEOUT
 
@@ -304,52 +303,6 @@ def classify(conditions, engine, timeout, workers):
     return lines
 
 
-def write_pictures(out, blank_strip=False, seed=None, png=None):
-    """Draw the examples of the hunt in `out`, each under its seed
-    (`hunt_files.read_examples`): all of them to `out/renders/<seed>.png`,
-    or the one at `seed` to `png`. The fifth strip is drawn when
-    `blank_strip` is set or the record's own is. Returns the lines to print.
-    Raises ValueError, naming the seed, on a record the finder refuses or a
-    grid `hybrid_render.Picture` refuses, and names a missing or unpaired
-    log or a seed with no example."""
-    out = Path(out)
-    examples = hunt_files.read_examples(out)
-    if seed is not None:
-        examples = [(s, record) for s, record in examples if s == seed]
-        if not examples:
-            raise ValueError(f"seed {seed} has no example in {out}")
-    finder = HybridFinder(hybrid.Conditions(DEFAULT_SIDE, DEFAULT_SIDE))
-    # Every picture is drawn before any file is touched: a grid that is
-    # refused leaves renders/ as it was.
-    drawn = {}
-    for s, record in examples:
-        try:
-            asked, found = finder.candidate_from_record(record)
-            drawn[s] = hybrid_render.Picture(
-                found,
-                asked.rows,
-                asked.cols,
-                asked.circles,
-                blank_strip or asked.blank_strip,
-                asked.battenberg,
-            ).image
-        except ValueError as e:
-            raise ValueError(f"seed {s}: {e}") from e
-    if seed is not None:
-        hunt_files.write_image_atomic(Path(png), drawn[seed])
-        return [f"wrote the picture of seed {seed} to {png}"]
-    renders = out / "renders"
-
-    def save_all(directory):
-        for s, image in drawn.items():
-            hunt_files.write_image_atomic(directory / f"{s}.png", image)
-
-    # The whole set is swapped in, so a picture left by an earlier example
-    # list never stays.
-    hunt_files.swap_dir(renders, save_all)
-    return [f"wrote {len(drawn)} pictures to {renders}"]
-
-
 def parse_cells(flag, text):
     """The cells `text` names, a frozenset. Raises ValueError, naming the
     flag, on a name `hybrid.parse_cell` refuses."""
@@ -357,72 +310,6 @@ def parse_cells(flag, text):
         return frozenset(map(hybrid.parse_cell, text.split()))
     except ValueError as e:
         raise ValueError(f"{flag}: {e}") from e
-
-
-def write_links(
-    out, circles, numbers, blank_strip, battenberg=frozenset(), battenberg_only=False
-):
-    """Write `out/links/<seed>.txt`, one Penpa+ link per example of the hunt
-    in `out` (`hunt_files.read_examples`), showing the `circles`, the
-    `numbers` and the Battenberg markings on the windows of `battenberg`, and
-    no other circle, number or marking. With `battenberg_only` the rules text
-    says every checkerboard window is marked. The fifth strip is drawn
-    when `blank_strip` is set or the record's own is. Returns the lines to
-    print. Raises ValueError, naming the seed and the cell, on a record the
-    finder refuses, a circle or number that is not on the board, a circle that
-    is not valid, a marked window that is not wholly on the board or is no
-    checkerboard window, a checkerboard window left unmarked under
-    `battenberg_only`, or a grid that is no hybrid grid on the board drawn;
-    names a missing or unpaired log."""
-    out = Path(out)
-    examples = hunt_files.read_examples(out)
-    finder = HybridFinder(hybrid.Conditions(DEFAULT_SIDE, DEFAULT_SIDE))
-    # Every link is built before any file is touched: a refusal leaves
-    # links/ as it was, and a rerun replaces the whole set.
-    built = {}
-    for s, record in examples:
-        try:
-            asked, found = finder.candidate_from_record(record)
-            rows, cols = asked.rows, asked.cols
-            strip = blank_strip or asked.blank_strip
-            board = hybrid.number_cells(rows, cols, strip)
-            for cell in sorted(circles):
-                r, c = cell
-                if cell not in board and not (0 <= r < rows and 0 <= c < cols):
-                    raise ValueError(
-                        f"circle {hybrid.cell_name(cell)} is off the "
-                        f"{rows}x{cols} board" + ("" if strip else ", no blank strip")
-                    )
-            for cell in sorted(numbers):
-                if cell not in board:
-                    raise ValueError(
-                        f"given number {hybrid.cell_name(cell)} is not a number "
-                        f"cell of the {rows}x{cols} board"
-                        + ("" if strip else ", no blank strip")
-                    )
-            reasons = hybrid.failures(
-                found,
-                rows,
-                cols,
-                circles,
-                strip,
-                battenberg=battenberg,
-                battenberg_only=battenberg_only,
-            )
-            if reasons:
-                raise ValueError("; ".join(reasons))
-            shown = penpa.Hybrid(circles, numbers, battenberg, battenberg_only)
-            built[s] = penpa.link(rows, cols, found, strip, shown) + "\n"
-        except ValueError as e:
-            raise ValueError(f"seed {s}: {e}") from e
-    links = replace_links(out, built)
-    given = f"{len(circles)} circles and {len(numbers)} numbers given"
-    if battenberg:
-        given = (
-            f"{len(circles)} circles, {len(numbers)} numbers and "
-            f"{len(battenberg)} Battenberg markings given"
-        )
-    return [f"wrote {len(built)} links to {links}, {given}"]
 
 
 def _parser():
@@ -499,7 +386,21 @@ def _render(own, rest):
             "--seed N and --png FILE go together: "
             + ("--seed needs --png" if args.png is None else "--png needs --seed")
         )
-    print("\n".join(write_pictures(args.dir, own.blank_strip, args.seed, args.png)))
+    finder = HybridFinder(
+        hybrid.Conditions(DEFAULT_SIDE, DEFAULT_SIDE, blank_strip=own.blank_strip)
+    )
+    if args.seed is None:
+        return run(finder, ["render", args.dir])
+    # One picture to a file of the caller's: the driver's `render` is the set.
+    records = dict(hunt_files.read_examples(Path(args.dir)))
+    if args.seed not in records:
+        raise ValueError(f"seed {args.seed} has no example in {args.dir}")
+    try:
+        image = finder.render(finder.candidate_from_record(records[args.seed]))
+    except ValueError as e:
+        raise ValueError(f"seed {args.seed}: {e}") from e
+    hunt_files.write_image_atomic(Path(args.png), image)
+    print(f"wrote the picture of seed {args.seed} to {args.png}")
     return 0
 
 
@@ -510,16 +411,26 @@ def _links(own, rest):
     mine = argparse.ArgumentParser(prog="hybrid_finder links")
     mine.add_argument("dir")
     args = mine.parse_args(rest[1:])
-    lines = write_links(
-        args.dir,
+    shown = LinkShown(
         parse_cells("--circles", own.circles),
         parse_cells("--numbers", own.numbers),
-        own.blank_strip,
         parse_cells("--battenberg", own.battenberg),
         own.battenberg_only,
     )
-    print("\n".join(lines))
-    return 0
+    finder = HybridFinder(
+        hybrid.Conditions(DEFAULT_SIDE, DEFAULT_SIDE, blank_strip=own.blank_strip),
+        shown=shown,
+    )
+    code = run(finder, ["links", args.dir])
+    if code == 0:
+        given = f"{len(shown.circles)} circles and {len(shown.numbers)} numbers"
+        if shown.battenberg:
+            given = (
+                f"{len(shown.circles)} circles, {len(shown.numbers)} numbers and "
+                f"{len(shown.battenberg)} Battenberg markings"
+            )
+        print(f"{given} given")
+    return code
 
 
 def _classify(own, rest):

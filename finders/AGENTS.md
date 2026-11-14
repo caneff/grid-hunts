@@ -136,7 +136,7 @@ README before reusing anything there.
   #29 end to end. The 4x4 answer
   and the 7x7 run of record: the decision log, § Hybrid: the fewest Battenberg
   markings.
-  `hybrid_finder.py render DIR` draws each example of a hunt as a picture,
+  `hybrid_finder.py render DIR` (the driver's, on `HybridFinder.render`) draws each example of a hunt as a picture,
   `DIR/renders/<seed>.png` (`hybrid_render.py`, #791): the board with its
   outside numbers and network, chocolate in one colour and a tint per banana,
   a heavy ring in a second colour on a circle that is a condition and no ring
@@ -155,7 +155,9 @@ README before reusing anything there.
   by hand, outside both gates). The run of record is in the decision log,
   § Hybrid: at least N banana regions, and its rows in
   `docs/research/2026-10-11-u-bahn-min-bananas-timing/`.
-  `ubahn_finder.py links DIR [--blank-number]` writes a Penpa+ link per example
+  `ubahn_finder.py links DIR [--blank-number]` writes a Penpa+ link per verified example
+  (the driver's `links DIR`, on the finder's `link_text`, which a finder with
+  Penpa+ links supplies instead of `link_document`)
   to `DIR/links/<seed>.txt` (`penpa.py`, #774; wire format
   `docs/research/2026-10-10-u-bahn-penpa-link.md`). The three published links
   it is tested against are `finders/ubahn/fixtures/`.

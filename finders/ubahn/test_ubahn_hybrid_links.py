@@ -28,6 +28,8 @@ from cli_checks import check, finish, read_jsonl, run_cli
 from penpa_decode import Decoded, battenberg_vertices, edges_of, parameter
 
 FINDER = HERE / "hybrid_finder.py"
+# What the driver reads of a hunt a test builds by hand.
+RUN_JSON = '{"argv": ["--out", "x", "--seeds", "0:1"]}\n'
 
 
 def network_of(rec):
@@ -122,6 +124,7 @@ with tempfile.TemporaryDirectory() as tmp:
     )
     out = Path(tmp) / "one"
     out.mkdir()
+    (out / "run.json").write_text(RUN_JSON)
     (out / "examples.jsonl").write_text(json.dumps(rec) + "\n")
     (out / "progress.jsonl").write_text(
         json.dumps({"seed": seed, "outcome": "example"}) + "\n"
@@ -267,8 +270,8 @@ with tempfile.TemporaryDirectory() as tmp:
     )
     r = run_cli(FINDER, "links", str(Path(tmp) / "nowhere"))
     check(
-        "a missing directory exits 2 as not a hunt directory",
-        r.returncode == 2 and "not a hunt directory" in r.stderr,
+        "a missing directory exits 2, naming the missing run.json",
+        r.returncode == 2 and "has no run.json" in r.stderr,
     )
 
     # --blank-strip on a four-strip record draws the fifth strip when the grid
@@ -276,6 +279,7 @@ with tempfile.TemporaryDirectory() as tmp:
     for k, (rec_k, seed_k) in enumerate(zip(records, seeds, strict=True)):
         one_k = Path(tmp) / f"strip-{k}"
         one_k.mkdir()
+        (one_k / "run.json").write_text(RUN_JSON)
         (one_k / "examples.jsonl").write_text(json.dumps(rec_k) + "\n")
         (one_k / "progress.jsonl").write_text(
             json.dumps({"seed": seed_k, "outcome": "example"}) + "\n"
@@ -359,7 +363,7 @@ with tempfile.TemporaryDirectory() as tmp:
     check(
         "with no --battenberg `links` counts circles and numbers only, as "
         f"before the condition ({r.stdout.strip()!r})",
-        r.stdout.strip().endswith("1 circles and 2 numbers given"),
+        r.stdout.strip().endswith("\n1 circles and 2 numbers given"),
     )
     check(
         "with no --battenberg the link carries no checkerboard symbol and "

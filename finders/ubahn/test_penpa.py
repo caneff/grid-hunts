@@ -398,16 +398,16 @@ with tempfile.TemporaryDirectory() as tmp:
     (out / "links" / "999.txt").write_text("stale\n")
     r = run_cli(FINDER, "links", str(out))
     check(
-        "a rerun replaces the link set: a stale file goes, the variant is named",
+        "a rerun replaces the link set: a stale file goes, the count is said",
         r.returncode == 0
         and not (out / "links" / "999.txt").exists()
-        and "without the blank number" in r.stdout,
+        and f"wrote {len(seeds)} links" in r.stdout,
     )
 
     r = run_cli(FINDER, "links", str(Path(tmp) / "nowhere"))
     check(
-        "`links` on a missing directory exits 2 and says it is not a hunt directory",
-        r.returncode == 2 and "has no examples.jsonl: not a hunt directory" in r.stderr,
+        "`links` on a missing directory exits 2 and says it has no run.json",
+        r.returncode == 2 and "has no run.json" in r.stderr,
     )
 
     # A progress log with one example event too many is a kill between the
@@ -415,6 +415,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # writes the links of the examples that are there, as the resume reads them.
     ahead = Path(tmp) / "ahead"
     ahead.mkdir()
+    (ahead / "run.json").write_text((out / "run.json").read_text())
     (ahead / "examples.jsonl").write_text((out / "examples.jsonl").read_text())
     (ahead / "progress.jsonl").write_text(
         (out / "progress.jsonl").read_text()
