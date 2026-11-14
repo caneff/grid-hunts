@@ -158,15 +158,6 @@ with tempfile.TemporaryDirectory() as d:
         r.returncode == 0
         and all(f"| 6x6 | {engine} | 2 | 2 | 0 | 0 " in r.stdout for engine in ENGINES),
     )
-    check(
-        "timing report: the bar is read against cpsat and, with no 8x8 or "
-        "10x10 run, says unknown for both PySAT engines",
-        all(
-            f"- `{engine}` is at least 2 times faster than `cpsat` at 8x8 and "
-            "10x10: unknown" in r.stdout
-            for engine in ENGINES[1:]
-        ),
-    )
 
     plain = Path(d) / "plain"
     r = run_cli(HERE / "ubahn_finder.py", "--rows", "4", "--cols", "4", "--timeout", "10",

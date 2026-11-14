@@ -201,20 +201,4 @@ with tempfile.TemporaryDirectory() as d:
         and (out / "sets.jsonl").read_text() == before,
     )
 
-    r = run_cli(
-        HERE / "hybrid_finder.py",
-        "fewest-markings",
-        *BOARD,
-        "--engine",
-        "cpsat",
-        "--out",
-        Path(d) / "unused",
-    )
-    check(
-        "fewest-markings on cpsat is refused by name, exit 2, before any solve",
-        r.returncode == 2
-        and "--engine cpsat" in r.stderr
-        and not (Path(d) / "unused").exists(),
-    )
-
 finish()

@@ -23,6 +23,7 @@ import network
 import penpa
 from cli_checks import check, finish, run_cli
 from penpa_decode import Decoded, edges_of, numbers_of, unabbreviate
+from ubahn_finder import UbahnFinder
 
 FIXTURES = HERE / "fixtures"
 FINDER = HERE / "ubahn_finder.py"
@@ -364,23 +365,7 @@ with tempfile.TemporaryDirectory() as tmp:
     good = True
     for seed, rec in zip(seeds, records, strict=True):
         got = Decoded((out / "links" / f"{seed}.txt").read_text().strip())
-        net = frozenset(
-            tuple(map(tuple, edge))
-            for edge in (
-                [
-                    ((r_, c), (r_, c + 1))
-                    for r_, bits in enumerate(rec["h"])
-                    for c, b in enumerate(bits)
-                    if b == "1"
-                ]
-                + [
-                    ((r_, c), (r_ + 1, c))
-                    for r_, bits in enumerate(rec["v"])
-                    for c, b in enumerate(bits)
-                    if b == "1"
-                ]
-            )
-        )
+        net = UbahnFinder(4, 4).candidate_from_record(rec).network
         rows_, cols_ = numbers_of(got, 4, 4, 4)
         want = network.outside_numbers(net, 4, 4)
         good &= edges_of(got, 4) == net

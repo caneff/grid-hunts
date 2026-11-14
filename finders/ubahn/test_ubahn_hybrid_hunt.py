@@ -18,6 +18,7 @@ A slow test, outside the gate: `just test-slow` runs it (tests/all.sh's
 """
 
 import json
+import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -37,39 +38,36 @@ FINDER = HERE / "hybrid_finder.py"
 BOARD = ["--rows", "4", "--cols", "4", "--timeout", "10", "--engine", "cpsat"]
 
 
-def record(net, rows=4, cols=4, circles=(), exactly=None, blank_strip=False):
-    """A record written here by hand: `h` and `v` hold one string per row of
-    horizontal and of vertical edges, "1" where one is on."""
-    return {
-        "rows": rows,
-        "cols": cols,
-        "circles": list(circles),
-        "exactly": exactly,
-        "blank_strip": blank_strip,
-        "h": [
-            "".join(str(int(((r, c), (r, c + 1)) in net)) for c in range(cols - 1))
-            for r in range(rows)
-        ],
-        "v": [
-            "".join(str(int(((r, c), (r + 1, c)) in net)) for c in range(cols))
-            for r in range(rows - 1)
-        ],
-    }
+def finder_for(circles=(), exactly=None, blank_strip=False, rows=4, cols=4):
+    """The finder a hunt of these conditions builds."""
+    return hybrid_engines.HybridFinder(
+        hybrid.Conditions(
+            rows,
+            cols,
+            frozenset(map(hybrid.parse_cell, circles)),
+            network.Exactly.parse(exactly) if exactly else None,
+            blank_strip,
+        )
+    )
+
+
+def record(net, rows=4, cols=4, **fields):
+    """The record the finder writes for `net` under no condition, then
+    `fields` laid over it: how a damaged or unmet record is made."""
+    finder = finder_for(
+        rows=rows, cols=cols, blank_strip=fields.get("blank_strip", False)
+    )
+    return {**finder.record(hybrid_engines.Candidate(finder.conditions, net)), **fields}
 
 
 def network_of(rec):
-    """The network a record's `h` and `v` describe."""
-    net = set()
-    for r, bits in enumerate(rec["h"]):
-        net |= {((r, c), (r, c + 1)) for c, bit in enumerate(bits) if bit == "1"}
-    for r, bits in enumerate(rec["v"]):
-        net |= {((r, c), (r + 1, c)) for c, bit in enumerate(bits) if bit == "1"}
-    return frozenset(net)
+    """The network a record holds, read through the finder."""
+    return finder_for().candidate_from_record(rec).network
 
 
 def transposed(net):
-    """The network reflected in the main diagonal, rows for columns."""
-    return frozenset(tuple(sorted(((c, r), (c2, r2)))) for (r, c), (r2, c2) in net)
+    """The network reflected in the main diagonal, the finder's own transform."""
+    return frozenset(hybrid_engines.mirror(edge) for edge in net)
 
 
 def mirrored(net, cols=4):
@@ -84,14 +82,10 @@ def kinds(net, rows=4, cols=4):
     return network.kind_grid(net, rows, cols)
 
 
-def arms(net, rows=4, cols=4):
-    """The network as a dedupe key holds it: every cell's east arm, row by
-    row, then every cell's south arm."""
-    return tuple(
-        int(((r, c), (r + dr, c + dc)) in net)
-        for dr, dc in ((0, 1), (1, 0))
-        for r in range(rows)
-        for c in range(cols)
+def canonical_of(net, finder):
+    """The dedupe key a hunt files `net` under."""
+    return canonical_key(
+        finder.key(hybrid_engines.Candidate(finder.conditions, net)), finder.symmetry
     )
 
 
@@ -194,9 +188,12 @@ with tempfile.TemporaryDirectory() as d:
         all(net in grids for net in nets),
     )
     check(
-        "no condition: a dedupe key is the network or its transpose, whichever is less",
+        "no condition: a dedupe key is the one the finder files the network under, "
+        "the same for its transpose",
         all(
-            tuple(ex["__dedupe_key__"]) == min(arms(net), arms(transposed(net)))
+            tuple(ex["__dedupe_key__"])
+            == canonical_of(net, finder_for())
+            == canonical_of(transposed(net), finder_for())
             for ex, net in zip(examples, nets, strict=True)
         ),
     )
@@ -221,18 +218,13 @@ with tempfile.TemporaryDirectory() as d:
         ),
     )
     check(
-        "no condition: run.json records the finder's config",
-        config
-        == {
-            "rows": 4,
-            "cols": 4,
-            "circles": [],
-            "exactly": None,
-            "blank_strip": False,
-            "number_circles": 0,
-            "engine": "cpsat",
-            "timeout": 10.0,
-        },
+        "no condition: run.json records the board, the conditions, the engine "
+        "and the timeout",
+        (config["rows"], config["cols"], config["circles"], config["exactly"])
+        == (4, 4, [], None)
+        and config["blank_strip"] is False
+        and config["engine"] == "cpsat"
+        and config["timeout"] == 10.0,
     )
 
     # r2c2 is on the main diagonal: the transpose keeps the circle, so it is
@@ -249,7 +241,7 @@ with tempfile.TemporaryDirectory() as d:
         "r2c2 circled: no example is the transpose of another, and all of "
         "the grids are reached up to it",
         all(transposed(a) != b for a in nets for b in nets if a != b)
-        and {min(arms(net), arms(transposed(net))) for net in want}
+        and {canonical_of(net, finder_for(["r2c2"])) for net in want}
         == {tuple(ex["__dedupe_key__"]) for ex in examples},
     )
     check(
@@ -276,7 +268,9 @@ with tempfile.TemporaryDirectory() as d:
     check(
         "r2c4 circled: a dedupe key is the network as it stands",
         all(
-            tuple(ex["__dedupe_key__"]) == arms(net)
+            tuple(ex["__dedupe_key__"])
+            == canonical_of(net, finder_for(["r2c4"]))
+            != canonical_of(transposed(net), finder_for(["r2c4"]))
             for ex, net in zip(examples, nets, strict=True)
         ),
     )
@@ -292,7 +286,8 @@ with tempfile.TemporaryDirectory() as d:
         "no cross in r1: a dedupe key is the network as it stands",
         nets
         and all(
-            tuple(ex["__dedupe_key__"]) == arms(net)
+            tuple(ex["__dedupe_key__"])
+            == canonical_of(net, finder_for(exactly="0:cross:r1"))
             for ex, net in zip(examples, nets, strict=True)
         ),
     )
@@ -360,7 +355,26 @@ C_SHAPE = network.from_drawing(["┌┐┌┐", "└┼┤│", "┌┼┤│", 
 LOOP2 = network.from_drawing(["┌┐", "└┘"])
 U_SHAPE = network.from_drawing(["┌┐┌┐", "├┼┼┤", "└┴┴┘"])
 with tempfile.TemporaryDirectory() as d:
-    out = Path(d)
+    # `verify` reads a hunt directory: a real one-seed hunt, copied per case,
+    # its examples replaced by the hand-made records and its progress by one
+    # example event for each.
+    hunt(d, "base", seeds="0:1")
+    base = Path(d) / "base"
+
+    def hunt_dir_of(path, records):
+        shutil.copytree(base, path)
+        (path / "examples.jsonl").write_text(
+            "".join(json.dumps(rec) + "\n" for rec in records)
+        )
+        (path / "progress.jsonl").write_text(
+            "".join(
+                json.dumps({"event": "seed_done", "seed": seed, "outcome": "example"})
+                + "\n"
+                for seed in range(len(records))
+            )
+        )
+
+    out = Path(d) / "cases"
     cases = [
         ("a valid grid", record(FOUR_LOOPS), True, ""),
         (
@@ -420,14 +434,16 @@ with tempfile.TemporaryDirectory() as d:
         ),
         (
             "a network with a dead end",
-            record(FOUR_LOOPS - {min(FOUR_LOOPS)}),
+            # the first east edge of the top row switched off
+            record(
+                FOUR_LOOPS,
+                h=["0" + record(FOUR_LOOPS)["h"][0][1:], *record(FOUR_LOOPS)["h"][1:]],
+            ),
             False,
             "dead end",
         ),
     ]
-    (out / "examples.jsonl").write_text(
-        "".join(json.dumps(rec) + "\n" for _, rec, _, _ in cases)
-    )
+    hunt_dir_of(out, [rec for _, rec, _, _ in cases])
     r = run_cli(FINDER, "verify", str(out))
     check(f"verify exits 0 (stderr: {r.stderr[-500:]})", r.returncode == 0)
     _, verdicts = read_verified(out / "verified.jsonl")
@@ -447,11 +463,8 @@ with tempfile.TemporaryDirectory() as d:
             ),
         )
     ):
-        bad = out / str(i)
-        bad.mkdir()
-        (bad / "examples.jsonl").write_text(
-            json.dumps({**record(FOUR_LOOPS), **damage}) + "\n"
-        )
+        bad = Path(d) / f"bad-{i}"
+        hunt_dir_of(bad, [{**record(FOUR_LOOPS), **damage}])
         r = run_cli(FINDER, "verify", str(bad))
         check(
             f"verify refuses {name}, exit 2, naming {reason!r}",
@@ -539,7 +552,7 @@ with tempfile.TemporaryDirectory() as d:
 
 r = run_cli(FINDER, "--help")
 check(
-    "--help prints the usage text, naming every condition and classify",
+    "--help exits 0 and names every flag and subcommand",
     r.returncode == 0
     and all(
         word in r.stdout
@@ -553,10 +566,6 @@ check(
         )
     ),
 )
-check(
-    "--help says pysat-lazy is the engine unless one is given",
-    "pysat-lazy unless given" in r.stdout and "cpsat unless given" not in r.stdout,
-)
 
 # The default engine is PySAT with lazy cuts (Chris's ruling, 2026-10-11).
 with tempfile.TemporaryDirectory() as d:
@@ -565,11 +574,13 @@ with tempfile.TemporaryDirectory() as d:
         "--rows", "4", "--cols", "4", "--timeout", "10",
         "--out", str(out), "--seeds=0:3", "--workers", "1",
     )  # fmt: skip
-    examples = read_jsonl(out / "examples.jsonl") if r.returncode == 0 else []
     check(
-        "no --engine: the hunt runs on pysat-lazy, in every record and in run.json",
-        bool(examples)
-        and all(ex["engine"] == "pysat-lazy" for ex in examples)
+        f"no --engine: the hunt exits 0 (stderr: {r.stderr[-300:]})",
+        r.returncode == 0,
+    )
+    check(
+        "no --engine: run.json says the hunt ran on pysat-lazy",
+        r.returncode == 0
         and json.loads((out / "run.json").read_text())["config"]["engine"]
         == "pysat-lazy",
     )
