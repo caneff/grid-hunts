@@ -98,7 +98,7 @@ def _parts(on):
     return parts
 
 
-def _piece_clauses(edge, kind, cells):
+def _kind_clauses(edge, kind, cells):
     """Each cell's kind channelled from its arms: every assignment of the
     arms that are on the board either is a dead end, and is forbidden, or
     fixes all five kind booleans."""
@@ -142,7 +142,7 @@ def network_rules(rows, cols):
     cells = [(r, c) for r in range(rows) for c in range(cols)]
     edge = {e: pool.id(e) for e in all_edges(rows, cols)}
     kind = {(cell, k): pool.id((cell, k)) for cell in cells for k in KINDS}
-    clauses = _piece_clauses(edge, kind, cells)
+    clauses = _kind_clauses(edge, kind, cells)
     # A network has at least one edge.
     clauses.append(list(edge.values()))
     return pool, edge, kind, clauses

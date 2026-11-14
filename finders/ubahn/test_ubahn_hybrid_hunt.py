@@ -1,6 +1,6 @@
 """The hybrid finder's CLI (#783), black-box: hunts, `verify` and `classify`.
 
-A fresh 4x4 hunt with no condition, then with circles and the piece-count
+A fresh 4x4 hunt with no condition, then with circles and the kind-count
 condition: every example must be one of the brute force's valid hybrid grids
 for those conditions, and no two examples the same grid under the symmetry
 those conditions leave. Then `verify DIR` over hand-written records, each a
@@ -97,7 +97,7 @@ def arms(net, rows=4, cols=4):
 
 def meeting(names, exactly=None):
     """The brute force's 4x4 grids that meet these circles and this
-    piece-count condition."""
+    kind-count condition."""
     circles = [hybrid.parse_cell(name) for name in names]
     return {
         net
@@ -282,7 +282,7 @@ with tempfile.TemporaryDirectory() as d:
     )
     accounted("r2c4 circled", summary)
 
-    # A piece-count condition names a row or a column, which the transpose
+    # A kind-count condition names a row or a column, which the transpose
     # swaps: it leaves no symmetry either. No cross sits on the border, so
     # "no cross in r1" keeps every grid and its transpose: with no circle to
     # break the reflection, both must be examples.
@@ -370,7 +370,7 @@ with tempfile.TemporaryDirectory() as d:
             "",
         ),
         (
-            "a valid grid filed under its own piece count",
+            "a valid grid filed under its own kind count",
             record(FOUR_LOOPS, circles=["r2c2"], exactly="2:cross:r2"),
             True,
             "",
@@ -401,7 +401,7 @@ with tempfile.TemporaryDirectory() as d:
             "chocolate at r1:blank is not a rectangle",
         ),
         (
-            "a valid grid filed under another piece count",
+            "a valid grid filed under another kind count",
             record(FOUR_LOOPS, exactly="1:cross:r2"),
             False,
             "1:cross:r2",
@@ -439,7 +439,7 @@ with tempfile.TemporaryDirectory() as d:
     for i, (name, damage, reason) in enumerate(
         (
             ("a circle that names no cell", {"circles": ["r2"]}, "rKcK"),
-            ("an empty piece-count condition", {"exactly": ""}, "N:PIECE:rK"),
+            ("an empty kind-count condition", {"exactly": ""}, "N:KIND:rK"),
             (
                 "an edge row that is not 0s and 1s",
                 {"h": ["x1x", *record(FOUR_LOOPS)["h"][1:]]},
@@ -510,7 +510,7 @@ with tempfile.TemporaryDirectory() as d:
             ([*board, "--circles", "r5c1"], "r5c1"),
             ([*board, "--circles", "c5:turn"], "c5:turn"),
             ([*board, "--circles", "r1:blank"], "r1:blank"),
-            ([*board, "--exactly", "2:cross"], "N:PIECE:rK"),
+            ([*board, "--exactly", "2:cross"], "N:KIND:rK"),
             ([*board, "--exactly", "2:cross:r5"], "r5"),
             ([*board, "--engine", "abacus"], "abacus"),
             (["--rows", "1", "--cols", "4"], "2x2"),

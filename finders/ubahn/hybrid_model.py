@@ -1,7 +1,7 @@
 """The CP-SAT model of the hybrid (#783): U-Bahn with Choco-Banana over the
 grid cells and the number cells, built from the conditions.
 
-It is the plain model (`model.py`, flow connectivity, the piece-count
+It is the plain model (`model.py`, flow connectivity, the kind-count
 condition) with the hybrid's rules stated on top of its `kind` booleans. No
 outside number is given: each number cell's value is the count the network
 makes it.
@@ -50,10 +50,10 @@ def _add_parity(m, kind, conditions):
     rows, cols = conditions.rows, conditions.cols
     value, odd = {}, {}
     for cell in product(range(rows), range(cols)):
-        value[cell] = sum(hybrid.PIECE_VALUE[k] * kind[cell, k] for k in KINDS)
+        value[cell] = sum(hybrid.KIND_VALUE[k] * kind[cell, k] for k in KINDS)
         odd[cell] = m.new_bool_var(f"odd{cell}")
         m.add(
-            odd[cell] == sum(kind[cell, k] for k in KINDS if hybrid.PIECE_VALUE[k] % 2)
+            odd[cell] == sum(kind[cell, k] for k in KINDS if hybrid.KIND_VALUE[k] % 2)
         )
     lines = hybrid.number_cells(rows, cols, conditions.blank_strip)
     for cell, (k, held) in lines.items():
@@ -198,11 +198,11 @@ def build(conditions):
     _add_banana(built.m, odd)
     lines = hybrid.number_cells(rows, cols, conditions.blank_strip)
     for circle in sorted(circles):
-        # A piece is worth 4 at most; a number cell counts a row or column.
+        # A kind is worth 4 at most; a number cell counts a row or column.
         largest = (
             len(lines[circle][1])
             if circle in lines
-            else max(hybrid.PIECE_VALUE.values())
+            else max(hybrid.KIND_VALUE.values())
         )
         _add_circle(built.m, value, odd, circle, largest)
     if conditions.min_bananas:

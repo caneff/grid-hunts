@@ -80,7 +80,7 @@ def condition_symmetry(conditions):
     keeps the conditions, the identity alone when it moves one. It keeps
     them on a square board whose circled cells are circled in the image too
     and whose marked windows are marked there too (a window's image is the
-    window named by its top-left cell's image), with no piece-count
+    window named by its top-left cell's image), with no kind-count
     condition, which names a row or a column. The reflection sends a cell's
     east arm to its image's south arm and back."""
     rows, cols, circles = conditions.rows, conditions.cols, conditions.circles
@@ -164,7 +164,7 @@ class HybridFinder:
         board = hybrid.values(found, rows, cols, asked.blank_strip)
         return {
             # The plain finder's record of the network: the board, the
-            # piece-count condition, the edge rows and the outside numbers.
+            # kind-count condition, the edge rows and the outside numbers.
             **UbahnFinder().record(PlainCandidate(rows, cols, found, asked.exactly)),
             "circles": sorted(map(hybrid.cell_name, circles)),
             "blank_strip": asked.blank_strip,
@@ -260,7 +260,7 @@ class HybridFinder:
     def candidate_from_record(self, record):
         """Raises ValueError, naming it, on a circle `hybrid.parse_cell`
         refuses, anything the plain finder's reader refuses in the edge
-        rows and the piece-count condition, a `min_bananas` that is no whole
+        rows and the kind-count condition, a `min_bananas` that is no whole
         number of 0 or more, a `battenberg` that is no list of window names,
         a `battenberg_only` that is not true or false, or a field the record
         lacks. A record with no

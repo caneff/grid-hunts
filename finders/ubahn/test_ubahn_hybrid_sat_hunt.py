@@ -35,7 +35,7 @@ READER = hybrid_engines.HybridFinder(hybrid.Conditions(4, 4))
 
 def meeting(names, exactly=None):
     """The brute force's 4x4 grids that meet these circles and this
-    piece-count condition."""
+    kind-count condition."""
     circles = [hybrid.parse_cell(name) for name in names]
     return {
         net

@@ -87,7 +87,7 @@ with tempfile.TemporaryDirectory() as d:
         verified("hybrid_finder.py", out, examples),
     )
 
-    # Number-cell circles together with the piece-count condition: the
+    # Number-cell circles together with the kind-count condition: the
     # decision log's two grids, on the default engine.
     both = Path(d) / "both"
     r = run_cli(HERE / "hybrid_finder.py", *BOARD, "--circles", "c1:turn c4:turn",

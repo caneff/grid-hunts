@@ -422,7 +422,7 @@ check(
     hybrid.parse_windows("r1:blank", 4, 4, blank_strip=True) == frozenset([(0, -5)]),
 )
 
-# The drawing: number cells as digits, icon cells as their pieces, the
+# The drawing: number cells as digits, icon cells as their kinds, the
 # network as box characters, a circled cell in brackets.
 check(
     "four loops drawn with a circled cross and a circled number cell",
