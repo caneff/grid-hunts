@@ -6,7 +6,6 @@ markings that leave one grid. Both take the engines as a mapping
 with a fake engine (spec #117, #133). The command line is `hybrid_finder.py`.
 """
 
-import fcntl
 import itertools
 import json
 import multiprocessing
@@ -60,13 +59,13 @@ def _step(finder, seed, out):
     return status, None
 
 
-def _steps_on_file(out, lines, asked, start):
-    """The steps a climb wrote to `out/climb.jsonl`, checked as a chain: each
+def _steps_on_file(out, steps, asked, start):
+    """The steps a climb wrote to `out/climb.jsonl` (`steps`, the run log's
+    lines past its heading), checked as a chain: each
     is this climb's (`asked`), the first is at `start` when one is given, each
     later one is at one more than the count before it, and only the last may
     be other than "found". Raises ValueError, naming the step, on a log that
     is not one: two climbs wrote into it, or it was edited."""
-    steps = [json.loads(line) for line in lines if line]
     for i, step in enumerate(steps):
         k = step["at_least"]
         if step["config"] != asked:
@@ -87,8 +86,10 @@ def climb(conditions, engine, timeout, out, start=None, engines=ENGINES):
     printing each step as it ends and then the answer. Each step is a hunt of
     seed `CLIMB_SEED` in `out/at-least-K` and a line of `out/climb.jsonl`; a
     rerun goes on from the last line written. One climb at a time holds
-    `out`. Raises ValueError on a step `_step` refuses, when another climb
-    holds `out`, or when its log is not this climb's (`_steps_on_file`)."""
+    `out` (`hunt_files.run_log`, which drops a torn last line and refuses a
+    log under another config). Raises ValueError on a step `_step` refuses,
+    when another run holds `out`, or when its log is not this climb's
+    (`_steps_on_file`)."""
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     asked = {
@@ -109,16 +110,10 @@ def climb(conditions, engine, timeout, out, start=None, engines=ENGINES):
         )
         print(f"at least {k}: {status}, {what}, {took}", flush=True)
 
-    with (out / "climb.jsonl").open("a+") as log:
-        # The lock is on the log itself, held until the answer is printed:
-        # two climbs in one directory would each write steps the other
-        # then reads as its own.
-        try:
-            fcntl.flock(log, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            raise ValueError(f"another climb is running in {out}") from None
-        log.seek(0)
-        steps = _steps_on_file(out, log.read().splitlines(), asked, start)
+    # The lock is on the log, held until the answer is printed: two climbs
+    # in one directory would each write steps the other then reads as its own.
+    with hunt_files.run_log(out / "climb.jsonl", asked) as log:
+        steps = _steps_on_file(out, list(log.lines), asked, start)
         for step in steps:
             say(step)
         while not steps or steps[-1]["status"] == "found":
@@ -146,8 +141,7 @@ def climb(conditions, engine, timeout, out, start=None, engines=ENGINES):
                     "config": asked,
                 }
             )
-            log.write(json.dumps(steps[-1]) + "\n")
-            log.flush()
+            log.append(steps[-1])
             say(steps[-1])
     *found, last = steps
     proven = last["status"] == "infeasible"
@@ -189,8 +183,8 @@ def _classify_sets(conditions, engine, timeout, sets, mirrored, path, engines):
     its line to the per-set file at `path` as the answer lands; a unique
     set's line carries its one grid as a hunt's record. With `mirrored`, a
     set that is not its own mirror is followed by its mirror's line, copied
-    from it, in the same write."""
-    with path.open("a") as log:
+    from it; a kill between the two lines leaves `_mend` to copy it again."""
+    with hunt_files.open_log(path) as append:
         for windows in sets:
             began = time.monotonic()
             marked = conditions.asking(battenberg=windows)
@@ -213,8 +207,8 @@ def _classify_sets(conditions, engine, timeout, sets, mirrored, path, engines):
             if mirrored and image != windows:
                 solved["mirror"] = [hybrid.cell_name(window) for window in image]
                 lines.append(_mirror_line(conditions, engine, timeout, solved, engines))
-            log.write("".join(json.dumps(line) + "\n" for line in lines))
-            log.flush()
+            for line in lines:
+                append(line)
 
 
 def _mirror_line(conditions, engine, timeout, solved, engines):
@@ -236,23 +230,16 @@ def _mirror_line(conditions, engine, timeout, solved, engines):
     return line
 
 
-def _sets_on_file(path, asked):
-    """{a set of windows: its line} from the per-set file at `path`, whose
-    first line is the run's heading. Raises ValueError, naming the file,
-    when the heading does not read or is another run's (`asked` is this
-    one's config), or when a line is no set's line: it does not read, its
-    answer is none of `SAID`'s words, or it is a unique set's with no grid."""
-    heading, *lines = path.read_text().splitlines()
-    try:
-        held = json.loads(heading)["config"]
-    except (ValueError, KeyError, TypeError) as e:
-        raise ValueError(f"{path}: line 1 is no run's heading: {e!r}") from e
-    if held != asked:
-        raise ValueError(f"{path.parent} holds a run under {held}")
+def _sets_on_file(path):
+    """{a set of windows: its line} from the per-set file at `path`, read
+    through `hunt_files.read_log` (a torn last line dropped, its heading
+    left out). Raises ValueError, naming the file, on a line that is no set's
+    line: its answer is none of `SAID`'s words, it is a unique set's with no
+    grid, or it does not say how it was answered."""
+    _, (_, *lines) = hunt_files.read_log(path)
     tried = {}
-    for number, line in enumerate(lines, 2):
+    for number, entry in enumerate(lines, 2):
         try:
-            entry = json.loads(line)
             if entry["status"] not in SAID:
                 raise ValueError(f"its answer is {entry['status']!r}")
             if entry["status"] == "unique" and "record" not in entry:
@@ -265,26 +252,15 @@ def _sets_on_file(path, asked):
     return tried
 
 
-def _mend(log, path, conditions, engine, timeout, asked, engines):
-    """Make the per-set file ready to read. A new file gets the run's
-    heading. In one a write cut short, the last line with no end is dropped
-    and a solved set whose mirror's line is missing gets that line copied
-    again. Any other line that does not read is refused (`_sets_on_file`)."""
-    text = path.read_text()
-    if not text.endswith("\n"):
-        log.truncate(text.rfind("\n") + 1)
-    if "\n" not in text:
-        log.write(json.dumps({"config": asked}) + "\n")
-        log.flush()
-    tried = _sets_on_file(path, asked)
+def _mend(log, conditions, engine, timeout, engines):
+    """Give every solved set whose mirror's line is missing (a kill between
+    the two writes) that line, copied again. Every other check is the run
+    log's and `_sets_on_file`'s."""
+    tried = _sets_on_file(log.path)
     for line in list(tried.values()):
         image = line["mirror"] and frozenset(map(hybrid.parse_cell, line["mirror"]))
         if line["how"] == "solved" and image and image not in tried:
-            log.write(
-                json.dumps(_mirror_line(conditions, engine, timeout, line, engines))
-                + "\n"
-            )
-    log.flush()
+            log.append(_mirror_line(conditions, engine, timeout, line, engines))
 
 
 def fewest_markings(
@@ -314,17 +290,14 @@ def fewest_markings(
     # a module, which cannot be: it gets the one engine it solves with.
     mine = {engine: engines[engine]}
     timed, unique, size = [], [], 0
-    with path.open("a+") as log:
-        # Held until the answer is printed, as a climb holds its own log.
-        try:
-            fcntl.flock(log, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            raise ValueError(f"another run is in {out}") from None
-        log.seek(0)
-        _mend(log, path, conditions, engine, timeout, asked, engines)
+    # Held until the answer is printed, as a climb holds its own log. A
+    # worker appends to the file itself (`hunt_files.open_log`), so what the
+    # run reads after one is the file, not `log.lines`.
+    with hunt_files.run_log(path, asked) as log:
+        _mend(log, conditions, engine, timeout, engines)
         for size in range(max_size + 1):
             sets = list(itertools.combinations(windows, size))
-            tried = _sets_on_file(path, asked)
+            tried = _sets_on_file(path)
             # Of a mirror pair the set that sorts first is the one solved.
             todo = [
                 chosen
@@ -346,7 +319,7 @@ def fewest_markings(
                 worker.join()
             if any(worker.exitcode for worker in crew):
                 raise ValueError(f"a worker died at size {size}: rerun into {out}")
-            tried = _sets_on_file(path, asked)
+            tried = _sets_on_file(path)
             try:
                 lines = [tried[frozenset(chosen)] for chosen in sets]
             except KeyError as e:

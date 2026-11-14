@@ -92,7 +92,7 @@ def main():
             json.loads(line)
             for line in (out / "climb.jsonl").read_text().split("\n")
             if line
-        ]
+        ][1:]  # the run log's heading is the first line
         check(
             "climb: the log holds the found step, then the infeasible one",
             [s["status"] for s in steps] == ["found", "infeasible"],
