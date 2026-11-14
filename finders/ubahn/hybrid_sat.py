@@ -266,7 +266,9 @@ def _add_circle(pool, clauses, odd, value, circle, true, chosen=None):
                     [same[cell], odd[cell], odd[circle]],
                     [same[cell], -odd[cell], -odd[circle]],
                 ]
-            sources = [before[n] for n in (cell, *hybrid.neighbours(cell)) if n in before]
+            sources = [
+                before[n] for n in (cell, *hybrid.neighbours(cell)) if n in before
+            ]
             reached[cell] = pool.id()
             clauses += [[-reached[cell], same[cell]], [-reached[cell], *sources]]
             clauses += [[-source, -same[cell], reached[cell]] for source in sources]
