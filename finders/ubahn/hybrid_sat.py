@@ -207,7 +207,7 @@ def _chocolate(odd):
     clauses = []
     corners = {(r - dr, c - dc) for r, c in odd for dr in (0, 1) for dc in (0, 1)}
     for r, c in sorted(corners):
-        window = [(r, c), (r, c + 1), (r + 1, c), (r + 1, c + 1)]
+        window = hybrid.window_cells((r, c))
         for fourth in window:
             three = [cell for cell in window if cell != fourth]
             if all(cell in odd for cell in three):
@@ -239,11 +239,6 @@ def _banana(odd):
     return clauses
 
 
-def _neighbours(cell):
-    r, c = cell
-    return [(r - 1, c), (r, c + 1), (r + 1, c), (r, c - 1)]
-
-
 def _add_circle(pool, clauses, odd, value, circle, true, chosen=None):
     """The circled cell's value is the number of cells of its region.
     `value` is that value in unary, with a last entry no value reaches. With
@@ -261,7 +256,7 @@ def _add_circle(pool, clauses, odd, value, circle, true, chosen=None):
     same = {}
     for _ in range(top - 1):
         before, reached = reached, {circle: true}
-        near = {n for cell in before for n in _neighbours(cell) if n in odd}
+        near = {n for cell in before for n in hybrid.neighbours(cell) if n in odd}
         for cell in sorted((near | set(before)) - {circle}):
             if cell not in same:
                 same[cell] = pool.id()
@@ -271,7 +266,7 @@ def _add_circle(pool, clauses, odd, value, circle, true, chosen=None):
                     [same[cell], odd[cell], odd[circle]],
                     [same[cell], -odd[cell], -odd[circle]],
                 ]
-            sources = [before[n] for n in (cell, *_neighbours(cell)) if n in before]
+            sources = [before[n] for n in (cell, *hybrid.neighbours(cell)) if n in before]
             reached[cell] = pool.id()
             clauses += [[-reached[cell], same[cell]], [-reached[cell], *sources]]
             clauses += [[-source, -same[cell], reached[cell]] for source in sources]

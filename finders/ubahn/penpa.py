@@ -36,13 +36,14 @@ from typing import NamedTuple
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 # isort: split
 import network
+from hybrid import BLANK_ICON, ICONS, STRIP_ORDER, marking_off_board, window_cells
 
 PAGE = "https://swaroopg92.github.io/penpa-edit/"
 CELL_SIZE = 38
 MARGIN = 2  # hidden cells on every side of the table (§ 1.4)
 
 # The kinds from the outside in, as `network.KIND_NAMES` spells them.
-PIECE_ORDER = ("cross", "branch", "straight", "turn")
+PIECE_ORDER = tuple(network.KIND_NAMES[k] for k in STRIP_ORDER)
 KINDS_WITH_BLANK = ("blank", *PIECE_ORDER)
 
 # Abbreviations applied to the whole payload text, in this order (§ 1.2).
@@ -195,16 +196,6 @@ _MODE = {
     },
 }
 
-# The cross icon's four flags are [right, down, left, up] (§ 1.5). Per piece,
-# the icon beside a row of outside numbers and beside a column of them.
-# The turn's icon sits in the one cell the innermost row and column share.
-ICONS = {
-    "cross": ([1, 1, 1, 1], [1, 1, 1, 1]),
-    "branch": ([1, 1, 1, 0], [1, 1, 0, 1]),
-    "straight": ([1, 0, 1, 0], [0, 1, 0, 1]),
-    "turn": ([1, 1, 0, 0], [1, 1, 0, 0]),
-}
-BLANK_ICON = "□"  # a number's text: a blank cell has no arm to draw
 CIRCLE = [1, "circle_L", 1]  # a symbol: the plain white ring, under the lines
 # A symbol: Penpa+'s 2x2 checkerboard, in the layer drawn over the grid
 # lines, as Penpa+'s own Battenberg import writes it (§ 10).
@@ -372,11 +363,16 @@ class _Table(NamedTuple):
         Raises ValueError when one of the window's four cells is off the
         board, giving the window and that cell as (r, c)."""
         r, c = window
-        for cell in ((r, c), (r, c + 1), (r + 1, c), (r + 1, c + 1)):
+        board = set()
+        for cell in window_cells(window):
             try:
                 self.board_cell(cell)
-            except ValueError as e:
-                raise ValueError(f"Battenberg marking at {window}: {e}") from e
+            except ValueError:
+                continue
+            board.add(cell)
+        reason = marking_off_board(window, board)
+        if reason is not None:
+            raise ValueError(reason)
         g = self.grid_origin
         return self.vertex(g + c, g + r)
 
