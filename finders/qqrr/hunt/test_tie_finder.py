@@ -67,20 +67,20 @@ with tempfile.TemporaryDirectory() as d:
             "the found grid filed under another corner",
             record(GOOD, corner="tl"),
             False,
-            "corner",
+            "not 5",
         ),
         (
             "the found grid filed under another QR-10 window",
             record(GOOD, ten="r6c6"),
             False,
-            "QR",
+            "not 10",
         ),
         ("a grid that is not a sudoku", record(NOT_SUDOKU), False, "sudoku"),
         (
             "the found grid filed under the other cage",
             record(GOOD, hunt="r5c1"),
             False,
-            "cage",
+            "not 33",
         ),
         (
             "a grid with no tie",
@@ -92,7 +92,7 @@ with tempfile.TemporaryDirectory() as d:
             "a grid over the bound",
             record(BR1, hunt="r5c1", ten="r6c6", corner="br", q34=False),
             False,
-            "bounded",
+            "> 7",
         ),
         (
             "a grid with no 34-36 cell",
@@ -175,7 +175,6 @@ with tempfile.TemporaryDirectory() as d:
     flags += ["--seeds=0:1", "--q34"]
     good = json.dumps(record(GOOD)) + "\n"
     for name, text in [
-        ("a half-written last line", good + '{"grid": "4367'),
         ("a record of another finder", good + '{"x": 1}\n'),
         ("a grid with a short row", good + json.dumps(record(GOOD[:-1])) + "\n"),
         (
@@ -200,6 +199,17 @@ with tempfile.TemporaryDirectory() as d:
     (src / "examples.jsonl").write_text(good)
     r = run_cli("--out", out, *flags, "--warm-from", str(src))
     check("resuming after the warm source lost a lower grid refuses", r.returncode == 2)
+    src = Path(d) / "torn"
+    src.mkdir()
+    (src / "examples.jsonl").write_text(good + '{"grid": "4367')
+    r = run_cli("--out", str(Path(d) / "o-torn"), *flags, "--warm-from", str(src))
+    check("--warm-from drops a last line cut short by a kill", r.returncode == 0)
+    src = Path(d) / "torn-mid"
+    src.mkdir()
+    (src / "examples.jsonl").write_text(good + '{"grid": "4367\n' + good)
+    r = run_cli("--out", str(Path(d) / "o-mid"), *flags, "--warm-from", str(src))
+    check("--warm-from refuses an unreadable line that is not last", r.returncode == 2)
+    check("... naming the file and line", "examples.jsonl line 2" in r.stderr)
     src = Path(d) / "blank"
     src.mkdir()
     (src / "examples.jsonl").write_text(good + "\n")

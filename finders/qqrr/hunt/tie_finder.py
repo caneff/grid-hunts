@@ -14,8 +14,8 @@ The seed sets the solver's random seed. Every grid an earlier seed returned is
 forbidden (the finder's state), so a later seed finds a new grid or proves
 there is none. A capped solve comes back `Empty("timeout")`, a proof
 `Empty("infeasible with <k> grids forbidden")`. `verify` re-reads the grid with the
-oracle, never the model: sudoku, the cage's QQRR 33, the corner's QQRR 5,
-the bounded cell <= 7, QR 10 at the window, a tie, and the criterion.
+oracle, never the model: sudoku, the rule `hunt_common` holds (the cage's QQRR, the
+corner's QQRR, the bounded cell, QR at the window), a tie, and the criterion.
 
     uv run finders/qqrr/hunt/tie_finder.py --out DIR --seeds 0:3 \\
         --hunt r1c5 --ten r7c7 --corner bl --timeout 600 --q34 --warm-from DIR...
@@ -27,7 +27,6 @@ The driver's flags (`--out`, `--seeds`, `--workers`, ...) are its own
 
 import argparse
 import hashlib
-import json
 import re
 import sys
 from pathlib import Path
@@ -44,6 +43,7 @@ from sudoku_kit import cpsat
 
 sys.path.insert(0, str(hc.ROOT / "finders" / "hunt"))
 # isort: split
+import hunt_files
 from dedupe import IDENTITY
 from driver import run
 from protocol import Empty, Verdict
@@ -73,19 +73,21 @@ def read_warm_hits(dirs, hunt):
     hits = []
     for d in dirs:
         path = Path(d) / "examples.jsonl"
-        for i, line in enumerate(path.read_text().splitlines(), 1):
-            if not line.strip():
-                continue
+        # The hunt-files reader: a last line cut short by a kill is dropped, any other
+        # unreadable line or a missing file raises HuntFileError. Blank lines do not count,
+        # so `path:k` names the k-th record.
+        _, records = hunt_files.read_log(path)
+        for k, rec in enumerate(records, 1):
             try:
-                rec = json.loads(line)
                 if rec["hunt"] == hunt:
                     ten, corner, grid = rec["ten"], rec["corner"], rec["grid"]
                     if not re.fullmatch(r"\d{9}(/\d{9}){8}", grid):
                         raise ValueError(grid)
                     hits.append((ten, corner, grid))
             except (ValueError, KeyError, TypeError, AttributeError):
-                print(f"tie_finder: {path}:{i} is not a hunt example", file=sys.stderr)
-                sys.exit(2)
+                raise hunt_files.HuntFileError(
+                    f"{path}:{k} is not a hunt example"
+                ) from None
     return hits
 
 
@@ -181,14 +183,16 @@ class TieFinder:
         ten = chan_big.parse_ten(candidate.ten)
         ranks, _nums, cr = oracle.rank_grid(rows)
         why = []
-        if cr[cage[0]][cage[1]] != 33:
-            why.append(f"cage QQRR {cr[cage[0]][cage[1]]}, not 33")
-        if cr[pin[0]][pin[1]] != 5:
-            why.append(f"corner QQRR {cr[pin[0]][pin[1]]}, not 5")
-        if rows[target[0]][target[1]] > 7:
-            why.append(f"bounded cell {rows[target[0]][target[1]]} > 7")
-        if ranks[ten[0]][ten[1]] != 10:
-            why.append(f"QR {ranks[ten[0]][ten[1]]} at {candidate.ten}, not 10")
+        if cr[cage[0]][cage[1]] != hc.CAGE_QQRR:
+            why.append(f"cage QQRR {cr[cage[0]][cage[1]]}, not {hc.CAGE_QQRR}")
+        if cr[pin[0]][pin[1]] != hc.CORNER_RANK:
+            why.append(f"corner QQRR {cr[pin[0]][pin[1]]}, not {hc.CORNER_RANK}")
+        if rows[target[0]][target[1]] > hc.BOUND_MAX:
+            why.append(f"bounded cell {rows[target[0]][target[1]]} > {hc.BOUND_MAX}")
+        if ranks[ten[0]][ten[1]] != hc.WINDOW_RANK:
+            why.append(
+                f"QR {ranks[ten[0]][ten[1]]} at {candidate.ten}, not {hc.WINDOW_RANK}"
+            )
         if not oracle.seven_digit_ties(ranks):
             why.append("no 7-digit seeing tie")
         if candidate.q34 and not hc.q34_accept(ranks, cr):
@@ -258,13 +262,13 @@ def main(argv):
     if missing:
         print(f"tie_finder: a hunt needs {' '.join(missing)}", file=sys.stderr)
         return 2
-    for d in own.warm_from or []:
-        if not (Path(d) / "examples.jsonl").is_file():
-            print(f"tie_finder: --warm-from {d} has no examples.jsonl", file=sys.stderr)
-            return 2
-    finder = TieFinder(
-        own.hunt, own.ten, own.corner, own.timeout, own.q34, own.warm_from
-    )
+    try:
+        finder = TieFinder(
+            own.hunt, own.ten, own.corner, own.timeout, own.q34, own.warm_from
+        )
+    except hunt_files.HuntFileError as error:
+        print(f"tie_finder: --warm-from: {error}", file=sys.stderr)
+        return 2
     if own.warm_from and not finder.warm:
         # a warm source with nothing to hint from is the cold start, silently
         print(f"tie_finder: --warm-from holds no {own.hunt} grid", file=sys.stderr)

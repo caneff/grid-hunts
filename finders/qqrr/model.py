@@ -102,6 +102,7 @@ def number_bounds(k, top):
 
 def leading_digit_band(n, d):
     """Ranks a window whose top-left digit is `d` can take, on a full latin square.
+    `d` is a digit or a CP-SAT variable: the bounds are linear in it.
 
     Over the (n-1) rows holding top-left cells, each smaller digit sits in
     n-2 or n-1 of them (only column n-1 can hide one), and at most n-2 other
@@ -157,8 +158,9 @@ def build(n=9, ranked_cells=()):
             mine = v[r][c]
             others = [u for u in flat if u is not mine]
             rank[r][c] = add_rank(m, others, mine, f"rank{r}{c}", hi=top)
-            m.Add(rank[r][c] >= (n - 2) * (x[r][c] - 1) + 1)
-            m.Add(rank[r][c] <= (n - 2) * (x[r][c] - 1) + (n - 1))
+            lo, hi = leading_digit_band(n, x[r][c])
+            m.Add(rank[r][c] >= lo)
+            m.Add(rank[r][c] <= hi)
 
     wide = [
         [add_width(m, rank[r][c], f"wide{r}{c}") for c in range(w)] for r in range(w)
