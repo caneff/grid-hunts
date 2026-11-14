@@ -73,7 +73,9 @@ README before reusing anything there.
   with `--min-bananas N` under that condition too; `--battenberg "CELLS"`
   classifies a set of Battenberg markings, each window by its top-left cell,
   and `--battenberg-only` adds the negative constraint (#21);
-  the 4x4 answers every engine must match are in the decision log, § Hybrid.
+  the 4x4 answers every engine must match are in the decision log, § Hybrid;
+  `test_ubahn_engine_conformance.py` runs them through every `ENGINES` entry
+  (a new engine joins it by joining `ENGINES`).
   The hybrid finder is three files (spec #117, #133): `hybrid_engines.py`
   holds `ENGINES`, `HybridFinder` and `Candidate`, `hybrid_searches.py` the
   `climb` and `fewest_markings` searches (both take `engines=`, so a test
