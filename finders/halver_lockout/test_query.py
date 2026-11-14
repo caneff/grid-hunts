@@ -88,7 +88,7 @@ def main():
         }
         (link,) = (out / answer["links"]).read_text().split()
         assert short_link.fake_doc(fake, link) == expected, link
-        print("ok: the link is the hunt's link_doc with the solution entered")
+        print("ok: the link is the board file's own document with the solution entered")
 
         bad = json.loads((HERE / "fixtures" / "unique.json").read_text())
         bad["puzzle"]["cells"][0] = {"value": 5, "given": True}

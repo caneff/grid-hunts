@@ -40,7 +40,7 @@ from query import CELL, MARGIN
 from sudoku_kit.link_codec import SHORT_LINK
 
 DROPPABLE = [7, 14, 15]
-STEP = 6
+STEP = 6  # pixels past a segment's middle
 CLEAR = 10  # pixels: twice a line's half width
 
 

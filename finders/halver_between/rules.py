@@ -50,7 +50,7 @@ __all__ = [
     "post_between",
 ]
 
-BETWEEN_LINE = 403
+BETWEEN_LINE = 403  # SudokuMaker's constraint type for a between line
 
 
 def line_holds(solution, line):

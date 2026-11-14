@@ -7,12 +7,14 @@ what a naive walk over every king path finds.
     uv run finders/halver_between/test_candidates.py
 """
 
+import random
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import candidates
+import halver_shapes
 import rules
 from halver_query import uniqueness
 from rules import parse_cell
@@ -97,9 +99,10 @@ pruned = {
 assert any(len(next(iter(line))) == 4 for line in naive), "no four-cell line"
 assert pruned == naive, (len(pruned), len(naive))
 
-# A 6x6 board (no 9x9 constant in the walk): stub solutions with doubled
-# values 1..12 give exactly the lines a naive walk finds.
-import random
+# A 6x6 board: stub solutions with doubled values 1..12 give exactly the
+# lines a naive walk finds. The walk's value range only prunes, so a looser
+# range (the old 9x9 constant, 18) finds the same lines; the range itself is
+# pinned below, from what the walk passes its `extend` rule.
 
 
 class Stub:
@@ -150,5 +153,25 @@ pruned6 = {
 }
 assert naive6, "no 6x6 line"
 assert pruned6 == naive6, (len(pruned6), len(naive6))
+
+ranges = set()
+
+
+def recording_extend(start, v, state, lowest, highest):
+    ranges.add((lowest, highest))
+    return candidates._extend(start, v, state, lowest, highest)
+
+
+halver_shapes.separating_paths(
+    target6,
+    second6,
+    [],
+    4,
+    holds=rules.line_holds,
+    initial=candidates._initial,
+    closes=candidates._closes,
+    extend=recording_extend,
+)
+assert ranges == {(1, 12)}, f"a 6x6 walk's doubled values are 1..12, got {ranges}"
 
 print("ok")

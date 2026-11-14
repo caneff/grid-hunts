@@ -129,6 +129,9 @@ def links_of(out, answer, fake):
 
 
 def refused_boards(tmp, fake_bin):
+    """A board the between entry cannot read as between lines alone is
+    refused, naming the reason, and nothing is written: a given digit, a
+    second constraint type, a board that is not 9x9."""
     doc = json.loads(BOARD.read_text())
     given = copy.deepcopy(doc)
     given["puzzle"]["cells"][5] = {"value": 5, "given": True}

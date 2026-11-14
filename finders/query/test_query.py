@@ -598,7 +598,7 @@ def test_an_out_already_answered_is_refused():
 def test_unique_on_an_invalid_model_raises():
     model = cp_model.CpModel()
     x = model.NewIntVar(0, 5, "x")
-    model.proto.constraints.add().linear.vars.append(99)
+    model.proto.constraints.add().linear.vars.append(99)  # no variable 99
     try:
         query.unique_on(model, {"x": x}, 1.0)
     except ValueError as error:

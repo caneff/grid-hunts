@@ -128,6 +128,8 @@ def report(board, box, marks, time_limit):
     def holds(mark):
         verdict = board.mark_holds(mark, time_limit=time_limit)
         if verdict.status == "not_held":
+            # Only for its raise: a counterexample that breaks a rule is an
+            # encoding bug, never printed as an answer. one_line prints it.
             describe(verdict.counterexample, box, board.clues)
         return verdict
 

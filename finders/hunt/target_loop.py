@@ -28,6 +28,8 @@ The hooks, one object per seed (`Hooks` gives the optional ones' defaults):
 - `no_space(target, second, steps)`: an `Empty` when no step can fit, else
   None.
 - `separate(target, second, steps, limit)`: the step to add, or an `Empty`.
+  Here `limit` is `Budget.limit` itself, a callable giving the seconds left,
+  not a number: a separating step may solve more than once.
 - `add(choice)`: put the step on the board; returns the step's log fields.
 - `log(fields)`: one step's log line: `step`, `check_s`, and the fields
   `add` returned, or `status: unique` at the finish.

@@ -57,7 +57,7 @@ def lockout_narrowing(body, houses, n, gap=GAP):
     """The lockout line's narrowing step for one line with these body
     cells."""
     crowd = max(sum(1 for p in body if p in house) for house in houses)
-    every = (1 << (2 * n + 1)) - 2
+    every = (1 << (2 * n + 1)) - 2  # doubled values 1..2n
     # outside[lo, hi]: the doubled values strictly below lo or above hi, for
     # each pair of diamonds that leaves room: `crowd` distinct digits with a
     # value there, at most one of them halved.

@@ -110,7 +110,7 @@ def solutions(
             f"not {n}x{n} and {len(lines)}"
         )
     houses = [[r * n + c for r, c in house] for house in halver_brute._houses(n, box)]
-    every = (1 << (2 * n + 1)) - 2
+    every = (1 << (2 * n + 1)) - 2  # doubled values 1..2n
     flat_lines, flat_pairs, ends = [], [], set()
     for (a, ac), body, (b, bc) in lines:
         end_a, end_b = a * n + ac, b * n + bc

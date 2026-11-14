@@ -96,4 +96,26 @@ refused('[{"kind": "digit", "cell": "r0c1", "digit": 5}]', "r0c1")
 refused('[{"kind": "digit", "cell": 5, "digit": 5}]', "no cell 5")
 refused('[{"kind": "digit", "cell": null, "digit": 5}]', "no cell None")
 
+# The verdict lines come from halver_report.report_marks, which the
+# Doppelganger rank check prints through too: a mark with no verdict in the
+# time limit reads TIMEOUT, never held, and the exit is 1.
+sys.path.insert(0, str(HERE.parent / "halver"))
+
+# isort: split
+import contextlib
+import io
+
+from halver_report import report_marks
+from halver_rules import MarkCheck, mark_name
+
+printed = io.StringIO()
+timed = [{"kind": "digit", "cell": "r1c1", "digit": 5}]
+with contextlib.redirect_stdout(printed):
+    code = report_marks(timed, lambda m: MarkCheck("timeout"), mark_name, str, 5)
+assert printed.getvalue() == "TIMEOUT   r1c1 = 5 (no verdict in 5s)\n", (
+    printed.getvalue()
+)
+assert code == 1, code
+
+
 print("ok")
