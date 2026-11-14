@@ -10,9 +10,9 @@ One CP-SAT worker, a 1 s cap; a few seconds in all.
 
 import json
 import random
-import subprocess
 import sys
 import tempfile
+import types
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -23,7 +23,8 @@ import hunt_common as hc
 # isort: split
 import chan_big
 import tie_finder
-from subprocess_env import success_env
+from cli_checks import check, finish, run_cli
+from sudoku_kit import cpsat
 
 # Found by chan_big.py in the 34-36 hunt (docs/research/2026-09-22-qqrr-tie-r5c1.md).
 G_SAME = "436781529/978265134/125394876/217839465/354176982/689452713/763948251/591627348/842513697"  # passes q34
@@ -31,15 +32,6 @@ G_CORNER = "654781392/987234516/123956847/218679453/539842761/476513928/74516823
 G_WINDOW = "465781329/987432651/123965874/218574936/354196782/679328415/591847263/732659148/846213597"  # no 34-36 cell
 G_FAR = "563781429/987425136/124396875/218537964/745169283/396842517/439278651/652913748/871654392"  # passes q34
 SEED = hc.HUNTS["r1c5"][2]
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    if not cond:
-        ok = False
-    print(f"{'ok' if cond else 'FAIL'}: {name}")
 
 
 def rec(grid, ten, corner, hunt="r1c5"):
@@ -86,36 +78,47 @@ with tempfile.TemporaryDirectory() as tmp:
     check("a grid the run forbids is never the hint", G_SAME not in got)
     check("the next nearest takes its place", got[0] == G_CORNER)
 
-    # propose hands the model the hits, never a forbidden one (a stub build stops the solve)
-    class Built(Exception):
-        pass
+    # propose builds the model and solves it. A solver that gives up at once
+    # hands back the model propose built; the grid that model is hinted with is
+    # what propose asked build to warm-start from, read off the hint by cell.
+    def proposed_hint(finder):
+        models = []
 
-    def proposed_hits(finder):
-        def stub(hunt, ten, corner, flags, hits=None):
-            raise Built(flags, hits)
+        class GivesUp:
+            parameters = types.SimpleNamespace(num_workers=None)
 
-        real, chan_big.build = chan_big.build, stub
+            def Solve(self, m):
+                models.append(m)
+                return cpsat.UNKNOWN
+
+        real, cpsat.solver = cpsat.solver, lambda *a, **kw: GivesUp()
         try:
+            finder.workers = 1  # the driver sets it
             finder.propose(random.Random(0))
-        except Built as e:
-            return e.args
         finally:
-            chan_big.build = real
+            cpsat.solver = real
+        (m,) = models
+        proto = m.Proto()
+        hinted = {
+            proto.variables[i].name: v
+            for i, v in zip(
+                proto.solution_hint.vars, proto.solution_hint.values, strict=True
+            )
+        }
+        return "/".join(
+            "".join(str(hinted[f"x{r}{c}"]) for c in range(9)) for r in range(9)
+        )
 
     g = tie_finder.TieFinder("r1c5", "r7c7", "tr", 1, True, [a])
-    flags, hits = proposed_hits(g)
-    check("propose asks build to warm-start", "warm" in flags)
-    check("propose passes the nearest grid first", hits[0][2] == G_SAME)
+    check("propose hints the model with the nearest grid", proposed_hint(g) == G_SAME)
     g.found.append(G_SAME.replace("/", ""))
-    flags, hits = proposed_hits(g)
     check(
-        "after a find, propose passes no grid the run forbids",
-        G_SAME not in [h[2] for h in hits],
+        "after a find, propose hints with the nearest grid the run does not forbid",
+        proposed_hint(g) == G_CORNER,
     )
-    flags, hits = proposed_hits(tie_finder.TieFinder("r1c5", "r7c7", "tr", 1, True))
     check(
-        "without --warm-from, propose asks for no warm start",
-        "warm" not in flags and hits is None,
+        "without --warm-from, propose hints with the hunt's seed grid",
+        proposed_hint(tie_finder.TieFinder("r1c5", "r7c7", "tr", 1, True)) == SEED,
     )
 
     q, warm_from, _ = chan_big.build(
@@ -182,12 +185,7 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
     def cli(*args):
-        return subprocess.run(
-            [sys.executable, str(HERE / "tie_finder.py"), *args],
-            capture_output=True,
-            text=True,
-            env=success_env(),
-        )
+        return run_cli(HERE / "tie_finder.py", *args)
 
     base = [
         "--seeds=0:1",
@@ -233,4 +231,4 @@ with tempfile.TemporaryDirectory() as tmp:
     check("a source that is not a hunt directory refuses (exit 2)", r.returncode == 2)
     check("... saying it has no examples.jsonl", "has no examples.jsonl" in r.stderr)
 
-sys.exit(0 if ok else 1)
+finish()
