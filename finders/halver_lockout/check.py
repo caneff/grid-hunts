@@ -29,8 +29,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import rules
 
 # isort: split
+from halver_query import load_marks
 from halver_report import report
-from halver_rules import read_marks
 
 
 def read_board(path):
@@ -50,7 +50,7 @@ def main(argv):
             board = rules.RuleModel(lines)
         except (OSError, ValueError, KeyError) as error:
             raise ValueError(f"{args.board}: {error}") from error
-        marks = read_marks(args.marks, board.n) if args.marks else []
+        marks = load_marks(args.marks, board.n) if args.marks else []
     except ValueError as error:
         print(f"check.py: {error}", file=sys.stderr)
         return 2

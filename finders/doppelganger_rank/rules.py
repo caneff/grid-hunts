@@ -54,7 +54,9 @@ def cell_name(cell):
 def parse_cell(name, n=None):
     """The (row, column) from 0 of a cell named rNcM. A ValueError naming the
     cell when row or column is 0, or past the board when `n`, its size, is
-    given."""
+    given, or anything else that is no rNcM name."""
+    if not isinstance(name, str):
+        raise ValueError(f"no cell {name!r}: a cell is named rNcM")
     row, col = name.removeprefix("r").split("c")
     row, col = int(row), int(col)
     if row < 1 or col < 1 or (n is not None and max(row, col) > n):

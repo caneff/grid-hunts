@@ -107,5 +107,13 @@ except ValueError as error:
     assert "r0c1" in str(error), error
 else:
     raise AssertionError("parse_cell('r0c1') was accepted")
+# A cell that is no string is a ValueError too, so check.py exits 2.
+for bad in (5, None):
+    try:
+        rules.parse_cell(bad, 4)
+    except ValueError as error:
+        assert repr(bad) in str(error), error
+    else:
+        raise AssertionError(f"parse_cell({bad!r}, 4) was accepted")
 
 print("test_rules: ok")

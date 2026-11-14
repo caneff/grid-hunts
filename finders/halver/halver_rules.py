@@ -24,7 +24,6 @@ type's lines from a decoded SudokuMaker document, and `lines_alone` reads
 them from a board that holds nothing else, refusing one that does.
 """
 
-import json
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -83,7 +82,9 @@ def cell_name(cell):
 def parse_cell(name, n=None):
     """The (row, column) from 0 of a cell named rNcM. A ValueError naming the
     cell when row or column is 0, or past the board when `n`, its size, is
-    given."""
+    given, or anything else that is no rNcM name."""
+    if not isinstance(name, str):
+        raise ValueError(f"no cell {name!r}: a cell is named rNcM")
     row, col = name.lower().removeprefix("r").split("c")
     row, col = int(row), int(col)
     if row < 1 or col < 1 or (n is not None and max(row, col) > n):
@@ -92,15 +93,10 @@ def parse_cell(name, n=None):
     return row - 1, col - 1
 
 
-def mark_cells(mark):
-    """The cell names a `marks.json` entry reads."""
-    return [mark["cell"]] if "cell" in mark else mark.get("cells", [])
-
-
 def check_mark_cells(mark, n):
-    """Raises a ValueError naming the first cell of `mark` that `parse_cell`
-    refuses on an n x n board."""
-    for name in mark_cells(mark):
+    """Raises a ValueError naming the first cell of the `marks.json` entry
+    `mark` that `parse_cell` refuses on an n x n board."""
+    for name in [mark["cell"]] if "cell" in mark else mark.get("cells", []):
         parse_cell(name, n)
 
 
@@ -303,21 +299,3 @@ def mark_name(mark):
 def mark_condition(mark):
     """A `marks.json` entry as a condition on the board's variables."""
     return mark_kind(mark).condition(mark)
-
-
-def read_marks(path, n):
-    """The marks in the JSON file `path` for an n x n board. A ValueError
-    names `path` and what is wrong: unreadable, not JSON, not a list of
-    marks, an unknown kind, a missing field or a cell off the board."""
-    try:
-        marks = json.loads(Path(path).read_text())
-        if not isinstance(marks, list) or not all(isinstance(m, dict) for m in marks):
-            raise ValueError("not a list of marks")
-        for mark in marks:
-            mark_name(mark)
-            check_mark_cells(mark, n)
-    except KeyError as error:
-        raise ValueError(f"{path}: a mark lacks {error}") from error
-    except (OSError, ValueError, TypeError) as error:
-        raise ValueError(f"{path}: {error}") from error
-    return marks

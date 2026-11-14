@@ -94,13 +94,23 @@ class HalverQuery:
         return mint(doc)
 
     def mark(self, entry):
-        return condition(entry)
+        """The `marks.json` entry as a condition (`halver_rules.MARK_KINDS`)."""
+        return mark_condition(entry)
 
 
-def condition(entry):
-    """A `marks.json` entry as a condition: what every solution must meet
-    for the mark to hold. The kinds are `halver_rules.MARK_KINDS`."""
-    return mark_condition(entry)
+def load_marks(path, n):
+    """The marks in the JSON file `path` for an n x n board, read by the
+    driver's `read_entries` (a list of objects, each with the fields its
+    kind needs), each kind one of `halver_rules.MARK_KINDS` and each cell on
+    the board. A ValueError names `path` and what is wrong."""
+    try:
+        entries = query.read_entries(mark_condition, Path(path))
+        marks = [fields["mark"] for _, fields in entries]
+        for mark in marks:
+            check_mark_cells(mark, n)
+    except (OSError, ValueError, TypeError) as error:
+        raise ValueError(f"{path}: {error}") from error
+    return marks
 
 
 def uniqueness(board, time_limit=10.0):
@@ -119,5 +129,7 @@ def holds(board, mark, time_limit=10.0):
         k: model.GetIntVarFromProtoIndex(v.Index())
         for k, v in board.variables().items()
     }
-    status, solutions = query.forced_on(model, variables, condition(mark), time_limit)
+    status, solutions = query.forced_on(
+        model, variables, mark_condition(mark), time_limit
+    )
     return MarkCheck(status, *map(board.solution, solutions))
