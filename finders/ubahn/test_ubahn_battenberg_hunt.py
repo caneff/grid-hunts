@@ -26,7 +26,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import hybrid
-import hybrid_finder
+import hybrid_engines
 from cli_checks import check, finish, read_jsonl, run_cli
 from dedupe import IDENTITY
 from verified_io import read_verified
@@ -34,7 +34,7 @@ from verified_io import read_verified
 FINDER = HERE / "hybrid_finder.py"
 ENGINES = ("pysat-lazy", "pysat-propagator")
 # A record carries its own board and conditions.
-READER = hybrid_finder.HybridFinder(hybrid.Conditions(4, 4))
+READER = hybrid_engines.HybridFinder(hybrid.Conditions(4, 4))
 
 
 def transposed(net):
@@ -396,7 +396,9 @@ for names, kept in (
     ("r2c2 r1c2", False),
 ):
     marked = hybrid.parse_windows(names, 5, 5)
-    group = hybrid_finder.condition_symmetry(hybrid.Conditions(5, 5, battenberg=marked))
+    group = hybrid_engines.condition_symmetry(
+        hybrid.Conditions(5, 5, battenberg=marked)
+    )
     check(
         f"5x5 markings {names or 'none'}: the reflection is "
         f"{'kept' if kept else 'not a symmetry'}",

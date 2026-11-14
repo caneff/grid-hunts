@@ -33,7 +33,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import hybrid
-import hybrid_finder
+import hybrid_engines
 import network
 from cli_checks import check, finish, read_jsonl, run_cli
 from verified_io import read_verified
@@ -46,7 +46,7 @@ BOARD = ["--rows", "4", "--cols", "4", "--timeout", "20"]
 WINDOWS = 33
 WORDS = ("unique", "not_unique", "infeasible", "timeout")
 # A record carries its own board and conditions.
-READER = hybrid_finder.HybridFinder(hybrid.Conditions(4, 4))
+READER = hybrid_engines.HybridFinder(hybrid.Conditions(4, 4))
 
 
 def sets_tried(out):

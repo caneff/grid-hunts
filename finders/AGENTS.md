@@ -74,6 +74,14 @@ README before reusing anything there.
   classifies a set of Battenberg markings, each window by its top-left cell,
   and `--battenberg-only` adds the negative constraint (#21);
   the 4x4 answers every engine must match are in the decision log, § Hybrid.
+  The hybrid finder is three files (spec #117, #133): `hybrid_engines.py`
+  holds `ENGINES`, `HybridFinder` and `Candidate`, `hybrid_searches.py` the
+  `climb` and `fewest_markings` searches (both take `engines=`, so a test
+  calls them with a fake engine: `test_ubahn_hybrid_searches.py`), and
+  `hybrid_finder.py` is the command line over them, one table of
+  subcommands and one error path. A timing tool or test imports the engines
+  module, never the command line, and `Conditions.asking(...)` derives the
+  conditions of a search's next step.
   `hybrid_finder.py` is the hybrid finder on the hunt protocol (#783): the
   conditions `--circles "r6:turn r2c3"`, `--exactly N:PIECE:rK`,
   `--blank-strip` and `--min-bananas N` (at least N banana regions, #792,

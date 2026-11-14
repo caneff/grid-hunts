@@ -198,12 +198,7 @@ The driver's flags (`--out`, `--seeds`, `--workers`, ...) are its own
 """
 
 import argparse
-import fcntl
-import itertools
-import json
-import multiprocessing
 import sys
-import time
 from pathlib import Path
 from typing import NamedTuple
 
@@ -213,238 +208,28 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 # isort: split
 import hunt_files
 import hybrid
-import hybrid_model
 import hybrid_render
-import hybrid_sat
 import network
 import penpa
-from dedupe import IDENTITY
 from driver import run
 from hunt_dir import replace_links
-from protocol import Empty, Verdict
-from ubahn_finder import DEFAULT_SIDE, DEFAULT_TIMEOUT, UbahnFinder
-from ubahn_finder import Candidate as PlainCandidate
-
-# Each engine offers `grid(conditions, rng, *, time_limit)`, a
-# `hybrid.Sampled`, and `classify(conditions, *, time_limit, workers)`, a
-# `hybrid.Classified`.
-ENGINES = {
-    "cpsat": hybrid_model,
-    "pysat-lazy": hybrid_sat.Engine(hybrid_sat.LAZY),
-    "pysat-propagator": hybrid_sat.Engine(hybrid_sat.PROPAGATOR),
-}
-# Chris ruled PySAT with lazy cuts the default on 2026-10-11, on the timing
-# in docs/research/2026-10-10-u-bahn-optimization-queue.md (#786).
-DEFAULT_ENGINE = "pysat-lazy"
-
-# The classification's words as Chris reads them, in the order the
-# `fewest-markings` report counts them.
-SAID = {
-    "unique": "exactly one grid",
-    "not_unique": "more than one grid",
-    "infeasible": "no grid",
-    "timeout": "time limit reached",
-}
+from hybrid_engines import DEFAULT_ENGINE, ENGINES, SAID, HybridFinder
+from hybrid_searches import climb, fewest_markings
+from ubahn_finder import DEFAULT_SIDE, DEFAULT_TIMEOUT
 
 
-# Why a seed gave no grid, as `propose` says it and `climb` reads it back.
-EMPTY_TIMEOUT = "timeout sampling a grid"
-EMPTY_INFEASIBLE = "infeasible: no grid meets the conditions"
-# The one seed every step of a climb hunts.
-CLIMB_SEED = 0
-# The one seed a unique set's example is written under by `fewest-markings`.
-SET_SEED = 0
+class Usage(ValueError):
+    """A refusal of the flags as a whole, said as `hybrid_finder: <why>`."""
 
 
-class Candidate(NamedTuple):
-    """A found grid with the conditions it answers."""
+class Command(NamedTuple):
+    """One subcommand: `run(own, rest)` returns the exit code, `rest` being
+    the words from the subcommand's name on. A ValueError from a command that
+    `refuses` is its refusal, said as `hybrid_finder <name>: <why>`; from any
+    other it is a crash."""
 
-    conditions: hybrid.Conditions
-    network: frozenset
-
-
-def _mirror(cells):
-    """The cells reflected in the main diagonal, sorted. A window's image is
-    the window named by its top-left cell's image."""
-    return tuple(sorted((c, r) for r, c in cells))
-
-
-def condition_symmetry(conditions):
-    """The group a grid's key (`HybridFinder.key`) dedupes under: the
-    identity and the reflection in the main diagonal when that reflection
-    keeps the conditions, the identity alone when it moves one. It keeps
-    them on a square board whose circled cells are circled in the image too
-    and whose marked windows are marked there too (a window's image is the
-    window named by its top-left cell's image), with no piece-count
-    condition, which names a row or a column. The reflection sends a cell's
-    east arm to its image's south arm and back."""
-    rows, cols, circles = conditions.rows, conditions.cols, conditions.circles
-    marked = conditions.battenberg
-    if (
-        rows != cols
-        or conditions.exactly
-        or set(_mirror(circles)) != set(circles)
-        or set(_mirror(marked)) != set(marked)
-    ):
-        return IDENTITY
-    cells = rows * cols
-    image = [c * cols + r for r in range(rows) for c in range(cols)]
-    return [
-        tuple(range(2 * cells)),
-        tuple([cells + i for i in image] + image),
-    ]
-
-
-class HybridFinder:
-    def __init__(self, conditions, engine=DEFAULT_ENGINE, timeout=DEFAULT_TIMEOUT):
-        self.conditions, self.engine, self.timeout = conditions, engine, timeout
-        self.symmetry = condition_symmetry(conditions)
-        self.config = {
-            "rows": conditions.rows,
-            "cols": conditions.cols,
-            "circles": sorted(map(hybrid.cell_name, conditions.circles)),
-            "exactly": conditions.exactly.text() if conditions.exactly else None,
-            "blank_strip": conditions.blank_strip,
-            "number_circles": conditions.number_circles,
-            "engine": engine,
-            "timeout": timeout,
-        }
-        # Only when asked for: the driver refuses to resume a hunt whose
-        # config differs, and a hunt from before the condition has no such key.
-        if conditions.min_bananas:
-            self.config["min_bananas"] = conditions.min_bananas
-        if conditions.battenberg:
-            self.config["battenberg"] = sorted(
-                map(hybrid.cell_name, conditions.battenberg)
-            )
-        if conditions.battenberg_only:
-            self.config["battenberg_only"] = True
-
-    def propose(self, rng):
-        status, found = ENGINES[self.engine].grid(
-            self.conditions, rng, time_limit=self.timeout
-        )
-        if status == "timeout":
-            return Empty(EMPTY_TIMEOUT)
-        if status == "infeasible":
-            return Empty(EMPTY_INFEASIBLE)
-        if found is None:
-            raise RuntimeError(f"{self.engine} answered {status!r} with no grid")
-        return Candidate(self.conditions, found)
-
-    def verify(self, candidate):
-        asked, found = candidate
-        rows, cols, exactly = asked.rows, asked.cols, asked.exactly
-        why = hybrid.why_not_hybrid(
-            found,
-            rows,
-            cols,
-            asked.circles,
-            asked.blank_strip,
-            min_bananas=asked.min_bananas,
-            number_circles=asked.number_circles,
-            battenberg=asked.battenberg,
-            battenberg_only=asked.battenberg_only,
-        )
-        if why:
-            return Verdict(False, why)
-        if exactly and not exactly.on_board(rows, cols):
-            return Verdict(
-                False, f"condition {exactly.text()} is off the {rows}x{cols} board"
-            )
-        if exactly and not exactly.holds(found, rows, cols):
-            return Verdict(False, f"condition {exactly.text()} does not hold")
-        return Verdict(True)
-
-    def record(self, candidate):
-        asked, found = candidate
-        rows, cols, circles = asked.rows, asked.cols, asked.circles
-        board = hybrid.values(found, rows, cols, asked.blank_strip)
-        return {
-            # The plain finder's record of the network: the board, the
-            # piece-count condition, the edge rows and the outside numbers.
-            **UbahnFinder().record(PlainCandidate(rows, cols, found, asked.exactly)),
-            "circles": sorted(map(hybrid.cell_name, circles)),
-            "blank_strip": asked.blank_strip,
-            "min_bananas": asked.min_bananas,
-            "number_circles": asked.number_circles,
-            # The reader's own count, whatever the condition asked for.
-            "number_cell_circles": [
-                hybrid.cell_name(cell) for cell in hybrid.number_cell_circles(board)
-            ],
-            "battenberg": sorted(map(hybrid.cell_name, asked.battenberg)),
-            "battenberg_only": asked.battenberg_only,
-            # Every checkerboard window of the grid, marked or not.
-            "checkerboard_windows": [
-                hybrid.cell_name(window)
-                for window in hybrid.checkerboard_windows(board)
-            ],
-            "engine": self.engine,
-            "drawing": hybrid.drawing(found, rows, cols, circles, asked.blank_strip),
-        }
-
-    def key(self, candidate):
-        """The network itself: every cell's east arm, row by row, then every
-        cell's south arm. Two networks can have the same kind in every cell
-        and both be valid grids, so the kinds alone would drop one of them
-        as a repeat."""
-        asked, found = candidate
-        rows, cols = asked.rows, asked.cols
-        cells = [(r, c) for r in range(rows) for c in range(cols)]
-        return tuple(
-            int(((r, c), (r + dr, c + dc)) in found)
-            for dr, dc in ((0, 1), (1, 0))
-            for r, c in cells
-        )
-
-    def candidate_from_record(self, record):
-        """Raises ValueError, naming it, on a circle `hybrid.parse_cell`
-        refuses, anything the plain finder's reader refuses in the edge
-        rows and the piece-count condition, a `min_bananas` that is no whole
-        number of 0 or more, a `battenberg` that is no list of window names,
-        a `battenberg_only` that is not true or false, or a field the record
-        lacks. A record with no
-        `min_bananas` is of a hunt from before that condition (#792) and asks
-        for none; `record` has written the field in every record since. One
-        with no `battenberg` or `battenberg_only` is from before Battenberg
-        markings (spec #20): no markings, the negative constraint off."""
-        try:
-            rows, cols, found, exactly = UbahnFinder().candidate_from_record(record)
-            circles = frozenset(map(hybrid.parse_cell, record["circles"]))
-            min_bananas = record.get("min_bananas", 0)
-            if type(min_bananas) is not int or min_bananas < 0:
-                raise ValueError(
-                    f"min_bananas is {min_bananas!r}: it is a whole number, 0 or more"
-                )
-            battenberg = record.get("battenberg", [])
-            if type(battenberg) is not list or not all(
-                type(name) is str for name in battenberg
-            ):
-                raise ValueError(
-                    f"battenberg is {battenberg!r}: it is a list of window names"
-                )
-            battenberg_only = record.get("battenberg_only", False)
-            if type(battenberg_only) is not bool:
-                raise ValueError(
-                    f"battenberg_only is {battenberg_only!r}: it is true or false"
-                )
-            conditions = hybrid.Conditions(
-                rows,
-                cols,
-                circles,
-                exactly,
-                record["blank_strip"],
-                min_bananas,
-                # A record older than the condition (#794) asked for none.
-                record.get("number_circles", 0),
-                frozenset(map(hybrid.parse_cell, battenberg)),
-                battenberg_only,
-            )
-        except KeyError as e:
-            raise ValueError(
-                f"the record has no {e.args[0]!r}: no hybrid hunt wrote it"
-            ) from e
-        return Candidate(conditions, found)
+    run: object
+    refuses: bool = True
 
 
 def parse_conditions(args):
@@ -517,369 +302,6 @@ def classify(conditions, engine, timeout, workers):
             conditions.blank_strip,
         )
     return lines
-
-
-def _step(finder, seed, out):
-    """Hunt one seed into `out`, a hunt directory of its own. Returns
-    `(status, count)`: "found" with the rule reader's count of the grid's
-    valid circles on number cells, or "infeasible" or "timeout" with None.
-    Raises ValueError when the driver refuses the hunt or the seed ends any
-    other way, a grid `verify` rejected among them."""
-    argv = ["--out", str(out), f"--seeds={seed}:{seed + 1}", "--workers", "1"]
-    if run(finder, argv):
-        raise ValueError(f"the hunt in {out} was refused")
-    event = json.loads((out / "progress.jsonl").read_text().splitlines()[-1])
-    if event["outcome"] == "example":
-        ((_, record),) = hunt_files.read_examples(out)
-        return "found", len(record["number_cell_circles"])
-    status = {EMPTY_INFEASIBLE: "infeasible", EMPTY_TIMEOUT: "timeout"}.get(
-        event.get("empty_reason")
-    )
-    if event["outcome"] != "empty" or status is None:
-        raise ValueError(f"the hunt in {out} ended on {event}")
-    return status, None
-
-
-def _steps_on_file(out, lines, asked, start):
-    """The steps a climb wrote to `out/climb.jsonl`, checked as a chain: each
-    is this climb's (`asked`), the first is at `start` when one is given, each
-    later one is at one more than the count before it, and only the last may
-    be other than "found". Raises ValueError, naming the step, on a log that
-    is not one: two climbs wrote into it, or it was edited."""
-    steps = [json.loads(line) for line in lines if line]
-    for i, step in enumerate(steps):
-        k = step["at_least"]
-        if step["config"] != asked:
-            raise ValueError(f"{out} holds a climb under {step['config']}")
-        if i == 0 and start not in (None, k):
-            raise ValueError(f"{out} holds a climb from {k}: --from {start} is another")
-        if i and (steps[i - 1]["status"] != "found" or k != steps[i - 1]["count"] + 1):
-            raise ValueError(
-                f"{out}/climb.jsonl: the step at least {k} does not follow "
-                f"the step before it"
-            )
-    return steps
-
-
-def climb(conditions, engine, timeout, out, start=None):
-    """Raise K in "at least K valid circles on number cells" from `start`
-    (0 when None) until no grid reaches it or a step reaches the time limit,
-    printing each step as it ends and then the answer. Each step is a hunt of
-    seed `CLIMB_SEED` in `out/at-least-K` and a line of `out/climb.jsonl`; a
-    rerun goes on from the last line written. One climb at a time holds
-    `out`. Raises ValueError on a step `_step` refuses, when another climb
-    holds `out`, or when its log is not this climb's (`_steps_on_file`)."""
-    out = Path(out)
-    out.mkdir(parents=True, exist_ok=True)
-    asked = {
-        **HybridFinder(conditions, engine, timeout).config,
-        "number_circles": None,
-        "seed": CLIMB_SEED,
-    }
-
-    def say(step):
-        k, status = step["at_least"], step["status"]
-        what = (
-            f"{step['count']} valid circles on number cells"
-            if status == "found"
-            else SAID[status]
-        )
-        took = (
-            "time not on record" if step["seconds"] is None else f"{step['seconds']} s"
-        )
-        print(f"at least {k}: {status}, {what}, {took}", flush=True)
-
-    with (out / "climb.jsonl").open("a+") as log:
-        # The lock is on the log itself, held until the answer is printed:
-        # two climbs in one directory would each write steps the other
-        # then reads as its own.
-        try:
-            fcntl.flock(log, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            raise ValueError(f"another climb is running in {out}") from None
-        log.seek(0)
-        steps = _steps_on_file(out, log.read().splitlines(), asked, start)
-        for step in steps:
-            say(step)
-        while not steps or steps[-1]["status"] == "found":
-            k = steps[-1]["count"] + 1 if steps else start or 0
-            step_dir = out / f"at-least-{k}"
-            # A hunt directory that already holds its seed's answer is read
-            # back, not solved again, so its time is not this run's to state.
-            read_back = (step_dir / "summary.json").is_file() and json.loads(
-                (step_dir / "summary.json").read_text()
-            ).get("seeds_done")
-            began = time.monotonic()
-            finder = HybridFinder(
-                conditions._replace(number_circles=k), engine, timeout
-            )
-            status, count = _step(finder, CLIMB_SEED, step_dir)
-            steps.append(
-                {
-                    "at_least": k,
-                    "status": status,
-                    "count": count,
-                    "seconds": (
-                        None if read_back else round(time.monotonic() - began, 1)
-                    ),
-                    "dir": step_dir.name,
-                    "config": asked,
-                }
-            )
-            log.write(json.dumps(steps[-1]) + "\n")
-            log.flush()
-            say(steps[-1])
-    *found, last = steps
-    proven = last["status"] == "infeasible"
-    stopped = (
-        f"at least {last['at_least']} "
-        f"{'has no grid' if proven else 'reached the time limit'}"
-    )
-    if not found:
-        print(f"no grid found: {stopped} on {engine}")
-        return
-    best = found[-1]
-    if proven:
-        print(f"maximum {best['count']}: proven on {engine}, {stopped}")
-    else:
-        print(f"best found {best['count']}: not proven, {stopped} on {engine}")
-    print(f"best grid: {out / best['dir']} (seed {CLIMB_SEED})")
-
-
-def _set_name(names):
-    """A set of windows, given by their names, as the report names it."""
-    return " ".join(names) or "no markings"
-
-
-class _HeldGrid(HybridFinder):
-    """The finder of a hunt whose one seed is a grid already in hand: a
-    unique set's grid as `classify` found it, written as an ordinary example
-    with no second solve."""
-
-    def __init__(self, conditions, engine, timeout, found):
-        super().__init__(conditions, engine, timeout)
-        self.found = found
-
-    def propose(self, rng):
-        return Candidate(self.conditions, self.found)
-
-
-def _classify_sets(conditions, engine, timeout, sets, mirrored, path):
-    """Classify each set of windows as the conditions' markings and append
-    its line to the per-set file at `path` as the answer lands; a unique
-    set's line carries its one grid as a hunt's record. With `mirrored`, a
-    set that is not its own mirror is followed by its mirror's line, copied
-    from it, in the same write."""
-    with path.open("a") as log:
-        for windows in sets:
-            began = time.monotonic()
-            marked = conditions._replace(battenberg=frozenset(windows))
-            status, found = ENGINES[engine].classify(
-                marked, time_limit=timeout, workers=1
-            )
-            solved = {
-                "size": len(windows),
-                "windows": [hybrid.cell_name(window) for window in windows],
-                "status": status,
-                "how": "solved",
-                "mirror": None,
-                "seconds": round(time.monotonic() - began, 3),
-            }
-            if status == "unique":
-                finder = HybridFinder(marked, engine, timeout)
-                solved["record"] = finder.record(Candidate(marked, found))
-            lines = [solved]
-            image = _mirror(windows)
-            if mirrored and image != windows:
-                solved["mirror"] = [hybrid.cell_name(window) for window in image]
-                lines.append(_mirror_line(conditions, engine, timeout, solved))
-            log.write("".join(json.dumps(line) + "\n" for line in lines))
-            log.flush()
-
-
-def _mirror_line(conditions, engine, timeout, solved):
-    """The line of a solved set's mirror, copied from the solved set's own:
-    the same answer, and a unique set's grid reflected with it."""
-    line = {
-        **solved,
-        "windows": solved["mirror"],
-        "how": "mirror",
-        "mirror": solved["windows"],
-        "seconds": None,
-    }
-    if solved["status"] == "unique":
-        image = conditions._replace(
-            battenberg=frozenset(map(hybrid.parse_cell, line["windows"]))
-        )
-        finder = HybridFinder(image, engine, timeout)
-        found = finder.candidate_from_record(solved["record"]).network
-        reflected = frozenset((_mirror([a])[0], _mirror([b])[0]) for a, b in found)
-        line["record"] = finder.record(Candidate(image, reflected))
-    return line
-
-
-def _sets_on_file(path, asked):
-    """{a set of windows: its line} from the per-set file at `path`, whose
-    first line is the run's heading. Raises ValueError, naming the file,
-    when the heading does not read or is another run's (`asked` is this
-    one's config), or when a line is no set's line: it does not read, its
-    answer is none of `SAID`'s words, or it is a unique set's with no grid."""
-    heading, *lines = path.read_text().splitlines()
-    try:
-        held = json.loads(heading)["config"]
-    except (ValueError, KeyError, TypeError) as e:
-        raise ValueError(f"{path}: line 1 is no run's heading: {e!r}") from e
-    if held != asked:
-        raise ValueError(f"{path.parent} holds a run under {held}")
-    tried = {}
-    for number, line in enumerate(lines, 2):
-        try:
-            entry = json.loads(line)
-            if entry["status"] not in SAID:
-                raise ValueError(f"its answer is {entry['status']!r}")
-            if entry["status"] == "unique" and "record" not in entry:
-                raise ValueError("a unique set's line with no grid")
-            if not {"mirror", "how"} <= entry.keys():
-                raise ValueError("it does not say how it was answered")
-            tried[frozenset(map(hybrid.parse_cell, entry["windows"]))] = entry
-        except (ValueError, KeyError, TypeError) as e:
-            raise ValueError(f"{path}: line {number} is no set's line: {e!r}") from e
-    return tried
-
-
-def _mend(log, path, conditions, engine, timeout, asked):
-    """Make the per-set file ready to read. A new file gets the run's
-    heading. In one a write cut short, the last line with no end is dropped
-    and a solved set whose mirror's line is missing gets that line copied
-    again. Any other line that does not read is refused (`_sets_on_file`)."""
-    text = path.read_text()
-    if not text.endswith("\n"):
-        log.truncate(text.rfind("\n") + 1)
-    if "\n" not in text:
-        log.write(json.dumps({"config": asked}) + "\n")
-        log.flush()
-    tried = _sets_on_file(path, asked)
-    for line in list(tried.values()):
-        image = line["mirror"] and frozenset(map(hybrid.parse_cell, line["mirror"]))
-        if line["how"] == "solved" and image and image not in tried:
-            log.write(
-                json.dumps(_mirror_line(conditions, engine, timeout, line)) + "\n"
-            )
-    log.flush()
-
-
-def fewest_markings(conditions, engine, timeout, out, max_size, workers):
-    """Find the fewest Battenberg markings that leave exactly one grid under
-    the negative constraint, with `conditions` as fixed background: classify
-    every set of one size before any of the next, from no markings up to
-    `max_size`, and stop at the first size with a unique set. One size's
-    sets are split over `workers` processes. Each set is a line of
-    `out/sets.jsonl`, and a rerun solves only the sets with no line. Prints
-    each size's counts as the size ends, then every set that reached the
-    time limit, the answer, and each unique set of the smallest size with
-    the hunt directory under `out` that holds its grid. One run at a time
-    holds `out`. Raises ValueError when another run holds `out`, when its
-    file is another run's or does not read (`_sets_on_file`), when a worker
-    dies, or on an example hunt `_step` refuses."""
-    out = Path(out)
-    out.mkdir(parents=True, exist_ok=True)
-    conditions = conditions._replace(battenberg_only=True)
-    asked = HybridFinder(conditions, engine, timeout).config
-    board = hybrid.board_cells(conditions.rows, conditions.cols, conditions.blank_strip)
-    windows = hybrid.windows(board)
-    mirrored = condition_symmetry(conditions) != IDENTITY
-    path = out / "sets.jsonl"
-    timed, unique, size = [], [], 0
-    with path.open("a+") as log:
-        # Held until the answer is printed, as a climb holds its own log.
-        try:
-            fcntl.flock(log, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            raise ValueError(f"another run is in {out}") from None
-        log.seek(0)
-        _mend(log, path, conditions, engine, timeout, asked)
-        for size in range(max_size + 1):
-            sets = list(itertools.combinations(windows, size))
-            tried = _sets_on_file(path, asked)
-            # Of a mirror pair the set that sorts first is the one solved.
-            todo = [
-                chosen
-                for chosen in sets
-                if frozenset(chosen) not in tried
-                and not (mirrored and _mirror(chosen) < chosen)
-            ]
-            crew = [
-                multiprocessing.Process(
-                    target=_classify_sets,
-                    args=(conditions, engine, timeout, share, mirrored, path),
-                )
-                for share in (todo[i::workers] for i in range(workers))
-                if share
-            ]
-            for worker in crew:
-                worker.start()
-            for worker in crew:
-                worker.join()
-            if any(worker.exitcode for worker in crew):
-                raise ValueError(f"a worker died at size {size}: rerun into {out}")
-            tried = _sets_on_file(path, asked)
-            try:
-                lines = [tried[frozenset(chosen)] for chosen in sets]
-            except KeyError as e:
-                missing = _set_name(map(hybrid.cell_name, sorted(e.args[0])))
-                raise ValueError(f"{path}: no line for {missing}") from e
-            counts = {
-                word: sum(1 for line in lines if line["status"] == word)
-                for word in SAID
-            }
-            print(
-                f"size {size}: " + ", ".join(f"{counts[word]} {word}" for word in SAID),
-                flush=True,
-            )
-            timed += [line for line in lines if line["status"] == "timeout"]
-            unique = [line for line in lines if line["status"] == "unique"]
-            if unique:
-                break
-        for line in timed:
-            print(f"time limit reached: {_set_name(line['windows'])}")
-        sets_timed = f"{len(timed)} set{'' if len(timed) == 1 else 's'}"
-        if not unique:
-            if timed:
-                print(
-                    f"no unique set found up to {max_size} on {engine}: not "
-                    f"proven, {sets_timed} reached the time limit"
-                )
-            else:
-                print(f"no unique set up to {max_size} on {engine}")
-            return
-        if timed:
-            print(
-                f"smallest found {size}: not proven on {engine}, {sets_timed} of "
-                f"{size} or fewer markings reached the time limit"
-            )
-        else:
-            print(
-                f"minimum {size}: proven on {engine}, {len(unique)} unique "
-                f"set{'' if len(unique) == 1 else 's'} of {size} markings"
-            )
-        for line in unique:
-            name = _set_name(line["windows"])
-            if line["mirror"]:
-                name += f", mirror {_set_name(line['mirror'])}"
-            example = out / (
-                "+".join(window.replace(":", "-") for window in line["windows"])
-                or "no-markings"
-            )
-            # An example already written is left as it is: the hunt driver
-            # holds a hunt directory to the `--out` it was first given.
-            if not (example / "examples.jsonl").is_file():
-                marked = conditions._replace(
-                    battenberg=frozenset(map(hybrid.parse_cell, line["windows"]))
-                )
-                finder = HybridFinder(marked, engine, timeout)
-                found = finder.candidate_from_record(line["record"]).network
-                _step(_HeldGrid(marked, engine, timeout, found), SET_SEED, example)
-            print(f"unique: {name}: {example} (seed {SET_SEED})")
 
 
 def write_pictures(out, blank_strip=False, seed=None, png=None):
@@ -1003,10 +425,8 @@ def write_links(
     return [f"wrote {len(built)} links to {links}, {given}"]
 
 
-def main(argv):
-    if argv[:1] in (["-h"], ["--help"]):
-        print(__doc__)
-        return 0
+def _parser():
+    """The flags every subcommand shares; a subcommand's own are its parser's."""
     parser = argparse.ArgumentParser(prog="hybrid_finder", add_help=False)
     parser.add_argument("--rows", type=int, default=DEFAULT_SIDE)
     parser.add_argument("--cols", type=int, default=DEFAULT_SIDE)
@@ -1020,72 +440,13 @@ def main(argv):
     parser.add_argument("--battenberg-only", action="store_true")
     parser.add_argument("--engine", default=DEFAULT_ENGINE, choices=ENGINES)
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT)
-    own, rest = parser.parse_known_args(argv)
-    if own.numbers and rest[:1] != ["links"]:
-        print("hybrid_finder: --numbers is for `links` only", file=sys.stderr)
-        return 2
-    if rest[:1] in (["verify"], ["render"]):
-        # Both read the markings off each record.
-        for flag, given in (
-            ("--battenberg", own.battenberg),
-            ("--battenberg-only", own.battenberg_only),
-        ):
-            if given:
-                print(
-                    f"hybrid_finder: {flag} is not for `{rest[0]}`, which reads "
-                    f"a record's own markings",
-                    file=sys.stderr,
-                )
-                return 2
-    if rest[:1] == ["verify"]:
-        # A record carries its own board and conditions, and `verify` runs
-        # no solver.
-        return run(HybridFinder(hybrid.Conditions(own.rows, own.cols)), rest)
-    if rest[:1] == ["render"]:
-        # A record carries its own board and conditions too; `--blank-strip`
-        # is the one flag of the finder's own that `render` reads.
-        mine = argparse.ArgumentParser(prog="hybrid_finder render")
-        mine.add_argument("dir")
-        mine.add_argument("--seed", type=int)
-        mine.add_argument("--png", metavar="FILE")
-        args = mine.parse_args(rest[1:])
-        try:
-            if (args.seed is None) != (args.png is None):
-                raise ValueError(
-                    "--seed N and --png FILE go together: "
-                    + (
-                        "--seed needs --png"
-                        if args.png is None
-                        else "--png needs --seed"
-                    )
-                )
-            lines = write_pictures(args.dir, own.blank_strip, args.seed, args.png)
-        except ValueError as e:
-            print(f"hybrid_finder render: {e}", file=sys.stderr)
-            return 2
-        print("\n".join(lines))
-        return 0
-    if rest[:1] == ["links"]:
-        # A record carries its own board; `--circles`, `--numbers`,
-        # `--battenberg`, `--battenberg-only` and `--blank-strip` are what
-        # the link shows.
-        mine = argparse.ArgumentParser(prog="hybrid_finder links")
-        mine.add_argument("dir")
-        args = mine.parse_args(rest[1:])
-        try:
-            lines = write_links(
-                args.dir,
-                parse_cells("--circles", own.circles),
-                parse_cells("--numbers", own.numbers),
-                own.blank_strip,
-                parse_cells("--battenberg", own.battenberg),
-                own.battenberg_only,
-            )
-        except ValueError as e:
-            print(f"hybrid_finder links: {e}", file=sys.stderr)
-            return 2
-        print("\n".join(lines))
-        return 0
+    return parser
+
+
+def _conditions(own):
+    """The conditions the flags name, for a subcommand that solves. Raises
+    Usage, naming the flag, on any `parse_conditions` refuses and on a
+    Battenberg flag with `--engine cpsat`."""
     try:
         conditions = parse_conditions(own)
         # A new hybrid condition is written on the PySAT engines only
@@ -1100,62 +461,155 @@ def main(argv):
                     f"no model of it"
                 )
     except ValueError as e:
+        raise Usage(e) from e
+    return conditions
+
+
+def _record_only(own, name):
+    """Raises Usage when a flag of the markings is given to a subcommand that
+    reads them off each record."""
+    for flag, given in (
+        ("--battenberg", own.battenberg),
+        ("--battenberg-only", own.battenberg_only),
+    ):
+        if given:
+            raise Usage(
+                f"{flag} is not for `{name}`, which reads a record's own markings"
+            )
+
+
+def _verify(own, rest):
+    _record_only(own, "verify")
+    # A record carries its own board and conditions, and `verify` runs no
+    # solver.
+    return run(HybridFinder(hybrid.Conditions(own.rows, own.cols)), rest)
+
+
+def _render(own, rest):
+    _record_only(own, "render")
+    # A record carries its own board and conditions too; `--blank-strip` is
+    # the one flag of the finder's own that `render` reads.
+    mine = argparse.ArgumentParser(prog="hybrid_finder render")
+    mine.add_argument("dir")
+    mine.add_argument("--seed", type=int)
+    mine.add_argument("--png", metavar="FILE")
+    args = mine.parse_args(rest[1:])
+    if (args.seed is None) != (args.png is None):
+        raise ValueError(
+            "--seed N and --png FILE go together: "
+            + ("--seed needs --png" if args.png is None else "--png needs --seed")
+        )
+    print("\n".join(write_pictures(args.dir, own.blank_strip, args.seed, args.png)))
+    return 0
+
+
+def _links(own, rest):
+    # A record carries its own board; `--circles`, `--numbers`,
+    # `--battenberg`, `--battenberg-only` and `--blank-strip` are what the
+    # link shows.
+    mine = argparse.ArgumentParser(prog="hybrid_finder links")
+    mine.add_argument("dir")
+    args = mine.parse_args(rest[1:])
+    lines = write_links(
+        args.dir,
+        parse_cells("--circles", own.circles),
+        parse_cells("--numbers", own.numbers),
+        own.blank_strip,
+        parse_cells("--battenberg", own.battenberg),
+        own.battenberg_only,
+    )
+    print("\n".join(lines))
+    return 0
+
+
+def _classify(own, rest):
+    conditions = _conditions(own)
+    mine = argparse.ArgumentParser(prog="hybrid_finder classify")
+    mine.add_argument("--workers", type=int, default=1)
+    workers = mine.parse_args(rest[1:]).workers
+    print("\n".join(classify(conditions, own.engine, own.timeout, workers)))
+    return 0
+
+
+def _climb(own, rest):
+    conditions = _conditions(own)
+    mine = argparse.ArgumentParser(prog="hybrid_finder climb")
+    mine.add_argument("--out", required=True, metavar="DIR")
+    mine.add_argument("--from", type=int, dest="start", metavar="K")
+    args = mine.parse_args(rest[1:])
+    if conditions.number_circles:
+        raise ValueError(
+            "climb raises K itself: start it at K with --from K, not --number-circles"
+        )
+    if args.start is not None and args.start < 0:
+        raise ValueError(f"--from is 0 or more, got {args.start}")
+    climb(conditions, own.engine, own.timeout, args.out, args.start)
+    return 0
+
+
+def _fewest_markings(own, rest):
+    conditions = _conditions(own)
+    mine = argparse.ArgumentParser(prog="hybrid_finder fewest-markings")
+    mine.add_argument("--out", required=True, metavar="DIR")
+    mine.add_argument("--max-size", type=int, default=3, metavar="K")
+    mine.add_argument("--workers", type=int, default=1, metavar="N")
+    args = mine.parse_args(rest[1:])
+    if own.engine == "cpsat":
+        raise ValueError(
+            "--engine cpsat has no model of a Battenberg marking: "
+            "fewest-markings is on the PySAT engines only"
+        )
+    if conditions.battenberg:
+        raise ValueError(
+            "--battenberg is not for fewest-markings, which chooses the markings itself"
+        )
+    if args.max_size < 0:
+        raise ValueError(f"--max-size is 0 or more, got {args.max_size}")
+    if args.workers < 1:
+        raise ValueError(f"--workers is 1 or more, got {args.workers}")
+    fewest_markings(
+        conditions, own.engine, own.timeout, args.out, args.max_size, args.workers
+    )
+    return 0
+
+
+def _hunt(own, rest):
+    """Anything that is no subcommand of ours is the driver's: a hunt, or its
+    own subcommands (`summary`, ...)."""
+    return run(HybridFinder(_conditions(own), own.engine, own.timeout), rest)
+
+
+# The one table of subcommands. `verify` and the driver's hunt let a
+# ValueError through as a crash, as `classify` does.
+COMMANDS = {
+    "verify": Command(_verify, refuses=False),
+    "render": Command(_render),
+    "links": Command(_links),
+    "classify": Command(_classify, refuses=False),
+    "climb": Command(_climb),
+    "fewest-markings": Command(_fewest_markings),
+}
+HUNT = Command(_hunt, refuses=False)
+
+
+def main(argv):
+    if argv[:1] in (["-h"], ["--help"]):
+        print(__doc__)
+        return 0
+    own, rest = _parser().parse_known_args(argv)
+    name = rest[0] if rest and rest[0] in COMMANDS else None
+    command = COMMANDS[name] if name else HUNT
+    try:
+        if own.numbers and name != "links":
+            raise Usage("--numbers is for `links` only")
+        return command.run(own, rest)
+    except Usage as e:
         print(f"hybrid_finder: {e}", file=sys.stderr)
-        return 2
-    if rest[:1] == ["classify"]:
-        mine = argparse.ArgumentParser(prog="hybrid_finder classify")
-        mine.add_argument("--workers", type=int, default=1)
-        workers = mine.parse_args(rest[1:]).workers
-        print("\n".join(classify(conditions, own.engine, own.timeout, workers)))
-        return 0
-    if rest[:1] == ["climb"]:
-        mine = argparse.ArgumentParser(prog="hybrid_finder climb")
-        mine.add_argument("--out", required=True, metavar="DIR")
-        mine.add_argument("--from", type=int, dest="start", metavar="K")
-        args = mine.parse_args(rest[1:])
-        try:
-            if conditions.number_circles:
-                raise ValueError(
-                    "climb raises K itself: start it at K with --from K, "
-                    "not --number-circles"
-                )
-            if args.start is not None and args.start < 0:
-                raise ValueError(f"--from is 0 or more, got {args.start}")
-            climb(conditions, own.engine, own.timeout, args.out, args.start)
-        except ValueError as e:
-            print(f"hybrid_finder climb: {e}", file=sys.stderr)
-            return 2
-        return 0
-    if rest[:1] == ["fewest-markings"]:
-        mine = argparse.ArgumentParser(prog="hybrid_finder fewest-markings")
-        mine.add_argument("--out", required=True, metavar="DIR")
-        mine.add_argument("--max-size", type=int, default=3, metavar="K")
-        mine.add_argument("--workers", type=int, default=1, metavar="N")
-        args = mine.parse_args(rest[1:])
-        try:
-            if own.engine == "cpsat":
-                raise ValueError(
-                    "--engine cpsat has no model of a Battenberg marking: "
-                    "fewest-markings is on the PySAT engines only"
-                )
-            if conditions.battenberg:
-                raise ValueError(
-                    "--battenberg is not for fewest-markings, which chooses "
-                    "the markings itself"
-                )
-            if args.max_size < 0:
-                raise ValueError(f"--max-size is 0 or more, got {args.max_size}")
-            if args.workers < 1:
-                raise ValueError(f"--workers is 1 or more, got {args.workers}")
-            fewest_markings(
-                conditions, own.engine, own.timeout, args.out, args.max_size,
-                args.workers,
-            )  # fmt: skip
-        except ValueError as e:
-            print(f"hybrid_finder fewest-markings: {e}", file=sys.stderr)
-            return 2
-        return 0
-    return run(HybridFinder(conditions, own.engine, own.timeout), rest)
+    except ValueError as e:
+        if not command.refuses:
+            raise
+        print(f"hybrid_finder {name}: {e}", file=sys.stderr)
+    return 2
 
 
 if __name__ == "__main__":
