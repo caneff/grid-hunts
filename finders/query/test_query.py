@@ -607,7 +607,7 @@ def test_unique_on_an_invalid_model_raises():
         raise AssertionError("an invalid model gave a status")
 
 
-def test_symbols_other_modules_import_keep_their_docstring():
+def test_solve_and_read_entries_keep_their_docstring():
     # Spec #116: a docstring on a symbol another module imports stays.
     # halver_query reads marks through read_entries; the tests call solve.
     for symbol in (query.solve, query.read_entries):

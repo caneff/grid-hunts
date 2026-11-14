@@ -160,7 +160,8 @@ def load_finder(name, board_path):
 
 
 def solve(question, model, variables, time_limit):
-    """One solve: `found` with one solution, `infeasible`, or `timeout`."""
+    """`found` with one solution, `infeasible`, or `timeout`; any other solver
+    status raises ValueError."""
     solver = cpsat.solver(time_limit)
     status = solver.Solve(model)
     if status in cpsat.SOLVED:
