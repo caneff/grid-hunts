@@ -55,7 +55,6 @@ from hybrid_engines import ENGINES, Candidate, HybridFinder
 from measure_baseline import seed_range, times
 from ubahn_finder import DEFAULT_TIMEOUT
 
-# An engine stops on a case when this many of its first seeds all time out.
 CAP_AFTER = 20
 
 # Chris's bar (spec #781): a PySAT engine wins only if it is at least this
@@ -65,12 +64,11 @@ BAR = 2
 BASE_ENGINE = "cpsat"
 BAR_CASES = ("8x8", "10x10")
 
-# The words of a call that found a grid.
 FOUND = ("found", "unique", "not_unique")
 
 
 class Case(NamedTuple):
-    """One timed case: `call` is "grid" (a grid for a seed) or "classify"."""
+    """One timed case; `call` is "grid" or "classify"."""
 
     name: str
     call: str
@@ -97,8 +95,7 @@ CASES = {
 
 
 class Solve(NamedTuple):
-    """One timed call: `status` is the engine's own word, `seconds` the
-    call's wall clock, and `cuts` and `conflicts` the PySAT engines' counts
+    """One timed call; `cuts` and `conflicts` are the PySAT engines' counts
     (`hybrid_sat.Listing`), None on the CP-SAT engine."""
 
     engine: str
@@ -111,7 +108,6 @@ class Solve(NamedTuple):
 
 
 def _call(name, case, seed, timeout):
-    """One call of the engine: `(status, network, cuts, conflicts)`."""
     engine, conditions = ENGINES[name], case.conditions
     rng = random.Random(seed)
     if isinstance(engine, hybrid_sat.Engine):
@@ -126,8 +122,7 @@ def _call(name, case, seed, timeout):
 
 
 class Ran(NamedTuple):
-    """One engine on one case: the seeds asked for, the limit per solve, the
-    solves that ran, and whether the cap rule stopped the case short."""
+    """One engine on one case; `capped` is set when the cap rule stopped it."""
 
     engine: str
     case: str
@@ -139,11 +134,9 @@ class Ran(NamedTuple):
 
 
 def run(engine, case, seeds, *, timeout, cap_after=CAP_AFTER, done=(), progress=None):
-    """One engine on one case, as a `Ran`: one `Solve` per seed, in order,
-    stopped short when the first `cap_after` seeds all timed out. A seed that
-    has a solve in `done` keeps it and is not solved again; `progress` is
-    called with each new solve. Raises RuntimeError on a found grid the rule
-    reader refuses."""
+    """Stops short when the first `cap_after` seeds all timed out. A seed with
+    a solve in `done` keeps it; `progress` is called with each new solve.
+    Raises RuntimeError on a found grid the rule reader refuses."""
     finder = HybridFinder(case.conditions, engine, timeout)
     seeds = list(seeds)
     known = {solve.seed: solve for solve in done}
@@ -171,19 +164,14 @@ def run(engine, case, seeds, *, timeout, cap_after=CAP_AFTER, done=(), progress=
 
 
 def _timed(ran):
-    """The solves of a run that reached an answer: the ones a time is read
-    from."""
     return [solve for solve in ran.solves if solve.status != "timeout"]
 
 
 def _short(ran):
-    """Whether a limit, the cap rule or a kill left the run short of an
-    answer for every seed asked."""
     return len(_timed(ran)) < ran.asked
 
 
 def _row(ran):
-    """One run's row of the table."""
     timed = _timed(ran)
     seeds = str(ran.asked)
     if ran.capped:
@@ -212,16 +200,11 @@ def _row(ran):
 
 
 def _median_ms(ran):
-    """The median time of a run's timed solves in milliseconds, or None
-    when it has none."""
     timed = _timed(ran)
     return statistics.median(solve.seconds for solve in timed) * 1000 if timed else None
 
 
 def _bar(rans):
-    """The lines that read the runs against the bar: per case, the base
-    engine's median over each other engine's, and per engine whether that is
-    at least `BAR` at every case of `BAR_CASES`."""
     base = {ran.case: ran for ran in rans if ran.engine == BASE_ENGINE}
     lines = [
         f"| Case | Engine | `{BASE_ENGINE}` median ms | Engine median ms "
@@ -266,7 +249,7 @@ def _bar(rans):
 
 def _disagreements(rans):
     """A line per case where one engine found a grid and another proved
-    there is none: the conditions decide that, not the engine or the seed."""
+    there is none."""
     lines = []
     for case in dict.fromkeys(ran.case for ran in rans):
         words = {
@@ -286,8 +269,7 @@ def _disagreements(rans):
 
 
 def report(rans):
-    """The Markdown tables for these runs: a row per run in the order
-    given, then the reading against the bar."""
+    """The Markdown tables for these runs, then the reading against the bar."""
     lines = [
         "| Case | Engine | Seeds | Found | Proven impossible | Timed out "
         "| Solves timed | Median ms | Mean ms | 90th ms | Max ms "

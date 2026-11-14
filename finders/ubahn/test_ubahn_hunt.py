@@ -31,14 +31,11 @@ EXACTLY = "2:cross:r2"
 
 
 def record(net, exactly=EXACTLY):
-    """The record the finder writes for a 4x4 network, its `exactly` then
-    replaced by `exactly`."""
     found = Candidate(ROWS, COLS, frozenset(net), None)
     return {**UbahnFinder(ROWS, COLS).record(found), "exactly": exactly}
 
 
 def network_of(rec):
-    """The network a record holds, read through the finder."""
     return UbahnFinder(rec["rows"], rec["cols"]).candidate_from_record(rec).network
 
 
@@ -49,7 +46,6 @@ def canonical(net, rows=ROWS, cols=COLS):
 
 
 def mirrored(net, cols):
-    """The network reflected left to right."""
     return frozenset(
         tuple(sorted(((r, cols - 1 - c), (r2, cols - 1 - c2))))
         for (r, c), (r2, c2) in net
@@ -57,7 +53,6 @@ def mirrored(net, cols):
 
 
 def upturned(net, rows):
-    """The network reflected top to bottom."""
     return frozenset(
         tuple(sorted(((rows - 1 - r, c), (rows - 1 - r2, c2))))
         for (r, c), (r2, c2) in net
@@ -220,8 +215,6 @@ with tempfile.TemporaryDirectory() as d:
             check(f"verify: {name} says why ({reason})", reason in v.get("reason", ""))
 
 with tempfile.TemporaryDirectory() as d:
-    # A record `verify` cannot read is refused by name, never read as a
-    # network with fewer edges or as a record with no condition.
     good = min(unique, key=sorted)
     for i, (name, damage, reason) in enumerate(
         (
@@ -284,9 +277,6 @@ with tempfile.TemporaryDirectory() as d:
     examples = read_jsonl(out / "examples.jsonl")
     nets = [network_of(ex) for ex in examples]
     check(f"the 2x8 hunt wrote examples ({len(examples)})", len(examples) >= 2)
-    # On this board some sampled network shares its outside numbers with
-    # another. The search itself must drop it, with the reason, and leave
-    # `verify` nothing to reject.
     summary = json.loads((out / "summary.json").read_text())
     reasons = [
         e.get("empty_reason")

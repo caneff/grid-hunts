@@ -88,7 +88,6 @@ check(
 
 
 def count(picture, name, colour):
-    """How many of a cell's pixels are this colour."""
     x0, y0, x1, y1 = picture.box(cell(name))
     return sum(
         picture.image.getpixel((x, y)) == colour
@@ -102,11 +101,6 @@ def centre(picture, name):
     return (x0 + x1) // 2, (y0 + y1) // 2
 
 
-# The valid circles, by hand from the board above: c1:turn (2) shares a
-# chocolate of 2 with c1:straight (0); r1:turn (2) one of 2 with r2:turn (0);
-# r2c4 and r3c4, both straights (2), are a chocolate of 2. No other cell's
-# value is its region's size: the bananas hold 5 and 20 cells, and no number
-# reaches either.
 VALID = ["c1:turn", "r1:turn", "r2c4", "r3c4"]
 check(
     "the rule reader's valid circles are the four worked out by hand",
@@ -125,7 +119,6 @@ def ring(picture, name):
 
 
 def ringed(picture):
-    """The names of the cells with a ring in the given colour, sorted."""
     return sorted(
         hybrid.cell_name(c)
         for c in picture.board
@@ -177,11 +170,6 @@ check(
 
 
 def symbol(picture, corner, image=None):
-    """The colour of the checkerboard symbol at the bottom-right corner of
-    the cell `corner`, or None when none is drawn there: a symbol's top-left
-    and bottom-right quarters share a colour and its other two are white.
-    Read from `image`, a decoded file of the same layout, when one is given,
-    else from the picture's own."""
     _, _, x, y = picture.box(corner)
     quarters = [
         (image or picture.image).getpixel((x + dx, y + dy))
@@ -194,7 +182,6 @@ def symbol(picture, corner, image=None):
 
 
 def weight(picture, name, colour):
-    """How many pixels of the symbol at this window's centre are `colour`."""
     _, _, x, y = picture.box(cell(name))
     return sum(
         picture.image.getpixel((x + dx, y + dy)) == colour
@@ -204,9 +191,6 @@ def weight(picture, name, colour):
 
 
 def symbols(picture, depth=4, image=None):
-    """{the name of a cell: the colour of the symbol at its bottom-right
-    corner}, over every corner inside the picture, the icon cells' and the
-    corner off the board included. Read from `image` when one is given."""
     return {
         hybrid.cell_name((r, c)) if (r, c) in picture.board else str((r, c)): colour
         for r in range(-depth, 4)
@@ -255,8 +239,6 @@ except ValueError as e:
         "Battenberg marking at r1c1" in str(e),
     )
 
-# The network. r1c1 is a turn with arms east and south, so its outer corner
-# is up and to the left of its centre: the notch two butt-ended lines leave.
 x, y = centre(picture, "r1c1")
 check(
     "a pixel at the outer corner of a turn is the network's colour",
@@ -278,10 +260,7 @@ check(
 )
 
 
-# The `render` command. Two records as a hunt writes them, their edge rows
-# read off the drawings by hand: GRID under its two circles at seed 3, and at
-# seed 7 the grid with every edge on, which is a hybrid grid with four strips
-# and with five.
+# FULL, every edge on, is a hybrid grid with four strips and with five.
 FULL = network.from_drawing(["┌┬┬┐", "├┼┼┤", "├┼┼┤", "└┴┴┘"])
 GRID_RECORD = {
     "rows": 4,
@@ -304,8 +283,6 @@ FULL_RECORD = {
 
 
 def hunt_dir(parent, name, records):
-    """A hunt directory holding these {seed: record}, with a seed that found
-    nothing between them, as progress.jsonl pairs them."""
     out = Path(parent) / name
     out.mkdir()
     (out / "run.json").write_text('{"argv": ["--out", "x", "--seeds", "0:1"]}\n')
@@ -321,8 +298,6 @@ def hunt_dir(parent, name, records):
 
 
 def decoded(path):
-    """(format, image) of the picture file at `path`, decoded in full, or
-    (None, None) when there is no such file."""
     if not Path(path).is_file():
         return None, None
     with Image.open(path) as image:
@@ -374,9 +349,6 @@ with tempfile.TemporaryDirectory() as d:
         same(pictures[3][1], picture),
     )
     check("seed 7's picture is the other grid's", same(pictures[7][1], four))
-    # GRID_RECORD has no `battenberg` field, as a record written before the
-    # condition: it is drawn with no markings, a plain symbol on each
-    # checkerboard window.
     check(
         "a record older than the condition is drawn with plain symbols only",
         pictures[3][1] is not None
@@ -405,7 +377,6 @@ with tempfile.TemporaryDirectory() as d:
         len(r.stdout) + len(r.stderr) < 500 and "http" not in r.stdout + r.stderr,
     )
 
-    # The blank strip: by the flag, or by a record of a hunt that had it on.
     r = run_cli(
         FINDER, "render", str(out), "--seed", "7", "--png", str(one), "--blank-strip"
     )
@@ -420,7 +391,6 @@ with tempfile.TemporaryDirectory() as d:
         r.returncode == 0 and same(decoded(with_blank / "renders" / "7.png")[1], five),
     )
 
-    # A hunt with markings: the record names the windows that are conditions.
     with_markings = hunt_dir(
         d,
         "markings",
@@ -435,8 +405,6 @@ with tempfile.TemporaryDirectory() as d:
         and not same(decoded(with_markings / "renders" / "3.png")[1], picture),
     )
 
-    # A grid that is no hybrid grid on the board drawn is refused, and no
-    # picture of the directory is touched: GRID breaks on the fifth strip.
     before = {p.name: p.read_bytes() for p in (out / "renders").iterdir()}
     r = run_cli(FINDER, "render", str(out), "--blank-strip")
     check(
@@ -452,8 +420,6 @@ with tempfile.TemporaryDirectory() as d:
         {p.name: p.read_bytes() for p in (out / "renders").iterdir()} == before,
     )
 
-    # The refused record comes after a good one: nothing is written until
-    # every picture is drawn, so the good one leaves no file either.
     dead_end = hunt_dir(
         d,
         "dead-end",

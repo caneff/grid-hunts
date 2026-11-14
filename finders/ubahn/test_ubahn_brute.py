@@ -63,8 +63,6 @@ check(
 
 
 def model_networks(connectivity, rows=ROWS, cols=COLS, exactly=EXACTLY):
-    """Every network the model allows: solve, forbid the network on its edge
-    variables, solve again, until the model is infeasible."""
     built = model.build(rows, cols, connectivity, exactly=exactly)
     solver = cp_model.CpSolver()
     solver.parameters.num_workers = 1
@@ -143,9 +141,6 @@ check(
     == {net for net in every_3x4 if None not in network.kind_grid(net, 3, 4)},
 )
 
-# Both spaces above shut the board with no edge out by their own condition.
-# A 2x2 board with no condition does not: of its 16 edge assignments only
-# the loop of all four is a network.
 loop = frozenset(network.all_edges(2, 2))
 small = {
     net
@@ -182,7 +177,6 @@ check(
     f"4x4 with the blank strip: 8 valid hybrid grids (got {len(with_blank)})",
     len(with_blank) == 8 and with_blank < grids,
 )
-# Circle conditions, each classified in the words of the uniqueness check.
 for names, want in (
     ((), ("not_unique", 18)),
     (("r2c2",), ("not_unique", 4)),
@@ -228,7 +222,6 @@ check(
 
 
 def printed(*argv):
-    """What the brute-force command prints for these arguments, by line."""
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
         brute.main(list(argv))

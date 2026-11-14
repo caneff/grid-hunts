@@ -39,7 +39,6 @@ BOARD = ["--rows", "4", "--cols", "4", "--timeout", "10", "--engine", "cpsat"]
 
 
 def finder_for(circles=(), exactly=None, blank_strip=False, rows=4, cols=4):
-    """The finder a hunt of these conditions builds."""
     return hybrid_engines.HybridFinder(
         hybrid.Conditions(
             rows,
@@ -61,17 +60,14 @@ def record(net, rows=4, cols=4, **fields):
 
 
 def network_of(rec):
-    """The network a record holds, read through the finder."""
     return finder_for().candidate_from_record(rec).network
 
 
 def transposed(net):
-    """The network reflected in the main diagonal, the finder's own transform."""
     return frozenset(hybrid_engines.mirror(edge) for edge in net)
 
 
 def mirrored(net, cols=4):
-    """The network reflected left to right."""
     return frozenset(
         tuple(sorted(((r, cols - 1 - c), (r2, cols - 1 - c2))))
         for (r, c), (r2, c2) in net
@@ -90,8 +86,6 @@ def canonical_of(net, finder):
 
 
 def meeting(names, exactly=None):
-    """The brute force's 4x4 grids that meet these circles and this
-    kind-count condition."""
     circles = [hybrid.parse_cell(name) for name in names]
     return {
         net
@@ -119,8 +113,6 @@ check(
 
 
 def hunt(d, name, *flags, seeds="0:40"):
-    """Run a hunt with these flags; returns (exit, examples, summary,
-    progress, run.json's config)."""
     out = Path(d) / name
     r = run_cli(
         FINDER, *BOARD, *flags, "--out", str(out), f"--seeds={seeds}", "--workers", "1"
@@ -227,8 +219,6 @@ with tempfile.TemporaryDirectory() as d:
         and config["timeout"] == 10.0,
     )
 
-    # r2c2 is on the main diagonal: the transpose keeps the circle, so it is
-    # still a symmetry and a grid's transpose is a repeat.
     examples, summary, _, _ = hunt(d, "r2c2", "--circles", "r2c2")
     nets = [network_of(ex) for ex in examples]
     want = meeting(["r2c2"])
@@ -254,9 +244,6 @@ with tempfile.TemporaryDirectory() as d:
     )
     accounted("r2c2 circled", summary)
 
-    # r2c4 is off the diagonal: the transpose would move the circle to r4c2,
-    # so the condition has no symmetry and a grid and its transpose are two
-    # examples.
     examples, summary, _, _ = hunt(d, "r2c4", "--circles", "r2c4")
     nets = [network_of(ex) for ex in examples]
     want = meeting(["r2c4"])
@@ -278,8 +265,7 @@ with tempfile.TemporaryDirectory() as d:
 
     # A kind-count condition names a row or a column, which the transpose
     # swaps: it leaves no symmetry either. No cross sits on the border, so
-    # "no cross in r1" keeps every grid and its transpose: with no circle to
-    # break the reflection, both must be examples.
+    # `0:cross:r1` keeps every grid while still naming a row the transpose moves.
     examples, summary, _, _ = hunt(d, "no cross in r1", "--exactly", "0:cross:r1")
     nets = [network_of(ex) for ex in examples]
     check(
@@ -297,7 +283,6 @@ with tempfile.TemporaryDirectory() as d:
     )
     accounted("no cross in r1", summary)
 
-    # Together with circles.
     examples, summary, _, _ = hunt(
         d, "two crosses", "--circles", "c1:turn c4:turn", "--exactly", "2:cross:r2"
     )
@@ -317,7 +302,6 @@ with tempfile.TemporaryDirectory() as d:
     )
     accounted("2 crosses in r2 with circles", summary)
 
-    # The blank strip: off unless asked for, and a different answer when on.
     examples, summary, _, _ = hunt(d, "blank strip", "--blank-strip")
     nets = [network_of(ex) for ex in examples]
     with_blank = brute.hybrid_grids(4, 4, blank_strip=True)
@@ -335,7 +319,6 @@ with tempfile.TemporaryDirectory() as d:
         ),
     )
 
-    # Conditions with no grid: every seed is empty and says why.
     examples, summary, progress, _ = hunt(
         d, "no grid", "--circles", "r2c2 r2c4", seeds="0:3"
     )
@@ -348,8 +331,7 @@ with tempfile.TemporaryDirectory() as d:
         and all("infeasible" in reason for reason in reasons),
     )
 
-# `verify` re-reads each record with the solver-free rule reader. The grids
-# are the ones test_ubahn_hybrid.py works out by hand.
+# The grids are the ones `test_ubahn_hybrid.py` works out by hand.
 FOUR_LOOPS = network.from_drawing(["┌┐┌┐", "└┼┼┘", "┌┼┼┐", "└┘└┘"])
 C_SHAPE = network.from_drawing(["┌┐┌┐", "└┼┤│", "┌┼┤│", "└┘└┘"])
 LOOP2 = network.from_drawing(["┌┐", "└┘"])
@@ -482,7 +464,6 @@ for flags, word, said in (
     (["--circles", "r2c2 r2c4"], "infeasible", "no grid"),
     (["--circles", "c4:turn r4:turn"], "infeasible", "no grid"),
     (["--circles", "r1c1"], "infeasible", "no grid"),
-    # 8 of the 18 grids have 2 crosses in r2, none of them with r2c4 circled.
     (["--exactly", "2:cross:r2"], "not_unique", "more than one grid"),
     (["--exactly", "2:cross:r2", "--circles", "r2c4"], "infeasible", "no grid"),
 ):
@@ -493,7 +474,6 @@ for flags, word, said in (
         f"classify {label}: {word}, {said} ({first}, stderr: {r.stderr[-300:]})",
         r.returncode == 0 and first == [f"{word}: {said}"],
     )
-    # A time limit reached is a timeout whatever the true answer is.
     for limit in ("0", "-1"):
         r = run_cli(FINDER,
             "classify", "--rows", "4", "--cols", "4", "--engine", "cpsat",
@@ -506,8 +486,6 @@ for flags, word, said in (
             and r.stdout.splitlines() == ["timeout: time limit reached"],
         )
 
-# The one grid of a unique condition is drawn under the answer, circles in
-# brackets.
 r = run_cli(FINDER, "classify", *BOARD, "--circles", "c1:turn r2c4")
 (only,) = meeting(["c1:turn", "r2c4"])
 check(
@@ -540,7 +518,6 @@ with tempfile.TemporaryDirectory() as d:
             f"classify {' '.join(flags)} is refused, exit 2, naming {reason!r}",
             r.returncode == 2 and reason in r.stderr and not r.stdout,
         )
-    # The blank number cell is on the board once the blank strip is on.
     r = run_cli(FINDER,
         "classify", *board, "--engine", "cpsat", "--blank-strip",
         "--circles", "r1:blank",

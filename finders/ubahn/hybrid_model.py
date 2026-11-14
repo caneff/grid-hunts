@@ -45,8 +45,6 @@ from network import KINDS
 
 
 def _add_parity(m, kind, conditions):
-    """`value[cell]`, a linear expression, and `odd[cell]`, a boolean, for
-    every cell of the board."""
     rows, cols = conditions.rows, conditions.cols
     value, odd = {}, {}
     for cell in product(range(rows), range(cols)):
@@ -66,7 +64,6 @@ def _add_parity(m, kind, conditions):
 
 
 def _add_chocolate(m, odd):
-    """No 2x2 window with exactly three even cells."""
     top, left = (min(cell[i] for cell in odd) for i in (0, 1))
     bottom, right = (max(cell[i] for cell in odd) for i in (0, 1))
     for r, c in product(range(top, bottom), range(left, right)):
@@ -81,7 +78,6 @@ def _add_chocolate(m, odd):
 
 
 def _add_banana(m, odd):
-    """No rectangle of odd cells with every bordering cell even."""
     top, left = (min(cell[i] for cell in odd) for i in (0, 1))
     bottom, right = (max(cell[i] for cell in odd) for i in (0, 1))
     for r, c in product(range(top, bottom + 1), range(left, right + 1)):
@@ -102,10 +98,6 @@ def _add_banana(m, odd):
 
 
 def _add_circle(m, value, odd, circle, largest, chosen=None):
-    """The circled cell's value is the size of its region. `largest` bounds
-    the value, so only cells within `largest - 1` steps can be in the region.
-    With `chosen`, a boolean, that holds only when `chosen` is true: when it
-    is false the members need not be the region."""
     steps = {circle: 0}
     queue = [circle]
     for cell in queue:
@@ -124,11 +116,10 @@ def _add_circle(m, value, odd, circle, largest, chosen=None):
         unless = [chosen.Not()]
     mine = odd[circle]
     for cell, member in inside.items():
-        # A member shares the circled cell's parity.
         m.add_bool_or([member.Not(), mine.Not(), odd[cell]])
         m.add_bool_or([member.Not(), mine, odd[cell].Not()])
-        # A member's neighbour of that parity is a member. One too far to
-        # have a boolean would make the region larger than any value.
+        # A neighbour too far to have a boolean would make the region larger
+        # than any value, so it forbids membership.
         for near in hybrid.neighbours(cell):
             if near in odd:
                 joins = [inside[near]] if near in inside else []
@@ -136,8 +127,6 @@ def _add_circle(m, value, odd, circle, largest, chosen=None):
                     [*unless, member.Not(), mine.Not(), odd[near].Not(), *joins]
                 )
                 m.add_bool_or([*unless, member.Not(), mine, odd[near], *joins])
-    # Connected: the circled cell supplies one unit of flow per member, each
-    # member absorbs one, and flow passes only between members.
     cap = largest
     inflow = {cell: [] for cell in inside}
     outflow = {cell: [] for cell in inside}
@@ -166,7 +155,6 @@ def _add_bananas(m, odd, wanted):
         for k in range(wanted)
     }
     for cell in odd:
-        # An odd cell has one label, an even cell none.
         m.add(sum(label[cell, k] for k in range(wanted)) == odd[cell])
         for near in hybrid.neighbours(cell):
             if near in odd:

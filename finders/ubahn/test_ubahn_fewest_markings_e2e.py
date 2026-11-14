@@ -51,15 +51,12 @@ CIRCLE = "r2c4"
 
 
 def pixels(image, box, colour):
-    """How many pixels of a box of the picture are this colour."""
     x0, y0, x1, y1 = box
     return sum(
         image.getpixel((x, y)) == colour for x in range(x0, x1) for y in range(y0, y1)
     )
 
 
-# The brute force's answer: of the 4x4 grids with the circle valid, each by
-# its checkerboard windows, the smallest set of windows only one grid has.
 held = {}
 for net in brute.hybrid_grids(4, 4):
     board = hybrid.values(net, 4, 4)
@@ -131,7 +128,6 @@ with tempfile.TemporaryDirectory() as d:
     )
 
     r = run_cli(HERE / "hybrid_finder.py", "render", example)
-    # The same grid drawn in process, for where each cell's box is.
     drawn = hybrid_render.Picture(
         grid, 4, 4, [hybrid.parse_cell(CIRCLE)], False, windows
     )

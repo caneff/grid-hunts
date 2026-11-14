@@ -19,7 +19,6 @@ from typing import NamedTuple
 KIND_NAMES = ("turn", "straight", "branch", "cross", "blank")
 TURN, STRAIGHT, BRANCH, CROSS, BLANK = KINDS = range(len(KIND_NAMES))
 
-# A cell's kind drawn from its (north, east, south, west) arms.
 DRAWN = {
     (0, 0, 0, 0): " ",
     (1, 0, 1, 0): "│",
@@ -169,11 +168,9 @@ class Exactly(NamedTuple):
     index: int
 
     def on_board(self, rows, cols):
-        """Whether the board has the row or column the condition names."""
         return self.index < (rows if self.axis == "r" else cols)
 
     def why_off_board(self, rows, cols):
-        """Why the board has no such row or column, or "" when it has."""
         if self.on_board(rows, cols):
             return ""
         return f"condition {self.text()} is off the {rows}x{cols} board"

@@ -57,7 +57,6 @@ import hybrid
 import sat_model
 from network import BLANK, KINDS
 
-# How an engine keeps the network in one part.
 LAZY = "lazy"
 PROPAGATOR = "propagator"
 
@@ -76,10 +75,6 @@ class Listing(NamedTuple):
 
 
 class _Watcher(Propagator):
-    """The connectivity propagator: it is told each edge the solver turns
-    on or off, and refuses an assignment in which two edges that are on are
-    kept apart by edges that are off."""
-
     def __init__(self, edge):
         super().__init__()
         self.ends = {var: e for e, var in edge.items()}
@@ -162,7 +157,6 @@ def _at_least(pool, clauses, literals, top, true):
     for literal in literals:
         new = [true]
         for j in range(1, top + 1):
-            # At least j already, or this one after at least j - 1.
             g = pool.id()
             had, below = row[j], row[j - 1]
             clauses += [
@@ -177,10 +171,6 @@ def _at_least(pool, clauses, literals, top, true):
 
 
 def _add_values(pool, clauses, kind, conditions, true):
-    """Returns `(count, odd)`: `count[number cell]` is its value in unary, as
-    `_at_least` gives it up to one more than its row or column can hold, and
-    `odd[cell]` is the variable "this cell's value is odd", for every cell of
-    the board."""
     rows, cols, blank_strip = conditions.rows, conditions.cols, conditions.blank_strip
     odd = {}
     for cell in ((r, c) for r in range(rows) for c in range(cols)):
@@ -194,7 +184,6 @@ def _add_values(pool, clauses, kind, conditions, true):
         counted = [kind[held, k] for held in over]
         count[cell] = _at_least(pool, clauses, counted, len(over) + 1, true)
         odd[cell] = pool.id()
-        # The value is j when at least j are counted and not j + 1.
         clauses += [
             [-count[cell][j], count[cell][j + 1], odd[cell] if j % 2 else -odd[cell]]
             for j in range(len(over) + 1)
@@ -203,7 +192,6 @@ def _add_values(pool, clauses, kind, conditions, true):
 
 
 def _chocolate(odd):
-    """The clauses that make every even region a rectangle."""
     clauses = []
     corners = {(r - dr, c - dc) for r, c in odd for dr in (0, 1) for dc in (0, 1)}
     for r, c in sorted(corners):
@@ -211,14 +199,12 @@ def _chocolate(odd):
         for fourth in window:
             three = [cell for cell in window if cell != fourth]
             if all(cell in odd for cell in three):
-                # Not all three even, unless the fourth is even too.
                 unless = [-odd[fourth]] if fourth in odd else []
                 clauses.append([odd[cell] for cell in three] + unless)
     return clauses
 
 
 def _banana(odd):
-    """The clauses that keep every odd region from being a rectangle."""
     clauses = []
     board_rows = sorted({r for r, _ in odd})
     board_cols = sorted({c for _, c in odd})
@@ -312,10 +298,6 @@ def _add_bananas(pool, clauses, odd, wanted):
 
 
 def _battenberg(odd, marked, only):
-    """The clauses that make each window of `marked` a checkerboard window
-    and, when `only`, every other window of the board not one. Raises
-    ValueError on a marked window that is not wholly on the board, naming
-    the cell that is off it."""
     clauses = []
     for window in sorted(marked):
         off = hybrid.marking_off_board(window, odd)
@@ -327,14 +309,11 @@ def _battenberg(odd, marked, only):
         for window in hybrid.windows(odd):
             if window not in marked:
                 a, b, c, d = (odd[cell] for cell in hybrid.window_cells(window))
-                # Not odd-even over even-odd, and not even-odd over odd-even.
                 clauses += [[-a, b, c, -d], [a, -b, -c, d]]
     return clauses
 
 
 def _kind_value(pool, clauses, kind, cell, true):
-    """A grid cell's value in unary, as `_at_least` would give it, up to one
-    more than any kind is worth."""
     top = max(hybrid.KIND_VALUE.values()) + 1
     value = [true] + [pool.id() for _ in range(top)]
     clauses += [
@@ -450,13 +429,8 @@ class Engine(NamedTuple):
         return listing(conditions, self.connectivity, cap=2, time_limit=time_limit)
 
     def grid(self, conditions, rng, *, time_limit):
-        """One grid that meets the conditions, steered by `rng`: the same
-        grid on every run of a seed."""
         return sampled(self.grid_listing(conditions, rng, time_limit=time_limit))
 
     def classify(self, conditions, *, time_limit, workers):
-        """Whether the conditions have no grid, exactly one, or more than
-        one. A time limit reached is "timeout", never one of the other
-        three, and one limit covers the whole answer. CaDiCaL runs on one
-        thread whatever `workers` says."""
+        """`workers` is unused: CaDiCaL runs on one thread."""
         return classified(self.classify_listing(conditions, time_limit=time_limit))

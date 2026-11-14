@@ -64,9 +64,8 @@ class Candidate(NamedTuple):
 
 
 def board_symmetry(rows, cols):
-    """The group the grid of kinds dedupes under: the square's eight rotations
-    and reflections, or on any other board the four maps that keep its
-    shape (identity, the two reflections, the half turn)."""
+    """The maps a grid of kinds dedupes under: D4 on a square board, else the
+    four that keep the shape (identity, two reflections, half turn)."""
     if rows == cols:
         return D4
     return [
@@ -82,6 +81,9 @@ def board_symmetry(rows, cols):
 
 
 class UbahnFinder:
+    """The U-Bahn finder: samples a network, proves its outside numbers unique
+    and renders the Penpa+ link; a caller runs it through the hunt driver."""
+
     def __init__(
         self,
         rows=DEFAULT_SIDE,
@@ -109,8 +111,7 @@ class UbahnFinder:
         }
 
     def sample(self, rng):
-        """One network from the model, steered by `rng`; an `Empty` when
-        the solve timed out or the condition has no network."""
+        """An `Empty` when the solve timed out or the condition has no network."""
         built = model.build(self.rows, self.cols, "flow", exactly=self.exactly)
         status, found = model.sample(built, rng, time_limit=self.timeout)
         if status == "timeout":
@@ -120,8 +121,7 @@ class UbahnFinder:
         return found
 
     def prove(self, found):
-        """Whether the network's full set of outside numbers has no other
-        network: `model.uniqueness`'s "unique", "not_unique" or "timeout"."""
+        """`model.uniqueness`'s "unique", "not_unique" or "timeout"."""
         status, _ = model.uniqueness(
             self.rows,
             self.cols,
@@ -178,7 +178,6 @@ class UbahnFinder:
             "rows": rows,
             "cols": cols,
             "exactly": exactly.text() if exactly else None,
-            # One string per row of horizontal, then of vertical, edges.
             "h": [
                 "".join(
                     str(int(((r, c), (r, c + 1)) in found)) for c in range(cols - 1)
@@ -190,8 +189,6 @@ class UbahnFinder:
                 for r in range(rows - 1)
             ],
             "drawing": network.drawing(found, rows, cols),
-            # Per row and per column: turns, straights, branches, crosses,
-            # blank cells.
             "numbers": {"rows": row_numbers, "cols": col_numbers},
         }
 
@@ -248,7 +245,6 @@ def main(argv):
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT)
     own, rest = parser.parse_known_args(argv)
     if rest[:1] == ["verify"]:
-        # A record carries its own board and condition; only the cap is ours.
         return run(UbahnFinder(timeout=own.timeout), rest)
     if own.rows < 2 or own.cols < 2:
         print("ubahn_finder: the smallest board with a network is 2x2", file=sys.stderr)

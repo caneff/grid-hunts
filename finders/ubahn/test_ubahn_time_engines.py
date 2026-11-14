@@ -29,11 +29,9 @@ def circled(*names):
     return hybrid.Conditions(4, 4, frozenset(map(hybrid.parse_cell, names)))
 
 
-# The 4x4 board has 18 grids with no condition and none with r1c1 circled.
 OPEN = time_engines.Case("4x4", "grid", hybrid.Conditions(4, 4))
 NO_GRID = time_engines.Case("4x4 r1c1", "grid", circled("r1c1"))
 
-# c1:turn r2c4 circled has exactly one grid, r2c2 four.
 ONE_GRID = time_engines.Case("4x4 one", "classify", circled("c1:turn", "r2c4"))
 CLASSIFIED = {
     "infeasible": time_engines.Case("4x4 none", "classify", circled("r1c1")),
@@ -77,7 +75,6 @@ for engine in ENGINES:
             [s.status for s in ran.solves] == [word] * 2,
         )
 
-    # A limit of zero is reached before any solve, in every engine.
     ran = time_engines.run(engine, OPEN, range(5), timeout=0.0, cap_after=5)
     check(
         f"{engine}: a solve the limit stopped is a timeout",
@@ -91,7 +88,7 @@ for engine in ENGINES:
     )
 
 # The cap reads the first seeds only: a timeout after a found grid stops
-# nothing. One engine is enough, the rule is the script's.
+# nothing.
 first = time_engines.run("pysat-lazy", OPEN, range(1), timeout=60.0)
 progress = []
 ran = time_engines.run(
@@ -128,8 +125,6 @@ def raises(fn, error):
     return False
 
 
-# A found grid is re-read by the rule reader: an engine that returns a
-# network breaking a rule stops the run.
 real = ENGINES["cpsat"]
 
 
@@ -151,14 +146,10 @@ try:
 finally:
     ENGINES["cpsat"] = real
 
-# A tally, not a measurement: the report's own words, on seconds written
-# here by hand.
 Solve, Ran = time_engines.Solve, time_engines.Ran
 
 
 def ran_of(engine, case, rows, *, call="grid", asked=None, capped=False):
-    """A `Ran` of hand-written solves: each row is `(status, seconds)` or
-    `(status, seconds, cuts, conflicts)`."""
     solves = tuple(Solve(engine, case, seed, *row) for seed, row in enumerate(rows))
     return Ran(engine, case, call, asked or len(solves), 60.0, solves, capped)
 
@@ -235,8 +226,6 @@ check(
     < text.index("| none | cpsat"),
 )
 
-# The reading against the bar: CP-SAT's median over the engine's, and at
-# least 2 at both 8x8 and 10x10 to meet it.
 for name, row in {
     "250 over 62.5 is 4 times, capped by the CP-SAT timeout": "| 8x8 "
     "| pysat-lazy | 250.0 | 62.5 | 4.00 (capped) |",
@@ -311,8 +300,6 @@ check(
 
 
 def cli(*argv):
-    """`main`'s exit code and what it printed; its progress lines and
-    argparse's usage message are kept off the test's output."""
     out, err = io.StringIO(), io.StringIO()
     with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
         try:
@@ -354,7 +341,6 @@ with tempfile.TemporaryDirectory() as tmp:
         code == 2 and solve_lines(lazy) == 3,
     )
 
-    # A limit of zero times out every seed: the cap rule stops at 20.
     run_cpsat = ("run", "--engine", "cpsat", "--progress", str(cpsat))
     capped = (*run_cpsat, "--case", "8x8", "--seeds", "0:25", "--timeout", "0")
     code, _ = cli(*capped)
@@ -373,8 +359,6 @@ with tempfile.TemporaryDirectory() as tmp:
         in text,
     )
 
-    # A run that dies leaves every case it was asked for in the file: the
-    # one it never reached reads as incomplete, not as absent.
     died = Path(tmp) / "died.jsonl"
     real = ENGINES["pysat-lazy"]
 
@@ -459,7 +443,6 @@ def solved(engine, seed, status, seconds, case="8x8"):
     }
 
 
-# Hand-written progress files, no solver: a second run over other seeds.
 with tempfile.TemporaryDirectory() as tmp:
     base = [asked("cpsat", 4, case) for case in ("8x8", "10x10")] + [
         solved("cpsat", seed, "found", 1.0, case)

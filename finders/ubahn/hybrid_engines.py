@@ -84,12 +84,9 @@ def mirror(cells):
 def condition_symmetry(conditions):
     """The group a grid's key (`HybridFinder.key`) dedupes under: the
     identity and the reflection in the main diagonal when that reflection
-    keeps the conditions, the identity alone when it moves one. It keeps
-    them on a square board whose circled cells are circled in the image too
-    and whose marked windows are marked there too (a window's image is the
-    window named by its top-left cell's image), with no kind-count
-    condition, which names a row or a column. The reflection sends a cell's
-    east arm to its image's south arm and back."""
+    keeps the conditions, the identity alone when it moves one. The
+    reflection sends a cell's east arm to its image's south arm and back; a
+    window's image is the window named by its top-left cell's image."""
     rows, cols, circles = conditions.rows, conditions.cols, conditions.circles
     marked = conditions.battenberg
     if (
@@ -108,6 +105,10 @@ def condition_symmetry(conditions):
 
 
 class HybridFinder:
+    """The hunt-protocol finder for hybrid grids: proposes a grid from an
+    engine, verifies it, and records it. A hunt or a tool builds one from
+    `Conditions`."""
+
     def __init__(
         self,
         conditions,
@@ -177,13 +178,11 @@ class HybridFinder:
             "blank_strip": asked.blank_strip,
             "min_bananas": asked.min_bananas,
             "number_circles": asked.number_circles,
-            # The reader's own count, whatever the condition asked for.
             "number_cell_circles": [
                 hybrid.cell_name(cell) for cell in hybrid.number_cell_circles(board)
             ],
             "battenberg": sorted(map(hybrid.cell_name, asked.battenberg)),
             "battenberg_only": asked.battenberg_only,
-            # Every checkerboard window of the grid, marked or not.
             "checkerboard_windows": [
                 hybrid.cell_name(window)
                 for window in hybrid.checkerboard_windows(board)

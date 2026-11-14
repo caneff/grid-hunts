@@ -35,7 +35,6 @@ from dedupe import canonical_key
 from protocol import Empty
 from ubahn_finder import Candidate, UbahnFinder
 
-# A seed ends in exactly one of these.
 CAUSES = (
     "unique",
     "duplicate",
@@ -46,8 +45,7 @@ CAUSES = (
 
 
 class Outcome(NamedTuple):
-    """One seed: its cause and the seconds spent sampling and proving.
-    `prove_s` is None when no proof ran."""
+    """One seed's result; `prove_s` is None when no proof ran."""
 
     seed: int
     cause: str
@@ -56,7 +54,7 @@ class Outcome(NamedTuple):
 
 
 def measure(rows, cols, connectivity, seeds, *, timeout, progress=None):
-    """One `Outcome` per seed, in order. `progress` is called with each."""
+    """One `Outcome` per seed, in order; `progress` is called with each."""
     finder = UbahnFinder(rows, cols, None, timeout, connectivity=connectivity)
     finder.workers = 1
     seen = set()
@@ -67,8 +65,6 @@ def measure(rows, cols, connectivity, seeds, *, timeout, progress=None):
         sample_s = time.perf_counter() - started
         prove_s = None
         if isinstance(found, Empty):
-            # No condition is set, so every network exists and the only
-            # empty answer the sampler can give is its time limit.
             if not found.reason.startswith("timeout"):
                 raise RuntimeError(f"seed {seed}: sampling said {found.reason!r}")
             cause = "timeout sampling"
@@ -95,8 +91,7 @@ def measure(rows, cols, connectivity, seeds, *, timeout, progress=None):
 
 
 def times(seconds):
-    """n, median, mean, 90th percentile and max of `seconds`, in
-    milliseconds; dashes for none."""
+    """`n | median | mean | p90 | max` of `seconds` in ms, as a table row."""
     if not seconds:
         return "0 | - | - | - | -"
     ms = sorted(s * 1000 for s in seconds)
@@ -160,8 +155,7 @@ def report(size, connectivity, outcomes, *, timeout):
 
 
 def seed_range(text):
-    """The seeds `A:B` names, A up to B - 1. Raises ValueError, naming
-    `--seeds`, when it names none."""
+    """The seeds of `A:B` (A up to B - 1); ValueError naming `--seeds` if empty."""
     try:
         first, last = (int(x) for x in text.split(":"))
     except ValueError:

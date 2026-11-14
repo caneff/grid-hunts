@@ -42,8 +42,6 @@ TIME_LIMIT = 20.0
 R2C4 = frozenset({(1, 3)})
 WORDS = ("infeasible", "unique", "not_unique")
 
-# The two 4x4 grids with two banana regions, as `hybrid.drawing` draws their
-# grid cells, and a grid with one.
 TWO_BANANAS = (
     ("┌─────┬──┐", "├──┬──┤  │", "└──┼──┤  │", "   └──┴──┘"),
     ("┌──┬──┐", "│  ├──┼──┐", "├──┴──┴──┤", "└────────┘"),
@@ -52,7 +50,6 @@ ONE_BANANA = ("┌──┬──┬──┐", "├──┼──┼──┤"
 
 
 def drawn(net):
-    """The grid cells of a 4x4 network as `hybrid.drawing` draws them."""
     return tuple(line[13:] for line in hybrid.drawing(net, 4, 4)[4:])
 
 
@@ -114,8 +111,6 @@ def asked(side, n, circles=frozenset(), blank_strip=False, exactly=None):
 
 
 def test_engine(name, engine):
-    """An engine's two calls against the 4x4 answers."""
-
     def classify(conditions):
         return engine.classify(conditions, time_limit=TIME_LIMIT, workers=1)
 
@@ -160,10 +155,6 @@ def test_engine(name, engine):
 
 
 def test_larger_board(name, exactly, total):
-    """5x5, which no brute force reaches: every grid with this kind-count
-    condition, `total` of them, split by the reader's own count of banana
-    regions. Each engine must keep exactly the grids with enough of them.
-    Returns {N: the grids with N or more}."""
     every = hybrid_sat.listing(
         hybrid.Conditions(5, 5, exactly=exactly),
         hybrid_sat.LAZY,
@@ -230,8 +221,6 @@ def test_blank_strip(name, engine):
 
 
 def hunt(d, name, *flags, seeds=6):
-    """Run a hunt with these flags; returns (the examples' records, the
-    `empty` reasons, summary.json, run.json's config)."""
     out = Path(d) / name
     r = run_cli(
         FINDER,
@@ -261,7 +250,6 @@ def hunt(d, name, *flags, seeds=6):
 
 
 def test_verify():
-    """The finder's `verify`, the rule reader, on the condition."""
     reader = hybrid_engines.HybridFinder(hybrid.Conditions(4, 4))
     for net in TWO:
         check(
@@ -376,9 +364,6 @@ def test_flag():
 
 
 def test_timing():
-    """`time_bananas.py`, the script behind the decision log's 7x7 table: a
-    row says what the engine answered and what the rule reader makes of it,
-    and the table counts a timeout as a timeout."""
     row = time_bananas.measure(4, 2, 0, "pysat-lazy", TIME_LIMIT)
     check(
         "a timing row for 4x4, at least 2: found, two banana regions, passed "

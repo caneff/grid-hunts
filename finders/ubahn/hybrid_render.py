@@ -36,8 +36,6 @@ CELL = 64
 MARGIN = 20
 BACKGROUND = (255, 255, 255)
 CHOCOLATE = (201, 162, 126)
-# The first bananas' tints, the largest banana first; `_tint` goes on past
-# them.
 TINTS = (
     (255, 243, 166),
     (255, 210, 127),
@@ -53,11 +51,8 @@ ICON = (232, 185, 35)
 GRID_LINE = (136, 136, 136)
 FRAME = (0, 0, 0)
 NETWORK = (21, 101, 192)
-# The ring on a circle that is a condition of the grid.
 GIVEN_RING = (106, 27, 154)
-# The checkerboard symbol on a checkerboard window is drawn in `WINDOW`, and
-# in `GIVEN_RING` and heavier on a window that is a condition. Each of the
-# two symbols is (the side of one of its four quarters, the width of its
+# Each symbol is (the side of one of its four quarters, the width of its
 # outline), in pixels.
 WINDOW = (33, 33, 33)
 PLAIN_SYMBOL = (7, 1)
@@ -66,8 +61,6 @@ NUMBER_SIZE = 34
 
 
 def _tint(i):
-    """The i-th banana's tint: `TINTS`, then pale hues a golden-ratio step
-    apart, so no two bananas of one picture share one."""
     if i < len(TINTS):
         return TINTS[i]
     red, green, blue = colorsys.hls_to_rgb((i * 0.618034) % 1, 0.86, 0.9)
@@ -102,11 +95,9 @@ class Picture(GridCanvas):
         self._parity_lines()
         self._icons()
         self._frames()
-        # `why_not_hybrid` has passed each circle as valid.
         for r, c in circles:
             self.circle(r + self.depth, c + self.depth, GIVEN_RING, 7, radius_frac=0.41)
-        # Each edge runs from one cell's centre to the next, so the bar's
-        # reach is one cell; drawn last, over the rings.
+        # Drawn after the rings, so the network sits on top of them.
         for first, second in net:
             self._arm(first, 1 if first[0] == second[0] else 2, NETWORK, 4, CELL)
         marked = set(battenberg)
@@ -114,15 +105,10 @@ class Picture(GridCanvas):
             self._symbol(window, window in marked)
 
     def box(self, cell):
-        """The (x0, y0, x1, y1) pixel box of a cell of the board, or of an
-        icon cell."""
         r, c = cell
         return self._cell_box(r + self.depth, c + self.depth)
 
     def _symbol(self, window, given):
-        """The checkerboard symbol at the centre of a window: a square of
-        four quarters, the top-left and bottom-right ones filled and the
-        other two white, in an outline."""
         colour = GIVEN_RING if given else WINDOW
         quarter, outline = GIVEN_SYMBOL if given else PLAIN_SYMBOL
         _, _, x, y = self.box(window)
@@ -132,7 +118,6 @@ class Picture(GridCanvas):
         self.draw.rectangle([x - quarter, y, x - 1, y + quarter - 1], fill=BACKGROUND)
 
     def _cells(self):
-        """Every cell's fill and thin outline, and a number cell's number."""
         bananas = sorted(hybrid.bananas(self.board), key=len, reverse=True)
         tint = {cell: _tint(i) for i, g in enumerate(bananas) for cell in g}
         for cell, value in self.board.items():
@@ -147,8 +132,6 @@ class Picture(GridCanvas):
                 self.digit(r + self.depth, c + self.depth, value, font_size=NUMBER_SIZE)
 
     def _parity_lines(self):
-        """A heavy line along every side two cells of different parity
-        share."""
         for (r, c), value in self.board.items():
             for dr, dc in ((0, 1), (1, 0)):
                 other = self.board.get((r + dr, c + dc))
@@ -174,8 +157,6 @@ class Picture(GridCanvas):
         )
 
     def _icons(self):
-        """The icon cell at the head of each strip: the kind the strip
-        counts, and for the blank strip an empty cell."""
         for k in range(1, self.depth + 1):
             for cell in ((-k, -1), (-1, -k)):
                 self.draw.rectangle(
@@ -186,7 +167,6 @@ class Picture(GridCanvas):
                         self._arm(cell, arm, ICON, 3, CELL // 2 - 3)
 
     def _frames(self):
-        """Heavy frames around the grid and around each block of strips."""
         depth, rows, cols = self.depth, self.rows, self.cols
         for top, left, height, width in (
             (-depth, 0, depth, cols),

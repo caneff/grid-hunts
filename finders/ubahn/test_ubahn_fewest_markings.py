@@ -44,27 +44,20 @@ BOARD = ["--rows", "4", "--cols", "4", "--timeout", "20"]
 # answers).
 WINDOWS = 33
 WORDS = ("unique", "not_unique", "infeasible", "timeout")
-# A record carries its own board and conditions.
 READER = hybrid_engines.HybridFinder(hybrid.Conditions(4, 4))
 
 
 def sets_tried(out):
-    """The lines of the per-set file, its heading line left out."""
     return read_jsonl(out / "sets.jsonl")[1:]
 
 
 def mirror(windows):
-    """A set of window names reflected in the main diagonal."""
     return frozenset(
         hybrid.cell_name((c, r)) for r, c in map(hybrid.parse_cell, windows)
     )
 
 
 def by_brute(keep=lambda board: True, blank_strip=False):
-    """{a set of window names: the grids whose checkerboard windows are
-    exactly that set}, over the brute force's 4x4 grids whose board of
-    values `keep` takes: the grids each set of markings leaves under the
-    negative constraint."""
     held = {}
     for net in brute.hybrid_grids(4, 4, blank_strip):
         board = hybrid.values(net, 4, 4, blank_strip)
@@ -75,8 +68,6 @@ def by_brute(keep=lambda board: True, blank_strip=False):
 
 
 def counts(held, size, windows=WINDOWS):
-    """The brute force's count of each answer word over the sets of one
-    size, on a board of that many windows."""
     grids = [len(nets) for marked, nets in held.items() if len(marked) == size]
     unique = sum(1 for n in grids if n == 1)
     return {
@@ -92,13 +83,10 @@ def size_line(size, said):
 
 
 def report(result, out):
-    """A run's output with its own directory's name taken out, so two runs
-    into two directories can be compared."""
     return result.stdout.replace(str(out), "DIR")
 
 
 def directory(windows):
-    """The name of a set's hunt directory under the run's own."""
     return "+".join(name.replace(":", "-") for name in windows)
 
 
@@ -164,9 +152,6 @@ with tempfile.TemporaryDirectory() as d:
             and len({frozenset(line["windows"]) for line in tried}) == len(tried),
         )
 
-        # Mirror sets: 4x4 with no other condition keeps the reflection in
-        # the main diagonal, so one set of each mirror pair is solved and the
-        # other is copied from it, each naming the other.
         line_of = {frozenset(line["windows"]): line for line in tried}
         pairs = [
             (line, line_of[mirror(line["windows"])])
@@ -197,8 +182,6 @@ with tempfile.TemporaryDirectory() as d:
             and all(line["how"] == "solved" and line["mirror"] is None for line in own),
         )
 
-        # The examples: one hunt directory per unique set, which `verify`,
-        # `render` and `links` read.
         listed = [line for line in lines if line.startswith("unique: ")]
         want = {
             f"unique: {' '.join(line['windows'])}, mirror "
@@ -254,8 +237,6 @@ with tempfile.TemporaryDirectory() as d:
                 and (example / "links" / "0.txt").is_file(),
             )
 
-    # A run stopped partway and started again: the per-set file of the
-    # finished run cut off inside the last size, as a killed run leaves it.
     engine = hybrid_engines.PYSAT_ENGINES[0]
     done = Path(d) / engine
     whole = (done / "sets.jsonl").read_text().splitlines(keepends=True)
@@ -265,9 +246,6 @@ with tempfile.TemporaryDirectory() as d:
         for i in range(len(whole) - 800, len(whole))
         if json.loads(whole[i])["how"] == "solved"
     )
-    # Three ways a stopped run leaves its file: cut between two sets; cut
-    # inside a line, as a write cut short leaves it; and cut between a
-    # solved set's line and its mirror's.
     paired = next(
         i for i in range(cut, len(whole)) if json.loads(whole[i])["how"] == "mirror"
     )
@@ -309,8 +287,6 @@ with tempfile.TemporaryDirectory() as d:
                 and again_line["status"] == lost["status"],
             )
 
-    # The file of a run killed before its first set, under another time
-    # limit: refused before any solve, with no line added.
     unfinished = Path(d) / "unfinished"
     unfinished.mkdir()
     (unfinished / "sets.jsonl").write_text(whole[0])
@@ -327,7 +303,6 @@ with tempfile.TemporaryDirectory() as d:
         and (unfinished / "sets.jsonl").read_text() == whole[0],
     )
 
-    # A file that does not read is refused by name, never counted around.
     broken = Path(d) / "broken"
     broken.mkdir()
     for label, lines, named in (
@@ -388,7 +363,6 @@ with tempfile.TemporaryDirectory() as d:
         r.returncode == 0 and report(r, respelt) == report(finished[engine], done),
     )
 
-    # Another run is in the directory: this one starts nothing.
     held = hunt_files.acquire_lock(done, "sets.jsonl.lock")
     try:
         r = run_cli(
@@ -416,9 +390,6 @@ with tempfile.TemporaryDirectory() as d:
             and (done / "sets.jsonl").read_text() == "".join(whole),
         )
 
-    # A set that reached the time limit below the answer's size: the set is
-    # named and the minimum is not called proven. The finished run's file,
-    # with one single marking's answer (and its mirror's) read as a timeout.
     stopped = Path(d) / "stopped below"
     stopped.mkdir()
     first = next(
@@ -459,8 +430,6 @@ with tempfile.TemporaryDirectory() as d:
         == len(SMALLEST),
     )
 
-    # A time limit too short for any set: every set is named as timed out,
-    # none is read as "no grid", and nothing is proven.
     out = Path(d) / "no time"
     r = run_cli(FINDER,
         "fewest-markings", "--rows", 4, "--cols", 4, "--timeout", 0,
@@ -486,7 +455,6 @@ with tempfile.TemporaryDirectory() as d:
         and not subdirectories(out),
     )
 
-    # The size cap, below the minimum.
     out = Path(d) / "capped"
     r = run_cli(
         FINDER, "fewest-markings", *BOARD, "--max-size", MINIMUM - 1, "--out", out
@@ -504,7 +472,6 @@ with tempfile.TemporaryDirectory() as d:
         and not subdirectories(out),
     )
 
-    # Two workers: the same report and the same answers, set for set.
     two = Path(d) / "two workers"
     r = run_cli(FINDER,
         "fewest-markings", *BOARD, "--max-size", MINIMUM - 1, "--workers", 2,
@@ -523,8 +490,6 @@ with tempfile.TemporaryDirectory() as d:
         r.returncode == 0 and r.stdout == capped and answers(two) == answers(out),
     )
 
-    # A condition that breaks the reflection: r2c4 circled, whose image r4c2
-    # is not. Every set is solved, none copied.
     def circled(board):
         return hybrid.parse_cell("r2c4") in hybrid.valid_circles(board)
 
@@ -552,8 +517,6 @@ with tempfile.TemporaryDirectory() as d:
         == [size_line(k, counts(by_brute(circled), k)) for k in (0, 1)],
     )
 
-    # The other conditions as fixed background: each changes the grids the
-    # brute force keeps, and the counts follow it.
     strip_windows = len(hybrid.windows(hybrid.board_cells(4, 4, True)))
     for flags, held, windows in (
         (
@@ -581,8 +544,6 @@ with tempfile.TemporaryDirectory() as d:
             and want != [size_line(k, counts(HELD, k)) for k in (0, 1)],
         )
 
-    # A condition as fixed background, and a minimum of 0: with exactly 4
-    # branches in row 2 one grid has no checkerboard window.
     exactly = network.Exactly.parse("4:branch:r2")
     held = {
         marked: kept
@@ -617,7 +578,6 @@ with tempfile.TemporaryDirectory() as d:
         and run_cli(FINDER, "verify", out / "no-markings").returncode == 0,
     )
 
-    # Refused before any solve, and before anything is written.
     unused = Path(d) / "unused"
     for flags, named in (
         (["--engine", "cpsat"], "--engine cpsat"),

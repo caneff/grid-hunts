@@ -254,8 +254,6 @@ def checkerboard_windows(board):
 
 
 def off_board(window, board):
-    """The first cell of the window that is not on the board, or None when
-    all four are."""
     return next((cell for cell in window_cells(window) if cell not in board), None)
 
 
@@ -305,7 +303,6 @@ def parse_circles(text, rows, cols, blank_strip=False):
 
 
 def _box(region):
-    """(top, left, height, width) of the smallest box that holds the region."""
     top, left = (min(cell[i] for cell in region) for i in (0, 1))
     bottom, right = (max(cell[i] for cell in region) for i in (0, 1))
     return top, left, bottom - top + 1, right - left + 1
@@ -410,7 +407,6 @@ def icon_arms(cell):
 
 
 def _icon(cell):
-    """What the icon cell at `cell` shows, or "" when it is none."""
     cell_arms = icon_arms(cell)
     if cell_arms is None:
         return ""
