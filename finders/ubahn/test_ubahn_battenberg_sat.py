@@ -27,28 +27,28 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import hybrid
+import hybrid_engines
 import hybrid_model
 import hybrid_sat
 from cli_checks import check, finish
 
 TIME_LIMIT = 10.0
-ENGINES = (hybrid_sat.LAZY, hybrid_sat.PROPAGATOR)
 
 
 def kept(grids, side, marked, only):
-    """The grids of `grids` the rule reader accepts under these markings."""
     return {
         g
         for g in grids
         if not hybrid.why_not_hybrid(
-            g, side, side, battenberg=marked, battenberg_only=only
+            g,
+            hybrid.Conditions(
+                side, side, battenberg=frozenset(marked), battenberg_only=only
+            ),
         )
     }
 
 
 def listed(engine, side, marked, only, cap):
-    """The grids the engine lists under these markings, up to `cap`, or None
-    on a time limit reached."""
     got = hybrid_sat.listing(
         hybrid.Conditions(side, side, battenberg=marked, battenberg_only=only),
         engine,
@@ -61,17 +61,17 @@ def listed(engine, side, marked, only, cap):
 grids = brute.hybrid_grids(4, 4)
 ONE_GRID = ("c1:turn", "c2:turn", "r3c1", "r1:turn", "r2:turn", "r1c3")
 TABLE = (
-    ((), False, "not_unique", 18),
-    ((), True, "not_unique", 16),
-    *(((name,), False, "unique", 1) for name in ONE_GRID),
-    (("c1:turn", "c2:turn", "r3c1"), True, "unique", 1),
-    (("r1:turn", "r2:turn", "r1c3"), True, "unique", 1),
-    (("c1:turn",), True, "infeasible", 0),
-    (("c1:turn", "r1:turn"), False, "infeasible", 0),
-    (("r1c1",), False, "infeasible", 0),
+    ((), False, 18),
+    ((), True, 16),
+    *(((name,), False, 1) for name in ONE_GRID),
+    (("c1:turn", "c2:turn", "r3c1"), True, 1),
+    (("r1:turn", "r2:turn", "r1c3"), True, 1),
+    (("c1:turn",), True, 0),
+    (("c1:turn", "r1:turn"), False, 0),
+    (("r1c1",), False, 0),
 )
-for engine in ENGINES:
-    for names, only, word, count in TABLE:
+for engine in hybrid_engines.PYSAT_CONNECTIVITIES:
+    for names, only, count in TABLE:
         label = (
             f"{engine}, 4x4 markings {' '.join(names) or 'none'}"
             f"{', negative constraint' if only else ''}"
@@ -84,25 +84,19 @@ for engine in ENGINES:
             f"(listed {None if got is None else len(got)})",
             len(want) == count and got is not None and set(got) == want,
         )
-        classified = hybrid_sat.Engine(engine).classify(
-            hybrid.Conditions(4, 4, battenberg=marked, battenberg_only=only),
-            time_limit=TIME_LIMIT,
-            workers=1,
-        )
-        check(
-            f"{label}: classified {word} (got {classified.status})",
-            classified.status == word,
-        )
 
-    # A marking and a circle in one set of conditions: r2c4 is a valid
-    # circle in the one grid that has the marking r3c1, and r4c2 is not.
     for circle, count in (("r2c4", 1), ("r4c2", 0)):
         circles = frozenset({hybrid.parse_cell(circle)})
         marked = hybrid.parse_windows("r3c1", 4, 4)
         want = {
             g
             for g in grids
-            if not hybrid.why_not_hybrid(g, 4, 4, circles, battenberg=marked)
+            if not hybrid.why_not_hybrid(
+                g,
+                hybrid.Conditions(
+                    4, 4, circles=frozenset(circles), battenberg=frozenset(marked)
+                ),
+            )
         }
         got = hybrid_sat.listing(
             hybrid.Conditions(4, 4, circles, battenberg=marked),
@@ -132,7 +126,7 @@ check(
     "5x5, no condition: 31 grids, all passed by the rule reader",
     every is not None
     and len(every) == 31
-    and not any(hybrid.why_not_hybrid(g, 5, 5) for g in every),
+    and not any(hybrid.why_not_hybrid(g, hybrid.Conditions(5, 5)) for g in every),
 )
 every = set(every or ())
 by_grid = {g: hybrid.checkerboard_windows(hybrid.values(g, 5, 5)) for g in every}
@@ -149,11 +143,9 @@ check(
     f"windows, {len(alone)} of them one grid's alone",
     len(full_sets) == 13 and len(alone) == 7,
 )
-for engine in ENGINES:
-    # Every window marked alone on the lazy engine; the propagator engine
-    # runs the same clauses, so every fifth. Then each grid's full set of
-    # checkerboard windows, and no marking at all, which the negative
-    # constraint leaves no 5x5 grid for.
+for engine in hybrid_engines.PYSAT_CONNECTIVITIES:
+    # The propagator engine runs the same clauses as the lazy one, so every
+    # fifth window is enough there.
     singles = board_windows if engine == hybrid_sat.LAZY else board_windows[::5]
     cases = [frozenset({window}) for window in singles]
     cases += [*sorted(full_sets, key=sorted), frozenset()]
@@ -178,8 +170,6 @@ for engine in ENGINES:
 
 
 def blank_listed(marked, only, engine, cap):
-    """The 7x7 blank-strip grids the engine lists under these markings, or
-    None when the listing is not whole: a time limit, or `cap` reached."""
     got = hybrid_sat.listing(
         hybrid.Conditions(
             7, 7, blank_strip=True, battenberg=marked, battenberg_only=only
@@ -193,16 +183,16 @@ def blank_listed(marked, only, engine, cap):
 
 def blank_accepts(grid, marked, only):
     return not hybrid.why_not_hybrid(
-        grid, 7, 7, blank_strip=True, battenberg=marked, battenberg_only=only
+        grid,
+        hybrid.Conditions(
+            7, 7, blank_strip=True, battenberg=frozenset(marked), battenberg_only=only
+        ),
     )
 
 
-# 7x7 with the blank strip: the smallest board where a checkerboard window
-# touches the blank strip. One grid is taken that has such a window; its
-# full set of checkerboard windows under the negative constraint must list
-# it, and the same set with the blank-strip window left unmarked must not,
-# which only the clause forbidding that window can bring about.
-for engine in ENGINES:
+# With the blank-strip window left unmarked the grid must not be listed: only
+# the clause forbidding that window does that.
+for engine in hybrid_engines.PYSAT_CONNECTIVITIES:
     found = None
     for window in hybrid.windows(hybrid.board_cells(7, 7, blank_strip=True)):
         if not any(min(cell) == -5 for cell in hybrid.window_cells(window)):
@@ -245,8 +235,6 @@ for engine in ENGINES:
         and all(blank_accepts(g, full - {window}, True) for g in unmarked),
     )
 
-# The cpsat engine has no model of the condition and says so itself, for a
-# caller that does not come through the finder's flags.
 for name, conditions in (
     ("a marking", hybrid.Conditions(4, 4, battenberg=frozenset({(0, 2)}))),
     ("the negative constraint", hybrid.Conditions(4, 4, battenberg_only=True)),

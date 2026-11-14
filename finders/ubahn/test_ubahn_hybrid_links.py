@@ -23,20 +23,19 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import hybrid
+import hybrid_engines
 import penpa
 from cli_checks import check, finish, read_jsonl, run_cli
 from penpa_decode import Decoded, battenberg_vertices, edges_of, parameter
 
 FINDER = HERE / "hybrid_finder.py"
+# What the driver reads of a hunt a test builds by hand.
+RUN_JSON = '{"argv": ["--out", "x", "--seeds", "0:1"]}\n'
 
 
 def network_of(rec):
-    net = set()
-    for r, bits in enumerate(rec["h"]):
-        net |= {((r, c), (r, c + 1)) for c, bit in enumerate(bits) if bit == "1"}
-    for r, bits in enumerate(rec["v"]):
-        net |= {((r, c), (r + 1, c)) for c, bit in enumerate(bits) if bit == "1"}
-    return frozenset(net)
+    finder = hybrid_engines.HybridFinder(hybrid.Conditions(rec["rows"], rec["cols"]))
+    return finder.candidate_from_record(rec).network
 
 
 def table_index(decoded, strips, cell):
@@ -89,7 +88,6 @@ with tempfile.TemporaryDirectory() as tmp:
         if e.get("outcome") == "example"
     ]
     check(f"the hunt found examples ({len(records)})", len(records) >= 2)
-    # The first example with a valid circle on a grid cell and on a number cell.
     for rec, seed in zip(records, seeds, strict=True):  # noqa: B007
         net = network_of(rec)
         board = hybrid.values(net, 4, 4)
@@ -122,6 +120,7 @@ with tempfile.TemporaryDirectory() as tmp:
     )
     out = Path(tmp) / "one"
     out.mkdir()
+    (out / "run.json").write_text(RUN_JSON)
     (out / "examples.jsonl").write_text(json.dumps(rec) + "\n")
     (out / "progress.jsonl").write_text(
         json.dumps({"seed": seed, "outcome": "example"}) + "\n"
@@ -187,7 +186,6 @@ with tempfile.TemporaryDirectory() as tmp:
         and Decoded(plain).flags == d.flags,
     )
 
-    # A given number that is also circled: both drawn.
     both = circle_number
     r = run_cli(
         FINDER,
@@ -207,7 +205,6 @@ with tempfile.TemporaryDirectory() as tmp:
         and d.number.get(i, [None])[0] == str(board[both]),
     )
 
-    # Default: nothing given, nothing circled.
     r = run_cli(FINDER, "links", str(out))
     d = Decoded((out / "links" / f"{seed}.txt").read_text().strip())
     check(
@@ -217,7 +214,6 @@ with tempfile.TemporaryDirectory() as tmp:
         and not d.number,
     )
 
-    # A circle that is not valid is refused by name; no file is touched.
     invalid = next(c for c in board if c not in valid)
     before = (out / "links" / f"{seed}.txt").read_text()
     (out / "links" / "999.txt").write_text("stale\n")
@@ -240,7 +236,6 @@ with tempfile.TemporaryDirectory() as tmp:
         r.returncode == 0 and not (out / "links" / "999.txt").exists(),
     )
 
-    # A circle off the board is refused by its name, not as a raw tuple.
     r = run_cli(FINDER, "--circles", "r9c9", "links", str(out))
     check(
         "a circle off the board is refused by name",
@@ -253,13 +248,11 @@ with tempfile.TemporaryDirectory() as tmp:
         "--numbers outside `links` is refused, not ignored",
         r.returncode == 2 and "--numbers is for `links` only" in r.stderr,
     )
-    # A given number must be a number cell.
     r = run_cli(FINDER, "--numbers", "r1c1", "links", str(out))
     check(
         "a grid cell as a given number is refused by name",
         r.returncode == 2 and "r1c1" in r.stderr,
     )
-    # No blank strip on this board: a blank number cell is off it.
     r = run_cli(FINDER, "--numbers", "r1:blank", "links", str(out))
     check(
         "a blank number cell on a four-strip board is refused",
@@ -267,22 +260,25 @@ with tempfile.TemporaryDirectory() as tmp:
     )
     r = run_cli(FINDER, "links", str(Path(tmp) / "nowhere"))
     check(
-        "a missing directory exits 2 as not a hunt directory",
-        r.returncode == 2 and "not a hunt directory" in r.stderr,
+        "a missing directory exits 2, naming the missing run.json",
+        r.returncode == 2 and "has no run.json" in r.stderr,
     )
 
-    # --blank-strip on a four-strip record draws the fifth strip when the grid
-    # is still a hybrid grid with it, and is refused by name when it is not.
+    outcomes = set()
     for k, (rec_k, seed_k) in enumerate(zip(records, seeds, strict=True)):
         one_k = Path(tmp) / f"strip-{k}"
         one_k.mkdir()
+        (one_k / "run.json").write_text(RUN_JSON)
         (one_k / "examples.jsonl").write_text(json.dumps(rec_k) + "\n")
         (one_k / "progress.jsonl").write_text(
             json.dumps({"seed": seed_k, "outcome": "example"}) + "\n"
         )
         net_k = network_of(rec_k)
-        why = hybrid.why_not_hybrid(net_k, 4, 4, (), True)
+        why = hybrid.why_not_hybrid(
+            net_k, hybrid.Conditions(4, 4, circles=frozenset(()), blank_strip=True)
+        )
         r = run_cli(FINDER, "--blank-strip", "links", str(one_k))
+        outcomes.add("refused" if why else "drawn")
         if why:
             good = r.returncode == 2 and why in r.stderr
             good = good and not (one_k / "links").exists()
@@ -290,8 +286,11 @@ with tempfile.TemporaryDirectory() as tmp:
             d_k = Decoded((one_k / "links" / f"{seed_k}.txt").read_text().strip())
             good = r.returncode == 0 and (d_k.nx, d_k.ny) == (9, 9)
         check(f"--blank-strip on a four-strip record {k}: {why or 'drawn'}", good)
+    check(
+        "the records reach both ways, one refused and one drawn",
+        outcomes == {"refused", "drawn"},
+    )
 
-    # --blank-strip: the fifth strip is drawn, and a hunt's own strip is kept.
     five = hunt(tmp, "five", "--blank-strip")
     r = run_cli(FINDER, "--numbers", "r1:blank", "links", str(five))
     seed5 = next(
@@ -317,9 +316,7 @@ with tempfile.TemporaryDirectory() as tmp:
         == {table_index(d5, 5, (0, -5)): str(value5)},
     )
 
-# Battenberg markings. The one 4x4 grid with the marking r1c3 has three
-# checkerboard windows, r1:turn, r1c3 and r2:turn, and c1:turn is one of its
-# valid circles (decision log, § Hybrid: Battenberg markings).
+# Decision log, § Hybrid: Battenberg markings.
 MARKING_RULE = (
     "A checkerboard symbol on the corner shared by four cells, grid cells "
     "or clue cells, indicates that those four cells form a checkerboard of "
@@ -359,7 +356,7 @@ with tempfile.TemporaryDirectory() as tmp:
     check(
         "with no --battenberg `links` counts circles and numbers only, as "
         f"before the condition ({r.stdout.strip()!r})",
-        r.stdout.strip().endswith("1 circles and 2 numbers given"),
+        r.stdout.strip().endswith("\n1 circles and 2 numbers given"),
     )
     check(
         "with no --battenberg the link carries no checkerboard symbol and "
@@ -369,7 +366,6 @@ with tempfile.TemporaryDirectory() as tmp:
         and d0.rules == RULES,
     )
 
-    # A window on the grid and one across the turn strip and the grid.
     r = run_cli(FINDER, *shown, "--battenberg", "r1c3 r1:turn", "links", str(out))
     check(f"`links --battenberg` exits 0 ({r.stderr[-300:]})", r.returncode == 0)
     text = link_of(out, seed)
@@ -406,8 +402,6 @@ with tempfile.TemporaryDirectory() as tmp:
         "2 Battenberg markings" in r.stdout and "penpa-edit" not in r.stdout + r.stderr,
     )
 
-    # The negative constraint: every checkerboard window of the grid is
-    # marked, and the rules text says so in a second sentence.
     every = "r1:turn r1c3 r2:turn"
     r = run_cli(FINDER, "--battenberg", every, "--battenberg-only", "links", str(out))
     d = Decoded(link_of(out, seed))
@@ -419,7 +413,6 @@ with tempfile.TemporaryDirectory() as tmp:
         and d.rules == RULES + "\n" + MARKING_RULE + "\n" + ONLY_RULE,
     )
 
-    # A refusal names the window and leaves the link set as it was.
     before = link_of(out, seed)
     for name, flags, reason in (
         (
@@ -445,8 +438,6 @@ with tempfile.TemporaryDirectory() as tmp:
             r.returncode == 2 and reason in r.stderr and link_of(out, seed) == before,
         )
 
-# `penpa.link` called directly, past the rule reader `links` asks first: its
-# own guard refuses a marked window that is not wholly on the board.
 try:
     penpa.link(
         4, 4, network_of(rec), hybrid=penpa.Hybrid(frozenset(), frozenset(), {(3, 3)})
@@ -455,17 +446,17 @@ try:
 except ValueError as e:
     refused = str(e)
 check(
-    f"`penpa.link` refuses a marked window off the board, giving the window "
-    f"and the cell ({refused!r})",
-    refused == "Battenberg marking at (3, 3): cell (3, 4) is off the board",
+    f"`penpa.link` refuses a marked window off the board with `hybrid.py`'s "
+    f"one message ({refused!r})",
+    refused == "Battenberg marking at r4c4: r4c5 is off the board",
 )
 
 r = run_cli(FINDER, "--help")
 check(
-    "--help describes `links --battenberg` and `--battenberg-only`",
+    "--help names `--battenberg` and `--battenberg-only`",
     r.returncode == 0
-    and '--battenberg "r1c3 r1:turn"' in r.stdout
-    and "[--battenberg-only]" in r.stdout,
+    and "--battenberg " in r.stdout
+    and "--battenberg-only" in r.stdout,
 )
 
 finish()

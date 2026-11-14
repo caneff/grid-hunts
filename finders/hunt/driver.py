@@ -741,6 +741,7 @@ def _run_render(finder, argv):
                 file=sys.stderr,
             )
             return 2
+        print(f"wrote {len(drawn)} pictures to {out / 'renders'}")
         return 0
 
 
@@ -759,22 +760,37 @@ def _run_summary(finder, argv):
     )
 
 
-def _run_links(finder, argv):
-    """`hunt links DIR`: write DIR/links/<seed>.txt, the short link of the
-    finder's `link_document(candidate)`, for each verified hit, replacing
-    `links/` as one set. An unverified example gets none: run `verify DIR`
-    first. Returns 0, or 2 on a refusal (a finder without `link_document`,
-    DIR locked or holding no hunt, a hit that does not rebuild or mint)."""
-    import hunt_dir
+def _link_maker(finder):
+    """The function that turns a candidate into the text of its link file: the
+    finder's `link_text`, else the short link of its `link_document`; None
+    when it has neither."""
     from short_link import mint
+
+    text = getattr(finder, "link_text", None)
+    if text is not None:
+        return text
+    document = getattr(finder, "link_document", None)
+    return None if document is None else lambda candidate: mint(document(candidate))
+
+
+def _run_links(finder, argv):
+    """`hunt links DIR`: write DIR/links/<seed>.txt, the link of each verified
+    hit, replacing `links/` as one set: the finder's `link_text(candidate)`
+    verbatim, else the short link of its `link_document(candidate)`. A
+    refusal from either names the seed. An unverified example gets none: run
+    `verify DIR` first. Returns 0, or 2 on a refusal (a finder with neither
+    hook, DIR locked or holding no hunt, a hit that does not rebuild or
+    link)."""
+    import hunt_dir
     from verified_io import example_verdicts
 
     args = _parse_dir_args("hunt links", argv)
     out = Path(args.dir)
-    document = getattr(finder, "link_document", None)
-    if document is None:
+    make = _link_maker(finder)
+    if make is None:
         print(
-            "hunt links: refusing -- the finder has no link_document", file=sys.stderr
+            "hunt links: refusing -- the finder has no link_document or link_text",
+            file=sys.stderr,
         )
         return 2
     with _held_lock("hunt links", args.dir) as held:
@@ -787,11 +803,14 @@ def _run_links(finder, argv):
                 out, run_json["argv"], [record for _, record in seeded]
             )
             to_candidate = _candidate_builder(finder)
-            built = {
-                seed: mint(document(to_candidate(record))) + "\n"
-                for (seed, record), verdict in zip(seeded, verdicts, strict=True)
-                if verdict == "hit"
-            }
+            built = {}
+            for (seed, record), verdict in zip(seeded, verdicts, strict=True):
+                if verdict != "hit":
+                    continue
+                try:
+                    built[seed] = make(to_candidate(record)).removesuffix("\n") + "\n"
+                except ValueError as e:
+                    raise ValueError(f"seed {seed}: {e}") from e
             hunt_dir.replace_links(out, built)
             skipped = len(seeded) - len(built)
         except Exception as e:

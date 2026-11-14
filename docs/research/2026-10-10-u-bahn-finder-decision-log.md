@@ -617,7 +617,8 @@ Worker's choices, none a ruling:
 - **Each step is a hunt directory of its own**, `DIR/at-least-K`, one seed,
   so `verify` and `render` read the best grid with no new reader. The steps
   are also lines of `DIR/climb.jsonl`, written as each ends; a rerun into
-  the same DIR goes on from the last line. One climb at a time holds a DIR,
+  the same DIR goes on from the last line (a log from before the run log, #134,
+  is refused with a message to rerun into a new `--out`, not migrated). One climb at a time holds a DIR,
   by a lock on that file, and a rerun checks every step on file: the Codex
   review reproduced two climbs writing into one DIR and a rerun printing a
   maximum from the mixed log.

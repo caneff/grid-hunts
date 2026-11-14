@@ -61,8 +61,8 @@ uniqueness check (find a network, forbid it, prove there is no other).
 
 The shipped `model.build` and `sat_model.uniqueness` take only a full set of
 outside numbers. A throwaway script outside the repo built the same models
-from their own parts (`model._add_pieces`, `_add_root`, `_add_flow` or
-`_add_tree`; `sat_model._piece_clauses`, `_Connectivity`, `_solve`) with a
+from their own parts (`model._add_pieces` [now `_add_kinds`], `_add_root`, `_add_flow` or
+`_add_tree`; `sat_model._piece_clauses` [now `_kind_clauses`], `_Connectivity`, `_solve`) with a
 count constraint only on the given numbers, and the flow sized to the whole
 board. JWKNT's solver takes `-1` for a missing number; it ran from
 `~/src/third-party/logical-solver`, none of its code is here.

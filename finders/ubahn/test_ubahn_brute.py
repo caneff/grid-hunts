@@ -28,7 +28,6 @@ A slow test, outside the gate: `just test-slow` runs it (tests/all.sh's
 
 import contextlib
 import io
-import subprocess
 import sys
 from pathlib import Path
 
@@ -39,7 +38,7 @@ import brute
 import hybrid
 import model
 import network
-from cli_checks import check, finish
+from cli_checks import check, finish, run_cli
 from ortools.sat.python import cp_model
 
 ROWS = COLS = 4
@@ -63,8 +62,6 @@ check(
 
 
 def model_networks(connectivity, rows=ROWS, cols=COLS, exactly=EXACTLY):
-    """Every network the model allows: solve, forbid the network on its edge
-    variables, solve again, until the model is infeasible."""
     built = model.build(rows, cols, connectivity, exactly=exactly)
     solver = cp_model.CpSolver()
     solver.parameters.num_workers = 1
@@ -143,9 +140,6 @@ check(
     == {net for net in every_3x4 if None not in network.kind_grid(net, 3, 4)},
 )
 
-# Both spaces above shut the board with no edge out by their own condition.
-# A 2x2 board with no condition does not: of its 16 edge assignments only
-# the loop of all four is a network.
 loop = frozenset(network.all_edges(2, 2))
 small = {
     net
@@ -182,7 +176,6 @@ check(
     f"4x4 with the blank strip: 8 valid hybrid grids (got {len(with_blank)})",
     len(with_blank) == 8 and with_blank < grids,
 )
-# Circle conditions, each classified in the words of the uniqueness check.
 for names, want in (
     ((), ("not_unique", 18)),
     (("r2c2",), ("not_unique", 4)),
@@ -228,7 +221,6 @@ check(
 
 
 def printed(*argv):
-    """What the brute-force command prints for these arguments, by line."""
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
         brute.main(list(argv))
@@ -257,17 +249,49 @@ check(
         "unique (1)",
     ],
 )  # fmt: skip
-r = subprocess.run(
-    [sys.executable, str(Path(__file__).with_name("brute.py")), "4", "4",
-     "--battenberg", "r4c4"],
-    capture_output=True,
-    text=True,
-)  # fmt: skip
+r = run_cli(HERE / "brute.py", "4", "4", "--battenberg", "r4c4")
 check(
     f"a window off the board is refused, exit 2, naming r4c5 ({r.stderr[-200:]!r})",
     r.returncode == 2
     and "--battenberg: window r4c4 is not wholly on the 4x4 board" in r.stderr
     and "r4c5 is off it" in r.stderr,
+)
+
+
+def refusal(script, *argv):
+    """(exit code, stderr's last line, minus the program's name) of a run."""
+    r = run_cli(HERE / script, *argv)
+    lines = r.stderr.strip().splitlines()
+    return r.returncode, lines[-1].split(": ", 1)[-1] if lines else "(no stderr)"
+
+
+# An off-board circle is refused in the same words, exit 2, by brute and by the
+# finder (#136).
+brute_said = refusal("brute.py", "4", "4", "--circles", "r9c9")
+finder_said = refusal(
+    "hybrid_finder.py", "classify", "--rows", "4", "--cols", "4", "--circles", "r9c9"
+)
+check(
+    f"brute and the finder refuse an off-board circle alike ({brute_said}, "
+    f"{finder_said})",
+    brute_said[0] == finder_said[0] == 2
+    and "circle r9c9 is off the 4x4 board" in brute_said[1]
+    and brute_said[1].split("--circles", 1)[1]
+    == finder_said[1].split("--circles", 1)[1],
+)
+# `--exactly` off the board reads alike in both finders.
+plain = refusal(
+    "ubahn_finder.py", "--rows", "4", "--cols", "4", "--exactly", "2:cross:r5"
+)
+hybrid_said = refusal(
+    "hybrid_finder.py", "classify", "--rows", "4", "--cols", "4",
+    "--exactly", "2:cross:r5",
+)  # fmt: skip
+check(
+    f"both finders refuse an off-board --exactly alike ({plain}, {hybrid_said})",
+    plain[0] == hybrid_said[0] == 2
+    and "condition 2:cross:r5 is off the 4x4 board" in plain[1]
+    and plain[1].split("--exactly", 1)[1] == hybrid_said[1].split("--exactly", 1)[1],
 )
 
 finish()

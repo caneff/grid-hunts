@@ -118,6 +118,45 @@ with tempfile.TemporaryDirectory() as tmp, short_link.fake_mint() as fake:
         result.returncode == 0 and len(list((raw / "links").iterdir())) >= 1,
     )
 
+    # a finder with link_text: its own wording is written, nothing is minted,
+    # and a refusal names the seed and leaves links/ as it was
+    own = Path(tmp) / "own"
+    run_cli(TOY, "--out", own, "--seeds", "0:12", env={**EMPTY, "TOY_LINK_TEXT": "1"})
+    result = run_cli(TOY, "links", own, env={"TOY_LINK_TEXT": "1"})
+    own_hits = read_jsonl(own / "examples.jsonl")
+    check(
+        f"link_text links exits 0 (stderr: {result.stderr[-200:]})",
+        result.returncode == 0,
+    )
+    check(
+        "links writes the finder's own text for each hit, no minted link",
+        all(
+            (own / "links" / f"{e['seed']}.txt").read_text()
+            == "own-link:" + "".join(map(str, r["grid"])) + "\n"
+            for e, r in zip(
+                [
+                    e
+                    for e in read_jsonl(own / "progress.jsonl")
+                    if e["outcome"] == "example"
+                ],
+                own_hits,
+                strict=True,
+            )
+        ),
+    )
+    full = Path(tmp) / "full"
+    full.mkdir()
+    (full / "run.json").write_text((own / "run.json").read_text())
+    (full / "examples.jsonl").write_text(
+        '{"grid": [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]}\n'
+    )
+    (full / "progress.jsonl").write_text('{"seed": 5, "outcome": "example"}\n')
+    check_refusal(
+        "a link_text refusal names the seed",
+        run_cli(TOY, "links", full, env={"TOY_LINK_TEXT": "1"}),
+        "seed 5: every cell shaded",
+    )
+
     # refusals
     check_refusal(
         "summary on a directory with no hunt",

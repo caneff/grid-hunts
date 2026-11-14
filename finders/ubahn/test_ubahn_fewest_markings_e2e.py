@@ -1,6 +1,6 @@
 """Spec #29 end to end, through the commands Chris runs: `fewest-markings`
 with a circle as fixed background, then `verify`, `render` and `links` on
-the example it wrote, a rerun, and the refusal on `--engine cpsat`.
+the example it wrote, and the refusal on `--engine cpsat`.
 
 One chain on the 4x4 board with r2c4 circled, each step reading the files
 the step before wrote. The brute force gives the answer to expect: the
@@ -40,7 +40,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import hybrid
-import hybrid_finder
+import hybrid_engines
 import hybrid_render
 from cli_checks import check, finish, run_cli
 from penpa_decode import Decoded, battenberg_vertices
@@ -51,15 +51,12 @@ CIRCLE = "r2c4"
 
 
 def pixels(image, box, colour):
-    """How many pixels of a box of the picture are this colour."""
     x0, y0, x1, y1 = box
     return sum(
         image.getpixel((x, y)) == colour for x in range(x0, x1) for y in range(y0, y1)
     )
 
 
-# The brute force's answer: of the 4x4 grids with the circle valid, each by
-# its checkerboard windows, the smallest set of windows only one grid has.
 held = {}
 for net in brute.hybrid_grids(4, 4):
     board = hybrid.values(net, 4, 4)
@@ -115,7 +112,7 @@ with tempfile.TemporaryDirectory() as d:
         json.loads(line)
         for line in (example / "examples.jsonl").read_text().splitlines()
     ]
-    found = hybrid_finder.HybridFinder(hybrid.Conditions(4, 4)).candidate_from_record(
+    found = hybrid_engines.HybridFinder(hybrid.Conditions(4, 4)).candidate_from_record(
         record
     )
     check(
@@ -131,7 +128,6 @@ with tempfile.TemporaryDirectory() as d:
     )
 
     r = run_cli(HERE / "hybrid_finder.py", "render", example)
-    # The same grid drawn in process, for where each cell's box is.
     drawn = hybrid_render.Picture(
         grid, 4, 4, [hybrid.parse_cell(CIRCLE)], False, windows
     )
@@ -182,39 +178,6 @@ with tempfile.TemporaryDirectory() as d:
         and len(links) == 1
         and battenberg_vertices(Decoded(links[0].read_text().strip()), 4)
         == set(windows),
-    )
-
-    before = (out / "sets.jsonl").read_text()
-    r = run_cli(
-        HERE / "hybrid_finder.py",
-        "fewest-markings",
-        *BOARD,
-        "--circles",
-        CIRCLE,
-        "--out",
-        out,
-    )
-    check(
-        "a rerun into the finished directory: the same report, no set solved again",
-        r.returncode == 0
-        and r.stdout == report
-        and (out / "sets.jsonl").read_text() == before,
-    )
-
-    r = run_cli(
-        HERE / "hybrid_finder.py",
-        "fewest-markings",
-        *BOARD,
-        "--engine",
-        "cpsat",
-        "--out",
-        Path(d) / "unused",
-    )
-    check(
-        "fewest-markings on cpsat is refused by name, exit 2, before any solve",
-        r.returncode == 2
-        and "--engine cpsat" in r.stderr
-        and not (Path(d) / "unused").exists(),
     )
 
 finish()

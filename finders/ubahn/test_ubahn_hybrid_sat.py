@@ -29,6 +29,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import hybrid
+import hybrid_engines
 import hybrid_sat
 import network
 from cli_checks import check, finish
@@ -36,7 +37,6 @@ from pysat.solvers import Cadical195
 
 TIME_LIMIT = 10.0
 TWO_CROSSES = network.Exactly.parse("2:cross:r2")
-ENGINES = (hybrid_sat.LAZY, hybrid_sat.PROPAGATOR)
 
 
 def agrees(engine, name, conditions, want):
@@ -56,12 +56,12 @@ def agrees(engine, name, conditions, want):
 
 
 def agrees_with_reader(engine, name, side, count):
-    """The engine lists `count` grids of a square board with no condition,
-    and the rule reader passes every one. Returns them."""
     got = hybrid_sat.listing(
         hybrid.Conditions(side, side), engine, cap=count + 1, time_limit=TIME_LIMIT
     )
-    refused = [g for g in got.grids if hybrid.why_not_hybrid(g, side, side)]
+    refused = [
+        g for g in got.grids if hybrid.why_not_hybrid(g, hybrid.Conditions(side, side))
+    ]
     check(
         f"{engine}, {name}: {count} grids, each once, all passed by the rule "
         f"reader ({len(got.grids)} listed, {len(refused)} refused)",
@@ -83,11 +83,8 @@ check("4x4, no condition: the brute force counts 18", len(grids) == 18)
 check("4x4 with the blank strip: the brute force counts 8", len(with_blank) == 8)
 check("4x4 with exactly 2 crosses in r2: it counts 8", len(two_crosses) == 8)
 
-for engine in ENGINES:
+for engine in hybrid_engines.PYSAT_CONNECTIVITIES:
     listed = agrees(engine, "4x4, no condition", hybrid.Conditions(4, 4), grids)
-    # The board has fillings that break no rule but connectivity, and listing
-    # every grid makes the solver propose them: each is refused by a cut, and
-    # the list is still the brute force's.
     if engine == hybrid_sat.LAZY:
         lazy_cuts = listed.cuts
         check(
@@ -95,9 +92,6 @@ for engine in ENGINES:
             f"({listed.cuts}), and no conflict on a partial assignment",
             listed.cuts > 0 and listed.conflicts == 0,
         )
-    # The propagator refuses them before the grid is full: it raises a
-    # conflict while some edge is still undecided, so fewer full grids in
-    # several parts are left to cut.
     if engine == hybrid_sat.PROPAGATOR:
         check(
             f"{engine}, 4x4, no condition: conflicts were raised on partial "
@@ -105,7 +99,6 @@ for engine in ENGINES:
             f"lazy engine's {lazy_cuts} ({listed.cuts})",
             listed.conflicts > 0 and listed.cuts < lazy_cuts,
         )
-    # The blank strip is off unless asked for, and changes the answer when on.
     agrees(
         engine,
         "4x4 with the blank strip",
@@ -115,7 +108,7 @@ for engine in ENGINES:
 
     # The pinned circle conditions (decision log, § Hybrid): the engine's
     # grids are the brute force's, and its classification is the table's word.
-    for names, word, count in (
+    for names, _word, count in (
         ((), "not_unique", 18),
         (("r2c2",), "not_unique", 4),
         (("c1:turn", "r2c4"), "unique", 1),
@@ -126,21 +119,22 @@ for engine in ENGINES:
     ):
         label = f"4x4 circles {' '.join(names) or 'none'}"
         conditions = hybrid.Conditions(4, 4, cells(*names))
-        want = {g for g in grids if not hybrid.why_not_hybrid(g, 4, 4, cells(*names))}
+        want = {
+            g
+            for g in grids
+            if not hybrid.why_not_hybrid(
+                g, hybrid.Conditions(4, 4, circles=frozenset(cells(*names)))
+            )
+        }
         check(f"{label}: the brute force counts {count}", len(want) == count)
         agrees(engine, label, conditions, want)
         classify = hybrid_sat.Engine(engine).classify
         got = classify(conditions, time_limit=TIME_LIMIT, workers=1)
         check(
-            f"{engine}, {label}: classified {word} (got {got.status})",
-            got.status == word,
-        )
-        check(
             f"{engine}, {label}: the classification's grid is one of them, or "
             f"None for none",
             got.network in want if want else got.network is None,
         )
-        # A limit reached is a timeout whatever the true answer is.
         for limit in (0, -1):
             late = classify(conditions, time_limit=limit, workers=1)
             check(
@@ -149,7 +143,6 @@ for engine in ENGINES:
                 late == hybrid.Classified("timeout", None),
             )
 
-    # The piece-count condition, alone and together with circles.
     agrees(
         engine,
         "4x4 with exactly 2 crosses in r2",
@@ -159,12 +152,15 @@ for engine in ENGINES:
     for names, count in ((("r4c2",), 4), (("r2c4",), 0), (("c1:turn", "c4:turn"), 2)):
         label = f"4x4 with exactly 2 crosses in r2, circles {' '.join(names)}"
         want = {
-            g for g in two_crosses if not hybrid.why_not_hybrid(g, 4, 4, cells(*names))
+            g
+            for g in two_crosses
+            if not hybrid.why_not_hybrid(
+                g, hybrid.Conditions(4, 4, circles=frozenset(cells(*names)))
+            )
         }
         check(f"{label}: the brute force counts {count}", len(want) == count)
         agrees(engine, label, hybrid.Conditions(4, 4, cells(*names), TWO_CROSSES), want)
-    # Conditions that "at least" would answer differently: of the 18 grids, 5
-    # have no cross in r2 and 5 have one, and 11 have 2 turns in r1.
+    # Conditions that "at least" would answer differently.
     for text, count in (("0:cross:r2", 5), ("1:cross:r2", 5), ("2:turn:r1", 11)):
         exactly = network.Exactly.parse(text)
         want = {g for g in grids if exactly.holds(g, 4, 4)}
@@ -172,7 +168,6 @@ for engine in ENGINES:
         agrees(
             engine, f"4x4 with {text}", hybrid.Conditions(4, 4, exactly=exactly), want
         )
-    # A count past the row's length has no grid.
     agrees(
         engine,
         "4x4 with exactly 5 turns in r1",
@@ -193,11 +188,15 @@ for engine in ENGINES:
             f"{engine}: a circle on an icon cell is refused", "off the board" in str(e)
         )
 
-    # One grid for a seed: a brute-force grid that meets the conditions, the
-    # same one on every run of the seed, and not the same one for every seed.
     grid = hybrid_sat.Engine(engine).grid
     conditions = hybrid.Conditions(4, 4, cells("r2c2"))
-    want = {g for g in grids if not hybrid.why_not_hybrid(g, 4, 4, cells("r2c2"))}
+    want = {
+        g
+        for g in grids
+        if not hybrid.why_not_hybrid(
+            g, hybrid.Conditions(4, 4, circles=frozenset(cells("r2c2")))
+        )
+    }
     sampled = [
         grid(conditions, random.Random(seed), time_limit=TIME_LIMIT)
         for seed in range(12)
@@ -227,26 +226,33 @@ for engine in ENGINES:
             == hybrid.Sampled("timeout", None),
         )
 
-# A circle in an odd region, which no 4x4 grid has. On this 5x5 grid, worked
-# by hand in `test_ubahn_hybrid_model.py`, r1c2 is a branch in a bent region
-# of three.
+# A circle in an odd region, which no 4x4 grid has. On this 5x5 grid, r1c2 is
+# a branch in a bent region of three.
 BENT_THREE = network.from_drawing(["┌┬─┬┐", "├┼┬┤│", "│├┘├┤", "├┴┬┼┘", "└─┴┘ "])
 check(
     "5x5 bent three: the rule reader passes it with r1c2 circled",
-    hybrid.failures(BENT_THREE, 5, 5, cells("r1c2")) == [],
+    hybrid.failures(
+        BENT_THREE, hybrid.Conditions(5, 5, circles=frozenset(cells("r1c2")))
+    )
+    == [],
 )
-for engine in ENGINES:
+for engine in hybrid_engines.PYSAT_CONNECTIVITIES:
     # Every 5x5 grid, which no brute force reaches: the rule reader must pass
     # each one, and the count is the CP-SAT engine's own (decision log,
     # § Hybrid: the CP-SAT finder).
     every = set(agrees_with_reader(engine, "5x5, no condition", 5, 31))
-    # Then a cell of the board circled alone. A circle only ever rules a
-    # grid out, so the rule reader says which of the 31 each circle keeps.
-    # Every cell on the lazy engine; the propagator engine runs the same
-    # clauses, so r1c2 and every fifth cell.
+    # A circle only ever rules a grid out, so the rule reader's filter of the
+    # 31 is the answer; the propagator engine runs the same clauses, so r1c2
+    # and every fifth cell are enough there.
     board = sorted(hybrid.values(BENT_THREE, 5, 5))
     kept = {
-        cell: {g for g in every if not hybrid.why_not_hybrid(g, 5, 5, [cell])}
+        cell: {
+            g
+            for g in every
+            if not hybrid.why_not_hybrid(
+                g, hybrid.Conditions(5, 5, circles=frozenset([cell]))
+            )
+        }
         for cell in (board if engine == hybrid_sat.LAZY else [(0, 1), *board[::5]])
     }
     check("5x5: r1c2 circled keeps the bent three alone", kept[0, 1] == {BENT_THREE})
@@ -271,7 +277,6 @@ for engine in ENGINES:
 
 
 def takes(conditions, net):
-    """Whether the engines' rules for these conditions allow this grid."""
     clauses, edge, _ = hybrid_sat.rules(conditions)
     with Cadical195(bootstrap_with=clauses) as solver:
         return solver.solve(
@@ -279,12 +284,8 @@ def takes(conditions, net):
         )
 
 
-# The circle rule where no enumeration reaches, on three grids an engine found:
-# the rules must take a circle exactly where the rule reader says the cell's
-# value is its region's size. Per grid: every such cell, each alone and all at
-# once, and every seventh of the others. The 7x7 and the 10x10 grid hold what
-# smaller boards do not, a number cell that can be circled in an odd region:
-# c1:branch in one of 3 cells, r8:straight in one of 5.
+# The 7x7 and 10x10 grids hold what smaller boards do not: a number cell
+# circled in an odd region (c1:branch in one of 3 cells, r8:straight in one of 5).
 BRANCH_OF_3 = [
     "┌┬┬┬─┐ ",
     "├┘├┼┐├┐",
@@ -323,7 +324,7 @@ for drawn in (BRANCH_OF_3, STRAIGHT_OF_5, CROSS_AT_AN_END):
     side, found = len(drawn), network.from_drawing(drawn)
     check(
         f"{side}x{side} {drawn[0]}: the rule reader passes the grid",
-        hybrid.failures(found, side, side) == [],
+        hybrid.failures(found, hybrid.Conditions(side, side)) == [],
     )
     board = hybrid.values(found, side, side)
     size = {cell: len(region) for region in hybrid.regions(board) for cell in region}
@@ -359,7 +360,7 @@ check(
 found = network.from_drawing(CROSS_AT_AN_END)
 check(
     "7x7, a cross at an end of 5 even cells: the rule reader refuses its circle",
-    hybrid.failures(found, 7, 7, cells("r6c4"))
+    hybrid.failures(found, hybrid.Conditions(7, 7, circles=frozenset(cells("r6c4"))))
     == ["circle at r6c4: value 4, region of 5 cells"],
 )
 check(

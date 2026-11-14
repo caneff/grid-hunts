@@ -73,9 +73,19 @@ README before reusing anything there.
   with `--min-bananas N` under that condition too; `--battenberg "CELLS"`
   classifies a set of Battenberg markings, each window by its top-left cell,
   and `--battenberg-only` adds the negative constraint (#21);
-  the 4x4 answers every engine must match are in the decision log, § Hybrid.
+  the 4x4 answers every engine must match are in the decision log, § Hybrid;
+  `test_ubahn_engine_conformance.py` runs them through every `ENGINES` entry
+  (a new engine joins it by joining `ENGINES`).
+  The hybrid finder is three files (spec #117, #133): `hybrid_engines.py`
+  holds `ENGINES`, `HybridFinder` and `Candidate`, `hybrid_searches.py` the
+  `climb` and `fewest_markings` searches (both take `engines=`, so a test
+  calls them with a fake engine: `test_ubahn_hybrid_searches.py`), and
+  `hybrid_finder.py` is the command line over them, one table of
+  subcommands and one error path. A timing tool or test imports the engines
+  module, never the command line, and `Conditions.asking(...)` derives the
+  conditions of a search's next step.
   `hybrid_finder.py` is the hybrid finder on the hunt protocol (#783): the
-  conditions `--circles "r6:turn r2c3"`, `--exactly N:PIECE:rK`,
+  conditions `--circles "r6:turn r2c3"`, `--exactly N:KIND:rK`,
   `--blank-strip` and `--min-bananas N` (at least N banana regions, #792,
   on every engine) in, valid grids out, one per seed, each re-read by
   `hybrid.py` in `verify`; `hybrid_finder.py classify` takes the same
@@ -128,7 +138,7 @@ README before reusing anything there.
   #29 end to end. The 4x4 answer
   and the 7x7 run of record: the decision log, § Hybrid: the fewest Battenberg
   markings.
-  `hybrid_finder.py render DIR` draws each example of a hunt as a picture,
+  `hybrid_finder.py render DIR` (the driver's, on `HybridFinder.render`) draws each example of a hunt as a picture,
   `DIR/renders/<seed>.png` (`hybrid_render.py`, #791): the board with its
   outside numbers and network, chocolate in one colour and a tint per banana,
   a heavy ring in a second colour on a circle that is a condition and no ring
@@ -147,7 +157,9 @@ README before reusing anything there.
   by hand, outside both gates). The run of record is in the decision log,
   § Hybrid: at least N banana regions, and its rows in
   `docs/research/2026-10-11-u-bahn-min-bananas-timing/`.
-  `ubahn_finder.py links DIR [--blank-number]` writes a Penpa+ link per example
+  `ubahn_finder.py links DIR [--blank-number]` writes a Penpa+ link per verified example
+  (the driver's `links DIR`, on the finder's `link_text`, which a finder with
+  Penpa+ links supplies instead of `link_document`)
   to `DIR/links/<seed>.txt` (`penpa.py`, #774; wire format
   `docs/research/2026-10-10-u-bahn-penpa-link.md`). The three published links
   it is tested against are `finders/ubahn/fixtures/`.

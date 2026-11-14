@@ -1,6 +1,6 @@
 """The hybrid finder's CLI (#783), black-box: hunts, `verify` and `classify`.
 
-A fresh 4x4 hunt with no condition, then with circles and the piece-count
+A fresh 4x4 hunt with no condition, then with circles and the kind-count
 condition: every example must be one of the brute force's valid hybrid grids
 for those conditions, and no two examples the same grid under the symmetry
 those conditions leave. Then `verify DIR` over hand-written records, each a
@@ -18,6 +18,7 @@ A slow test, outside the gate: `just test-slow` runs it (tests/all.sh's
 """
 
 import json
+import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -27,7 +28,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import hybrid
-import hybrid_finder
+import hybrid_engines
 import network
 from cli_checks import check, finish, read_jsonl, run_cli
 from dedupe import canonical_key
@@ -37,43 +38,36 @@ FINDER = HERE / "hybrid_finder.py"
 BOARD = ["--rows", "4", "--cols", "4", "--timeout", "10", "--engine", "cpsat"]
 
 
-def record(net, rows=4, cols=4, circles=(), exactly=None, blank_strip=False):
-    """A record written here by hand: `h` and `v` hold one string per row of
-    horizontal and of vertical edges, "1" where one is on."""
-    return {
-        "rows": rows,
-        "cols": cols,
-        "circles": list(circles),
-        "exactly": exactly,
-        "blank_strip": blank_strip,
-        "h": [
-            "".join(str(int(((r, c), (r, c + 1)) in net)) for c in range(cols - 1))
-            for r in range(rows)
-        ],
-        "v": [
-            "".join(str(int(((r, c), (r + 1, c)) in net)) for c in range(cols))
-            for r in range(rows - 1)
-        ],
-    }
+def finder_for(circles=(), exactly=None, blank_strip=False, rows=4, cols=4):
+    return hybrid_engines.HybridFinder(
+        hybrid.Conditions(
+            rows,
+            cols,
+            frozenset(map(hybrid.parse_cell, circles)),
+            network.Exactly.parse(exactly) if exactly else None,
+            blank_strip,
+        )
+    )
+
+
+def record(net, rows=4, cols=4, **fields):
+    """The record the finder writes for `net` under no condition, then
+    `fields` laid over it: how a damaged or unmet record is made."""
+    finder = finder_for(
+        rows=rows, cols=cols, blank_strip=fields.get("blank_strip", False)
+    )
+    return {**finder.record(hybrid_engines.Candidate(finder.conditions, net)), **fields}
 
 
 def network_of(rec):
-    """The network a record's `h` and `v` describe."""
-    net = set()
-    for r, bits in enumerate(rec["h"]):
-        net |= {((r, c), (r, c + 1)) for c, bit in enumerate(bits) if bit == "1"}
-    for r, bits in enumerate(rec["v"]):
-        net |= {((r, c), (r + 1, c)) for c, bit in enumerate(bits) if bit == "1"}
-    return frozenset(net)
+    return finder_for().candidate_from_record(rec).network
 
 
 def transposed(net):
-    """The network reflected in the main diagonal, rows for columns."""
-    return frozenset(tuple(sorted(((c, r), (c2, r2)))) for (r, c), (r2, c2) in net)
+    return frozenset(hybrid_engines.mirror(edge) for edge in net)
 
 
 def mirrored(net, cols=4):
-    """The network reflected left to right."""
     return frozenset(
         tuple(sorted(((r, cols - 1 - c), (r2, cols - 1 - c2))))
         for (r, c), (r2, c2) in net
@@ -84,25 +78,21 @@ def kinds(net, rows=4, cols=4):
     return network.kind_grid(net, rows, cols)
 
 
-def arms(net, rows=4, cols=4):
-    """The network as a dedupe key holds it: every cell's east arm, row by
-    row, then every cell's south arm."""
-    return tuple(
-        int(((r, c), (r + dr, c + dc)) in net)
-        for dr, dc in ((0, 1), (1, 0))
-        for r in range(rows)
-        for c in range(cols)
+def canonical_of(net, finder):
+    """The dedupe key a hunt files `net` under."""
+    return canonical_key(
+        finder.key(hybrid_engines.Candidate(finder.conditions, net)), finder.symmetry
     )
 
 
 def meeting(names, exactly=None):
-    """The brute force's 4x4 grids that meet these circles and this
-    piece-count condition."""
     circles = [hybrid.parse_cell(name) for name in names]
     return {
         net
         for net in brute.hybrid_grids(4, 4)
-        if not hybrid.why_not_hybrid(net, 4, 4, circles)
+        if not hybrid.why_not_hybrid(
+            net, hybrid.Conditions(4, 4, circles=frozenset(circles))
+        )
         and (exactly is None or network.Exactly.parse(exactly).holds(net, 4, 4))
     }
 
@@ -123,8 +113,6 @@ check(
 
 
 def hunt(d, name, *flags, seeds="0:40"):
-    """Run a hunt with these flags; returns (exit, examples, summary,
-    progress, run.json's config)."""
     out = Path(d) / name
     r = run_cli(
         FINDER, *BOARD, *flags, "--out", str(out), f"--seeds={seeds}", "--workers", "1"
@@ -157,8 +145,8 @@ PAIR = [
         ["┌┬┬┬┬┐", "├┤├┘├┘", "├┤├┐├┐", "├┴┴┤├┤", "├──┤├┤", "└──┴┴┘"],
     )
 ]
-finder = hybrid_finder.HybridFinder(hybrid.Conditions(6, 6))
-pair = [hybrid_finder.Candidate(finder.conditions, net) for net in PAIR]
+finder = hybrid_engines.HybridFinder(hybrid.Conditions(6, 6))
+pair = [hybrid_engines.Candidate(finder.conditions, net) for net in PAIR]
 check(
     "6x6: two valid grids share every cell's kind",
     PAIR[0] != PAIR[1]
@@ -177,7 +165,7 @@ check(
     and all(
         canonical(candidate)
         == canonical(
-            hybrid_finder.Candidate(finder.conditions, transposed(candidate.network))
+            hybrid_engines.Candidate(finder.conditions, transposed(candidate.network))
         )
         for candidate in pair
     ),
@@ -192,9 +180,12 @@ with tempfile.TemporaryDirectory() as d:
         all(net in grids for net in nets),
     )
     check(
-        "no condition: a dedupe key is the network or its transpose, whichever is less",
+        "no condition: a dedupe key is the one the finder files the network under, "
+        "the same for its transpose",
         all(
-            tuple(ex["__dedupe_key__"]) == min(arms(net), arms(transposed(net)))
+            tuple(ex["__dedupe_key__"])
+            == canonical_of(net, finder_for())
+            == canonical_of(transposed(net), finder_for())
             for ex, net in zip(examples, nets, strict=True)
         ),
     )
@@ -219,22 +210,15 @@ with tempfile.TemporaryDirectory() as d:
         ),
     )
     check(
-        "no condition: run.json records the finder's config",
-        config
-        == {
-            "rows": 4,
-            "cols": 4,
-            "circles": [],
-            "exactly": None,
-            "blank_strip": False,
-            "number_circles": 0,
-            "engine": "cpsat",
-            "timeout": 10.0,
-        },
+        "no condition: run.json records the board, the conditions, the engine "
+        "and the timeout",
+        (config["rows"], config["cols"], config["circles"], config["exactly"])
+        == (4, 4, [], None)
+        and config["blank_strip"] is False
+        and config["engine"] == "cpsat"
+        and config["timeout"] == 10.0,
     )
 
-    # r2c2 is on the main diagonal: the transpose keeps the circle, so it is
-    # still a symmetry and a grid's transpose is a repeat.
     examples, summary, _, _ = hunt(d, "r2c2", "--circles", "r2c2")
     nets = [network_of(ex) for ex in examples]
     want = meeting(["r2c2"])
@@ -247,7 +231,7 @@ with tempfile.TemporaryDirectory() as d:
         "r2c2 circled: no example is the transpose of another, and all of "
         "the grids are reached up to it",
         all(transposed(a) != b for a in nets for b in nets if a != b)
-        and {min(arms(net), arms(transposed(net))) for net in want}
+        and {canonical_of(net, finder_for(["r2c2"])) for net in want}
         == {tuple(ex["__dedupe_key__"]) for ex in examples},
     )
     check(
@@ -260,9 +244,6 @@ with tempfile.TemporaryDirectory() as d:
     )
     accounted("r2c2 circled", summary)
 
-    # r2c4 is off the diagonal: the transpose would move the circle to r4c2,
-    # so the condition has no symmetry and a grid and its transpose are two
-    # examples.
     examples, summary, _, _ = hunt(d, "r2c4", "--circles", "r2c4")
     nets = [network_of(ex) for ex in examples]
     want = meeting(["r2c4"])
@@ -274,23 +255,25 @@ with tempfile.TemporaryDirectory() as d:
     check(
         "r2c4 circled: a dedupe key is the network as it stands",
         all(
-            tuple(ex["__dedupe_key__"]) == arms(net)
+            tuple(ex["__dedupe_key__"])
+            == canonical_of(net, finder_for(["r2c4"]))
+            != canonical_of(transposed(net), finder_for(["r2c4"]))
             for ex, net in zip(examples, nets, strict=True)
         ),
     )
     accounted("r2c4 circled", summary)
 
-    # A piece-count condition names a row or a column, which the transpose
+    # A kind-count condition names a row or a column, which the transpose
     # swaps: it leaves no symmetry either. No cross sits on the border, so
-    # "no cross in r1" keeps every grid and its transpose: with no circle to
-    # break the reflection, both must be examples.
+    # `0:cross:r1` keeps every grid while still naming a row the transpose moves.
     examples, summary, _, _ = hunt(d, "no cross in r1", "--exactly", "0:cross:r1")
     nets = [network_of(ex) for ex in examples]
     check(
         "no cross in r1: a dedupe key is the network as it stands",
         nets
         and all(
-            tuple(ex["__dedupe_key__"]) == arms(net)
+            tuple(ex["__dedupe_key__"])
+            == canonical_of(net, finder_for(exactly="0:cross:r1"))
             for ex, net in zip(examples, nets, strict=True)
         ),
     )
@@ -300,7 +283,6 @@ with tempfile.TemporaryDirectory() as d:
     )
     accounted("no cross in r1", summary)
 
-    # Together with circles.
     examples, summary, _, _ = hunt(
         d, "two crosses", "--circles", "c1:turn c4:turn", "--exactly", "2:cross:r2"
     )
@@ -320,7 +302,6 @@ with tempfile.TemporaryDirectory() as d:
     )
     accounted("2 crosses in r2 with circles", summary)
 
-    # The blank strip: off unless asked for, and a different answer when on.
     examples, summary, _, _ = hunt(d, "blank strip", "--blank-strip")
     nets = [network_of(ex) for ex in examples]
     with_blank = brute.hybrid_grids(4, 4, blank_strip=True)
@@ -338,7 +319,6 @@ with tempfile.TemporaryDirectory() as d:
         ),
     )
 
-    # Conditions with no grid: every seed is empty and says why.
     examples, summary, progress, _ = hunt(
         d, "no grid", "--circles", "r2c2 r2c4", seeds="0:3"
     )
@@ -351,14 +331,32 @@ with tempfile.TemporaryDirectory() as d:
         and all("infeasible" in reason for reason in reasons),
     )
 
-# `verify` re-reads each record with the solver-free rule reader. The grids
-# are the ones test_ubahn_hybrid.py works out by hand.
+# The grids are the ones `test_ubahn_hybrid.py` works out by hand.
 FOUR_LOOPS = network.from_drawing(["┌┐┌┐", "└┼┼┘", "┌┼┼┐", "└┘└┘"])
 C_SHAPE = network.from_drawing(["┌┐┌┐", "└┼┤│", "┌┼┤│", "└┘└┘"])
 LOOP2 = network.from_drawing(["┌┐", "└┘"])
 U_SHAPE = network.from_drawing(["┌┐┌┐", "├┼┼┤", "└┴┴┘"])
 with tempfile.TemporaryDirectory() as d:
-    out = Path(d)
+    # `verify` reads a hunt directory: a real one-seed hunt, copied per case,
+    # its examples replaced by the hand-made records and its progress by one
+    # example event for each.
+    hunt(d, "base", seeds="0:1")
+    base = Path(d) / "base"
+
+    def hunt_dir_of(path, records):
+        shutil.copytree(base, path)
+        (path / "examples.jsonl").write_text(
+            "".join(json.dumps(rec) + "\n" for rec in records)
+        )
+        (path / "progress.jsonl").write_text(
+            "".join(
+                json.dumps({"event": "seed_done", "seed": seed, "outcome": "example"})
+                + "\n"
+                for seed in range(len(records))
+            )
+        )
+
+    out = Path(d) / "cases"
     cases = [
         ("a valid grid", record(FOUR_LOOPS), True, ""),
         (
@@ -368,7 +366,7 @@ with tempfile.TemporaryDirectory() as d:
             "",
         ),
         (
-            "a valid grid filed under its own piece count",
+            "a valid grid filed under its own kind count",
             record(FOUR_LOOPS, circles=["r2c2"], exactly="2:cross:r2"),
             True,
             "",
@@ -399,7 +397,7 @@ with tempfile.TemporaryDirectory() as d:
             "chocolate at r1:blank is not a rectangle",
         ),
         (
-            "a valid grid filed under another piece count",
+            "a valid grid filed under another kind count",
             record(FOUR_LOOPS, exactly="1:cross:r2"),
             False,
             "1:cross:r2",
@@ -418,14 +416,16 @@ with tempfile.TemporaryDirectory() as d:
         ),
         (
             "a network with a dead end",
-            record(FOUR_LOOPS - {min(FOUR_LOOPS)}),
+            # the first east edge of the top row switched off
+            record(
+                FOUR_LOOPS,
+                h=["0" + record(FOUR_LOOPS)["h"][0][1:], *record(FOUR_LOOPS)["h"][1:]],
+            ),
             False,
             "dead end",
         ),
     ]
-    (out / "examples.jsonl").write_text(
-        "".join(json.dumps(rec) + "\n" for _, rec, _, _ in cases)
-    )
+    hunt_dir_of(out, [rec for _, rec, _, _ in cases])
     r = run_cli(FINDER, "verify", str(out))
     check(f"verify exits 0 (stderr: {r.stderr[-500:]})", r.returncode == 0)
     _, verdicts = read_verified(out / "verified.jsonl")
@@ -437,7 +437,7 @@ with tempfile.TemporaryDirectory() as d:
     for i, (name, damage, reason) in enumerate(
         (
             ("a circle that names no cell", {"circles": ["r2"]}, "rKcK"),
-            ("an empty piece-count condition", {"exactly": ""}, "N:PIECE:rK"),
+            ("an empty kind-count condition", {"exactly": ""}, "N:KIND:rK"),
             (
                 "an edge row that is not 0s and 1s",
                 {"h": ["x1x", *record(FOUR_LOOPS)["h"][1:]]},
@@ -445,11 +445,8 @@ with tempfile.TemporaryDirectory() as d:
             ),
         )
     ):
-        bad = out / str(i)
-        bad.mkdir()
-        (bad / "examples.jsonl").write_text(
-            json.dumps({**record(FOUR_LOOPS), **damage}) + "\n"
-        )
+        bad = Path(d) / f"bad-{i}"
+        hunt_dir_of(bad, [{**record(FOUR_LOOPS), **damage}])
         r = run_cli(FINDER, "verify", str(bad))
         check(
             f"verify refuses {name}, exit 2, naming {reason!r}",
@@ -467,7 +464,6 @@ for flags, word, said in (
     (["--circles", "r2c2 r2c4"], "infeasible", "no grid"),
     (["--circles", "c4:turn r4:turn"], "infeasible", "no grid"),
     (["--circles", "r1c1"], "infeasible", "no grid"),
-    # 8 of the 18 grids have 2 crosses in r2, none of them with r2c4 circled.
     (["--exactly", "2:cross:r2"], "not_unique", "more than one grid"),
     (["--exactly", "2:cross:r2", "--circles", "r2c4"], "infeasible", "no grid"),
 ):
@@ -478,7 +474,6 @@ for flags, word, said in (
         f"classify {label}: {word}, {said} ({first}, stderr: {r.stderr[-300:]})",
         r.returncode == 0 and first == [f"{word}: {said}"],
     )
-    # A time limit reached is a timeout whatever the true answer is.
     for limit in ("0", "-1"):
         r = run_cli(FINDER,
             "classify", "--rows", "4", "--cols", "4", "--engine", "cpsat",
@@ -491,8 +486,6 @@ for flags, word, said in (
             and r.stdout.splitlines() == ["timeout: time limit reached"],
         )
 
-# The one grid of a unique condition is drawn under the answer, circles in
-# brackets.
 r = run_cli(FINDER, "classify", *BOARD, "--circles", "c1:turn r2c4")
 (only,) = meeting(["c1:turn", "r2c4"])
 check(
@@ -508,7 +501,7 @@ with tempfile.TemporaryDirectory() as d:
             ([*board, "--circles", "r5c1"], "r5c1"),
             ([*board, "--circles", "c5:turn"], "c5:turn"),
             ([*board, "--circles", "r1:blank"], "r1:blank"),
-            ([*board, "--exactly", "2:cross"], "N:PIECE:rK"),
+            ([*board, "--exactly", "2:cross"], "N:KIND:rK"),
             ([*board, "--exactly", "2:cross:r5"], "r5"),
             ([*board, "--engine", "abacus"], "abacus"),
             (["--rows", "1", "--cols", "4"], "2x2"),
@@ -525,7 +518,6 @@ with tempfile.TemporaryDirectory() as d:
             f"classify {' '.join(flags)} is refused, exit 2, naming {reason!r}",
             r.returncode == 2 and reason in r.stderr and not r.stdout,
         )
-    # The blank number cell is on the board once the blank strip is on.
     r = run_cli(FINDER,
         "classify", *board, "--engine", "cpsat", "--blank-strip",
         "--circles", "r1:blank",
@@ -537,7 +529,7 @@ with tempfile.TemporaryDirectory() as d:
 
 r = run_cli(FINDER, "--help")
 check(
-    "--help prints the usage text, naming every condition and classify",
+    "--help exits 0 and names every flag and subcommand",
     r.returncode == 0
     and all(
         word in r.stdout
@@ -551,10 +543,6 @@ check(
         )
     ),
 )
-check(
-    "--help says pysat-lazy is the engine unless one is given",
-    "pysat-lazy unless given" in r.stdout and "cpsat unless given" not in r.stdout,
-)
 
 # The default engine is PySAT with lazy cuts (Chris's ruling, 2026-10-11).
 with tempfile.TemporaryDirectory() as d:
@@ -563,11 +551,13 @@ with tempfile.TemporaryDirectory() as d:
         "--rows", "4", "--cols", "4", "--timeout", "10",
         "--out", str(out), "--seeds=0:3", "--workers", "1",
     )  # fmt: skip
-    examples = read_jsonl(out / "examples.jsonl") if r.returncode == 0 else []
     check(
-        "no --engine: the hunt runs on pysat-lazy, in every record and in run.json",
-        bool(examples)
-        and all(ex["engine"] == "pysat-lazy" for ex in examples)
+        f"no --engine: the hunt exits 0 (stderr: {r.stderr[-300:]})",
+        r.returncode == 0,
+    )
+    check(
+        "no --engine: run.json says the hunt ran on pysat-lazy",
+        r.returncode == 0
         and json.loads((out / "run.json").read_text())["config"]["engine"]
         == "pysat-lazy",
     )

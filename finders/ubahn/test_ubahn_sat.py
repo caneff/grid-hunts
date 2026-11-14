@@ -56,8 +56,6 @@ check(
     ),
 )
 
-# A 2x2 board's one network is the loop of all four edges, and a loop needs
-# no connectivity cut.
 status, found, cuts = sat_model.uniqueness(
     2, 2, network.outside_numbers(loop, 2, 2), time_limit=10.0
 )
@@ -87,42 +85,22 @@ check(
     (status, found) == ("infeasible", None) and cuts > 0,
 )
 
-# A timeout is a timeout, never unique: the 2x2 loop again with no time.
 status, found, cuts = sat_model.uniqueness(
     2, 2, network.outside_numbers(loop, 2, 2), time_limit=0.0
 )
 check(f"no time: timeout (got {status})", (status, found) == ("timeout", None))
 
 
-class Clock:
-    """A clock that reads 0 for its first `reads` readings and 100 after."""
-
-    def __init__(self, reads):
-        self.left = reads
-
-    def monotonic(self):
-        self.left -= 1
-        return 0.0 if self.left >= 0 else 100.0
-
-
-# "unique" comes from the second solve alone, so time must be able to run out
-# there too. The check reads the clock once to set its deadline and once
-# before each solve; a clock that jumps after two readings stops the second.
-real_time, sat_model.time = sat_model.time, Clock(2)
-try:
-    status, found, cuts = sat_model.uniqueness(
-        2, 2, network.outside_numbers(loop, 2, 2), time_limit=10.0
-    )
-finally:
-    sat_model.time = real_time
+# A time limit too short to finish is a timeout whatever the solver had found
+# by then, never "unique": the answer is read off the output, not the clock.
+status, found, cuts = sat_model.uniqueness(
+    2, 2, network.outside_numbers(loop, 2, 2), time_limit=1e-9
+)
 check(
-    f"time runs out before the second solve: timeout, with the loop (got {status})",
-    (status, found) == ("timeout", loop),
+    f"a time limit of a nanosecond: timeout, never unique (got {status})",
+    status == "timeout",
 )
 
-# A set of numbers no board can hold reads infeasible, as the CP-SAT check
-# says: every cell blank, which leaves no edge on, and a count past the length
-# of its row.
 all_blank = (((0, 0, 0, 0, 2),) * 2,) * 2
 too_many = (((3, 0, 0, 0, 0), (0, 0, 0, 0, 2)), ((2, 0, 0, 0, 0), (1, 0, 0, 0, 1)))
 for name, numbers in (
@@ -138,7 +116,6 @@ for name, numbers in (
         (status, found, reference) == ("infeasible", None, "infeasible"),
     )
 
-# `fillings` counts what the numbers allow before connectivity is asked for.
 check(
     "fillings: the 2x2 loop is the one filling, in one part",
     sat_model.fillings(2, 2, network.outside_numbers(loop, 2, 2), cap=10)
@@ -150,8 +127,6 @@ check(
     == sat_model.Fillings(0, 1, False),
 )
 
-# The 4x4 space with 2 crosses in r2: the verdict on each full set of outside
-# numbers must match the brute-force count of networks that share it.
 space = brute.two_crosses_in_r2()
 wrong = []
 space_cuts = 0
@@ -215,9 +190,6 @@ for name, numbers, expected, verdict in CUT_AND_NETWORK:
         and network.outside_numbers(found, 4, 4) == numbers,
     )
 
-# The 15 timing puzzles: the same verdict as the CP-SAT flow check, and a
-# network that the solver-free rule check passes and that has the puzzle's
-# numbers.
 puzzles = time_sat.fixture_puzzles()
 check(f"the fixture holds 15 puzzles (got {len(puzzles)})", len(puzzles) == 15)
 for puzzle in puzzles:

@@ -21,33 +21,29 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import hybrid
-import hybrid_finder
+import hybrid_engines
 import hybrid_sat
 import network
 from cli_checks import check, finish, read_jsonl, run_cli
 
 FINDER = HERE / "hybrid_finder.py"
 BOARD = ["--rows", "4", "--cols", "4", "--timeout", "10"]
-ENGINES = ("pysat-lazy", "pysat-propagator")
-# A record carries its own board and conditions.
-READER = hybrid_finder.HybridFinder(hybrid.Conditions(4, 4))
+READER = hybrid_engines.HybridFinder(hybrid.Conditions(4, 4))
 
 
 def meeting(names, exactly=None):
-    """The brute force's 4x4 grids that meet these circles and this
-    piece-count condition."""
     circles = [hybrid.parse_cell(name) for name in names]
     return {
         net
         for net in brute.hybrid_grids(4, 4)
-        if not hybrid.why_not_hybrid(net, 4, 4, circles)
+        if not hybrid.why_not_hybrid(
+            net, hybrid.Conditions(4, 4, circles=frozenset(circles))
+        )
         and (exactly is None or network.Exactly.parse(exactly).holds(net, 4, 4))
     }
 
 
 def hunt(d, engine, name, *flags, seeds=40):
-    """Run a hunt on this engine with these flags; returns (the examples'
-    records, their networks, the `empty` reasons, run.json's config)."""
     out = Path(d) / f"{engine} {name}"
     r = run_cli(
         FINDER,
@@ -87,7 +83,7 @@ def hunt(d, engine, name, *flags, seeds=40):
     )
 
 
-for engine in ENGINES:
+for engine in hybrid_engines.PYSAT_ENGINES:
     with tempfile.TemporaryDirectory() as d:
         examples, nets, _, config = hunt(d, engine, "no condition")
         want = meeting([])
@@ -101,8 +97,6 @@ for engine in ENGINES:
             config is not None and config["engine"] == engine,
         )
 
-        # r2c4 is off the main diagonal, so the conditions have no symmetry
-        # and each grid is its own example.
         _, nets, _, _ = hunt(d, engine, "r2c4", "--circles", "r2c4")
         want = meeting(["r2c4"])
         check(
@@ -127,7 +121,6 @@ for engine in ENGINES:
             len(want) == 2 and nets and set(nets) <= want,
         )
 
-        # Conditions with no grid: every seed is empty and says why.
         examples, _, reasons, _ = hunt(
             d, engine, "no grid", "--circles", "r2c2 r2c4", seeds=3
         )
@@ -139,10 +132,8 @@ for engine in ENGINES:
             and all("infeasible" in reason for reason in reasons),
         )
 
-    # `classify` through the CLI: five rows of the decision log's table,
-    # § Hybrid, one of each word and the `--exactly` flag. All seven circle
-    # conditions of the table, on both engines, are held in process by
-    # `test_ubahn_hybrid_sat.py`'s table of count and word.
+    # Five rows only; every circle condition on both engines is held in
+    # `test_ubahn_hybrid_sat.py`'s table.
     for flags, word, said in (
         ([], "not_unique", "more than one grid"),
         (["--circles", "c1:turn r2c4"], "unique", "exactly one grid"),
@@ -157,7 +148,6 @@ for engine in ENGINES:
             f"{label}: {word}, {said} ({first}, stderr: {r.stderr[-300:]})",
             r.returncode == 0 and first == [f"{word}: {said}"],
         )
-        # A time limit reached is a timeout whatever the true answer is.
         r = run_cli(FINDER,
             "classify", "--rows", "4", "--cols", "4", "--engine", engine, *flags,
             "--timeout", "0",
@@ -168,7 +158,6 @@ for engine in ENGINES:
             and r.stdout.splitlines() == ["timeout: time limit reached"],
         )
 
-    # The one grid of a unique condition is drawn under the answer.
     r = run_cli(
         FINDER, "classify", *BOARD, "--engine", engine, "--circles", "c1:turn r2c4"
     )
@@ -180,17 +169,17 @@ for engine in ENGINES:
 
 check(
     "--engine pysat-lazy is the PySAT engine with lazy connectivity cuts",
-    hybrid_finder.ENGINES["pysat-lazy"] == hybrid_sat.Engine(hybrid_sat.LAZY),
+    hybrid_engines.ENGINES["pysat-lazy"] == hybrid_sat.Engine(hybrid_sat.LAZY),
 )
 check(
     "--engine pysat-propagator is the one with the connectivity propagator",
-    hybrid_finder.ENGINES.get("pysat-propagator")
+    hybrid_engines.ENGINES.get("pysat-propagator")
     == hybrid_sat.Engine(hybrid_sat.PROPAGATOR),
 )
 r = run_cli(FINDER, "--help")
 check(
-    f"--help names every engine ({', '.join(ENGINES)})",
-    r.returncode == 0 and all(engine in r.stdout for engine in ENGINES),
+    f"--help names every engine ({', '.join(hybrid_engines.ENGINES)})",
+    r.returncode == 0 and all(engine in r.stdout for engine in hybrid_engines.ENGINES),
 )
 
 finish()

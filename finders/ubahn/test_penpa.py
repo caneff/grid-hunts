@@ -23,6 +23,7 @@ import network
 import penpa
 from cli_checks import check, finish, run_cli
 from penpa_decode import Decoded, edges_of, numbers_of, unabbreviate
+from ubahn_finder import UbahnFinder
 
 FIXTURES = HERE / "fixtures"
 FINDER = HERE / "ubahn_finder.py"
@@ -33,8 +34,6 @@ def read(path):
 
 
 def kind_counts(edges, rows, cols, order):
-    """Per row and per column, the count of each kind in `order`, by degree
-    of every cell: the layout check that confirmed Niverio's link."""
     deg = {(r, c): 0 for r in range(rows) for c in range(cols)}
     nbrs = {cell: set() for cell in deg}
     for a, b in edges:
@@ -71,7 +70,6 @@ def kind_counts(edges, rows, cols, order):
 RULED = ["cross", "branch", "straight", "turn"]
 
 
-# --- The three published links decode, and their layout reads as the note says
 knt = read("publ-knt.txt")
 dandelo = read("publ-dandelo.txt")
 niverio = read("publ-niverio.txt")
@@ -114,14 +112,11 @@ check(
     ),
 )
 
-# --- Header arithmetic against the five published values
 check(
     "centre point of 12x12, 10x10, 14x14 and 9x9 boards",
     [penpa.center_point(n, n) for n in (12, 10, 14, 9)] == [375, 286, 476, 84],
 )
 
-# --- A hand-built network: the 3x3 block with a cross, four branches
-# and four turns, in the top-left of a 4x4 board.
 BLOCK = frozenset(
     [((r, c), (r, c + 1)) for r in range(3) for c in range(2)]
     + [((r, c), (r + 1, c)) for r in range(2) for c in range(3)]
@@ -179,8 +174,6 @@ check(
     "only the lines-only check flag is on",
     [k for k, v in d.flags.items() if v] == ["sol_loopline"],
 )
-# Every number cell: 4 rows x 4 columns + 4 columns x 4 rows; the
-# icons are symbols, not numbers.
 check(
     "32 outside numbers, zero shown as 0",
     len(d.number) == 32
@@ -203,7 +196,6 @@ check(
     and sym[(5, 5)] == [1, 1, 0, 0],
 )
 
-# Structural: every drawn cell is on the board, the centerlist is the L.
 cells = set(d.centerlist)
 check(
     "the centerlist is the L-shaped table without the notch",
@@ -226,8 +218,6 @@ check(
     all(int(i) in grid_cells for e in d.answer[1] for i in e.split(",")[:2]),
 )
 
-# The abbreviation table escapes `z` first, so a `z` in the text survives it
-# and so does a token-shaped one.
 tricky = 'zebra "line" zL null zO "z9"'
 packed = penpa.abbreviate(tricky)
 check(
@@ -246,7 +236,6 @@ check(
     == [[], ["66,67,1", "66,76,1", "67,77,1", "76,77,1"], [], [], [], []],
 )
 
-# --- The blank-number option: a fifth row and column, outside the cross
 five = Decoded(penpa.link(ROWS, COLS, BLOCK, blank_number=True))
 check("the blank option adds a fifth strip: board 9x9", (five.nx, five.ny) == (9, 9))
 order5 = [network.KIND_NAMES.index(k) for k in ["blank", *RULED]]
@@ -266,7 +255,6 @@ check(
 )
 check("the answer edges are unchanged by the option", edges_of(five, 5) == BLOCK)
 
-# A non-square board: 3 rows by 5 columns.
 wide = Decoded(penpa.link(3, 5, BLOCK))
 check("a 3x5 board has a 9 by 7 table", (wide.nx, wide.ny) == (9, 7))
 w_rows, w_cols = numbers_of(wide, 4, 3, 5)
@@ -290,8 +278,6 @@ check(
     Decoded(penpa.link(4, 5, BLOCK)).center == (383, 383),
 )
 
-# The link opens in the Line tool, and the dividers are the two thick lines
-# along the number strips' inner edge (vertex indices, written out here).
 check(
     "line 2 opens the Line tool, normal, green",
     d.lines[2] == '["1","2","1"]~"line"~["1",3]',
@@ -310,11 +296,9 @@ check(
     d.layer["lineE"] == want_dividers,
 )
 
-# A link written twice is the same text.
 check("encoding is deterministic", penpa.link(ROWS, COLS, BLOCK) == url)
 
 
-# --- The `links` subcommand, over a fresh hunt: no link on stdout or stderr
 with tempfile.TemporaryDirectory() as tmp:
     out = Path(tmp) / "hunt"
     r = run_cli(
@@ -364,23 +348,7 @@ with tempfile.TemporaryDirectory() as tmp:
     good = True
     for seed, rec in zip(seeds, records, strict=True):
         got = Decoded((out / "links" / f"{seed}.txt").read_text().strip())
-        net = frozenset(
-            tuple(map(tuple, edge))
-            for edge in (
-                [
-                    ((r_, c), (r_, c + 1))
-                    for r_, bits in enumerate(rec["h"])
-                    for c, b in enumerate(bits)
-                    if b == "1"
-                ]
-                + [
-                    ((r_, c), (r_ + 1, c))
-                    for r_, bits in enumerate(rec["v"])
-                    for c, b in enumerate(bits)
-                    if b == "1"
-                ]
-            )
-        )
+        net = UbahnFinder(4, 4).candidate_from_record(rec).network
         rows_, cols_ = numbers_of(got, 4, 4, 4)
         want = network.outside_numbers(net, 4, 4)
         good &= edges_of(got, 4) == net
@@ -398,16 +366,16 @@ with tempfile.TemporaryDirectory() as tmp:
     (out / "links" / "999.txt").write_text("stale\n")
     r = run_cli(FINDER, "links", str(out))
     check(
-        "a rerun replaces the link set: a stale file goes, the variant is named",
+        "a rerun replaces the link set: a stale file goes, the count is said",
         r.returncode == 0
         and not (out / "links" / "999.txt").exists()
-        and "without the blank number" in r.stdout,
+        and f"wrote {len(seeds)} links" in r.stdout,
     )
 
     r = run_cli(FINDER, "links", str(Path(tmp) / "nowhere"))
     check(
-        "`links` on a missing directory exits 2 and says it is not a hunt directory",
-        r.returncode == 2 and "has no examples.jsonl: not a hunt directory" in r.stderr,
+        "`links` on a missing directory exits 2 and says it has no run.json",
+        r.returncode == 2 and "has no run.json" in r.stderr,
     )
 
     # A progress log with one example event too many is a kill between the
@@ -415,6 +383,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # writes the links of the examples that are there, as the resume reads them.
     ahead = Path(tmp) / "ahead"
     ahead.mkdir()
+    (ahead / "run.json").write_text((out / "run.json").read_text())
     (ahead / "examples.jsonl").write_text((out / "examples.jsonl").read_text())
     (ahead / "progress.jsonl").write_text(
         (out / "progress.jsonl").read_text()

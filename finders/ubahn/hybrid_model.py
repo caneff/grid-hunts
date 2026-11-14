@@ -1,7 +1,7 @@
 """The CP-SAT model of the hybrid (#783): U-Bahn with Choco-Banana over the
 grid cells and the number cells, built from the conditions.
 
-It is the plain model (`model.py`, flow connectivity, the piece-count
+It is the plain model (`model.py`, flow connectivity, the kind-count
 condition) with the hybrid's rules stated on top of its `kind` booleans. No
 outside number is given: each number cell's value is the count the network
 makes it.
@@ -44,21 +44,14 @@ import model
 from network import KINDS
 
 
-def _neighbours(cell):
-    r, c = cell
-    return ((r - 1, c), (r, c + 1), (r + 1, c), (r, c - 1))
-
-
 def _add_parity(m, kind, conditions):
-    """`value[cell]`, a linear expression, and `odd[cell]`, a boolean, for
-    every cell of the board."""
     rows, cols = conditions.rows, conditions.cols
     value, odd = {}, {}
     for cell in product(range(rows), range(cols)):
-        value[cell] = sum(hybrid.PIECE_VALUE[k] * kind[cell, k] for k in KINDS)
+        value[cell] = sum(hybrid.KIND_VALUE[k] * kind[cell, k] for k in KINDS)
         odd[cell] = m.new_bool_var(f"odd{cell}")
         m.add(
-            odd[cell] == sum(kind[cell, k] for k in KINDS if hybrid.PIECE_VALUE[k] % 2)
+            odd[cell] == sum(kind[cell, k] for k in KINDS if hybrid.KIND_VALUE[k] % 2)
         )
     lines = hybrid.number_cells(rows, cols, conditions.blank_strip)
     for cell, (k, held) in lines.items():
@@ -71,11 +64,10 @@ def _add_parity(m, kind, conditions):
 
 
 def _add_chocolate(m, odd):
-    """No 2x2 window with exactly three even cells."""
     top, left = (min(cell[i] for cell in odd) for i in (0, 1))
     bottom, right = (max(cell[i] for cell in odd) for i in (0, 1))
     for r, c in product(range(top, bottom), range(left, right)):
-        window = [(r, c), (r, c + 1), (r + 1, c), (r + 1, c + 1)]
+        window = hybrid.window_cells((r, c))
         for lone in window:
             three = [cell for cell in window if cell != lone]
             if all(cell in odd for cell in three):
@@ -86,7 +78,6 @@ def _add_chocolate(m, odd):
 
 
 def _add_banana(m, odd):
-    """No rectangle of odd cells with every bordering cell even."""
     top, left = (min(cell[i] for cell in odd) for i in (0, 1))
     bottom, right = (max(cell[i] for cell in odd) for i in (0, 1))
     for r, c in product(range(top, bottom + 1), range(left, right + 1)):
@@ -97,7 +88,7 @@ def _add_banana(m, odd):
             border = {
                 near
                 for cell in inside
-                for near in _neighbours(cell)
+                for near in hybrid.neighbours(cell)
                 if near in odd and near not in inside
             }
             m.add_bool_or(
@@ -107,16 +98,12 @@ def _add_banana(m, odd):
 
 
 def _add_circle(m, value, odd, circle, largest, chosen=None):
-    """The circled cell's value is the size of its region. `largest` bounds
-    the value, so only cells within `largest - 1` steps can be in the region.
-    With `chosen`, a boolean, that holds only when `chosen` is true: when it
-    is false the members need not be the region."""
     steps = {circle: 0}
     queue = [circle]
     for cell in queue:
         if steps[cell] == largest - 1:
             continue
-        for near in _neighbours(cell):
+        for near in hybrid.neighbours(cell):
             if near in odd and near not in steps:
                 steps[near] = steps[cell] + 1
                 queue.append(near)
@@ -129,25 +116,22 @@ def _add_circle(m, value, odd, circle, largest, chosen=None):
         unless = [chosen.Not()]
     mine = odd[circle]
     for cell, member in inside.items():
-        # A member shares the circled cell's parity.
         m.add_bool_or([member.Not(), mine.Not(), odd[cell]])
         m.add_bool_or([member.Not(), mine, odd[cell].Not()])
-        # A member's neighbour of that parity is a member. One too far to
-        # have a boolean would make the region larger than any value.
-        for near in _neighbours(cell):
+        # A neighbour too far to have a boolean would make the region larger
+        # than any value, so it forbids membership.
+        for near in hybrid.neighbours(cell):
             if near in odd:
                 joins = [inside[near]] if near in inside else []
                 m.add_bool_or(
                     [*unless, member.Not(), mine.Not(), odd[near].Not(), *joins]
                 )
                 m.add_bool_or([*unless, member.Not(), mine, odd[near], *joins])
-    # Connected: the circled cell supplies one unit of flow per member, each
-    # member absorbs one, and flow passes only between members.
     cap = largest
     inflow = {cell: [] for cell in inside}
     outflow = {cell: [] for cell in inside}
     for source in inside:
-        for sink in _neighbours(source):
+        for sink in hybrid.neighbours(source):
             if sink in inside:
                 f = m.new_int_var(0, cap, f"g{circle}_{source}_{sink}")
                 m.add(f <= cap * inside[source])
@@ -171,9 +155,8 @@ def _add_bananas(m, odd, wanted):
         for k in range(wanted)
     }
     for cell in odd:
-        # An odd cell has one label, an even cell none.
         m.add(sum(label[cell, k] for k in range(wanted)) == odd[cell])
-        for near in _neighbours(cell):
+        for near in hybrid.neighbours(cell):
             if near in odd:
                 for k in range(wanted):
                     m.add_bool_or(
@@ -203,11 +186,11 @@ def build(conditions):
     _add_banana(built.m, odd)
     lines = hybrid.number_cells(rows, cols, conditions.blank_strip)
     for circle in sorted(circles):
-        # A piece is worth 4 at most; a number cell counts a row or column.
+        # A kind is worth 4 at most; a number cell counts a row or column.
         largest = (
             len(lines[circle][1])
             if circle in lines
-            else max(hybrid.PIECE_VALUE.values())
+            else max(hybrid.KIND_VALUE.values())
         )
         _add_circle(built.m, value, odd, circle, largest)
     if conditions.min_bananas:

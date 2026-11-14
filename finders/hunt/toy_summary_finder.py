@@ -10,6 +10,8 @@ the tests, counting `propose` calls from 1 in a fresh process:
 - `TOY_EMPTY=timeout:2,infeasible:4` makes those calls return
   `Empty("<reason>: ...")`;
 - `TOY_STALL_CALL=N` makes call N sleep 60 s, so a test can kill the hunt there;
+- `TOY_LINK_TEXT=1` adds `link_text`, a finder's own link wording that
+  `links DIR` writes instead of minting `link_document`; a grid of 16 shaded cells is refused;
 - `TOY_OWN_SUMMARY=1` gives the finder a `summary_lines(out)` hook, wording
   `summary DIR` itself.
 
@@ -61,6 +63,13 @@ class ToySummaryFinder:
             self.empty[int(call)] = reason
         if os.environ.get("TOY_OWN_SUMMARY"):
             self.summary_lines = self._own_summary
+        if os.environ.get("TOY_LINK_TEXT"):
+            self.link_text = self._own_link
+
+    def _own_link(self, candidate):
+        if sum(candidate) == SIDE * SIDE:
+            raise ValueError("every cell shaded")
+        return "own-link:" + "".join(map(str, candidate))
 
     def _own_summary(self, out):
         return [f"own wording for {Path(out).name}"]
