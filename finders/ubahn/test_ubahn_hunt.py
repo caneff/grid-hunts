@@ -241,7 +241,7 @@ with tempfile.TemporaryDirectory() as d:
                 {"v": ["1", *record(good)["v"][1:]]},
                 "'1' of v",
             ),
-            ("an empty condition", {"exactly": ""}, "N:PIECE:rK"),
+            ("an empty condition", {"exactly": ""}, "N:KIND:rK"),
         )
     ):
         out = Path(d) / str(i)
@@ -264,11 +264,11 @@ with tempfile.TemporaryDirectory() as d:
     board = ["--rows", "4", "--cols", "4"]
     for i, (flags, reason) in enumerate(
         (
-            ([*board, "--exactly", "2:cross"], "N:PIECE:rK"),
+            ([*board, "--exactly", "2:cross"], "N:KIND:rK"),
             ([*board, "--exactly", "2:loop:r2"], "loop"),
             ([*board, "--exactly", "2:cross:r5"], "r5"),
-            ([*board, "--exactly", "2:cross:r00"], "N:PIECE:rK"),
-            ([*board, "--exactly", ""], "N:PIECE:rK"),
+            ([*board, "--exactly", "2:cross:r00"], "N:KIND:rK"),
+            ([*board, "--exactly", ""], "N:KIND:rK"),
             (["--rows", "1", "--cols", "4"], "2x2"),
         )
     ):

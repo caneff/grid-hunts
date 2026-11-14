@@ -83,7 +83,7 @@ README before reusing anything there.
   module, never the command line, and `Conditions.asking(...)` derives the
   conditions of a search's next step.
   `hybrid_finder.py` is the hybrid finder on the hunt protocol (#783): the
-  conditions `--circles "r6:turn r2c3"`, `--exactly N:PIECE:rK`,
+  conditions `--circles "r6:turn r2c3"`, `--exactly N:KIND:rK`,
   `--blank-strip` and `--min-bananas N` (at least N banana regions, #792,
   on every engine) in, valid grids out, one per seed, each re-read by
   `hybrid.py` in `verify`; `hybrid_finder.py classify` takes the same

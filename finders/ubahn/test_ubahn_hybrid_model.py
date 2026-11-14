@@ -142,7 +142,7 @@ for names, word, count in (
         late == hybrid.Classified("timeout", None),
     )
 
-# The piece-count condition, alone and together with circles.
+# The kind-count condition, alone and together with circles.
 two_crosses = {g for g in grids if TWO_CROSSES.holds(g, 4, 4)}
 agrees(
     "4x4 with exactly 2 crosses in r2",
@@ -239,7 +239,7 @@ check(
     f"5x5, r1c2 circled: exactly one grid, the bent three (got {got.status})",
     got == hybrid.Classified("unique", BENT_THREE),
 )
-# The same circle beside a piece-count condition. The engine without the
+# The same circle beside a kind-count condition. The engine without the
 # circle lists every grid with 2 branches in r1; the rule reader says which
 # of them the circle keeps.
 TWO_BRANCHES_R1 = network.Exactly.parse("2:branch:r1")

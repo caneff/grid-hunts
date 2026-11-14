@@ -23,7 +23,7 @@ import network
 
 # What a grid cell of each kind is worth. A number cell is worth its outside
 # number.
-PIECE_VALUE = {
+KIND_VALUE = {
     network.BLANK: 0,
     network.TURN: 1,
     network.STRAIGHT: 2,
@@ -37,7 +37,7 @@ PIECE_VALUE = {
 STRIP_ORDER = (network.CROSS, network.BRANCH, network.STRAIGHT, network.TURN)
 
 # The cross icon's four flags are [right, down, left, up] (penpa.py § 1.5).
-# Per piece, the icon beside a row of outside numbers and beside a column of
+# Per kind, the icon beside a row of outside numbers and beside a column of
 # them. The turn's icon sits in the one cell the innermost row and column
 # share.
 ICONS = {
@@ -56,7 +56,7 @@ def strips(blank_strip=False):
 
 class Conditions(NamedTuple):
     """What a hybrid grid is asked to meet: the board, the circled cells,
-    the piece-count condition (a `network.Exactly`, or None), whether the
+    the kind-count condition (a `network.Exactly`, or None), whether the
     blank strip is on, the fewest banana regions it may have (0 asks for
     none), how many valid circles on number cells it holds at least (#794),
     the windows that carry a Battenberg marking, each by its top-left cell,
@@ -126,7 +126,7 @@ def values(net, rows, cols, blank_strip=False):
     row_numbers, col_numbers = network.outside_numbers(net, rows, cols)
     depth = strips(blank_strip)
     board = {
-        (r, c): PIECE_VALUE[kinds[r * cols + c]]
+        (r, c): KIND_VALUE[kinds[r * cols + c]]
         for r in range(rows)
         for c in range(cols)
     }
@@ -155,11 +155,11 @@ def parse_cell(text):
         return int(match[1]) - 1, int(match[2]) - 1
     match = re.fullmatch(r"([rc])([1-9][0-9]*):([a-z]+)", text)
     if not match:
-        raise ValueError(f"a cell is rKcK, rK:PIECE or cK:PIECE, got {text!r}")
+        raise ValueError(f"a cell is rKcK, rK:KIND or cK:KIND, got {text!r}")
     axis, number, name = match.groups()
     if name not in network.KIND_NAMES:
         raise ValueError(
-            f"no piece named {name!r}: a number cell counts "
+            f"no kind named {name!r}: a number cell counts "
             f"{', '.join(network.KIND_NAMES)}"
         )
     strip = -network.KIND_NAMES.index(name) - 1
@@ -419,7 +419,7 @@ def _icon(cell):
 
 def drawing(net, rows, cols, circles=(), blank_strip=False):
     """The board as one string per board row: a number cell as its value, a
-    grid cell as its piece, an icon cell as the piece its strip counts, and a
+    grid cell as its kind, an icon cell as the kind its strip counts, and a
     circled cell in brackets. Only for a network with no dead end."""
     board = values(net, rows, cols, blank_strip)
     depth = strips(blank_strip)

@@ -201,16 +201,16 @@ class Exactly(NamedTuple):
 
     @classmethod
     def parse(cls, text):
-        """The condition written `N:PIECE:rK` or `N:PIECE:cK`, as in
+        """The condition written `N:KIND:rK` or `N:KIND:cK`, as in
         `2:cross:r2` or `3:blank:c1`. Raises ValueError, naming what is
         wrong."""
         match = re.fullmatch(r"([0-9]+):([a-z]+):([rc])([1-9][0-9]*)", text)
         if not match:
-            raise ValueError(f"a condition is N:PIECE:rK or N:PIECE:cK, got {text!r}")
+            raise ValueError(f"a condition is N:KIND:rK or N:KIND:cK, got {text!r}")
         count, name, axis, number = match.groups()
         if name not in KIND_NAMES:
             raise ValueError(
-                f"no piece named {name!r}: a condition counts {', '.join(KIND_NAMES)}"
+                f"no kind named {name!r}: a condition counts {', '.join(KIND_NAMES)}"
             )
         return cls(int(count), KIND_NAMES.index(name), axis, int(number) - 1)
 

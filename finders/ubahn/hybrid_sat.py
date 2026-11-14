@@ -7,7 +7,7 @@ both on the clauses `rules` builds. The network's own rules are
 `hybrid.py`'s reader, not carried over from the CP-SAT model, so that the
 engines check each other:
 
-- A cell's value: a grid cell's is its piece's, a number cell's is a count
+- A cell's value: a grid cell's is its kind's, a number cell's is a count
   of one kind over its row or column, kept in unary by `_at_least`. Each
   cell has one variable for "its value is odd".
 - Chocolate: no 2x2 window holds exactly three even cells, a cell off the
@@ -186,7 +186,7 @@ def _add_values(pool, clauses, kind, conditions, true):
     for cell in ((r, c) for r in range(rows) for c in range(cols)):
         odd[cell] = pool.id()
         clauses += [
-            [-kind[cell, k], odd[cell] if hybrid.PIECE_VALUE[k] % 2 else -odd[cell]]
+            [-kind[cell, k], odd[cell] if hybrid.KIND_VALUE[k] % 2 else -odd[cell]]
             for k in KINDS
         ]
     count = {}
@@ -332,13 +332,13 @@ def _battenberg(odd, marked, only):
     return clauses
 
 
-def _piece_value(pool, clauses, kind, cell, true):
+def _kind_value(pool, clauses, kind, cell, true):
     """A grid cell's value in unary, as `_at_least` would give it, up to one
-    more than any piece is worth."""
-    top = max(hybrid.PIECE_VALUE.values()) + 1
+    more than any kind is worth."""
+    top = max(hybrid.KIND_VALUE.values()) + 1
     value = [true] + [pool.id() for _ in range(top)]
     clauses += [
-        [-kind[cell, k], value[j] if hybrid.PIECE_VALUE[k] >= j else -value[j]]
+        [-kind[cell, k], value[j] if hybrid.KIND_VALUE[k] >= j else -value[j]]
         for k in KINDS
         for j in range(1, top + 1)
     ]
@@ -363,7 +363,7 @@ def rules(conditions):
     for circle in sorted(circles):
         if circle not in odd:
             raise ValueError(f"circle off the board: {circle}")
-        value = count.get(circle) or _piece_value(pool, clauses, kind, circle, true)
+        value = count.get(circle) or _kind_value(pool, clauses, kind, circle, true)
         _add_circle(pool, clauses, odd, value, circle, true)
     if exactly is not None:
         counted = [kind[cell, exactly.kind] for cell in exactly.cells(rows, cols)]

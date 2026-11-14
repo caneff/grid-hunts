@@ -6,7 +6,7 @@ decision log's, § Hybrid: at least N banana regions: of the 18 valid grids
 16 have one banana region and 2 have two, so N = 2 leaves 2 grids, N = 3
 none, and N = 2 with `r2c4` circled exactly one. The rule reader, the brute
 force, each engine and the CLI must all say so. The condition is held to
-the rule reader with a piece count on 5x5, listed in full, and with the
+the rule reader with a kind count on 5x5, listed in full, and with the
 blank strip on 6x6, by seed.
 
 One worker.
@@ -160,7 +160,7 @@ def test_engine(name, engine):
 
 
 def test_larger_board(name, exactly, total):
-    """5x5, which no brute force reaches: every grid with this piece-count
+    """5x5, which no brute force reaches: every grid with this kind-count
     condition, `total` of them, split by the reader's own count of banana
     regions. Each engine must keep exactly the grids with enough of them.
     Returns {N: the grids with N or more}."""
@@ -418,7 +418,7 @@ if __name__ == "__main__":
     for name, engine in hybrid_engines.ENGINES.items():
         test_engine(name, engine)
         test_blank_strip(name, engine)
-    test_larger_board("no piece count", None, 31)
+    test_larger_board("no kind count", None, 31)
     two_branches = network.Exactly.parse("2:branch:r1")
     kept = test_larger_board("2 branches in r1", two_branches, 8)
     check(

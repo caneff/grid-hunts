@@ -157,7 +157,7 @@ for engine in ENGINES:
                 late == hybrid.Classified("timeout", None),
             )
 
-    # The piece-count condition, alone and together with circles.
+    # The kind-count condition, alone and together with circles.
     agrees(
         engine,
         "4x4 with exactly 2 crosses in r2",

@@ -11,12 +11,12 @@ capped solve `Empty("timeout ...")`.
 `verify` re-reads the network with `network.py`, which states the rules
 without the model (dead ends, flood fill, the condition by counting), and
 re-proves uniqueness with the spanning-tree encoding. That re-proof shares
-the search's piece table, number sums and root; only its connectivity is a
+the search's kind table, number sums and root; only its connectivity is a
 second encoding.
 
 Conditions are finder rules passed as flags. The one so far:
-`--exactly N:PIECE:rK` (or `cK`), exactly N of a piece in a row or column;
-PIECE is turn, straight, branch, cross, or blank for the cells with no arm.
+`--exactly N:KIND:rK` (or `cK`), exactly N of a kind in a row or column;
+KIND is turn, straight, branch, cross, or blank for the cells with no arm.
 
     uv run finders/ubahn/ubahn_finder.py --out DIR --seeds 0:50 --workers 1 \\
         --rows 6 --cols 6 --exactly 2:cross:r2 --timeout 60
@@ -244,7 +244,7 @@ def main(argv):
     parser = argparse.ArgumentParser(prog="ubahn_finder", add_help=False)
     parser.add_argument("--rows", type=int, default=DEFAULT_SIDE)
     parser.add_argument("--cols", type=int, default=DEFAULT_SIDE)
-    parser.add_argument("--exactly", metavar="N:PIECE:rK")
+    parser.add_argument("--exactly", metavar="N:KIND:rK")
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT)
     own, rest = parser.parse_known_args(argv)
     if rest[:1] == ["verify"]:

@@ -12,9 +12,9 @@ Conditions are flags:
 
     --circles "CELL CELL ..."  circled cells: each one's value is the size of
                                its region. A grid cell is rKcK, a number cell
-                               rK:PIECE or cK:PIECE (r6:straight, c1:turn).
-    --exactly N:PIECE:rK       exactly N of a piece in a row (or cK, a
-                               column); PIECE is turn, straight, branch,
+                               rK:KIND or cK:KIND (r6:straight, c1:turn).
+    --exactly N:KIND:rK       exactly N of a kind in a row (or cK, a
+                               column); KIND is turn, straight, branch,
                                cross or blank.
     --blank-strip              a fifth strip of number cells, for blank,
                                outside the cross. Off unless given.
@@ -193,7 +193,7 @@ the row and column number cells; a left-right mirror image is another
 puzzle, since the number cells sit above and on the left only. A hunt
 dedupes under that reflection when the board is square, every circle's
 image is circled, every marked window's image is marked and there is no
-piece-count condition, and under nothing otherwise.
+kind-count condition, and under nothing otherwise.
 
 The driver's flags (`--out`, `--seeds`, `--workers`, ...) are its own
 (finders/hunt/driver.py).
@@ -304,7 +304,7 @@ def _parser():
     parser.add_argument("--cols", type=int, default=DEFAULT_SIDE)
     parser.add_argument("--circles", default="", metavar="CELLS")
     parser.add_argument("--numbers", default="", metavar="CELLS")
-    parser.add_argument("--exactly", metavar="N:PIECE:rK")
+    parser.add_argument("--exactly", metavar="N:KIND:rK")
     parser.add_argument("--blank-strip", action="store_true")
     parser.add_argument("--min-bananas", type=int, metavar="N")
     parser.add_argument("--number-circles", type=int, default=0, metavar="K")

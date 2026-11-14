@@ -2,8 +2,8 @@
 
 One boolean per edge is the decision; everything else is channelled from the
 edges. Per cell, one table over its arms lists the 12 legal arm patterns and
-the piece each one makes (blank for no arm), so a dead end has no row. The
-pieces and blank cells of a row or column sum to its outside numbers. Connectivity has two encodings: `flow`
+the kind each one makes (blank for no arm), so a dead end has no row. The
+cells of one kind in a row or column sum to its outside numbers. Connectivity has two encodings: `flow`
 (single-commodity flow, what the finder searches with) and `tree` (a spanning
 tree with level labels, the independent check). Both hang off the same root,
 the first used cell in reading order.
@@ -65,7 +65,7 @@ class Built(NamedTuple):
     kind: dict
 
 
-def _add_pieces(m, edge, cells):
+def _add_kinds(m, edge, cells):
     """Channel each cell's kind from its arms. Returns `kind[cell, k]`
     booleans and `used[cell]`, the cell is not blank. An arm that would leave the board has no variable, so only the
     patterns without it are listed."""
@@ -144,7 +144,7 @@ def build(rows, cols, connectivity, *, exactly=None, numbers=None):
     m = cp_model.CpModel()
     edge = {e: m.new_bool_var(f"e{e}") for e in all_edges(rows, cols)}
     cells = [(r, c) for r in range(rows) for c in range(cols)]
-    kind, used = _add_pieces(m, edge, cells)
+    kind, used = _add_kinds(m, edge, cells)
 
     cap = rows * cols
     if exactly is not None:

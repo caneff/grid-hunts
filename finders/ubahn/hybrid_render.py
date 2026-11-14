@@ -174,7 +174,7 @@ class Picture(GridCanvas):
         )
 
     def _icons(self):
-        """The icon cell at the head of each strip: the piece the strip
+        """The icon cell at the head of each strip: the kind the strip
         counts, and for the blank strip an empty cell."""
         for k in range(1, self.depth + 1):
             for cell in ((-k, -1), (-1, -k)):

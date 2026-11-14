@@ -110,19 +110,19 @@ class Solve(NamedTuple):
     conflicts: int | None = None
 
 
-def _call(engine, case, seed, timeout):
+def _call(name, case, seed, timeout):
     """One call of the engine: `(status, network, cuts, conflicts)`."""
-    solver, conditions = ENGINES[engine], case.conditions
+    engine, conditions = ENGINES[name], case.conditions
     rng = random.Random(seed)
-    if isinstance(solver, hybrid_sat.Engine):
+    if isinstance(engine, hybrid_sat.Engine):
         if case.call == "grid":
-            found = solver.grid_listing(conditions, rng, time_limit=timeout)
+            found = engine.grid_listing(conditions, rng, time_limit=timeout)
             return (*hybrid_sat.sampled(found), found.cuts, found.conflicts)
-        found = solver.classify_listing(conditions, time_limit=timeout)
+        found = engine.classify_listing(conditions, time_limit=timeout)
         return (*hybrid_sat.classified(found), found.cuts, found.conflicts)
     if case.call == "grid":
-        return (*solver.grid(conditions, rng, time_limit=timeout), None, None)
-    return (*solver.classify(conditions, time_limit=timeout, workers=1), None, None)
+        return (*engine.grid(conditions, rng, time_limit=timeout), None, None)
+    return (*engine.classify(conditions, time_limit=timeout, workers=1), None, None)
 
 
 class Ran(NamedTuple):
