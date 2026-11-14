@@ -46,6 +46,8 @@ VIEWERS = ("xdg-open", "display", "eog", "feh", "wslview", "explorer.exe", "open
 
 
 def run(out, *extra, board=BOARD, fake_bin=None, questions=("feasible", "unique")):
+    """`query.py halver_between BOARD QUESTION... --out OUT EXTRA...`, with
+    no display and, given `fake_bin`, its viewers first on PATH."""
     env = {
         k: v for k, v in os.environ.items() if k not in ("DISPLAY", "WAYLAND_DISPLAY")
     }
@@ -107,6 +109,8 @@ def is_valid(solution, lines):
 
 
 def board_with(values):
+    """board.json with every cell's entries cleared and, given a solution,
+    its digits entered."""
     doc = json.loads(BOARD.read_text())
     doc["puzzle"]["cells"] = [
         {"value": values[f"r{i // 9 + 1}c{i % 9 + 1}"]} if values else {}
@@ -153,7 +157,16 @@ def refused_boards(tmp, fake_bin):
     print("ok: a given digit, a lockout line and a 4x4 board are each refused")
 
 
+def test_helpers_other_modules_import_keep_their_docstring():
+    # Spec #116: a docstring on a symbol another module imports stays. The
+    # forced, drop-one and spec-65 suites import `run` and `board_with`.
+    for helper in (run, board_with):
+        assert helper.__doc__, f"{helper.__name__} lost its docstring"
+    print("ok: run and board_with keep their docstrings")
+
+
 def main():
+    test_helpers_other_modules_import_keep_their_docstring()
     lines = rules.load_lines(BOARD)
     with tempfile.TemporaryDirectory() as tmp, short_link.fake_mint() as fake:
         fake_bin, opened = fake_viewers(tmp)

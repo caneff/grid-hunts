@@ -160,6 +160,8 @@ def load_finder(name, board_path):
 
 
 def solve(question, model, variables, time_limit):
+    """`found` with one solution, `infeasible`, or `timeout`; any other solver
+    status raises ValueError."""
     solver = cpsat.solver(time_limit)
     status = solver.Solve(model)
     if status in cpsat.SOLVED:
@@ -453,6 +455,9 @@ def read_marks(finder, condition_files, marks_file):
 
 
 def read_entries(hook, marks_file):
+    """Each `marks.json` entry through `hook`, as (condition, its line's
+    fields); a ValueError names what does not read: not JSON, not a list, an
+    entry that is not an object or lacks a field the hook reads."""
     entries = json.loads(marks_file.read_text())
     if not isinstance(entries, list):
         raise ValueError("not a list of marks")
