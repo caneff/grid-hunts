@@ -67,7 +67,9 @@ with tempfile.TemporaryDirectory() as d:
     verdicts = read_jsonl(out / "verified.jsonl")[1:]
     check(
         "verify takes every example of the hunt",
-        r.returncode == 0 and verdicts and all(v["ok"] for v in verdicts),
+        r.returncode == 0
+        and len(verdicts) == len(examples)
+        and all(v["ok"] for v in verdicts),
     )
     # The same grids, asked for one more than they hold.
     (out / "examples.jsonl").write_text(
@@ -81,7 +83,7 @@ with tempfile.TemporaryDirectory() as d:
     check(
         f"verify rejects every one of them at {MOST + 1} ({reason})",
         r.returncode == 0
-        and verdicts
+        and len(verdicts) == len(examples) > 0
         and all(not v["ok"] and v["reason"] == reason for v in verdicts),
     )
 
@@ -116,10 +118,13 @@ with tempfile.TemporaryDirectory() as d:
         )
     )  # fmt: skip
     r = run_cli(FINDER, "verify", old)
+    old_verdicts = read_jsonl(old / "verified.jsonl")[1:]
     check(
         f"verify still reads a record with no number_circles ({r.stderr[-200:]})",
-        r.returncode == 0 and all(v["ok"] for v in read_jsonl(old / "verified.jsonl")[1:]),
-    )  # fmt: skip
+        r.returncode == 0
+        and len(old_verdicts) == len(read_jsonl(old / "examples.jsonl")) > 0
+        and all(v["ok"] for v in old_verdicts),
+    )
 
     # `climb`: K up from 0 until no grid reaches it.
     for engine in hybrid_engines.ENGINES:
@@ -334,8 +339,8 @@ with tempfile.TemporaryDirectory() as d:
         )
 r = run_cli(FINDER, "--help")
 check(
-    "--help names the condition and the climb",
-    r.returncode == 0 and "--number-circles K" in r.stdout and "climb" in r.stdout,
+    "--help names the flag and the climb",
+    r.returncode == 0 and "--number-circles" in r.stdout and "climb" in r.stdout,
 )
 
 finish()

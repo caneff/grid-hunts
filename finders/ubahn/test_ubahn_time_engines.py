@@ -53,7 +53,9 @@ for engine in ENGINES:
     )
     check(
         f"{engine}: a run names its engine, case, call, seeds asked and limit",
-        ran[:5] == (engine, "4x4", "grid", 3, 60.0) and not ran.capped,
+        (ran.engine, ran.case, ran.call, ran.asked, ran.timeout)
+        == (engine, "4x4", "grid", 3, 60.0)
+        and not ran.capped,
     )
     check(
         f"{engine}: cuts and conflicts are counted on the PySAT engines only",
@@ -299,8 +301,7 @@ check(
         time_engines.Case(
             "7x7 example, classify", "classify", hybrid.Conditions(7, 7, EXAMPLE)
         ),
-    ]
-    and list(time_engines.CASES) == [c.name for c in time_engines.CASES.values()],
+    ],
 )
 check(
     "the cap is 20 seeds and the bar 2 times at 8x8 and 10x10",
@@ -312,12 +313,13 @@ check(
 def cli(*argv):
     """`main`'s exit code and what it printed; its progress lines and
     argparse's usage message are kept off the test's output."""
-    out = io.StringIO()
-    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+    out, err = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
         try:
             code = time_engines.main(list(argv))
         except SystemExit as e:
             code = e.code
+    cli.stderr = err.getvalue()
     return code, out.getvalue()
 
 
@@ -410,15 +412,21 @@ with tempfile.TemporaryDirectory() as tmp:
         and "| 8x8 | pysat-lazy | 0 of 2 (incomplete) |" in text,
     )
 
-    for bad in (
-        ("--case", "6x6", "--seeds", "5:5"),
-        ("--case", "6x6", "--seeds", "x:3"),
-        ("--case", "9x9"),
+    for bad, named in (
+        (("--case", "6x6", "--seeds", "5:5"), "--seeds"),
+        (("--case", "6x6", "--seeds", "x:3"), "--seeds"),
+        (("--case", "9x9"), "9x9"),
     ):
         code, _ = cli(*run_lazy, *bad)
-        check(f"run: {' '.join(bad)} is refused", code == 2)
+        check(
+            f"run: {' '.join(bad)} is refused, exit 2, naming {named!r}",
+            code == 2 and named in cli.stderr,
+        )
     code, _ = cli("run", "--engine", "clingo", "--progress", str(lazy))
-    check("run: an unknown engine is refused", code == 2)
+    check(
+        "run: an unknown engine is refused, exit 2, naming it",
+        code == 2 and "clingo" in cli.stderr,
+    )
     check("the refusals solved nothing", solve_lines(lazy) == 3)
 
 

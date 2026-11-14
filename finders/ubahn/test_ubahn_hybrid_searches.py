@@ -24,6 +24,7 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 import hybrid
 import hybrid_engines
 import hybrid_searches
+import network
 from cli_checks import check, finish
 
 ROWS, COLS = 3, 4  # not square, so no mirror pair is solved once for two
@@ -130,6 +131,8 @@ def main():
         and base.asking(battenberg_only=True).circles == base.circles,
     )
 
+    mirror_line_checks()
+
     # --- no tool or test imports the command line ------------------------------
     imports_cli = [
         p.name
@@ -145,6 +148,57 @@ def main():
         not imports_cli,
     )
     finish()
+
+
+def mirror_line_checks():
+    """`_mirror_line` copies a solved set's line to its mirror's: the same
+    answer, the windows swapped, and a unique set's grid reflected with it."""
+    asked = hybrid.Conditions(4, 4)
+    grid = network.from_drawing(["┌┐┌┐", "└┼┤│", "┌┼┤│", "└┘└┘"])
+    # Not a diagonal pair of windows: (0, 1) and its image (1, 0) are two sets.
+    windows, image = [(0, 1)], [(1, 0)]
+    solved_conditions = asked.asking(battenberg=map(tuple, windows))
+    finder = hybrid_engines.HybridFinder(solved_conditions)
+    solved = {
+        "size": 1,
+        "windows": [hybrid.cell_name(w) for w in windows],
+        "status": "unique",
+        "how": "solved",
+        "mirror": [hybrid.cell_name(w) for w in image],
+        "seconds": 1.5,
+        "record": finder.record(hybrid_engines.Candidate(solved_conditions, grid)),
+    }
+    line = hybrid_searches._mirror_line(asked, "cpsat", 10.0, solved, {})
+    reflected = frozenset(hybrid_engines.mirror(edge) for edge in grid)
+    check(
+        "_mirror_line: the mirror's line names the image's windows, says it was "
+        "copied, and points back at the solved set",
+        (line["windows"], line["how"], line["mirror"], line["seconds"])
+        == (solved["mirror"], "mirror", solved["windows"], None)
+        and line["status"] == "unique"
+        and line["size"] == 1,
+    )
+    mirrored = finder.candidate_from_record(line["record"])
+    check(
+        "_mirror_line: a unique set's record holds the grid reflected, asked "
+        "under the image's windows",
+        mirrored.network == reflected
+        and mirrored.network != grid
+        and line["record"]["battenberg"] == solved["mirror"],
+    )
+    check(
+        "_mirror_line: the solved line is left as it was",
+        solved["how"] == "solved" and solved["seconds"] == 1.5,
+    )
+    other = {**solved, "status": "not_unique"}
+    del other["record"]
+    line = hybrid_searches._mirror_line(asked, "cpsat", 10.0, other, {})
+    check(
+        "_mirror_line: a set with no unique grid copies its answer and no record",
+        line["status"] == "not_unique"
+        and "record" not in line
+        and line["windows"] == solved["mirror"],
+    )
 
 
 # A search starts its workers by `multiprocessing`, which imports this file again.

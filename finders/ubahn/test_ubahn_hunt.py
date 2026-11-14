@@ -21,7 +21,8 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import network
 from cli_checks import check, finish, read_jsonl, run_cli
-from dedupe import D4, canonical_key
+from dedupe import canonical_key
+from ubahn_finder import Candidate, UbahnFinder
 from verified_io import read_verified
 
 FINDER = HERE / "ubahn_finder.py"
@@ -30,32 +31,21 @@ EXACTLY = "2:cross:r2"
 
 
 def record(net, exactly=EXACTLY):
-    """The record of a 4x4 network, written here by hand: `h` and `v` hold
-    one string per row of horizontal and of vertical edges, "1" where one is
-    on."""
-    return {
-        "rows": ROWS,
-        "cols": COLS,
-        "exactly": exactly,
-        "h": [
-            "".join(str(int(((r, c), (r, c + 1)) in net)) for c in range(COLS - 1))
-            for r in range(ROWS)
-        ],
-        "v": [
-            "".join(str(int(((r, c), (r + 1, c)) in net)) for c in range(COLS))
-            for r in range(ROWS - 1)
-        ],
-    }
+    """The record the finder writes for a 4x4 network, its `exactly` then
+    replaced by `exactly`."""
+    found = Candidate(ROWS, COLS, frozenset(net), None)
+    return {**UbahnFinder(ROWS, COLS).record(found), "exactly": exactly}
 
 
 def network_of(rec):
-    """The network a record's `h` and `v` describe."""
-    net = set()
-    for r, bits in enumerate(rec["h"]):
-        net |= {((r, c), (r, c + 1)) for c, bit in enumerate(bits) if bit == "1"}
-    for r, bits in enumerate(rec["v"]):
-        net |= {((r, c), (r + 1, c)) for c, bit in enumerate(bits) if bit == "1"}
-    return frozenset(net)
+    """The network a record holds, read through the finder."""
+    return UbahnFinder(rec["rows"], rec["cols"]).candidate_from_record(rec).network
+
+
+def canonical(net, rows=ROWS, cols=COLS):
+    """The dedupe key a hunt files `net` under."""
+    finder = UbahnFinder(rows, cols)
+    return canonical_key(finder.key(Candidate(rows, cols, net, None)), finder.symmetry)
 
 
 def mirrored(net, cols):
@@ -117,12 +107,9 @@ with tempfile.TemporaryDirectory() as d:
             for counts, cells in zip(ex["numbers"][axis], groups, strict=True)
         ),
     )
-    keys = [
-        canonical_key(network.kind_grid(network_of(ex), ROWS, COLS), D4)
-        for ex in examples
-    ]
+    keys = [canonical(network_of(ex)) for ex in examples]
     check(
-        "every example's dedupe key is its grid of kinds, least under D4",
+        "every example's dedupe key is the one the finder files its network under",
         all(
             tuple(ex["__dedupe_key__"]) == key
             for ex, key in zip(examples, keys, strict=True)
@@ -139,16 +126,23 @@ with tempfile.TemporaryDirectory() as d:
         and summary["examples"] + summary["duplicates"] + summary["empty"] == 40
         and summary["rejected"] == 0,
     )
+    config = json.loads((out / "run.json").read_text()).get("config")
     check(
-        "run.json records the finder's config",
-        json.loads((out / "run.json").read_text()).get("config")
-        == {"rows": 4, "cols": 4, "exactly": EXACTLY, "timeout": 10.0},
+        "run.json records the board, the condition and the timeout",
+        (config["rows"], config["cols"], config["exactly"], config["timeout"])
+        == (4, 4, EXACTLY, 10.0),
     )
 
 with tempfile.TemporaryDirectory() as d:
     out = Path(d)
     good = min(unique, key=sorted)
-    dead_end = good - {min(good)}
+    # The first edge of `good` switched off in its record: the finder cannot
+    # draw a network with a dead end, so the record is damaged after it.
+    (r0, c0), (r1, c1) = min(good)
+    side, row, col = ("h", r0, c0) if r0 == r1 else ("v", r0, c0)
+    dead_end = record(good)
+    bits = dead_end[side][row]
+    dead_end[side][row] = bits[:col] + "0" + bits[col + 1 :]
     good_blanks = sum(1 for c in range(COLS) if not any(network.arms(good, (0, c))))
     cases = [
         ("a unique network", record(good), True, ""),
@@ -164,7 +158,7 @@ with tempfile.TemporaryDirectory() as d:
             False,
             "1:cross:r2",
         ),
-        ("a network with a dead end", record(dead_end), False, "dead end"),
+        ("a network with a dead end", dead_end, False, "dead end"),
         (
             "a unique network filed under a row off its board",
             record(good, exactly="0:cross:r9"),
@@ -308,18 +302,13 @@ with tempfile.TemporaryDirectory() as d:
         all(not network.why_not_network(net, 2, 8) for net in nets),
     )
     check(
-        "every 2x8 dedupe key is the least of the kind grid's four images",
+        "every 2x8 dedupe key is the finder's, the same for the network's four images",
         all(
             tuple(ex["__dedupe_key__"])
-            == min(
-                network.kind_grid(image, 2, 8)
-                for image in (
-                    net,
-                    mirrored(net, 8),
-                    upturned(net, 2),
-                    upturned(mirrored(net, 8), 2),
-                )
-            )
+            == canonical(net, 2, 8)
+            == canonical(mirrored(net, 8), 2, 8)
+            == canonical(upturned(net, 2), 2, 8)
+            == canonical(upturned(mirrored(net, 8), 2), 2, 8)
             for ex, net in zip(examples, nets, strict=True)
         ),
     )

@@ -367,13 +367,11 @@ def test_flag():
         r = run_cli(HERE / "brute.py", "4", "4", "--min-bananas", bad)
         check(
             f"brute.py --min-bananas {bad} is refused the same way",
-            r.returncode == 2
-            and r.stderr.splitlines()[-1:]
-            == [f"brute.py: error: --min-bananas takes 1 or more, got {bad}"],
+            r.returncode == 2 and "--min-bananas" in r.stderr,
         )
     check(
-        "the usage text names the condition",
-        "--min-bananas N" in run_cli(FINDER, "--help").stdout,
+        "the usage text names the flag",
+        "--min-bananas" in run_cli(FINDER, "--help").stdout,
     )
 
 

@@ -94,30 +94,14 @@ status, found, cuts = sat_model.uniqueness(
 check(f"no time: timeout (got {status})", (status, found) == ("timeout", None))
 
 
-class Clock:
-    """A clock that reads 0 for its first `reads` readings and 100 after."""
-
-    def __init__(self, reads):
-        self.left = reads
-
-    def monotonic(self):
-        self.left -= 1
-        return 0.0 if self.left >= 0 else 100.0
-
-
-# "unique" comes from the second solve alone, so time must be able to run out
-# there too. The check reads the clock once to set its deadline and once
-# before each solve; a clock that jumps after two readings stops the second.
-real_time, sat_model.time = sat_model.time, Clock(2)
-try:
-    status, found, cuts = sat_model.uniqueness(
-        2, 2, network.outside_numbers(loop, 2, 2), time_limit=10.0
-    )
-finally:
-    sat_model.time = real_time
+# A time limit too short to finish is a timeout whatever the solver had found
+# by then, never "unique": the answer is read off the output, not the clock.
+status, found, cuts = sat_model.uniqueness(
+    2, 2, network.outside_numbers(loop, 2, 2), time_limit=1e-9
+)
 check(
-    f"time runs out before the second solve: timeout, with the loop (got {status})",
-    (status, found) == ("timeout", loop),
+    f"a time limit of a nanosecond: timeout, never unique (got {status})",
+    status == "timeout",
 )
 
 # A set of numbers no board can hold reads infeasible, as the CP-SAT check

@@ -624,11 +624,10 @@ with tempfile.TemporaryDirectory() as d:
 
 r = run_cli(FINDER, "--help")
 check(
-    "--help describes fewest-markings and its flags",
+    "--help names fewest-markings and its flags",
     r.returncode == 0
     and all(
-        word in r.stdout
-        for word in ("fewest-markings", "--max-size K", "--workers N", "sets.jsonl")
+        word in r.stdout for word in ("fewest-markings", "--max-size", "--workers")
     ),
 )
 

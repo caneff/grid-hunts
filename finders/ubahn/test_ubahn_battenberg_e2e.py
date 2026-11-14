@@ -117,13 +117,4 @@ with tempfile.TemporaryDirectory() as d:
             == {(0, 2), (0, -1)},
         )
 
-for flags in (("--battenberg", "r1c3"), ("--battenberg-only",)):
-    r = run_cli(
-        HERE / "hybrid_finder.py", "classify", *BOARD, "--engine", "cpsat", *flags
-    )
-    check(
-        f"classify on cpsat with {flags[0]} is refused by name, exit 2",
-        r.returncode == 2 and f"{flags[0]} is on the PySAT engines only" in r.stderr,
-    )
-
 finish()

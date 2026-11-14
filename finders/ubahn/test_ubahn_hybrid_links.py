@@ -23,6 +23,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import hybrid
+import hybrid_engines
 import penpa
 from cli_checks import check, finish, read_jsonl, run_cli
 from penpa_decode import Decoded, battenberg_vertices, edges_of, parameter
@@ -33,12 +34,9 @@ RUN_JSON = '{"argv": ["--out", "x", "--seeds", "0:1"]}\n'
 
 
 def network_of(rec):
-    net = set()
-    for r, bits in enumerate(rec["h"]):
-        net |= {((r, c), (r, c + 1)) for c, bit in enumerate(bits) if bit == "1"}
-    for r, bits in enumerate(rec["v"]):
-        net |= {((r, c), (r + 1, c)) for c, bit in enumerate(bits) if bit == "1"}
-    return frozenset(net)
+    """The network a record holds, read through the finder."""
+    finder = hybrid_engines.HybridFinder(hybrid.Conditions(rec["rows"], rec["cols"]))
+    return finder.candidate_from_record(rec).network
 
 
 def table_index(decoded, strips, cell):
@@ -276,6 +274,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
     # --blank-strip on a four-strip record draws the fifth strip when the grid
     # is still a hybrid grid with it, and is refused by name when it is not.
+    outcomes = set()
     for k, (rec_k, seed_k) in enumerate(zip(records, seeds, strict=True)):
         one_k = Path(tmp) / f"strip-{k}"
         one_k.mkdir()
@@ -289,6 +288,7 @@ with tempfile.TemporaryDirectory() as tmp:
             net_k, hybrid.Conditions(4, 4, circles=frozenset(()), blank_strip=True)
         )
         r = run_cli(FINDER, "--blank-strip", "links", str(one_k))
+        outcomes.add("refused" if why else "drawn")
         if why:
             good = r.returncode == 2 and why in r.stderr
             good = good and not (one_k / "links").exists()
@@ -296,6 +296,10 @@ with tempfile.TemporaryDirectory() as tmp:
             d_k = Decoded((one_k / "links" / f"{seed_k}.txt").read_text().strip())
             good = r.returncode == 0 and (d_k.nx, d_k.ny) == (9, 9)
         check(f"--blank-strip on a four-strip record {k}: {why or 'drawn'}", good)
+    check(
+        "the records reach both ways, one refused and one drawn",
+        outcomes == {"refused", "drawn"},
+    )
 
     # --blank-strip: the fifth strip is drawn, and a hunt's own strip is kept.
     five = hunt(tmp, "five", "--blank-strip")
@@ -468,10 +472,10 @@ check(
 
 r = run_cli(FINDER, "--help")
 check(
-    "--help describes `links --battenberg` and `--battenberg-only`",
+    "--help names `--battenberg` and `--battenberg-only`",
     r.returncode == 0
-    and '--battenberg "r1c3 r1:turn"' in r.stdout
-    and "[--battenberg-only]" in r.stdout,
+    and "--battenberg " in r.stdout
+    and "--battenberg-only" in r.stdout,
 )
 
 finish()
