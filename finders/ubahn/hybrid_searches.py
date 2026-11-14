@@ -32,9 +32,7 @@ from hybrid_engines import (
     mirror,
 )
 
-# The one seed every step of a climb hunts.
 CLIMB_SEED = 0
-# The one seed a unique set's example is written under by `fewest-markings`.
 SET_SEED = 0
 
 
@@ -281,16 +279,14 @@ def fewest_markings(
     # a module, which cannot be: it gets the one engine it solves with.
     mine = {engine: engines[engine]}
     timed, unique, size = [], [], 0
-    # Held until the answer is printed, as a climb holds its own log. A
-    # worker appends to the file itself (`hunt_files.open_log`), so what the
+    # A worker appends to the file itself (`hunt_files.open_log`), so what the
     # run reads after one is the file, not `log.lines`.
     with hunt_files.run_log(path, asked):
         for size in range(max_size + 1):
             sets = list(itertools.combinations(windows, size))
             tried = _sets_on_file(path)
-            # Of a mirror pair the set that sorts first is the one solved and
-            # writes both lines. A mirror whose solved partner has a line and
-            # it none (a kill between the two) is solved itself.
+            # A mirror whose solved partner has a line and it none (a kill
+            # between the two) is solved itself.
             todo = [
                 chosen
                 for chosen in sets

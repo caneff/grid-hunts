@@ -43,8 +43,6 @@ TWO_CROSSES = network.Exactly.parse("2:cross:r2")
 
 
 def said(call, *args, **kwargs):
-    """What a call answers, or the error it raises: a guard that is gone
-    then fails its own check instead of ending the run."""
     try:
         return call(*args, **kwargs)
     except Exception as e:
@@ -56,10 +54,8 @@ def cells(*names):
 
 
 def engine_grids(conditions, valid):
-    """Every grid the engine's model allows: solve, forbid the grid on its
-    edge variables, solve again, until the model is infeasible. It stops at
-    the first grid `valid` refuses, with that grid in what it returns: a
-    model that has lost a rule allows too many grids to list."""
+    """Stops at the first grid `valid` refuses, with it in the result: a model
+    that has lost a rule allows too many grids to list."""
     built = hybrid_model.build(conditions)
     solver = cp_model.CpSolver()
     solver.parameters.num_workers = 1
@@ -94,7 +90,6 @@ grids = brute.hybrid_grids(4, 4)
 agrees("4x4, no condition", hybrid.Conditions(4, 4), grids)
 check("4x4, no condition: 18 grids", len(grids) == 18)
 
-# The blank strip is off unless asked for, and changes the answer when on.
 with_blank = brute.hybrid_grids(4, 4, blank_strip=True)
 agrees(
     "4x4 with the blank strip", hybrid.Conditions(4, 4, blank_strip=True), with_blank
@@ -129,20 +124,17 @@ for names, word, count in (
         f"{label}: the classification's grid is one of them, or None for none",
         got.network in want if want else got.network is None,
     )
-    # A limit reached is a timeout whatever the true answer is.
     late = hybrid_model.classify(conditions, time_limit=0, workers=1)
     check(
         f"{label}: a zero time limit reads timeout (got {late.status})",
         late == hybrid.Classified("timeout", None),
     )
-    # A limit below zero is reached too; the solver itself calls it invalid.
     late = said(hybrid_model.classify, conditions, time_limit=-1, workers=1)
     check(
         f"{label}: a time limit below zero reads timeout (got {late!r})",
         late == hybrid.Classified("timeout", None),
     )
 
-# The kind-count condition, alone and together with circles.
 two_crosses = {g for g in grids if TWO_CROSSES.holds(g, 4, 4)}
 agrees(
     "4x4 with exactly 2 crosses in r2",
@@ -162,8 +154,6 @@ for names, count in ((("r4c2",), 4), (("r2c4",), 0), (("c1:turn", "c4:turn"), 2)
     check(f"{label}: the brute force counts {count}", len(want) == count)
     agrees(label, hybrid.Conditions(4, 4, cells(*names), TWO_CROSSES), want)
 
-# One grid for a seed: a brute-force grid that meets the conditions, the same
-# one on every run of the seed, and not the same one for every seed.
 conditions = hybrid.Conditions(4, 4, cells("r2c2"))
 want = {
     g
@@ -213,11 +203,6 @@ try:
 except ValueError as e:
     check("a circle on an icon cell is refused", "off the board" in str(e))
 
-# A circle in a banana, which no 4x4 grid has. On this 5x5 grid, checked
-# by hand, r1c2 is a branch (3). Its region is r1c1, r1c2 and r2c1: a turn, the
-# branch and a branch, bent, so no rectangle. Round it everything is even: the
-# straight at r1c3, the cross at r2c2, the straight at r3c1, and the turn
-# numbers of rows 1 and 2 (2, 0) and of columns 1 and 2 (2, 0).
 BRANCH_AT = cells("r1c2")
 BENT_THREE = network.from_drawing(["┌┬─┬┐", "├┼┬┤│", "│├┘├┤", "├┴┬┼┘", "└─┴┘ "])
 board = hybrid.values(BENT_THREE, 5, 5)
@@ -239,9 +224,6 @@ check(
     f"5x5, r1c2 circled: exactly one grid, the bent three (got {got.status})",
     got == hybrid.Classified("unique", BENT_THREE),
 )
-# The same circle beside a kind-count condition. The engine without the
-# circle lists every grid with 2 branches in r1; the rule reader says which
-# of them the circle keeps.
 TWO_BRANCHES_R1 = network.Exactly.parse("2:branch:r1")
 
 
@@ -273,7 +255,6 @@ agrees(
 
 
 def takes(conditions, net):
-    """Whether the engine's model of these conditions allows this grid."""
     built = hybrid_model.build(conditions)
     for e, var in built.edge.items():
         built.m.add(var == (e in net))
@@ -285,9 +266,6 @@ def takes(conditions, net):
     return status != cp_model.INFEASIBLE
 
 
-# The circle rule where no enumeration reaches. Per grid: every cell the rule
-# reader would let be circled, each alone and all at once, and every seventh
-# of the others.
 refused, wrongly_taken, circled = [], [], 0
 for seed in range(3):
     found = hybrid_model.grid(

@@ -66,8 +66,7 @@ class Built(NamedTuple):
 
 
 def _add_kinds(m, edge, cells):
-    """Channel each cell's kind from its arms. Returns `kind[cell, k]`
-    booleans and `used[cell]`, the cell is not blank. An arm that would leave the board has no variable, so only the
+    """An arm that would leave the board has no variable, so only the
     patterns without it are listed."""
     kind, used = {}, {}
     for cell in cells:
@@ -101,9 +100,6 @@ def _add_root(m, cells, used):
 
 
 def _add_flow(m, edge, cells, used, root, cap):
-    """The root supplies one unit of flow per used cell; each used cell
-    absorbs one; flow crosses only edges that are on. `cap` bounds the number
-    of used cells."""
     inflow = {cell: [] for cell in cells}
     outflow = {cell: [] for cell in cells}
     for (a, b), on in edge.items():
@@ -119,8 +115,6 @@ def _add_flow(m, edge, cells, used, root, cap):
 
 
 def _add_tree(m, edge, cells, used, root, cap):
-    """Every used cell but the root has exactly one parent across an edge
-    that is on, one level nearer the root, which sits at level 0."""
     level = {cell: m.new_int_var(0, cap - 1, f"l{cell}") for cell in cells}
     parents = {cell: [] for cell in cells}
     for (a, b), on in edge.items():
@@ -156,7 +150,6 @@ def build(rows, cols, connectivity, *, exactly=None, numbers=None):
         for held, counts in rows_and_columns(rows, cols, numbers):
             for k, count in zip(KINDS, counts, strict=True):
                 m.add(sum(kind[cell, k] for cell in held) == count)
-        # The numbers fix how many cells are used: size the flow to that.
         cap = rows * cols - sum(counts[BLANK] for counts in numbers[0])
 
     root = _add_root(m, cells, used)
@@ -166,9 +159,9 @@ def build(rows, cols, connectivity, *, exactly=None, numbers=None):
 
 
 def sample(built, rng, *, time_limit):
-    """One network of a built model, steered by `rng`, on one worker so a
-    seed gives the same network every run. Returns `(status, network)`:
-    "found" with the network, or "infeasible" or "timeout" with None."""
+    """Returns `(status, network)`: "found" with the network, or
+    "infeasible" or "timeout" with None. One worker, so a seed gives the
+    same network every run."""
     # The seed picks which edges the search decides first and which way:
     # left to itself the solver returns the same dull network every time.
     order = list(built.edge.values())

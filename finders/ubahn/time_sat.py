@@ -28,15 +28,12 @@ import sat_model
 from network import BLANK, KINDS
 
 FIXTURE = HERE / "fixtures/timing-puzzles.json"
-# The order the fixture writes a row's or column's four numbers in; it leaves
-# blank out.
 FIXTURE_ORDER = hybrid.STRIP_ORDER
 
 
 def fixture_numbers(puzzle):
-    """One fixture puzzle's outside numbers as `network.outside_numbers`
-    returns them: a blank count added to each row and column, the kinds in `KINDS`
-    order."""
+    """A fixture puzzle's outside numbers as `network.outside_numbers` returns
+    them (the fixture leaves the blank count out)."""
 
     def five(counts, length):
         by_kind = dict(zip(FIXTURE_ORDER, counts, strict=True))
@@ -55,8 +52,7 @@ def fixture_puzzles():
 
 
 def fastest(check, reps):
-    """`check()`'s result and the fastest of `reps` runs, in milliseconds.
-    Raises if two runs give different verdicts."""
+    """Raises if two runs of `check()` give different verdicts."""
     results, times = [], []
     for _ in range(reps):
         started = time.perf_counter()
@@ -119,8 +115,6 @@ def main(argv):
 
 
 def count_fillings(cap):
-    """Print, per puzzle, how many fillings its numbers have in one part and
-    how many in several, counted up to `cap`."""
     print("| Puzzle | In one part | In several parts | Counted |")
     print("| --- | --- | --- | --- |")
     for puzzle in fixture_puzzles():

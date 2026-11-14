@@ -36,7 +36,6 @@ TIME_LIMIT = 10.0
 
 
 def kept(grids, side, marked, only):
-    """The grids of `grids` the rule reader accepts under these markings."""
     return {
         g
         for g in grids
@@ -50,8 +49,6 @@ def kept(grids, side, marked, only):
 
 
 def listed(engine, side, marked, only, cap):
-    """The grids the engine lists under these markings, up to `cap`, or None
-    on a time limit reached."""
     got = hybrid_sat.listing(
         hybrid.Conditions(side, side, battenberg=marked, battenberg_only=only),
         engine,
@@ -88,8 +85,6 @@ for engine in hybrid_engines.PYSAT_CONNECTIVITIES:
             len(want) == count and got is not None and set(got) == want,
         )
 
-    # A marking and a circle in one set of conditions: r2c4 is a valid
-    # circle in the one grid that has the marking r3c1, and r4c2 is not.
     for circle, count in (("r2c4", 1), ("r4c2", 0)):
         circles = frozenset({hybrid.parse_cell(circle)})
         marked = hybrid.parse_windows("r3c1", 4, 4)
@@ -149,10 +144,8 @@ check(
     len(full_sets) == 13 and len(alone) == 7,
 )
 for engine in hybrid_engines.PYSAT_CONNECTIVITIES:
-    # Every window marked alone on the lazy engine; the propagator engine
-    # runs the same clauses, so every fifth. Then each grid's full set of
-    # checkerboard windows, and no marking at all, which the negative
-    # constraint leaves no 5x5 grid for.
+    # The propagator engine runs the same clauses as the lazy one, so every
+    # fifth window is enough there.
     singles = board_windows if engine == hybrid_sat.LAZY else board_windows[::5]
     cases = [frozenset({window}) for window in singles]
     cases += [*sorted(full_sets, key=sorted), frozenset()]
@@ -177,8 +170,6 @@ for engine in hybrid_engines.PYSAT_CONNECTIVITIES:
 
 
 def blank_listed(marked, only, engine, cap):
-    """The 7x7 blank-strip grids the engine lists under these markings, or
-    None when the listing is not whole: a time limit, or `cap` reached."""
     got = hybrid_sat.listing(
         hybrid.Conditions(
             7, 7, blank_strip=True, battenberg=marked, battenberg_only=only
@@ -199,11 +190,8 @@ def blank_accepts(grid, marked, only):
     )
 
 
-# 7x7 with the blank strip: the smallest board where a checkerboard window
-# touches the blank strip. One grid is taken that has such a window; its
-# full set of checkerboard windows under the negative constraint must list
-# it, and the same set with the blank-strip window left unmarked must not,
-# which only the clause forbidding that window can bring about.
+# With the blank-strip window left unmarked the grid must not be listed: only
+# the clause forbidding that window does that.
 for engine in hybrid_engines.PYSAT_CONNECTIVITIES:
     found = None
     for window in hybrid.windows(hybrid.board_cells(7, 7, blank_strip=True)):
@@ -247,8 +235,6 @@ for engine in hybrid_engines.PYSAT_CONNECTIVITIES:
         and all(blank_accepts(g, full - {window}, True) for g in unmarked),
     )
 
-# The cpsat engine has no model of the condition and says so itself, for a
-# caller that does not come through the finder's flags.
 for name, conditions in (
     ("a marking", hybrid.Conditions(4, 4, battenberg=frozenset({(0, 2)}))),
     ("the negative constraint", hybrid.Conditions(4, 4, battenberg_only=True)),

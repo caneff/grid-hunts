@@ -272,7 +272,6 @@ def parse_conditions(args):
 
 
 def classify(conditions, engine, timeout, workers):
-    """The lines `classify` prints: the answer, then the first grid found."""
     status, found = ENGINES[engine].classify(
         conditions, time_limit=timeout, workers=workers
     )
@@ -289,8 +288,6 @@ def classify(conditions, engine, timeout, workers):
 
 
 def parse_cells(flag, text):
-    """The cells `text` names, a frozenset. Raises ValueError, naming the
-    flag, on a name `hybrid.parse_cell` refuses."""
     try:
         return frozenset(map(hybrid.parse_cell, text.split()))
     except ValueError as e:
@@ -352,15 +349,11 @@ def _record_only(own, name):
 
 def _verify(own, rest):
     _record_only(own, "verify")
-    # A record carries its own board and conditions, and `verify` runs no
-    # solver.
     return run(HybridFinder(hybrid.Conditions(own.rows, own.cols)), rest)
 
 
 def _render(own, rest):
     _record_only(own, "render")
-    # A record carries its own board and conditions too; `--blank-strip` is
-    # the one flag of the finder's own that `render` reads.
     mine = argparse.ArgumentParser(prog="hybrid_finder render")
     mine.add_argument("dir")
     mine.add_argument("--seed", type=int)
@@ -390,9 +383,6 @@ def _render(own, rest):
 
 
 def _links(own, rest):
-    # A record carries its own board; `--circles`, `--numbers`,
-    # `--battenberg`, `--battenberg-only` and `--blank-strip` are what the
-    # link shows.
     mine = argparse.ArgumentParser(prog="hybrid_finder links")
     mine.add_argument("dir")
     args = mine.parse_args(rest[1:])

@@ -72,10 +72,6 @@ def no_dead_end(rows, cols):
 
 
 class Space(NamedTuple):
-    """An exhaustively listed space: how many edges were free and how many
-    assignments that makes, its valid networks, how many of them share each
-    full set of outside numbers, and the networks alone under theirs."""
-
     free_edges: int
     assignments: int
     valid: frozenset
@@ -126,7 +122,6 @@ def hybrid_grids(rows, cols, blank_strip=False):
 
 
 def banana_counts(rows, cols, blank_strip=False):
-    """{a number of banana regions: how many valid hybrid grids have it}."""
     return Counter(
         len(hybrid.bananas(hybrid.values(net, rows, cols, blank_strip)))
         for net in hybrid_grids(rows, cols, blank_strip)
@@ -203,7 +198,6 @@ def main(argv):
     )
     args = parser.parse_args(argv)
     if args.min_bananas is not None and args.min_bananas < 1:
-        # The finder's own refusal (`hybrid_finder.parse_conditions`).
         parser.error(f"--min-bananas takes 1 or more, got {args.min_bananas}")
     rows, cols, blank_strip = args.rows, args.cols, args.blank_strip
     try:

@@ -52,8 +52,6 @@ for connectivity in ("flow", "tree"):
         ),
     )
 
-    # Seed by seed, `propose` (what the hunt runs) and the measured split
-    # (sample, then prove) must reach the same verdict and the same network.
     finder = UbahnFinder(4, 4, None, 60.0, connectivity=connectivity)
     finder.workers = 1
     seen = set()
@@ -78,8 +76,7 @@ for connectivity in ("flow", "tree"):
             o.cause == want,
         )
 
-# A tally, not a measurement: the report's own words. Two unique, one
-# duplicate, one not unique, one proof and one sample the limit stopped.
+# A tally, not a measurement: the report's own words.
 Outcome = measure_baseline.Outcome
 rows = [
     Outcome(0, "unique", 0.010, 0.020),
@@ -125,8 +122,6 @@ check(
 
 
 def raises(fn, error):
-    """Whether `fn()` raises `error`; argparse's usage message is kept off
-    the test's output."""
     try:
         with contextlib.redirect_stderr(io.StringIO()):
             fn()

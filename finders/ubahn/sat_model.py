@@ -36,8 +36,6 @@ CONFLICTS_PER_SLICE = 2000
 
 
 class _Connectivity(Propagator):
-    """The lazy connectivity check: it sees full assignments only."""
-
     def __init__(self, edge, blank):
         super().__init__()
         self.is_lazy = True
@@ -77,7 +75,6 @@ def cut_clauses(edge, blank, on):
 
 
 def _parts(on):
-    """The connected parts of a set of edges, each a set of cells."""
     neighbours = {}
     for a, b in on:
         neighbours.setdefault(a, []).append(b)
@@ -99,9 +96,6 @@ def _parts(on):
 
 
 def _kind_clauses(edge, kind, cells):
-    """Each cell's kind channelled from its arms: every assignment of the
-    arms that are on the board either is a dead end, and is forbidden, or
-    fixes all five kind booleans."""
     clauses = []
     for cell in cells:
         on_board = arms_on_board(cell, edge)
@@ -143,15 +137,11 @@ def network_rules(rows, cols):
     edge = {e: pool.id(e) for e in all_edges(rows, cols)}
     kind = {(cell, k): pool.id((cell, k)) for cell in cells for k in KINDS}
     clauses = _kind_clauses(edge, kind, cells)
-    # A network has at least one edge.
     clauses.append(list(edge.values()))
     return pool, edge, kind, clauses
 
 
 def _add_rules(solver, rows, cols, numbers):
-    """Every rule but connectivity, as clauses on `solver`. Returns the edge
-    variables keyed by edge and each cell's blank variable, or None when a
-    count is outside its row or column, which no board can hold."""
     held_counts = rows_and_columns(rows, cols, numbers)
     if any(
         not 0 <= count <= len(held) for held, counts in held_counts for count in counts
@@ -170,13 +160,11 @@ def _add_rules(solver, rows, cols, numbers):
 
 
 def edges_on(solver, edge):
-    """The edges the solver's model turns on."""
     true = {lit for lit in solver.get_model() if lit > 0}
     return frozenset(e for e, var in edge.items() if var in true)
 
 
 def forbid(solver, edge, found):
-    """Rule out exactly this set of edges."""
     solver.add_clause([-var if e in found else var for e, var in edge.items()])
 
 
