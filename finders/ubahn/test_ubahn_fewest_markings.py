@@ -20,7 +20,6 @@ A slow test, outside the gate: `just test-slow` runs it (tests/all.sh's
     uv run finders/ubahn/test_ubahn_fewest_markings.py
 """
 
-import fcntl
 import json
 import math
 import sys
@@ -32,6 +31,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
+import hunt_files
 import hybrid
 import hybrid_engines
 import network
@@ -297,6 +297,18 @@ with tempfile.TemporaryDirectory() as d:
             and len(after) == len(whole)
             and len({frozenset(line["windows"]) for line in tried}) == len(tried),
         )
+        if label == "before a mirror's line":
+            # The lost mirror is an untried set: solved on its own, one solve.
+            lost = json.loads(whole[paired])
+            (again_line,) = [
+                line for line in tried if line["windows"] == lost["windows"]
+            ]
+            check(
+                "stopped before a mirror's line: that set is solved again on "
+                "its own, its answer the one the copy gave",
+                again_line["how"] == "solved"
+                and again_line["status"] == lost["status"],
+            )
 
     # The file of a run killed before its first set, under another time
     # limit: refused before any solve, with no line added.
@@ -311,7 +323,7 @@ with tempfile.TemporaryDirectory() as d:
         f"a run into an unfinished directory another time limit wrote is "
         f"refused and adds no line ({r.stderr.strip()[:60]!r})",
         r.returncode == 2
-        and "holds a run under" in r.stderr
+        and "another config" in r.stderr
         and not r.stdout
         and (unfinished / "sets.jsonl").read_text() == whole[0],
     )
@@ -327,27 +339,27 @@ with tempfile.TemporaryDirectory() as d:
                 json.dumps({**json.loads(whole[5]), "status": "unknown"}) + "\n",
                 *whole[6:],
             ],
-            "line 6 is no set's line",
+            f"{broken / 'sets.jsonl'}: line 6 is no set's line",
         ),
         (
             "a line with no answer",
             [*whole[:5], json.dumps({"windows": []}) + "\n", *whole[6:]],
-            "line 6 is no set's line",
+            f"{broken / 'sets.jsonl'}: line 6 is no set's line",
         ),
         (
             "a line that is no JSON, not the last",
             [*whole[:5], "{\n", *whole[6:]],
-            "line 6 is no set's line",
+            f"{broken / 'sets.jsonl'} line 6 does not read",
         ),
         (
             "a heading that is a list",
             ["[]\n", *whole[1:]],
-            "line 1 is no run's heading",
+            f"{broken / 'sets.jsonl'} has no config line first",
         ),
         (
             "a heading that is no JSON",
             ["x\n", *whole[1:]],
-            "line 1 is no run's heading",
+            f"{broken / 'sets.jsonl'} line 1 does not read",
         ),
     ):
         (broken / "sets.jsonl").write_text("".join(lines))
@@ -358,7 +370,7 @@ with tempfile.TemporaryDirectory() as d:
             f"{label}: refused, exit 2, naming the file and the line "
             f"({r.stderr.strip()[-70:]!r})",
             r.returncode == 2
-            and f"{broken / 'sets.jsonl'}: {named}" in r.stderr
+            and named in r.stderr
             and "Traceback" not in r.stderr
             and not r.stdout,
         )
@@ -378,15 +390,17 @@ with tempfile.TemporaryDirectory() as d:
     )
 
     # Another run is in the directory: this one starts nothing.
-    with (done / "sets.jsonl").open("a") as held:
-        fcntl.flock(held, fcntl.LOCK_EX)
+    held = hunt_files.acquire_lock(done, "sets.jsonl.lock")
+    try:
         r = run_cli(
             FINDER, "fewest-markings", *BOARD, "--engine", engine, "--out", done
         )
+    finally:
+        hunt_files.release_lock(held)
     check(
         f"a run into a directory another run holds is refused "
         f"({r.stderr.strip()[-60:]!r})",
-        r.returncode == 2 and "another run" in r.stderr and not r.stdout,
+        r.returncode == 2 and "sets.jsonl is locked" in r.stderr and not r.stdout,
     )
     for flags, why in (
         (["--rows", 4, "--cols", 4, "--timeout", 5], "another time limit"),
@@ -398,7 +412,7 @@ with tempfile.TemporaryDirectory() as d:
             f"a run into a directory {why} wrote is refused "
             f"({r.stderr.strip()[:70]!r})",
             r.returncode == 2
-            and "holds a run under" in r.stderr
+            and "another config" in r.stderr
             and not r.stdout
             and (done / "sets.jsonl").read_text() == "".join(whole),
         )

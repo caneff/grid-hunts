@@ -80,8 +80,8 @@ hunts seed 0 for a grid with at least K, counts the grid's valid circles on
 number cells with the rule reader, and asks next for one more than that
 count. Each step is a hunt directory of its own, `DIR/at-least-K`, which
 `verify` and `render` read, and a line of `DIR/climb.jsonl`, written as the
-step ends. It stops at the first K with no grid, or at the first step that
-reaches `--timeout`. Only the first is a proof: the maximum is called proven
+step ends (a last line cut short by a kill is dropped on the rerun). It stops
+at the first K with no grid, or at the first step that reaches `--timeout`. Only the first is a proof: the maximum is called proven
 when "at least one more" came back as no grid, and a time limit reached is a
 best found with no proof.
 

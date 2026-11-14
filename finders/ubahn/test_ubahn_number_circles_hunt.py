@@ -10,7 +10,6 @@ report a maximum of 2, proven, on every engine. About twenty seconds.
     uv run finders/ubahn/test_ubahn_number_circles_hunt.py
 """
 
-import fcntl
 import itertools
 import json
 import sys
@@ -21,9 +20,26 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
+import hunt_files
 import hybrid
 import hybrid_engines
 from cli_checks import check, finish, read_jsonl, run_cli
+
+
+def logged(out):
+    """The steps of `out/climb.jsonl`, the run log's heading left out."""
+    return read_jsonl(out / "climb.jsonl")[1:]
+
+
+def write_log(out, steps, config):
+    """A climb log as a run leaves it: the heading, then `steps`."""
+    (out / "climb.jsonl").write_text(
+        "".join(
+            json.dumps(line) + "\n"
+            for line in [{hunt_files.CONFIG_KEY: config}, *steps]
+        )
+    )
+
 
 FINDER = HERE / "hybrid_finder.py"
 BOARD = ["--rows", "4", "--cols", "4", "--timeout", "20"]
@@ -138,7 +154,7 @@ with tempfile.TemporaryDirectory() as d:
             and lines[-2:-1]
             == [f"maximum {MOST}: proven on {engine}, at least {MOST + 1} has no grid"],
         )
-        steps = read_jsonl(out / "climb.jsonl")
+        steps = logged(out)
         check(
             f"climb on {engine}: climb.jsonl holds each step, the last one "
             f"infeasible at {MOST + 1} ({[(s['at_least'], s['status']) for s in steps]})",
@@ -176,7 +192,7 @@ with tempfile.TemporaryDirectory() as d:
         "climb rerun into a finished directory: the same answer, no step added",
         r2.returncode == 0
         and r2.stdout.splitlines()[-2:] == lines[-2:]
-        and read_jsonl(out / "climb.jsonl") == steps,
+        and logged(out) == steps,
     )
 
     r2 = run_cli(
@@ -185,9 +201,7 @@ with tempfile.TemporaryDirectory() as d:
     check(
         f"climb into a directory another time limit wrote is refused "
         f"({r2.stderr.strip()[:60]!r})",
-        r2.returncode == 2
-        and "holds a climb under" in r2.stderr
-        and read_jsonl(out / "climb.jsonl") == steps,
+        r2.returncode == 2 and "another config" in r2.stderr and logged(out) == steps,
     )
 
     r2 = run_cli(FINDER, "climb", *BOARD, "--engine", engine, "--from", 1, "--out", out)
@@ -197,13 +211,15 @@ with tempfile.TemporaryDirectory() as d:
     )
 
     # Another climb is in the directory: this one starts nothing.
-    with (out / "climb.jsonl").open("a") as held:
-        fcntl.flock(held, fcntl.LOCK_EX)
+    held = hunt_files.acquire_lock(out, "climb.jsonl.lock")
+    try:
         r2 = run_cli(FINDER, "climb", *BOARD, "--engine", engine, "--out", out)
+    finally:
+        hunt_files.release_lock(held)
     check(
         f"climb into a directory another climb holds is refused "
         f"({r2.stderr.strip()[-40:]!r})",
-        r2.returncode == 2 and "another climb" in r2.stderr and not r2.stdout,
+        r2.returncode == 2 and "climb.jsonl is locked" in r2.stderr and not r2.stdout,
     )
 
     # A log that two climbs wrote into is not a proof: a step under another
@@ -214,9 +230,7 @@ with tempfile.TemporaryDirectory() as d:
     for name, last in (("another board's step", other), ("a step out of order", gap)):
         mixed = Path(d) / f"climb mixed {name}"
         mixed.mkdir()
-        (mixed / "climb.jsonl").write_text(
-            "".join(json.dumps(step) + "\n" for step in [*steps[:-1], last])
-        )
+        write_log(mixed, [*steps[:-1], last], steps[0]["config"])
         r2 = run_cli(FINDER, "climb", *BOARD, "--engine", engine, "--out", mixed)
         check(
             f"climb on a log with {name} is refused, no maximum printed "
@@ -224,14 +238,33 @@ with tempfile.TemporaryDirectory() as d:
             r2.returncode == 2 and "maximum" not in r2.stdout,
         )
 
+    # A climb killed mid-write leaves its last line cut short: the next run
+    # drops it and goes on, the step's hunt directory read back.
+    torn = Path(d) / "climb torn"
+    torn.mkdir()
+    cut = json.dumps(steps[1])[:30]
+    write_log(torn, steps[:1], steps[0]["config"])
+    with (torn / "climb.jsonl").open("a") as f:
+        f.write(cut)
+    r2 = run_cli(FINDER, "climb", *BOARD, "--engine", engine, "--out", torn)
+    check(
+        f"climb after a log cut short mid-line resumes with the whole steps "
+        f"kept and the cut one dropped ({r2.stderr.strip()[-80:]!r})",
+        r2.returncode == 0
+        and r2.stdout.splitlines()[-2] == lines[-2]
+        and [{**s, "seconds": None} for s in logged(torn)[1:]]
+        == [{**s, "seconds": None} for s in steps[1:]]
+        and logged(torn)[0] == steps[0],
+    )
+
     # A step whose hunt directory is already finished, with no line of the
     # log for it: the answer is read back, and no solve time is made up.
     again = Path(d) / "climb read back"
     run_cli(FINDER, "climb", *BOARD, "--out", again)
-    first, *_ = read_jsonl(again / "climb.jsonl")
+    first, *_ = logged(again)
     (again / "climb.jsonl").unlink()
     r2 = run_cli(FINDER, "climb", *BOARD, "--out", again)
-    reread = read_jsonl(again / "climb.jsonl")[0]
+    reread = logged(again)[0]
     check(
         f"climb reading a finished step back: the same count, the time not "
         f"on record ({r2.stdout.splitlines()[:1]})",
@@ -256,7 +289,7 @@ with tempfile.TemporaryDirectory() as d:
         r2.returncode == 2
         and "ended on" in r2.stderr
         and "no grid" not in r2.stdout
-        and not (bad / "climb.jsonl").read_text(),
+        and not logged(bad),
     )
     # The driver refuses a step directory that holds files and no run.json.
     bad = Path(d) / "climb refused"
@@ -275,7 +308,7 @@ with tempfile.TemporaryDirectory() as d:
     out = Path(d) / "climb stopped"
     out.mkdir()
     first = {**steps[0], "config": {**steps[0]["config"], "timeout": 0.0}}
-    (out / "climb.jsonl").write_text(json.dumps(first) + "\n")
+    write_log(out, [first], first["config"])
     r = run_cli(FINDER,
         "climb", "--rows", 4, "--cols", 4, "--timeout", 0, "--engine", engine,
         "--out", out,
