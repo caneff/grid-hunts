@@ -247,7 +247,9 @@ def test_verifier_rejects_a_non_unique_shape():
     re-solve can reject it (a 1-8 or no-8 filter would reject it first)."""
     shape = ADMISSIBLE_TWO_SOLUTIONS
     g = shapes.givens(shape)
-    assert g is not None and 8 in g.values(), "control: passes the admissibility filters"
+    assert g is not None and 8 in g.values(), (
+        "control: passes the admissibility filters"
+    )
     assert all(1 <= n <= 8 for n in g.values())
     assert shapes.count_solutions(g, 2) == 2, "control: the shape is not unique"
     assert verify_all.check([divmod(i, 9) for i in shape])[0] is None
