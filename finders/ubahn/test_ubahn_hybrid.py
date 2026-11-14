@@ -74,15 +74,17 @@ check(
 LOOP2 = ring(0, 0, 1, 1)
 check(
     "2x2 loop: the only failure is its odd 2x2 block",
-    hybrid.failures(LOOP2, 2, 2) == ["banana at r1c1 is a 2x2 rectangle"],
+    hybrid.failures(LOOP2, hybrid.Conditions(2, 2))
+    == ["banana at r1c1 is a 2x2 rectangle"],
 )
 check(
     "why_not_hybrid gives the first failure",
-    hybrid.why_not_hybrid(LOOP2, 2, 2) == "banana at r1c1 is a 2x2 rectangle",
+    hybrid.why_not_hybrid(LOOP2, hybrid.Conditions(2, 2))
+    == "banana at r1c1 is a 2x2 rectangle",
 )
 check(
     "a set of edges that is no network fails as the plain reader says",
-    hybrid.failures(frozenset(), 2, 2) == ["no edge is on"],
+    hybrid.failures(frozenset(), hybrid.Conditions(2, 2)) == ["no edge is on"],
 )
 
 
@@ -141,9 +143,13 @@ check(
         "00041111",
     ],
 )
-check("four loops: a valid hybrid grid", hybrid.failures(FOUR_LOOPS, 4, 4) == [])
 check(
-    "four loops: why_not_hybrid is empty", hybrid.why_not_hybrid(FOUR_LOOPS, 4, 4) == ""
+    "four loops: a valid hybrid grid",
+    hybrid.failures(FOUR_LOOPS, hybrid.Conditions(4, 4)) == [],
+)
+check(
+    "four loops: why_not_hybrid is empty",
+    hybrid.why_not_hybrid(FOUR_LOOPS, hybrid.Conditions(4, 4)) == "",
 )
 
 # A circled cell's value is its region's size. A cross is worth 4 and the
@@ -151,21 +157,33 @@ check(
 # turn number is 4 in a region of 16.
 check(
     "four loops: all four crosses can be circled",
-    hybrid.failures(FOUR_LOOPS, 4, 4, cells("r2c2", "r2c3", "r3c2", "r3c3")) == [],
+    hybrid.failures(
+        FOUR_LOOPS,
+        hybrid.Conditions(
+            4, 4, circles=frozenset(cells("r2c2", "r2c3", "r3c2", "r3c3"))
+        ),
+    )
+    == [],
 )
 check(
     "four loops: a circled turn breaks only the circle rule",
-    hybrid.failures(FOUR_LOOPS, 4, 4, cells("r1c1"))
+    hybrid.failures(
+        FOUR_LOOPS, hybrid.Conditions(4, 4, circles=frozenset(cells("r1c1")))
+    )
     == ["circle at r1c1: value 1, region of 12 cells"],
 )
 check(
     "four loops: a circled number cell is held to the same rule",
-    hybrid.failures(FOUR_LOOPS, 4, 4, cells("r2c2", "r1:turn"))
+    hybrid.failures(
+        FOUR_LOOPS, hybrid.Conditions(4, 4, circles=frozenset(cells("r2c2", "r1:turn")))
+    )
     == ["circle at r1:turn: value 4, region of 16 cells"],
 )
 check(
     "a circle on an icon cell or off the board is refused",
-    hybrid.failures(FOUR_LOOPS, 4, 4, [(-1, -1), (0, -5)])
+    hybrid.failures(
+        FOUR_LOOPS, hybrid.Conditions(4, 4, circles=frozenset([(-1, -1), (0, -5)]))
+    )
     == ["circle off the board: (-1, -1)", "circle off the board: (0, -5)"],
 )
 
@@ -190,7 +208,7 @@ check(
 )
 check(
     "U shape: the only failure is the chocolate that is no rectangle",
-    hybrid.failures(U_SHAPE, 3, 4)
+    hybrid.failures(U_SHAPE, hybrid.Conditions(3, 4))
     == ["chocolate at c1:straight is not a rectangle: 6 cells in a 2x4 box"],
 )
 
@@ -216,7 +234,7 @@ check(
 )
 check(
     "round the icon: the only failure names the icon cell",
-    hybrid.failures(ROUND_THE_ICON, 3, 4)
+    hybrid.failures(ROUND_THE_ICON, hybrid.Conditions(3, 4))
     == ["chocolate at c1:cross would need an icon cell"],
 )
 
@@ -230,21 +248,29 @@ check(
     [row[:4] for row in value_rows(C_SHAPE, 4, 4)[4:]]
     == ["0004", "1111", "1111", "0004"],
 )
-check("C shape: valid with no blank strip", hybrid.failures(C_SHAPE, 4, 4) == [])
+check(
+    "C shape: valid with no blank strip",
+    hybrid.failures(C_SHAPE, hybrid.Conditions(4, 4)) == [],
+)
 check(
     "C shape: the blank strip joins two rectangles into a C",
-    hybrid.failures(C_SHAPE, 4, 4, blank_strip=True)
+    hybrid.failures(C_SHAPE, hybrid.Conditions(4, 4, blank_strip=True))
     == ["chocolate at r1:blank is not a rectangle: 12 cells in a 4x5 box"],
 )
 check(
     "four loops: still valid with the blank strip",
-    hybrid.failures(FOUR_LOOPS, 4, 4, blank_strip=True) == [],
+    hybrid.failures(FOUR_LOOPS, hybrid.Conditions(4, 4, blank_strip=True)) == [],
 )
 check(
     "a blank number cell can be circled only with the blank strip on",
-    hybrid.failures(FOUR_LOOPS, 4, 4, cells("r1:blank"))
+    hybrid.failures(
+        FOUR_LOOPS, hybrid.Conditions(4, 4, circles=frozenset(cells("r1:blank")))
+    )
     == ["circle off the board: (0, -5)"]
-    and hybrid.failures(FOUR_LOOPS, 4, 4, cells("r1:blank"), blank_strip=True)
+    and hybrid.failures(
+        FOUR_LOOPS,
+        hybrid.Conditions(4, 4, circles=frozenset(cells("r1:blank")), blank_strip=True),
+    )
     == ["circle at r1:blank: value 0, region of 20 cells"],
 )
 
@@ -286,15 +312,25 @@ check(
     "four loops: no checkerboard window",
     hybrid.checkerboard_windows(hybrid.values(FOUR_LOOPS, 4, 4)) == [],
 )
-check("checkered: a valid hybrid grid", hybrid.failures(CHECKERED, 4, 4) == [])
+check(
+    "checkered: a valid hybrid grid",
+    hybrid.failures(CHECKERED, hybrid.Conditions(4, 4)) == [],
+)
 check(
     "checkered: a marking on the grid and one across the grid and a strip hold",
-    hybrid.failures(CHECKERED, 4, 4, battenberg=cells("r1c3", "r1:turn")) == [],
+    hybrid.failures(
+        CHECKERED,
+        hybrid.Conditions(4, 4, battenberg=frozenset(cells("r1c3", "r1:turn"))),
+    )
+    == [],
 )
 # r1c1 is 1 3 over 2 3; c1:turn is 2 0 over 1 3, across the strip and the grid.
 check(
     "checkered: a marking that fails is reported by its window",
-    hybrid.failures(CHECKERED, 4, 4, battenberg=cells("r1c3", "r1c1", "c1:turn"))
+    hybrid.failures(
+        CHECKERED,
+        hybrid.Conditions(4, 4, battenberg=frozenset(cells("r1c3", "r1c1", "c1:turn"))),
+    )
     == [
         "Battenberg marking at c1:turn: not a checkerboard window",
         "Battenberg marking at r1c1: not a checkerboard window",
@@ -302,7 +338,12 @@ check(
 )
 check(
     "checkered: the negative constraint reports each unmarked checkerboard window",
-    hybrid.failures(CHECKERED, 4, 4, battenberg=cells("r1c3"), battenberg_only=True)
+    hybrid.failures(
+        CHECKERED,
+        hybrid.Conditions(
+            4, 4, battenberg=frozenset(cells("r1c3")), battenberg_only=True
+        ),
+    )
     == [
         "checkerboard window at r1:turn has no Battenberg marking",
         "checkerboard window at r2:turn has no Battenberg marking",
@@ -312,22 +353,29 @@ check(
     "checkered: all three marked meets the negative constraint",
     hybrid.failures(
         CHECKERED,
-        4,
-        4,
-        battenberg=cells("r1:turn", "r1c3", "r2:turn"),
-        battenberg_only=True,
+        hybrid.Conditions(
+            4,
+            4,
+            battenberg=frozenset(cells("r1:turn", "r1c3", "r2:turn")),
+            battenberg_only=True,
+        ),
     )
     == [],
 )
 check(
     "four loops: the negative constraint with no marking holds",
-    hybrid.failures(FOUR_LOOPS, 4, 4, battenberg_only=True) == [],
+    hybrid.failures(FOUR_LOOPS, hybrid.Conditions(4, 4, battenberg_only=True)) == [],
 )
 # r4c4's window would need r4c5; c4:turn's would need c5:turn; r1:blank is a
 # board cell only with the blank strip on.
 check(
     "a window that is not wholly on the board is refused, naming the cell",
-    hybrid.failures(CHECKERED, 4, 4, battenberg=cells("r4c4", "c4:turn", "r1:blank"))
+    hybrid.failures(
+        CHECKERED,
+        hybrid.Conditions(
+            4, 4, battenberg=frozenset(cells("r4c4", "c4:turn", "r1:blank"))
+        ),
+    )
     == [
         "Battenberg marking at c4:turn: c5:turn is off the board",
         "Battenberg marking at r1:blank: r1:blank is off the board",
@@ -349,7 +397,10 @@ check(
     and not any(
         "Battenberg" in reason
         for reason in hybrid.failures(
-            CHECKERED, 4, 4, blank_strip=True, battenberg=cells("r1:blank")
+            CHECKERED,
+            hybrid.Conditions(
+                4, 4, blank_strip=True, battenberg=frozenset(cells("r1:blank"))
+            ),
         )
     ),
 )

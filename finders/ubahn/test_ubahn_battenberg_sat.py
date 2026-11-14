@@ -41,7 +41,10 @@ def kept(grids, side, marked, only):
         g
         for g in grids
         if not hybrid.why_not_hybrid(
-            g, side, side, battenberg=marked, battenberg_only=only
+            g,
+            hybrid.Conditions(
+                side, side, battenberg=frozenset(marked), battenberg_only=only
+            ),
         )
     }
 
@@ -102,7 +105,12 @@ for engine in ENGINES:
         want = {
             g
             for g in grids
-            if not hybrid.why_not_hybrid(g, 4, 4, circles, battenberg=marked)
+            if not hybrid.why_not_hybrid(
+                g,
+                hybrid.Conditions(
+                    4, 4, circles=frozenset(circles), battenberg=frozenset(marked)
+                ),
+            )
         }
         got = hybrid_sat.listing(
             hybrid.Conditions(4, 4, circles, battenberg=marked),
@@ -132,7 +140,7 @@ check(
     "5x5, no condition: 31 grids, all passed by the rule reader",
     every is not None
     and len(every) == 31
-    and not any(hybrid.why_not_hybrid(g, 5, 5) for g in every),
+    and not any(hybrid.why_not_hybrid(g, hybrid.Conditions(5, 5)) for g in every),
 )
 every = set(every or ())
 by_grid = {g: hybrid.checkerboard_windows(hybrid.values(g, 5, 5)) for g in every}
@@ -193,7 +201,10 @@ def blank_listed(marked, only, engine, cap):
 
 def blank_accepts(grid, marked, only):
     return not hybrid.why_not_hybrid(
-        grid, 7, 7, blank_strip=True, battenberg=marked, battenberg_only=only
+        grid,
+        hybrid.Conditions(
+            7, 7, blank_strip=True, battenberg=frozenset(marked), battenberg_only=only
+        ),
     )
 
 

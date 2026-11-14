@@ -50,7 +50,10 @@ def meeting(names, only=False):
     return {
         net
         for net in brute.hybrid_grids(4, 4)
-        if not hybrid.why_not_hybrid(net, 4, 4, battenberg=marked, battenberg_only=only)
+        if not hybrid.why_not_hybrid(
+            net,
+            hybrid.Conditions(4, 4, battenberg=frozenset(marked), battenberg_only=only),
+        )
     }
 
 

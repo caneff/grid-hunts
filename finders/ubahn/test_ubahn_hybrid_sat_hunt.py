@@ -40,7 +40,9 @@ def meeting(names, exactly=None):
     return {
         net
         for net in brute.hybrid_grids(4, 4)
-        if not hybrid.why_not_hybrid(net, 4, 4, circles)
+        if not hybrid.why_not_hybrid(
+            net, hybrid.Conditions(4, 4, circles=frozenset(circles))
+        )
         and (exactly is None or network.Exactly.parse(exactly).holds(net, 4, 4))
     }
 

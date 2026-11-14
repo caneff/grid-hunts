@@ -267,6 +267,21 @@ def parse_windows(text, rows, cols, blank_strip=False):
     return frozenset(found)
 
 
+def parse_circles(text, rows, cols, blank_strip=False):
+    """The circled cells `text` names, a frozenset. Raises ValueError on a
+    name `parse_cell` refuses, and on a cell that is not on the board, naming
+    it: the one refusal of an off-board circle, for every finder and brute."""
+    board = board_cells(rows, cols, blank_strip)
+    found = set()
+    for name in text.split():
+        cell = parse_cell(name)
+        if cell not in board:
+            strip = "" if blank_strip else ", no blank strip"
+            raise ValueError(f"circle {name} is off the {rows}x{cols} board{strip}")
+        found.add(cell)
+    return frozenset(found)
+
+
 def _box(region):
     """(top, left, height, width) of the smallest box that holds the region."""
     top, left = (min(cell[i] for cell in region) for i in (0, 1))
@@ -274,29 +289,21 @@ def _box(region):
     return top, left, bottom - top + 1, right - left + 1
 
 
-def failures(
-    net,
-    rows,
-    cols,
-    circles=(),
-    blank_strip=False,
-    *,
-    min_bananas=0,
-    number_circles=0,
-    battenberg=(),
-    battenberg_only=False,
-):
-    """Every reason these edges and circles are not a hybrid grid, [] when
-    they are one. `circles` are cells of the board. A set of edges that is no
-    U-Bahn network fails on that alone; a network then answers for each
-    region and each circle: an even region is a rectangle, an odd region is
-    not, and a circled cell's value is its region's size. Then a grid with
-    fewer than `min_bananas` banana regions fails on their number, and so
-    does one with fewer than `number_circles` valid circles on number cells.
-    Last, each Battenberg marking, a window of `battenberg`, answers by its
-    window: it is wholly on the board and a checkerboard window. With
-    `battenberg_only`, the negative constraint, every checkerboard window
-    that has no marking is a reason too."""
+def failures(net, asked):
+    """Every reason these edges are not a hybrid grid meeting `asked`, a
+    `Conditions`, [] when they are one. A set of edges that is no U-Bahn
+    network fails on that alone; a network then answers for each region and
+    each circle: an even region is a rectangle, an odd region is not, and a
+    circled cell's value is its region's size. Then a grid with fewer than
+    `min_bananas` banana regions fails on their number, and so does one with
+    fewer than `number_circles` valid circles on number cells. Then each
+    Battenberg marking, a window of `battenberg`, answers by its window: it is
+    wholly on the board and a checkerboard window. With `battenberg_only`, the
+    negative constraint, every checkerboard window that has no marking is a
+    reason too. Last, the `exactly` condition, if any, is on the board and
+    holds."""
+    rows, cols, blank_strip = asked.rows, asked.cols, asked.blank_strip
+    circles, exactly, battenberg = asked.circles, asked.exactly, asked.battenberg
     broken = network.why_not_network(net, rows, cols)
     if broken:
         return [broken]
@@ -329,15 +336,15 @@ def failures(
                 f"region of {size[cell]} cells"
             )
     count = len(bananas(board))
-    if count < min_bananas:
+    if count < asked.min_bananas:
         reasons.append(
             f"{count} banana region{'' if count == 1 else 's'}, "
-            f"fewer than the {min_bananas} asked for"
+            f"fewer than the {asked.min_bananas} asked for"
         )
     held = len(number_cell_circles(board))
-    if held < number_circles:
+    if held < asked.number_circles:
         reasons.append(
-            f"{held} valid circles on number cells, fewer than {number_circles}"
+            f"{held} valid circles on number cells, fewer than {asked.number_circles}"
         )
     checkerboards = checkerboard_windows(board)
     for window in sorted(battenberg):
@@ -348,20 +355,21 @@ def failures(
             reasons.append(
                 f"Battenberg marking at {cell_name(window)}: not a checkerboard window"
             )
-    if battenberg_only:
+    if asked.battenberg_only:
         reasons += [
             f"checkerboard window at {cell_name(window)} has no Battenberg marking"
             for window in checkerboards
             if window not in battenberg
         ]
+    if exactly:
+        reasons += [why for why in [exactly.why_not(net, rows, cols)] if why]
     return reasons
 
 
-def why_not_hybrid(net, rows, cols, circles=(), blank_strip=False, **conditions):
-    """Why these edges and circles are not a hybrid grid, or "" when they
-    are one: the first of `failures`, which takes the same arguments."""
-    reasons = failures(net, rows, cols, circles, blank_strip, **conditions)
-    return next(iter(reasons), "")
+def why_not_hybrid(net, asked):
+    """Why these edges are not a hybrid grid meeting `asked`, a `Conditions`,
+    or "" when they are one: the first of `failures`."""
+    return next(iter(failures(net, asked)), "")
 
 
 def icon_arms(cell):

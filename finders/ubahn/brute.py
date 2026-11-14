@@ -119,7 +119,9 @@ def hybrid_grids(rows, cols, blank_strip=False):
     return frozenset(
         net
         for net in no_dead_end(rows, cols)
-        if not hybrid.why_not_hybrid(net, rows, cols, blank_strip=blank_strip)
+        if not hybrid.why_not_hybrid(
+            net, hybrid.Conditions(rows, cols, blank_strip=blank_strip)
+        )
     )
 
 
@@ -147,19 +149,19 @@ def classify(
     check's word for it: "infeasible" for none, "unique" for one,
     "not_unique" for more. A condition only ever rules a grid out, so the
     grids with no condition are the ones to ask."""
+    asked = hybrid.Conditions(
+        rows,
+        cols,
+        frozenset(circles),
+        blank_strip=blank_strip,
+        min_bananas=min_bananas,
+        battenberg=frozenset(battenberg),
+        battenberg_only=battenberg_only,
+    )
     count = sum(
         1
         for net in hybrid_grids(rows, cols, blank_strip)
-        if not hybrid.why_not_hybrid(
-            net,
-            rows,
-            cols,
-            circles,
-            blank_strip,
-            min_bananas=min_bananas,
-            battenberg=battenberg,
-            battenberg_only=battenberg_only,
-        )
+        if not hybrid.why_not_hybrid(net, asked)
     )
     return ("infeasible", "unique", "not_unique")[min(count, 2)], count
 
@@ -211,6 +213,13 @@ def main(argv):
         ]
     except ValueError as e:
         parser.error(f"--battenberg: {e}")
+    try:
+        circled = [
+            (text, hybrid.parse_circles(text, rows, cols, blank_strip))
+            for text in args.circles
+        ]
+    except ValueError as e:
+        parser.error(f"--circles: {e}")
     edges = len(network.all_edges(rows, cols))
     kept = sum(1 for _ in no_dead_end(rows, cols))
     grids = hybrid_grids(rows, cols, blank_strip)
@@ -241,11 +250,8 @@ def main(argv):
 
     if also:
         say(also.removeprefix(", "))
-    for text in args.circles:
-        say(
-            f"circles {text}{also}",
-            frozenset(hybrid.parse_cell(name) for name in text.split()),
-        )
+    for text, cells in circled:
+        say(f"circles {text}{also}", cells)
     for text, windows in marked:
         say(f"Battenberg markings {text}{also}", battenberg=windows)
     if args.draw:

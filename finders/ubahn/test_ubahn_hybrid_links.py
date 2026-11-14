@@ -285,7 +285,9 @@ with tempfile.TemporaryDirectory() as tmp:
             json.dumps({"seed": seed_k, "outcome": "example"}) + "\n"
         )
         net_k = network_of(rec_k)
-        why = hybrid.why_not_hybrid(net_k, 4, 4, (), True)
+        why = hybrid.why_not_hybrid(
+            net_k, hybrid.Conditions(4, 4, circles=frozenset(()), blank_strip=True)
+        )
         r = run_cli(FINDER, "--blank-strip", "links", str(one_k))
         if why:
             good = r.returncode == 2 and why in r.stderr

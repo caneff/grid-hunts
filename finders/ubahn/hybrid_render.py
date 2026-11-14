@@ -83,7 +83,14 @@ class Picture(GridCanvas):
 
     def __init__(self, net, rows, cols, circles=(), blank_strip=False, battenberg=()):
         why = hybrid.why_not_hybrid(
-            net, rows, cols, circles, blank_strip, battenberg=battenberg
+            net,
+            hybrid.Conditions(
+                rows,
+                cols,
+                frozenset(circles),
+                blank_strip=blank_strip,
+                battenberg=frozenset(battenberg),
+            ),
         )
         if why:
             raise ValueError(f"not a hybrid grid: {why}")

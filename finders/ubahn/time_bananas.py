@@ -49,8 +49,7 @@ def measure(side, wanted, seed, engine, timeout):
         "status": status,
         "seconds": round(seconds, 3),
         "bananas": net and len(hybrid.bananas(hybrid.values(net, side, side))),
-        "reader_ok": net is not None
-        and not hybrid.failures(net, side, side, min_bananas=wanted),
+        "reader_ok": net is not None and not hybrid.failures(net, conditions),
     }
 
 

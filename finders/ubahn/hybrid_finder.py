@@ -240,31 +240,16 @@ def parse_conditions(args):
     rows, cols = args.rows, args.cols
     if rows < 2 or cols < 2:
         raise ValueError("the smallest board with a network is 2x2")
-    board = set(hybrid.number_cells(rows, cols, args.blank_strip))
-    circles = set()
-    for name in args.circles.split():
-        try:
-            cell = hybrid.parse_cell(name)
-        except ValueError as e:
-            raise ValueError(f"--circles: {e}") from e
-        r, c = cell
-        if cell not in board and not (0 <= r < rows and 0 <= c < cols):
-            strip = "" if args.blank_strip else ", no blank strip"
-            raise ValueError(
-                f"--circles names {name}, off a {rows}x{cols} board{strip}"
-            )
-        circles.add(cell)
+    try:
+        circles = hybrid.parse_circles(args.circles, rows, cols, args.blank_strip)
+    except ValueError as e:
+        raise ValueError(f"--circles: {e}") from e
     exactly = None
     if args.exactly is not None:
         try:
-            exactly = network.Exactly.parse(args.exactly)
+            exactly = network.Exactly.parse_on(args.exactly, rows, cols)
         except ValueError as e:
             raise ValueError(f"--exactly: {e}") from e
-        if not exactly.on_board(rows, cols):
-            raise ValueError(
-                f"--exactly names {args.exactly.split(':')[2]}, "
-                f"off a {rows}x{cols} board"
-            )
     if args.min_bananas is not None and args.min_bananas < 1:
         raise ValueError(f"--min-bananas takes 1 or more, got {args.min_bananas}")
     if args.number_circles < 0:
@@ -276,7 +261,7 @@ def parse_conditions(args):
     return hybrid.Conditions(
         rows,
         cols,
-        frozenset(circles),
+        circles,
         exactly,
         args.blank_strip,
         args.min_bananas or 0,

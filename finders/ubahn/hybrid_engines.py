@@ -153,26 +153,9 @@ class HybridFinder:
 
     def verify(self, candidate):
         asked, found = candidate
-        rows, cols, exactly = asked.rows, asked.cols, asked.exactly
-        why = hybrid.why_not_hybrid(
-            found,
-            rows,
-            cols,
-            asked.circles,
-            asked.blank_strip,
-            min_bananas=asked.min_bananas,
-            number_circles=asked.number_circles,
-            battenberg=asked.battenberg,
-            battenberg_only=asked.battenberg_only,
-        )
+        why = hybrid.why_not_hybrid(found, asked)
         if why:
             return Verdict(False, why)
-        if exactly and not exactly.on_board(rows, cols):
-            return Verdict(
-                False, f"condition {exactly.text()} is off the {rows}x{cols} board"
-            )
-        if exactly and not exactly.holds(found, rows, cols):
-            return Verdict(False, f"condition {exactly.text()} does not hold")
         return Verdict(True)
 
     def record(self, candidate):
@@ -244,16 +227,15 @@ class HybridFinder:
         circles, numbers, battenberg, battenberg_only = self.shown
         rows, cols = asked.rows, asked.cols
         strip = self.conditions.blank_strip or asked.blank_strip
-        board = hybrid.number_cells(rows, cols, strip)
+        board = hybrid.board_cells(rows, cols, strip)
         for cell in sorted(circles):
-            r, c = cell
-            if cell not in board and not (0 <= r < rows and 0 <= c < cols):
+            if cell not in board:
                 raise ValueError(
                     f"circle {hybrid.cell_name(cell)} is off the "
                     f"{rows}x{cols} board" + ("" if strip else ", no blank strip")
                 )
         for cell in sorted(numbers):
-            if cell not in board:
+            if cell not in hybrid.number_cells(rows, cols, strip):
                 raise ValueError(
                     f"given number {hybrid.cell_name(cell)} is not a number "
                     f"cell of the {rows}x{cols} board"
@@ -261,12 +243,14 @@ class HybridFinder:
                 )
         reasons = hybrid.failures(
             found,
-            rows,
-            cols,
-            circles,
-            strip,
-            battenberg=battenberg,
-            battenberg_only=battenberg_only,
+            hybrid.Conditions(
+                rows,
+                cols,
+                frozenset(circles),
+                blank_strip=strip,
+                battenberg=frozenset(battenberg),
+                battenberg_only=battenberg_only,
+            ),
         )
         if reasons:
             raise ValueError("; ".join(reasons))
