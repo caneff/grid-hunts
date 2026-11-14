@@ -1,6 +1,6 @@
 """counting shaded, all visible and orthogonally connected: do such shapes exist?
 
-    uv run finders/counting_shaded/connected.py --size 20 [--force 72,73,79] [--ban 57]
+    uv run finders/counting_shaded/connected.py [--min 16] [--max 40] [--force 72,73,79] [--ban 57]
 
 Shape-only CP-SAT model: shaded cell booleans, each shaded cell's given is its
 shaded-neighbour count (1-8), givens distinct within every row, column and box,
