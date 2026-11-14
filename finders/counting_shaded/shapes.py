@@ -19,6 +19,8 @@ import random
 import time
 from pathlib import Path
 
+from ortools.sat.python import cp_model
+
 N = 9
 CELLS = [(r, c) for r in range(N) for c in range(N)]
 BOX = [(r // 3) * 3 + c // 3 for r, c in CELLS]
@@ -66,6 +68,33 @@ def connected(shape):
                 seen.add(j)
                 stack.append(j)
     return len(seen) == len(shape)
+
+
+def add_flow_connectivity(m, g, cap=81):
+    """One root shaded cell supplies a unit of flow to every other shaded cell.
+
+    `cap` is the largest possible shaded cell count. Sizing the flow domains to it
+    rather than to 81 matters: `joint.py --maximize` proves no connected
+    all-visible shape exceeds 26 shaded cells, so 0..81 arcs hand the solver three
+    times the range it can ever use.
+    """
+    root = [m.new_bool_var(f"r{i}") for i in range(81)]
+    m.add_exactly_one(root)
+    arcs = {}
+    for i in range(81):
+        m.add_implication(root[i], g[i])
+        for j in ORTH[i]:
+            f = m.new_int_var(0, cap, f"f{i}_{j}")
+            m.add(f <= cap * g[i])
+            m.add(f <= cap * g[j])
+            arcs[i, j] = f
+    for i in range(81):
+        supply = m.new_int_var(0, cap, f"s{i}")
+        m.add(supply <= cap * root[i])
+        m.add(
+            sum(arcs[j, i] for j in ORTH[i]) + supply
+            == sum(arcs[i, j] for j in ORTH[i]) + g[i]
+        )
 
 
 def givens(shape):
@@ -164,7 +193,7 @@ BAN = set()  # cell indices that must not be shaded cells
 
 
 def pins(force=(), ban=()):
-    """Pin cells on (force) and off (ban), as r1c1-style indices 0-80."""
+    """Pin cells on (force) and off (ban), as row-major cell indices 0-80."""
     global FORCE, BAN
     FORCE, BAN = set(force), set(ban)
 
@@ -176,8 +205,6 @@ def eight_ok(given):
 
 def seed_shape(rng, min_shaded):
     """A random solvable admissible shape: grid and shaded cells together in CP-SAT."""
-    from ortools.sat.python import cp_model
-
     m = cp_model.CpModel()
     g = [m.new_bool_var(f"g{i}") for i in range(81)]
     x = [[m.new_bool_var(f"x{i}{d}") for d in range(9)] for i in range(81)]

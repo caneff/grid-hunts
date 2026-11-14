@@ -426,3 +426,52 @@ def test_dfs_all_digits_prune_keeps_a_shape_whose_only_eight_is_two_steps_out(tm
     assert r.exhausted
     assert (r.shapes, r.solvable, r.unique) == (n, solvable, unique)
     assert r.shapes == 3
+
+
+# --- one flow encoding, one neighbour table ---------------------------------
+
+
+def _defined_names(path):
+    import ast
+
+    return {
+        n.name
+        for n in ast.walk(ast.parse(path.read_text()))
+        if isinstance(n, ast.FunctionDef)
+    }
+
+
+def test_flow_connectivity_and_neighbour_table_are_defined_once():
+    owners = {
+        name: [p.name for p in HERE.glob("*.py") if name in _defined_names(p)]
+        for name in ("add_flow_connectivity", "neighbours")
+    }
+    assert owners == {"add_flow_connectivity": ["shapes.py"], "neighbours": []}
+
+
+def _flow_feasible(shape, **kwargs):
+    m = cp_model.CpModel()
+    g = [m.new_bool_var(f"g{i}") for i in range(81)]
+    for i in range(81):
+        m.add(g[i] == (1 if i in shape else 0))
+    shapes.add_flow_connectivity(m, g, **kwargs)
+    s = cp_model.CpSolver()
+    return s.solve(m) in (cp_model.OPTIMAL, cp_model.FEASIBLE)
+
+
+def test_flow_connectivity_matches_the_flood_fill():
+    rng = random.Random(5)
+    seen = set()
+    for _ in range(40):
+        shape = {rng.randrange(81)}
+        while len(shape) < rng.randint(2, 9):
+            shape.add(rng.choice([j for i in shape for j in shapes.ORTH[i]]))
+        if rng.random() < 0.5:
+            shape.add(rng.randrange(81))  # often a stray, disconnected cell
+        want = shapes.connected(shape)
+        seen.add(want)
+        assert _flow_feasible(shape) == want
+    assert seen == {True, False}
+    line = set(range(9))
+    assert _flow_feasible(line, cap=9)
+    assert not _flow_feasible(line | {40}, cap=10)

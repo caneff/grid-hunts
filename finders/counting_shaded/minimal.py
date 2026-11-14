@@ -20,18 +20,9 @@ import time
 from pathlib import Path
 
 from ortools.sat.python import cp_model
+from shapes import CELLS, NEIGH
 
 N = 9
-CELLS = [(r, c) for r in range(N) for c in range(N)]
-
-
-def neighbours(r, c):
-    return [
-        (r + a, c + b)
-        for a in (-1, 0, 1)
-        for b in (-1, 0, 1)
-        if (a or b) and 0 <= r + a < N and 0 <= c + b < N
-    ]
 
 
 def base_model():
@@ -53,7 +44,9 @@ def base_model():
                 )
     for r, c in CELLS:
         digit = sum((d + 1) * x[r, c][d] for d in range(9))
-        m.add(sum(g[n] for n in neighbours(r, c)) == digit).only_enforce_if(g[r, c])
+        m.add(sum(g[CELLS[j]] for j in NEIGH[r * 9 + c]) == digit).only_enforce_if(
+            g[r, c]
+        )
         m.add_bool_or([x[r, c][d].Not() for d in (8,)]).only_enforce_if(
             g[r, c]
         )  # no 9 on a shaded cell

@@ -26,19 +26,10 @@ import time
 from pathlib import Path
 
 from ortools.sat.python import cp_model
+from shapes import CELLS, NEIGH
 
 N = 9
-CELLS = [(r, c) for r in range(N) for c in range(N)]
 BANDS = [range(3), range(3, 6), range(6, 9)]
-
-
-def neighbours(r, c):
-    return [
-        (r + a, c + b)
-        for a in (-1, 0, 1)
-        for b in (-1, 0, 1)
-        if (a or b) and 0 <= r + a < N and 0 <= c + b < N
-    ]
 
 
 def shares_house(p, q):
@@ -95,7 +86,9 @@ class Master:
         self.g = g = {cell: m.new_bool_var(f"g{cell}") for cell in CELLS}
         for r, c in CELLS:
             digit = sum((d + 1) * x[r, c][d] for d in range(9))
-            m.add(sum(g[n] for n in neighbours(r, c)) == digit).only_enforce_if(g[r, c])
+            m.add(sum(g[CELLS[j]] for j in NEIGH[r * 9 + c]) == digit).only_enforce_if(
+                g[r, c]
+            )
         # on[c][d]: cell c is a shaded cell holding digit d+1
         self.on = on = {}
         for cell in CELLS:
@@ -267,7 +260,8 @@ def second_solution(S, shape, rng, limit):
 def verify(S, shape):
     """Fresh check: givens are neighbour counts, sudoku-consistent, an 8, unique."""
     counts_ok = all(
-        sum(n in shape for n in neighbours(*cell)) == S[cell] for cell in shape
+        sum(CELLS[j] in shape for j in NEIGH[cell[0] * 9 + cell[1]]) == S[cell]
+        for cell in shape
     )
     has_eight = any(S[cell] == 8 for cell in shape)
     m = cp_model.CpModel()
