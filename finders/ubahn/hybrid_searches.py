@@ -310,6 +310,9 @@ def fewest_markings(
     windows = hybrid.windows(board)
     mirrored = condition_symmetry(conditions) != IDENTITY
     path = out / "sets.jsonl"
+    # A worker process is sent its engine by pickle, and the `cpsat` entry is
+    # a module, which cannot be: it gets the one engine it solves with.
+    mine = {engine: engines[engine]}
     timed, unique, size = [], [], 0
     with path.open("a+") as log:
         # Held until the answer is printed, as a climb holds its own log.
@@ -332,7 +335,7 @@ def fewest_markings(
             crew = [
                 multiprocessing.Process(
                     target=_classify_sets,
-                    args=(conditions, engine, timeout, share, mirrored, path, engines),
+                    args=(conditions, engine, timeout, share, mirrored, path, mine),
                 )
                 for share in (todo[i::workers] for i in range(workers))
                 if share
