@@ -607,6 +607,13 @@ def test_unique_on_an_invalid_model_raises():
         raise AssertionError("an invalid model gave a status")
 
 
+def test_solve_and_read_entries_keep_their_docstring():
+    # Spec #116: a docstring on a symbol another module imports stays.
+    # halver_query reads marks through read_entries; the tests call solve.
+    for symbol in (query.solve, query.read_entries):
+        assert symbol.__doc__, f"{symbol.__name__} lost its docstring"
+
+
 def main():
     tests = [v for k, v in globals().items() if k.startswith("test_")]
     for test in tests:
