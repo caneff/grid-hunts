@@ -41,16 +41,10 @@ def build(pair):
     m = q.m
     pairs = model.add_seeing_tie(q)
     m.Add(pairs[pair] == 1)
-    m.AddLinearConstraint(q.rank[TEN[0]][TEN[1]], 10, 10)
-    m.AddAllowedAssignments(
-        [q.x[TEN[0]][TEN[1]]], [(d,) for d in model.leading_digits(n, 10, 10)]
-    )
-    m.Add(q.q[CAGE] == 33)
-    m.Add(q.q[PIN] == 5)
-    m.Add(q.x[TARGET[0]][TARGET[1]] <= 7)
-    for row_i, row in enumerate(SEEDS[0].split("/")):
+    hunt_common.post_rule(q, TEN, CAGE, TARGET, PIN)
+    for row_i, row in enumerate(hunt_common.grid_rows(SEEDS[0])):
         for c, d in enumerate(row):
-            m.AddHint(q.x[row_i][c], int(d))
+            m.AddHint(q.x[row_i][c], d)
     return q
 
 

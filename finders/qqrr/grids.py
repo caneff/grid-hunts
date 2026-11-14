@@ -1,6 +1,13 @@
 """Seeded full sudoku grids for the tests: the base pattern under band, stack
 and digit shuffles. Every grid is a valid 9x9 sudoku, none comes from a solver,
-and the same seed gives the same grid every run."""
+and the same seed gives the same grid every run. `parse` reads a grid from its rows of digits
+joined by slashes, as the explorer stores it (`hunt_common.grid_rows`)."""
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "hunt"))
+from hunt_common import grid_rows as parse
 
 
 def random_sudoku(rng):
@@ -17,11 +24,6 @@ def random_sudoku(rng):
     ]
     digits = rng.sample(range(1, 10), 9)
     return [[digits[base[r][c] - 1] for c in cols] for r in rows]
-
-
-def parse(text):
-    """A grid from its rows of digits joined by slashes, as the explorer stores it."""
-    return [[int(d) for d in row] for row in text.split("/")]
 
 
 # A full sudoku grid holding one 7-digit tie between interior cells that see

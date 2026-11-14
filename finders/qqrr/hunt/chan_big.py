@@ -82,7 +82,7 @@ def criterion_first(hits, crit):
     (stable: nearest first within each group)."""
 
     def passes(h):
-        g = [[int(d) for d in row] for row in h[2].split("/")]
+        g = hc.grid_rows(h[2])
         rk, nm, cr = oracle.rank_grid(g)
         return all(
             CRITERIA[c]["accept"](g, rk, nm, cr)
@@ -116,13 +116,7 @@ def build(hunt, ten_s, corner, flags, hits=None):
     CRIT = criteria(flags)
     q = model.build(n, ranked_cells=[CAGE, PIN])
     m = q.m
-    m.AddLinearConstraint(q.rank[TEN[0]][TEN[1]], 10, 10)
-    m.AddAllowedAssignments(
-        [q.x[TEN[0]][TEN[1]]], [(d,) for d in model.leading_digits(n, 10, 10)]
-    )
-    m.Add(q.q[CAGE] == 33)
-    m.Add(q.q[PIN] == 5)
-    m.Add(q.x[TARGET[0]][TARGET[1]] <= 7)
+    hc.post_rule(q, TEN, CAGE, TARGET, PIN)
     for name in CRIT:
         if "model" in CRITERIA[name]:
             CRITERIA[name]["model"](m, q)
@@ -134,9 +128,9 @@ def build(hunt, ten_s, corner, flags, hits=None):
             warm_from = hits[0]
     if "hint" in flags or warm_from:
         src = warm_from[2] if warm_from else SEED
-        for row_i, row in enumerate(src.split("/")):
+        for row_i, row in enumerate(hc.grid_rows(src)):
             for c, d in enumerate(row):
-                m.AddHint(q.x[row_i][c], int(d))
+                m.AddHint(q.x[row_i][c], d)
     known = 0
     if "forbid-known" in flags:
         _cells = {(r, c): q.x[r][c] for r in range(n) for c in range(n)}
@@ -144,27 +138,16 @@ def build(hunt, ten_s, corner, flags, hits=None):
             {h[2] for hh in HUNTS for h in earlier_hits(hh, ten_s, corner)}
         ):
             known += 1
+            rows = hc.grid_rows(g)
             cpsat.forbid(
-                m,
-                _cells,
-                {(r, c): int(g.split("/")[r][c]) for r in range(n) for c in range(n)},
+                m, _cells, {(r, c): rows[r][c] for r in range(n) for c in range(n)}
             )
     tens, units = {}, {}
     for wr in range(n - 1):
         for wc in range(n - 1):
-            t = m.NewIntVar(0, 6, f"t{wr}{wc}")
-            u = m.NewIntVar(0, 9, f"u{wr}{wc}")
-            m.Add(q.rank[wr][wc] == 10 * t + u)
-            w = q.wide[wr][wc]
-            m.Add(t >= 1).OnlyEnforceIf(w)
-            m.Add(t == 0).OnlyEnforceIf(w.Not())
-            if "tables" in flags:
-                allowed = []
-                for d in range(1, n + 1):
-                    lo, hi = model.leading_digit_band(n, d)
-                    allowed += [(d, tt) for tt in range(lo // 10, hi // 10 + 1)]
-                m.AddAllowedAssignments([q.x[wr][wc], t], allowed)
-            tens[(wr, wc)], units[(wr, wc)] = t, u
+            tens[(wr, wc)], units[(wr, wc)] = hc.digit_channel(
+                q, wr, wc, tables="tables" in flags
+            )
     interior = [(r, c) for r in range(1, n - 1) for c in range(1, n - 1)]
     act, nar, seq = {}, {}, {}
     for cell in interior:

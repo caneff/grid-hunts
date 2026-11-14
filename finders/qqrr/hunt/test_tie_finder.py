@@ -13,13 +13,12 @@ after the source changed (#643); the warm start's own checks are test_tie_warm.p
 
 import json
 import resource
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "finders" / "hunt"))
-from subprocess_env import success_env
+from cli_checks import check, finish, run_cli
 from verified_io import read_verified
 
 HERE = Path(__file__).resolve().parent
@@ -32,25 +31,6 @@ BR1 = "591247638/672183954/438695127/865934271/927516483/143872569/284369715/716
 SEED_R1C5 = "356791428/974286531/128534967/215948673/483617295/697352814/562873149/749165382/831429756"
 # GOOD with r1c1 and r1c2 swapped: row 1 still holds 1..9, column 1 and box 1 do not.
 NOT_SUDOKU = "346781529" + GOOD[9:]
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
-
-def run_cli(*args):
-    return subprocess.run(
-        [sys.executable, str(FINDER), *args],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
 
 
 def record(grid, **over):
@@ -67,20 +47,20 @@ with tempfile.TemporaryDirectory() as d:
             "the found grid filed under another corner",
             record(GOOD, corner="tl"),
             False,
-            "corner",
+            "not 5",
         ),
         (
             "the found grid filed under another QR-10 window",
             record(GOOD, ten="r6c6"),
             False,
-            "QR",
+            "QR 13 at r6c6, not 10",
         ),
         ("a grid that is not a sudoku", record(NOT_SUDOKU), False, "sudoku"),
         (
             "the found grid filed under the other cage",
             record(GOOD, hunt="r5c1"),
             False,
-            "cage",
+            "not 33",
         ),
         (
             "a grid with no tie",
@@ -92,7 +72,7 @@ with tempfile.TemporaryDirectory() as d:
             "a grid over the bound",
             record(BR1, hunt="r5c1", ten="r6c6", corner="br", q34=False),
             False,
-            "bounded",
+            "> 7",
         ),
         (
             "a grid with no 34-36 cell",
@@ -115,7 +95,7 @@ with tempfile.TemporaryDirectory() as d:
     (out / "state.json").write_text(
         json.dumps({"seed": len(cases) - 1, "state": {"found": []}})
     )
-    r = run_cli("verify", str(out))
+    r = run_cli(FINDER, "verify", str(out))
     check("hunt verify exits 0", r.returncode == 0)
     stamp, verdicts = read_verified(out / "verified.jsonl")
     check("verified.jsonl starts with the stamp", "verified_examples" in stamp)
@@ -129,7 +109,7 @@ with tempfile.TemporaryDirectory() as d:
     args = ["--out", str(out), "--seeds=0:1", "--workers", "1"]
     config = ["--hunt", "r1c5", "--ten", "r7c7", "--corner", "bl", "--q34"]
     before = resource.getrusage(resource.RUSAGE_CHILDREN).ru_utime
-    r = run_cli(*args, *config, "--timeout", "5")
+    r = run_cli(FINDER, *args, *config, "--timeout", "5")
     cpu = resource.getrusage(resource.RUSAGE_CHILDREN).ru_utime - before
     check("a hunt capped at 5 s exits 0", r.returncode == 0)
     # --workers 1 reaches the solver: cpsat.solver's portfolio default of 8
@@ -152,11 +132,11 @@ with tempfile.TemporaryDirectory() as d:
         == [("empty", "timeout")],
     )
 
-    r = run_cli(*args, *config, "--timeout", "9")
+    r = run_cli(FINDER, *args, *config, "--timeout", "9")
     check("resuming under another timeout refuses", r.returncode == 2)
 
 with tempfile.TemporaryDirectory() as d:
-    r = run_cli("--out", str(Path(d) / "hunt"), "--seeds=0:1", "--ten", "r7c7")
+    r = run_cli(FINDER, "--out", str(Path(d) / "hunt"), "--seeds=0:1", "--ten", "r7c7")
     check(
         "a hunt missing --hunt/--corner/--timeout refuses (exit 2)", r.returncode == 2
     )
@@ -166,7 +146,7 @@ with tempfile.TemporaryDirectory() as d:
 with tempfile.TemporaryDirectory() as d:
     out = Path(d) / "hunt"
     flags = ["--hunt", "r1c5", "--corner", "bl", "--timeout", "1", "--ten", "r9c9"]
-    r = run_cli("--out", str(out), "--seeds=0:1", *flags)
+    r = run_cli(FINDER, "--out", str(out), "--seeds=0:1", *flags)
     check("a hunt with a window off the board refuses (exit 2)", r.returncode == 2)
     check("the refused hunt wrote no run.json", not (out / "run.json").exists())
 
@@ -175,7 +155,6 @@ with tempfile.TemporaryDirectory() as d:
     flags += ["--seeds=0:1", "--q34"]
     good = json.dumps(record(GOOD)) + "\n"
     for name, text in [
-        ("a half-written last line", good + '{"grid": "4367'),
         ("a record of another finder", good + '{"x": 1}\n'),
         ("a grid with a short row", good + json.dumps(record(GOOD[:-1])) + "\n"),
         (
@@ -187,7 +166,12 @@ with tempfile.TemporaryDirectory() as d:
         src.mkdir()
         (src / "examples.jsonl").write_text(text)
         r = run_cli(
-            "--out", str(Path(d) / ("o-" + src.name)), *flags, "--warm-from", str(src)
+            FINDER,
+            "--out",
+            str(Path(d) / ("o-" + src.name)),
+            *flags,
+            "--warm-from",
+            str(src),
         )
         check(f"--warm-from over {name} refuses (exit 2)", r.returncode == 2)
         check(f"... naming the file and line ({name})", "examples.jsonl:2" in r.stderr)
@@ -196,14 +180,34 @@ with tempfile.TemporaryDirectory() as d:
     low = record(SEED_R1C5, ten="r1c1", corner="tl")
     (src / "examples.jsonl").write_text(good + json.dumps(low) + "\n")
     out = str(Path(d) / "o-edited")
-    run_cli("--out", out, *flags, "--warm-from", str(src))
+    r = run_cli(FINDER, "--out", out, *flags, "--warm-from", str(src))
+    check(
+        "the first run, over the source with the lower grid, exits 0", r.returncode == 0
+    )
     (src / "examples.jsonl").write_text(good)
-    r = run_cli("--out", out, *flags, "--warm-from", str(src))
+    r = run_cli(FINDER, "--out", out, *flags, "--warm-from", str(src))
     check("resuming after the warm source lost a lower grid refuses", r.returncode == 2)
+    src = Path(d) / "torn"
+    src.mkdir()
+    (src / "examples.jsonl").write_text(good + '{"grid": "4367')
+    r = run_cli(
+        FINDER, "--out", str(Path(d) / "o-torn"), *flags, "--warm-from", str(src)
+    )
+    check("--warm-from drops a last line cut short by a kill", r.returncode == 0)
+    src = Path(d) / "torn-mid"
+    src.mkdir()
+    (src / "examples.jsonl").write_text(good + '{"grid": "4367\n' + good)
+    r = run_cli(
+        FINDER, "--out", str(Path(d) / "o-mid"), *flags, "--warm-from", str(src)
+    )
+    check("--warm-from refuses an unreadable line that is not last", r.returncode == 2)
+    check("... naming the file and line", "examples.jsonl line 2" in r.stderr)
     src = Path(d) / "blank"
     src.mkdir()
     (src / "examples.jsonl").write_text(good + "\n")
-    r = run_cli("--out", str(Path(d) / "o-blank"), *flags, "--warm-from", str(src))
+    r = run_cli(
+        FINDER, "--out", str(Path(d) / "o-blank"), *flags, "--warm-from", str(src)
+    )
     check("--warm-from tolerates a trailing blank line", r.returncode == 0)
 
-sys.exit(0 if ok else 1)
+finish()
