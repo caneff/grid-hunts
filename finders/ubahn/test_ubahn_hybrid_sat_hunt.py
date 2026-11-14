@@ -21,7 +21,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import hybrid
-import hybrid_finder
+import hybrid_engines
 import hybrid_sat
 import network
 from cli_checks import check, finish, read_jsonl, run_cli
@@ -30,7 +30,7 @@ FINDER = HERE / "hybrid_finder.py"
 BOARD = ["--rows", "4", "--cols", "4", "--timeout", "10"]
 ENGINES = ("pysat-lazy", "pysat-propagator")
 # A record carries its own board and conditions.
-READER = hybrid_finder.HybridFinder(hybrid.Conditions(4, 4))
+READER = hybrid_engines.HybridFinder(hybrid.Conditions(4, 4))
 
 
 def meeting(names, exactly=None):
@@ -180,11 +180,11 @@ for engine in ENGINES:
 
 check(
     "--engine pysat-lazy is the PySAT engine with lazy connectivity cuts",
-    hybrid_finder.ENGINES["pysat-lazy"] == hybrid_sat.Engine(hybrid_sat.LAZY),
+    hybrid_engines.ENGINES["pysat-lazy"] == hybrid_sat.Engine(hybrid_sat.LAZY),
 )
 check(
     "--engine pysat-propagator is the one with the connectivity propagator",
-    hybrid_finder.ENGINES.get("pysat-propagator")
+    hybrid_engines.ENGINES.get("pysat-propagator")
     == hybrid_sat.Engine(hybrid_sat.PROPAGATOR),
 )
 r = run_cli(FINDER, "--help")

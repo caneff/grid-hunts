@@ -20,7 +20,7 @@ import random
 
 import brute
 import hybrid
-import hybrid_finder
+import hybrid_engines
 import hybrid_model
 import hybrid_sat
 import network
@@ -48,11 +48,13 @@ def meeting(k):
 
 
 def candidate(net, k):
-    return hybrid_finder.Candidate(hybrid.Conditions(ROWS, COLS, number_circles=k), net)
+    return hybrid_engines.Candidate(
+        hybrid.Conditions(ROWS, COLS, number_circles=k), net
+    )
 
 
 GRIDS = brute.hybrid_grids(ROWS, COLS)
-READER = hybrid_finder.HybridFinder(hybrid.Conditions(ROWS, COLS))
+READER = hybrid_engines.HybridFinder(hybrid.Conditions(ROWS, COLS))
 
 check(
     "the 18 grids: 6 with 2 valid circles on number cells, 12 with none",

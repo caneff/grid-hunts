@@ -22,7 +22,7 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 import hybrid
 import time_engines
 from cli_checks import check, finish
-from hybrid_finder import ENGINES
+from hybrid_engines import ENGINES
 
 
 def circled(*names):

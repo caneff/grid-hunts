@@ -27,7 +27,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import hybrid
-import hybrid_finder
+import hybrid_engines
 import network
 from cli_checks import check, finish, read_jsonl, run_cli
 from dedupe import canonical_key
@@ -157,8 +157,8 @@ PAIR = [
         ["┌┬┬┬┬┐", "├┤├┘├┘", "├┤├┐├┐", "├┴┴┤├┤", "├──┤├┤", "└──┴┴┘"],
     )
 ]
-finder = hybrid_finder.HybridFinder(hybrid.Conditions(6, 6))
-pair = [hybrid_finder.Candidate(finder.conditions, net) for net in PAIR]
+finder = hybrid_engines.HybridFinder(hybrid.Conditions(6, 6))
+pair = [hybrid_engines.Candidate(finder.conditions, net) for net in PAIR]
 check(
     "6x6: two valid grids share every cell's kind",
     PAIR[0] != PAIR[1]
@@ -177,7 +177,7 @@ check(
     and all(
         canonical(candidate)
         == canonical(
-            hybrid_finder.Candidate(finder.conditions, transposed(candidate.network))
+            hybrid_engines.Candidate(finder.conditions, transposed(candidate.network))
         )
         for candidate in pair
     ),

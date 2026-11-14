@@ -57,6 +57,20 @@ class Conditions(NamedTuple):
     battenberg: frozenset = frozenset()
     battenberg_only: bool = False
 
+    def asking(self, number_circles=None, battenberg=None, battenberg_only=None):
+        """These conditions with the number of circles on number cells, the
+        marked windows (any iterable of them) or the negative constraint
+        changed, whichever is given and nothing else: the one place a search
+        derives the conditions of its next step."""
+        changes = {}
+        if number_circles is not None:
+            changes["number_circles"] = number_circles
+        if battenberg is not None:
+            changes["battenberg"] = frozenset(battenberg)
+        if battenberg_only is not None:
+            changes["battenberg_only"] = battenberg_only
+        return self._replace(**changes)
+
 
 class Sampled(NamedTuple):
     """An engine's grid for a seed: `status` is "found" with the network, or

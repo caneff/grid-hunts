@@ -22,14 +22,14 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import hybrid
-import hybrid_finder
+import hybrid_engines
 from cli_checks import check, finish, read_jsonl, run_cli
 
 FINDER = HERE / "hybrid_finder.py"
 BOARD = ["--rows", "4", "--cols", "4", "--timeout", "20"]
 MOST = 2
 # A record carries its own board and conditions.
-READER = hybrid_finder.HybridFinder(hybrid.Conditions(4, 4))
+READER = hybrid_engines.HybridFinder(hybrid.Conditions(4, 4))
 
 
 def on_numbers(net):
@@ -122,7 +122,7 @@ with tempfile.TemporaryDirectory() as d:
     )  # fmt: skip
 
     # `climb`: K up from 0 until no grid reaches it.
-    for engine in hybrid_finder.ENGINES:
+    for engine in hybrid_engines.ENGINES:
         out = Path(d) / f"climb {engine}"
         r = run_cli(FINDER, "climb", *BOARD, "--engine", engine, "--out", out)
         lines = r.stdout.splitlines()

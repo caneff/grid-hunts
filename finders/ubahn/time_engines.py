@@ -51,7 +51,7 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 # isort: split
 import hybrid
 import hybrid_sat
-from hybrid_finder import ENGINES, Candidate, HybridFinder
+from hybrid_engines import ENGINES, Candidate, HybridFinder
 from measure_baseline import seed_range, times
 from ubahn_finder import DEFAULT_TIMEOUT
 

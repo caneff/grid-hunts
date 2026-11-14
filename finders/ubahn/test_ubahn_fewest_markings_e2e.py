@@ -40,7 +40,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import hybrid
-import hybrid_finder
+import hybrid_engines
 import hybrid_render
 from cli_checks import check, finish, run_cli
 from penpa_decode import Decoded, battenberg_vertices
@@ -115,7 +115,7 @@ with tempfile.TemporaryDirectory() as d:
         json.loads(line)
         for line in (example / "examples.jsonl").read_text().splitlines()
     ]
-    found = hybrid_finder.HybridFinder(hybrid.Conditions(4, 4)).candidate_from_record(
+    found = hybrid_engines.HybridFinder(hybrid.Conditions(4, 4)).candidate_from_record(
         record
     )
     check(

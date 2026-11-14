@@ -30,7 +30,7 @@ import tempfile
 
 import brute
 import hybrid
-import hybrid_finder
+import hybrid_engines
 import hybrid_sat
 import network
 import time_bananas
@@ -188,7 +188,7 @@ def test_larger_board(name, exactly, total):
                 and set(got.grids) == want
                 and len(got.grids) == len(want),
             )
-        status, found = hybrid_finder.ENGINES["cpsat"].classify(
+        status, found = hybrid_engines.ENGINES["cpsat"].classify(
             asked(5, n, exactly=exactly), time_limit=TIME_LIMIT, workers=1
         )
         word = WORDS[min(len(want), 2)]
@@ -256,19 +256,19 @@ def hunt(d, name, *flags, seeds=6):
 
 def test_verify():
     """The finder's `verify`, the rule reader, on the condition."""
-    reader = hybrid_finder.HybridFinder(hybrid.Conditions(4, 4))
+    reader = hybrid_engines.HybridFinder(hybrid.Conditions(4, 4))
     for net in TWO:
         check(
             "verify passes a grid with two banana regions asked for two",
-            reader.verify(hybrid_finder.Candidate(asked(4, 2), net)).ok,
+            reader.verify(hybrid_engines.Candidate(asked(4, 2), net)).ok,
         )
-    verdict = reader.verify(hybrid_finder.Candidate(asked(4, 2), ONE))
+    verdict = reader.verify(hybrid_engines.Candidate(asked(4, 2), ONE))
     check(
         f"verify rejects a grid with one, naming the count ({verdict.reason!r})",
         not verdict.ok
         and verdict.reason == "1 banana region, fewer than the 2 asked for",
     )
-    record = reader.record(hybrid_finder.Candidate(asked(4, 2), ONE))
+    record = reader.record(hybrid_engines.Candidate(asked(4, 2), ONE))
     check("the record carries the condition", record["min_bananas"] == 2)
     check(
         "a record read back asks for what it was found under, so verify rejects it",
@@ -297,7 +297,7 @@ def test_cli(engine, d):
     examples, _, summary, config = hunt(
         d, f"{engine} two", *flags, "--min-bananas", "2"
     )
-    reader = hybrid_finder.HybridFinder(hybrid.Conditions(4, 4))
+    reader = hybrid_engines.HybridFinder(hybrid.Conditions(4, 4))
     nets = {reader.candidate_from_record(ex).network for ex in examples}
     # The two grids are each other's image in the main diagonal, which the
     # hunt dedupes under, so they are one example.
@@ -408,7 +408,7 @@ def test_timing():
 if __name__ == "__main__":
     test_reader()
     test_brute()
-    for name, engine in hybrid_finder.ENGINES.items():
+    for name, engine in hybrid_engines.ENGINES.items():
         test_engine(name, engine)
         test_blank_strip(name, engine)
     test_larger_board("no piece count", None, 31)
@@ -419,7 +419,7 @@ if __name__ == "__main__":
         "six, so at least 3 leaves exactly one",
         [len(kept[n]) for n in sorted(kept)] == [8, 8, 1, 1, 1, 1, 0],
     )
-    for name, engine in hybrid_finder.ENGINES.items():
+    for name, engine in hybrid_engines.ENGINES.items():
         (only,) = kept[3]
         check(
             f"{name}, 5x5, 2 branches in r1 with at least 3: the one grid",
@@ -432,6 +432,6 @@ if __name__ == "__main__":
     test_timing()
     test_flag()
     with tempfile.TemporaryDirectory() as d:
-        for name in hybrid_finder.ENGINES:
+        for name in hybrid_engines.ENGINES:
             test_cli(name, d)
     finish()
