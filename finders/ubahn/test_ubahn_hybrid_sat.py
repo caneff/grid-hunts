@@ -61,7 +61,9 @@ def agrees_with_reader(engine, name, side, count):
     got = hybrid_sat.listing(
         hybrid.Conditions(side, side), engine, cap=count + 1, time_limit=TIME_LIMIT
     )
-    refused = [g for g in got.grids if hybrid.why_not_hybrid(g, side, side)]
+    refused = [
+        g for g in got.grids if hybrid.why_not_hybrid(g, hybrid.Conditions(side, side))
+    ]
     check(
         f"{engine}, {name}: {count} grids, each once, all passed by the rule "
         f"reader ({len(got.grids)} listed, {len(refused)} refused)",
@@ -126,7 +128,13 @@ for engine in ENGINES:
     ):
         label = f"4x4 circles {' '.join(names) or 'none'}"
         conditions = hybrid.Conditions(4, 4, cells(*names))
-        want = {g for g in grids if not hybrid.why_not_hybrid(g, 4, 4, cells(*names))}
+        want = {
+            g
+            for g in grids
+            if not hybrid.why_not_hybrid(
+                g, hybrid.Conditions(4, 4, circles=frozenset(cells(*names)))
+            )
+        }
         check(f"{label}: the brute force counts {count}", len(want) == count)
         agrees(engine, label, conditions, want)
         classify = hybrid_sat.Engine(engine).classify
@@ -159,7 +167,11 @@ for engine in ENGINES:
     for names, count in ((("r4c2",), 4), (("r2c4",), 0), (("c1:turn", "c4:turn"), 2)):
         label = f"4x4 with exactly 2 crosses in r2, circles {' '.join(names)}"
         want = {
-            g for g in two_crosses if not hybrid.why_not_hybrid(g, 4, 4, cells(*names))
+            g
+            for g in two_crosses
+            if not hybrid.why_not_hybrid(
+                g, hybrid.Conditions(4, 4, circles=frozenset(cells(*names)))
+            )
         }
         check(f"{label}: the brute force counts {count}", len(want) == count)
         agrees(engine, label, hybrid.Conditions(4, 4, cells(*names), TWO_CROSSES), want)
@@ -197,7 +209,13 @@ for engine in ENGINES:
     # same one on every run of the seed, and not the same one for every seed.
     grid = hybrid_sat.Engine(engine).grid
     conditions = hybrid.Conditions(4, 4, cells("r2c2"))
-    want = {g for g in grids if not hybrid.why_not_hybrid(g, 4, 4, cells("r2c2"))}
+    want = {
+        g
+        for g in grids
+        if not hybrid.why_not_hybrid(
+            g, hybrid.Conditions(4, 4, circles=frozenset(cells("r2c2")))
+        )
+    }
     sampled = [
         grid(conditions, random.Random(seed), time_limit=TIME_LIMIT)
         for seed in range(12)
@@ -233,7 +251,10 @@ for engine in ENGINES:
 BENT_THREE = network.from_drawing(["┌┬─┬┐", "├┼┬┤│", "│├┘├┤", "├┴┬┼┘", "└─┴┘ "])
 check(
     "5x5 bent three: the rule reader passes it with r1c2 circled",
-    hybrid.failures(BENT_THREE, 5, 5, cells("r1c2")) == [],
+    hybrid.failures(
+        BENT_THREE, hybrid.Conditions(5, 5, circles=frozenset(cells("r1c2")))
+    )
+    == [],
 )
 for engine in ENGINES:
     # Every 5x5 grid, which no brute force reaches: the rule reader must pass
@@ -246,7 +267,13 @@ for engine in ENGINES:
     # clauses, so r1c2 and every fifth cell.
     board = sorted(hybrid.values(BENT_THREE, 5, 5))
     kept = {
-        cell: {g for g in every if not hybrid.why_not_hybrid(g, 5, 5, [cell])}
+        cell: {
+            g
+            for g in every
+            if not hybrid.why_not_hybrid(
+                g, hybrid.Conditions(5, 5, circles=frozenset([cell]))
+            )
+        }
         for cell in (board if engine == hybrid_sat.LAZY else [(0, 1), *board[::5]])
     }
     check("5x5: r1c2 circled keeps the bent three alone", kept[0, 1] == {BENT_THREE})
@@ -323,7 +350,7 @@ for drawn in (BRANCH_OF_3, STRAIGHT_OF_5, CROSS_AT_AN_END):
     side, found = len(drawn), network.from_drawing(drawn)
     check(
         f"{side}x{side} {drawn[0]}: the rule reader passes the grid",
-        hybrid.failures(found, side, side) == [],
+        hybrid.failures(found, hybrid.Conditions(side, side)) == [],
     )
     board = hybrid.values(found, side, side)
     size = {cell: len(region) for region in hybrid.regions(board) for cell in region}
@@ -359,7 +386,7 @@ check(
 found = network.from_drawing(CROSS_AT_AN_END)
 check(
     "7x7, a cross at an end of 5 even cells: the rule reader refuses its circle",
-    hybrid.failures(found, 7, 7, cells("r6c4"))
+    hybrid.failures(found, hybrid.Conditions(7, 7, circles=frozenset(cells("r6c4"))))
     == ["circle at r6c4: value 4, region of 5 cells"],
 )
 check(

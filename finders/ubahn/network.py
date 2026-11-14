@@ -172,6 +172,21 @@ class Exactly(NamedTuple):
         """Whether the board has the row or column the condition names."""
         return self.index < (rows if self.axis == "r" else cols)
 
+    def why_off_board(self, rows, cols):
+        """Why the board has no such row or column, or "" when it has."""
+        if self.on_board(rows, cols):
+            return ""
+        return f"condition {self.text()} is off the {rows}x{cols} board"
+
+    def why_not(self, network, rows, cols):
+        """Why the network does not meet the condition, or "" when it does:
+        the one wording of both refusals, for every finder's verify."""
+        return self.why_off_board(rows, cols) or (
+            ""
+            if self.holds(network, rows, cols)
+            else f"condition {self.text()} does not hold"
+        )
+
     def cells(self, rows, cols):
         """The cells of the row or column the condition names."""
         if self.axis == "r":
@@ -198,6 +213,17 @@ class Exactly(NamedTuple):
                 f"no piece named {name!r}: a condition counts {', '.join(KIND_NAMES)}"
             )
         return cls(int(count), KIND_NAMES.index(name), axis, int(number) - 1)
+
+    @classmethod
+    def parse_on(cls, text, rows, cols):
+        """`parse`, then the board check: the condition `text` names on a
+        `rows`x`cols` board. Raises ValueError, naming what is wrong: the one
+        refusal of a bad `--exactly`, for every finder."""
+        exactly = cls.parse(text)
+        why = exactly.why_off_board(rows, cols)
+        if why:
+            raise ValueError(why)
+        return exactly
 
     def text(self):
         """The condition as `parse` reads it."""

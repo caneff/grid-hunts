@@ -270,4 +270,44 @@ check(
     and "r4c5 is off it" in r.stderr,
 )
 
+
+def refusal(script, *argv):
+    """(exit code, stderr's last line, minus the program's name) of a run."""
+    r = subprocess.run(
+        [sys.executable, str(Path(__file__).with_name(script)), *argv],
+        capture_output=True,
+        text=True,
+    )
+    return r.returncode, r.stderr.strip().splitlines()[-1].split(": ", 1)[-1]
+
+
+# An off-board circle is refused in the same words, exit 2, by brute and by the
+# finder (#136).
+brute_said = refusal("brute.py", "4", "4", "--circles", "r9c9")
+finder_said = refusal(
+    "hybrid_finder.py", "classify", "--rows", "4", "--cols", "4", "--circles", "r9c9"
+)
+check(
+    f"brute and the finder refuse an off-board circle alike ({brute_said}, "
+    f"{finder_said})",
+    brute_said[0] == finder_said[0] == 2
+    and "circle r9c9 is off the 4x4 board" in brute_said[1]
+    and brute_said[1].split("--circles", 1)[1]
+    == finder_said[1].split("--circles", 1)[1],
+)
+# `--exactly` off the board reads alike in both finders.
+plain = refusal(
+    "ubahn_finder.py", "--rows", "4", "--cols", "4", "--exactly", "2:cross:r5"
+)
+hybrid_said = refusal(
+    "hybrid_finder.py", "classify", "--rows", "4", "--cols", "4",
+    "--exactly", "2:cross:r5",
+)  # fmt: skip
+check(
+    f"both finders refuse an off-board --exactly alike ({plain}, {hybrid_said})",
+    plain[0] == hybrid_said[0] == 2
+    and "condition 2:cross:r5 is off the 4x4 board" in plain[1]
+    and plain[1].split("--exactly", 1)[1] == hybrid_said[1].split("--exactly", 1)[1],
+)
+
 finish()

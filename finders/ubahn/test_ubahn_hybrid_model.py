@@ -114,7 +114,13 @@ for names, word, count in (
 ):
     label = f"4x4 circles {' '.join(names) or 'none'}"
     conditions = hybrid.Conditions(4, 4, cells(*names))
-    want = {g for g in grids if not hybrid.why_not_hybrid(g, 4, 4, cells(*names))}
+    want = {
+        g
+        for g in grids
+        if not hybrid.why_not_hybrid(
+            g, hybrid.Conditions(4, 4, circles=frozenset(cells(*names)))
+        )
+    }
     check(f"{label}: the brute force counts {count}", len(want) == count)
     agrees(label, conditions, want)
     got = hybrid_model.classify(conditions, time_limit=TIME_LIMIT, workers=1)
@@ -146,14 +152,26 @@ agrees(
 check("4x4 with exactly 2 crosses in r2: 8 grids", len(two_crosses) == 8)
 for names, count in ((("r4c2",), 4), (("r2c4",), 0), (("c1:turn", "c4:turn"), 2)):
     label = f"4x4 with exactly 2 crosses in r2, circles {' '.join(names)}"
-    want = {g for g in two_crosses if not hybrid.why_not_hybrid(g, 4, 4, cells(*names))}
+    want = {
+        g
+        for g in two_crosses
+        if not hybrid.why_not_hybrid(
+            g, hybrid.Conditions(4, 4, circles=frozenset(cells(*names)))
+        )
+    }
     check(f"{label}: the brute force counts {count}", len(want) == count)
     agrees(label, hybrid.Conditions(4, 4, cells(*names), TWO_CROSSES), want)
 
 # One grid for a seed: a brute-force grid that meets the conditions, the same
 # one on every run of the seed, and not the same one for every seed.
 conditions = hybrid.Conditions(4, 4, cells("r2c2"))
-want = {g for g in grids if not hybrid.why_not_hybrid(g, 4, 4, cells("r2c2"))}
+want = {
+    g
+    for g in grids
+    if not hybrid.why_not_hybrid(
+        g, hybrid.Conditions(4, 4, circles=frozenset(cells("r2c2")))
+    )
+}
 sampled = [
     hybrid_model.grid(conditions, random.Random(seed), time_limit=TIME_LIMIT)
     for seed in range(12)
@@ -211,7 +229,8 @@ check(
 )
 check(
     "5x5 bent three: the rule reader passes it with r1c2 circled",
-    hybrid.failures(BENT_THREE, 5, 5, BRANCH_AT) == [],
+    hybrid.failures(BENT_THREE, hybrid.Conditions(5, 5, circles=frozenset(BRANCH_AT)))
+    == [],
 )
 got = hybrid_model.classify(
     hybrid.Conditions(5, 5, BRANCH_AT), time_limit=TIME_LIMIT, workers=1
@@ -227,11 +246,19 @@ TWO_BRANCHES_R1 = network.Exactly.parse("2:branch:r1")
 
 
 def two_branches(net):
-    return not hybrid.why_not_hybrid(net, 5, 5) and TWO_BRANCHES_R1.holds(net, 5, 5)
+    return not hybrid.why_not_hybrid(
+        net, hybrid.Conditions(5, 5)
+    ) and TWO_BRANCHES_R1.holds(net, 5, 5)
 
 
 loose = engine_grids(hybrid.Conditions(5, 5, exactly=TWO_BRANCHES_R1), two_branches)
-kept = {g for g in loose if not hybrid.why_not_hybrid(g, 5, 5, BRANCH_AT)}
+kept = {
+    g
+    for g in loose
+    if not hybrid.why_not_hybrid(
+        g, hybrid.Conditions(5, 5, circles=frozenset(BRANCH_AT))
+    )
+}
 check(
     f"5x5, 2 branches in r1: the rule reader passes every grid ({len(loose)}), "
     f"each with its 2 branches",

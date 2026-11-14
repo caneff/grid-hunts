@@ -69,21 +69,21 @@ def test_reader():
     for net in TWO:
         check(
             "the reader passes a grid with two banana regions asked for two",
-            hybrid.failures(net, 4, 4, min_bananas=2) == [],
+            hybrid.failures(net, hybrid.Conditions(4, 4, min_bananas=2)) == [],
         )
         check(
             "the reader refuses it asked for three, by name",
-            hybrid.failures(net, 4, 4, min_bananas=3)
+            hybrid.failures(net, hybrid.Conditions(4, 4, min_bananas=3))
             == ["2 banana regions, fewer than the 3 asked for"],
         )
     check(
         "the reader refuses a grid with one banana region asked for two",
-        hybrid.why_not_hybrid(ONE, 4, 4, min_bananas=2)
+        hybrid.why_not_hybrid(ONE, hybrid.Conditions(4, 4, min_bananas=2))
         == "1 banana region, fewer than the 2 asked for",
     )
     check(
         "a network that is none is refused on that alone",
-        hybrid.failures(frozenset(), 4, 4, min_bananas=2)
+        hybrid.failures(frozenset(), hybrid.Conditions(4, 4, min_bananas=2))
         == [network.why_not_network(frozenset(), 4, 4)],
     )
 
@@ -132,7 +132,13 @@ def test_engine(name, engine):
         f"{name}, 4x4, at least 2 with the blank strip: no grid, proven",
         classify(asked(4, 2, blank_strip=True)) == ("infeasible", None),
     )
-    (only,) = [net for net in TWO if not hybrid.why_not_hybrid(net, 4, 4, R2C4)]
+    (only,) = [
+        net
+        for net in TWO
+        if not hybrid.why_not_hybrid(
+            net, hybrid.Conditions(4, 4, circles=frozenset(R2C4))
+        )
+    ]
     check(
         f"{name}, 4x4, at least 2 with r2c4 circled: the one grid",
         classify(asked(4, 2, R2C4)) == ("unique", only),
@@ -214,7 +220,7 @@ def test_blank_strip(name, engine):
             asked(6, 3, blank_strip=True), random.Random(seed), time_limit=TIME_LIMIT
         )
         passed += status == "found" and not hybrid.failures(
-            net, 6, 6, blank_strip=True, min_bananas=3
+            net, hybrid.Conditions(6, 6, blank_strip=True, min_bananas=3)
         )
     check(
         f"{name}, 6x6 with the blank strip, at least 3: the reader passes all "
@@ -323,7 +329,8 @@ def test_cli(engine, d):
         len(examples) == 1
         and reader.candidate_from_record(examples[0]).network in TWO
         and not hybrid.why_not_hybrid(
-            reader.candidate_from_record(examples[0]).network, 4, 4, R2C4
+            reader.candidate_from_record(examples[0]).network,
+            hybrid.Conditions(4, 4, circles=frozenset(R2C4)),
         ),
     )
     examples, empty, _, _ = hunt(

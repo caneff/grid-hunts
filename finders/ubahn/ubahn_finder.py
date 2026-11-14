@@ -150,12 +150,9 @@ class UbahnFinder:
         why = network.why_not_network(found, rows, cols)
         if why:
             return Verdict(False, why)
-        if exactly and not exactly.on_board(rows, cols):
-            return Verdict(
-                False, f"condition {exactly.text()} is off the {rows}x{cols} board"
-            )
-        if exactly and not exactly.holds(found, rows, cols):
-            return Verdict(False, f"condition {exactly.text()} does not hold")
+        why = exactly.why_not(found, rows, cols) if exactly else ""
+        if why:
+            return Verdict(False, why)
         status, other = model.uniqueness(
             rows,
             cols,
@@ -259,16 +256,9 @@ def main(argv):
     exactly = None
     if own.exactly is not None:
         try:
-            exactly = network.Exactly.parse(own.exactly)
+            exactly = network.Exactly.parse_on(own.exactly, own.rows, own.cols)
         except ValueError as e:
             print(f"ubahn_finder: --exactly: {e}", file=sys.stderr)
-            return 2
-        if not exactly.on_board(own.rows, own.cols):
-            print(
-                f"ubahn_finder: --exactly names {own.exactly.split(':')[2]}, "
-                f"off a {own.rows}x{own.cols} board",
-                file=sys.stderr,
-            )
             return 2
     return run(UbahnFinder(own.rows, own.cols, exactly, own.timeout), rest)
 
