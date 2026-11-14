@@ -20,7 +20,6 @@ from typing import NamedTuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import network
-import penpa
 
 # What a grid cell of each kind is worth. A number cell is worth its outside
 # number.
@@ -31,6 +30,23 @@ PIECE_VALUE = {
     network.BRANCH: 3,
     network.CROSS: 4,
 }
+
+
+# The strip-kind order of the link and the fixture: the kinds outermost
+# strip first (Chris's ruling, #774). The one statement of it.
+STRIP_ORDER = (network.CROSS, network.BRANCH, network.STRAIGHT, network.TURN)
+
+# The cross icon's four flags are [right, down, left, up] (penpa.py § 1.5).
+# Per piece, the icon beside a row of outside numbers and beside a column of
+# them. The turn's icon sits in the one cell the innermost row and column
+# share.
+ICONS = {
+    "cross": ([1, 1, 1, 1], [1, 1, 1, 1]),
+    "branch": ([1, 1, 1, 0], [1, 1, 0, 1]),
+    "straight": ([1, 0, 1, 0], [0, 1, 0, 1]),
+    "turn": ([1, 1, 0, 0], [1, 1, 0, 0]),
+}
+BLANK_ICON = "□"  # a number's text: a blank cell has no arm to draw
 
 
 def strips(blank_strip=False):
@@ -168,8 +184,7 @@ def regions(board):
             if cell in region or cell not in board or board[cell] % 2 != parity:
                 continue
             region.add(cell)
-            r, c = cell
-            stack += [(r - 1, c), (r, c + 1), (r + 1, c), (r, c - 1)]
+            stack += neighbours(cell)
         seen |= region
         found.append(frozenset(region))
     return found
@@ -210,6 +225,13 @@ def window_cells(window):
     order."""
     r, c = window
     return [(r, c), (r, c + 1), (r + 1, c), (r + 1, c + 1)]
+
+
+def neighbours(cell):
+    """The four cells that share an edge with `cell`, on the board or not:
+    up, right, down, left."""
+    r, c = cell
+    return [(r - 1, c), (r, c + 1), (r + 1, c), (r, c - 1)]
 
 
 def windows(board):
@@ -383,7 +405,7 @@ def icon_arms(cell):
     name = network.KIND_NAMES[-min(r, c) - 1]
     if name == "blank":
         return (0, 0, 0, 0)
-    right, down, left, up = penpa.ICONS[name][0 if c == -1 else 1]
+    right, down, left, up = ICONS[name][0 if c == -1 else 1]
     return (up, right, down, left)
 
 
@@ -392,7 +414,7 @@ def _icon(cell):
     cell_arms = icon_arms(cell)
     if cell_arms is None:
         return ""
-    return network.DRAWN[cell_arms] if any(cell_arms) else penpa.BLANK_ICON
+    return network.DRAWN[cell_arms] if any(cell_arms) else BLANK_ICON
 
 
 def drawing(net, rows, cols, circles=(), blank_strip=False):

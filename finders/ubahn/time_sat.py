@@ -22,14 +22,15 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+import hybrid
 import model
 import sat_model
-from network import BLANK, BRANCH, CROSS, KINDS, STRAIGHT, TURN
+from network import BLANK, KINDS
 
 FIXTURE = HERE / "fixtures/timing-puzzles.json"
 # The order the fixture writes a row's or column's four numbers in; it leaves
 # blank out.
-FIXTURE_ORDER = (CROSS, BRANCH, STRAIGHT, TURN)
+FIXTURE_ORDER = hybrid.STRIP_ORDER
 
 
 def fixture_numbers(puzzle):

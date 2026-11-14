@@ -461,9 +461,9 @@ try:
 except ValueError as e:
     refused = str(e)
 check(
-    f"`penpa.link` refuses a marked window off the board, giving the window "
-    f"and the cell ({refused!r})",
-    refused == "Battenberg marking at (3, 3): cell (3, 4) is off the board",
+    f"`penpa.link` refuses a marked window off the board with `hybrid.py`'s "
+    f"one message ({refused!r})",
+    refused == "Battenberg marking at r4c4: r4c5 is off the board",
 )
 
 r = run_cli(FINDER, "--help")
