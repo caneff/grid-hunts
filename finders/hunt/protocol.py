@@ -121,6 +121,10 @@ class Finder(Protocol):
         `candidate_from_record` (or the record itself without that hook)."""
         ...
 
+    def link_text(self, candidate: Any) -> str:
+        """Instead of `link_document`: the text of the hit's link file."""
+        ...
+
     def finish(self, out: Path) -> None:
         """Called with the hunt directory once a hunt completes (exit 0), never
         on a killed one; a finder stamps its end here instead of re-parsing

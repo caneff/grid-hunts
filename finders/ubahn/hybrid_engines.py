@@ -16,7 +16,9 @@ sys.path.insert(0, str(HERE.parent / "hunt"))
 # isort: split
 import hybrid
 import hybrid_model
+import hybrid_render
 import hybrid_sat
+import penpa
 from dedupe import IDENTITY
 from protocol import Empty, Verdict
 from ubahn_finder import DEFAULT_TIMEOUT, UbahnFinder
@@ -47,6 +49,16 @@ SAID = {
 # Why a seed gave no grid, as `propose` says it and `climb` reads it back.
 EMPTY_TIMEOUT = "timeout sampling a grid"
 EMPTY_INFEASIBLE = "infeasible: no grid meets the conditions"
+
+
+class LinkShown(NamedTuple):
+    """What a hybrid link shows beyond the grid (`hunt links DIR`): the
+    circles and number cells named, and the Battenberg markings."""
+
+    circles: frozenset = frozenset()
+    numbers: frozenset = frozenset()
+    battenberg: frozenset = frozenset()
+    battenberg_only: bool = False
 
 
 class Candidate(NamedTuple):
@@ -95,11 +107,16 @@ class HybridFinder:
         engine=DEFAULT_ENGINE,
         timeout=DEFAULT_TIMEOUT,
         engines=ENGINES,
+        shown=None,
     ):
         """`engine` names one of `engines`, a mapping of the engines a hunt
-        may use: a test passes its own to hunt with a fake."""
+        may use: a test passes its own to hunt with a fake. `shown` is what
+        `link_text` puts on a link, and `conditions.blank_strip` forces the
+        fifth strip in `render` and `link_text`: neither is a rule of the hunt,
+        so neither is in `config`."""
         self.conditions, self.engine, self.timeout = conditions, engine, timeout
         self.engines = engines
+        self.shown = shown or LinkShown()
         self.symmetry = condition_symmetry(conditions)
         self.config = {
             "rows": conditions.rows,
@@ -198,6 +215,63 @@ class HybridFinder:
             for dr, dc in ((0, 1), (1, 0))
             for r, c in cells
         )
+
+    def render(self, candidate):
+        """The picture of a hit (`hunt render DIR`, #791). The fifth strip is
+        drawn when the finder's own `blank_strip` is set or the record's is.
+        Raises ValueError on a grid `hybrid_render.Picture` refuses."""
+        asked, found = candidate
+        return hybrid_render.Picture(
+            found,
+            asked.rows,
+            asked.cols,
+            asked.circles,
+            self.conditions.blank_strip or asked.blank_strip,
+            asked.battenberg,
+        ).image
+
+    def link_text(self, candidate):
+        """The Penpa+ link of a hit (`hunt links DIR`, #795), showing
+        `shown.circles`, `shown.numbers` and the Battenberg markings of
+        `shown.battenberg`, and no other circle, number or marking. With
+        `shown.battenberg_only` the rules text says every checkerboard window
+        is marked. Raises ValueError on a circle or number that is not on the
+        board, a circle that is not valid, a marked window that is not wholly
+        on the board or is no checkerboard window, a checkerboard window left
+        unmarked under `battenberg_only`, or a grid that is no hybrid grid on
+        the board drawn."""
+        asked, found = candidate
+        circles, numbers, battenberg, battenberg_only = self.shown
+        rows, cols = asked.rows, asked.cols
+        strip = self.conditions.blank_strip or asked.blank_strip
+        board = hybrid.number_cells(rows, cols, strip)
+        for cell in sorted(circles):
+            r, c = cell
+            if cell not in board and not (0 <= r < rows and 0 <= c < cols):
+                raise ValueError(
+                    f"circle {hybrid.cell_name(cell)} is off the "
+                    f"{rows}x{cols} board" + ("" if strip else ", no blank strip")
+                )
+        for cell in sorted(numbers):
+            if cell not in board:
+                raise ValueError(
+                    f"given number {hybrid.cell_name(cell)} is not a number "
+                    f"cell of the {rows}x{cols} board"
+                    + ("" if strip else ", no blank strip")
+                )
+        reasons = hybrid.failures(
+            found,
+            rows,
+            cols,
+            circles,
+            strip,
+            battenberg=battenberg,
+            battenberg_only=battenberg_only,
+        )
+        if reasons:
+            raise ValueError("; ".join(reasons))
+        shown = penpa.Hybrid(circles, numbers, battenberg, battenberg_only)
+        return penpa.link(rows, cols, found, strip, shown)
 
     def candidate_from_record(self, record):
         """Raises ValueError, naming it, on a circle `hybrid.parse_cell`

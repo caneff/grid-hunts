@@ -308,6 +308,7 @@ def hunt_dir(parent, name, records):
     nothing between them, as progress.jsonl pairs them."""
     out = Path(parent) / name
     out.mkdir()
+    (out / "run.json").write_text('{"argv": ["--out", "x", "--seeds", "0:1"]}\n')
     (out / "examples.jsonl").write_text(
         "".join(json.dumps(record) + "\n" for record in records.values())
     )

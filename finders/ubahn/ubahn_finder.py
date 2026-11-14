@@ -22,7 +22,8 @@ PIECE is turn, straight, branch, cross, or blank for the cells with no arm.
         --rows 6 --cols 6 --exactly 2:cross:r2 --timeout 60
     uv run finders/ubahn/ubahn_finder.py verify DIR
 
-`links DIR [--blank-number]` writes a Penpa+ link per example to
+`links DIR [--blank-number]` is the driver's `links DIR` with this finder's
+`link_text`: a Penpa+ link per verified example, to
 `DIR/links/<seed>.txt` (#774, `penpa.py`), the outside numbers cross, branch,
 straight, turn from the outside in; `--blank-number` adds a fifth, outside the
 cross, for the blank cells. A rerun replaces every link file there.
@@ -47,8 +48,6 @@ import network
 import penpa
 from dedupe import D4
 from driver import run
-from hunt_dir import replace_links
-from hunt_files import read_examples
 from protocol import Empty, Verdict
 
 DEFAULT_SIDE = 6
@@ -90,8 +89,11 @@ class UbahnFinder:
         exactly=None,
         timeout=DEFAULT_TIMEOUT,
         connectivity="flow",
+        blank_number=False,
     ):
         self.rows, self.cols, self.exactly, self.timeout = rows, cols, exactly, timeout
+        # What `link_text` draws, not a rule of the hunt: not in `config`.
+        self.blank_number = blank_number
         # Which connectivity encoding the uniqueness proof uses; sampling
         # always runs on flow, so a proof on tree is timed on the same
         # networks. A constructor argument for the baseline measurement
@@ -199,6 +201,12 @@ class UbahnFinder:
     def key(self, candidate):
         return network.kind_grid(candidate.network, candidate.rows, candidate.cols)
 
+    def link_text(self, candidate):
+        """The Penpa+ link of a hit (`hunt links DIR`, #774), with the fifth
+        outside number when `blank_number` is set."""
+        rows, cols, found, _ = candidate
+        return penpa.link(rows, cols, found, self.blank_number)
+
     def candidate_from_record(self, record):
         """Raises ValueError, naming it, on an edge row that is not the
         board's width of 0s and 1s or a condition `Exactly.parse` refuses."""
@@ -229,42 +237,13 @@ class UbahnFinder:
         )
 
 
-def write_links(out, blank_number=False):
-    """Write `out/links/<seed>.txt`, one Penpa+ link per example of the hunt
-    in `out`, each under its seed (`hunt_files.read_examples`). Returns how many;
-    raises ValueError, naming it, on a missing or unpaired log or a record
-    `candidate_from_record` refuses."""
-    out = Path(out)
-    examples = read_examples(out)
-    finder = UbahnFinder()
-    # Every link is built before any file is touched: a record the finder
-    # refuses leaves links/ as it was, and a rerun replaces the whole set,
-    # so a file left by an earlier example list or variant never stays.
-    built = {}
-    for seed, record in examples:
-        rows, cols, found, _ = finder.candidate_from_record(record)
-        built[seed] = penpa.link(rows, cols, found, blank_number) + "\n"
-    replace_links(out, built)
-    return len(examples)
-
-
 def main(argv):
     if argv[:1] == ["links"]:
         parser = argparse.ArgumentParser(prog="ubahn_finder links")
         parser.add_argument("dir")
         parser.add_argument("--blank-number", action="store_true")
         args = parser.parse_args(argv[1:])
-        try:
-            count = write_links(args.dir, args.blank_number)
-        except ValueError as e:
-            print(f"ubahn_finder links: {e}", file=sys.stderr)
-            return 2
-        variant = "with" if args.blank_number else "without"
-        print(
-            f"wrote {count} links to {Path(args.dir) / 'links'}, "
-            f"{variant} the blank number"
-        )
-        return 0
+        return run(UbahnFinder(blank_number=args.blank_number), ["links", args.dir])
     parser = argparse.ArgumentParser(prog="ubahn_finder", add_help=False)
     parser.add_argument("--rows", type=int, default=DEFAULT_SIDE)
     parser.add_argument("--cols", type=int, default=DEFAULT_SIDE)
