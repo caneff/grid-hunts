@@ -104,6 +104,17 @@ with tempfile.TemporaryDirectory() as d:
     (out / "examples.jsonl").write_text(
         "".join(json.dumps(rec) + "\n" for _, rec, _, _ in cases)
     )
+    (out / "progress.jsonl").write_text(
+        "".join(
+            json.dumps({"event": "seed_done", "seed": k, "outcome": "example"}) + "\n"
+            for k in range(len(cases))
+        )
+    )
+    # The tie finder is stateful: a real hunt saves state.json after each
+    # seed, and a hunt directory without it reads as no seed done yet.
+    (out / "state.json").write_text(
+        json.dumps({"seed": len(cases) - 1, "state": {"found": []}})
+    )
     r = run_cli("verify", str(out))
     check("hunt verify exits 0", r.returncode == 0)
     stamp, verdicts = read_verified(out / "verified.jsonl")

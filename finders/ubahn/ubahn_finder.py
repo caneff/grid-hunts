@@ -11,18 +11,19 @@ capped solve `Empty("timeout ...")`.
 `verify` re-reads the network with `network.py`, which states the rules
 without the model (dead ends, flood fill, the condition by counting), and
 re-proves uniqueness with the spanning-tree encoding. That re-proof shares
-the search's piece table, number sums and root; only its connectivity is a
+the search's kind table, number sums and root; only its connectivity is a
 second encoding.
 
 Conditions are finder rules passed as flags. The one so far:
-`--exactly N:PIECE:rK` (or `cK`), exactly N of a piece in a row or column;
-PIECE is turn, straight, branch, cross, or blank for the cells with no arm.
+`--exactly N:KIND:rK` (or `cK`), exactly N of a kind in a row or column;
+KIND is turn, straight, branch, cross, or blank for the cells with no arm.
 
     uv run finders/ubahn/ubahn_finder.py --out DIR --seeds 0:50 --workers 1 \\
         --rows 6 --cols 6 --exactly 2:cross:r2 --timeout 60
     uv run finders/ubahn/ubahn_finder.py verify DIR
 
-`links DIR [--blank-number]` writes a Penpa+ link per example to
+`links DIR [--blank-number]` is the driver's `links DIR` with this finder's
+`link_text`: a Penpa+ link per verified example, to
 `DIR/links/<seed>.txt` (#774, `penpa.py`), the outside numbers cross, branch,
 straight, turn from the outside in; `--blank-number` adds a fifth, outside the
 cross, for the blank cells. A rerun replaces every link file there.
@@ -47,7 +48,6 @@ import network
 import penpa
 from dedupe import D4
 from driver import run
-from hunt_dir import replace_links, seeded_examples
 from protocol import Empty, Verdict
 
 DEFAULT_SIDE = 6
@@ -64,9 +64,8 @@ class Candidate(NamedTuple):
 
 
 def board_symmetry(rows, cols):
-    """The group the grid of kinds dedupes under: the square's eight rotations
-    and reflections, or on any other board the four maps that keep its
-    shape (identity, the two reflections, the half turn)."""
+    """The maps a grid of kinds dedupes under: D4 on a square board, else the
+    four that keep the shape (identity, two reflections, half turn)."""
     if rows == cols:
         return D4
     return [
@@ -82,6 +81,9 @@ def board_symmetry(rows, cols):
 
 
 class UbahnFinder:
+    """The U-Bahn finder: samples a network, proves its outside numbers unique
+    and renders the Penpa+ link; a caller runs it through the hunt driver."""
+
     def __init__(
         self,
         rows=DEFAULT_SIDE,
@@ -89,8 +91,11 @@ class UbahnFinder:
         exactly=None,
         timeout=DEFAULT_TIMEOUT,
         connectivity="flow",
+        blank_number=False,
     ):
         self.rows, self.cols, self.exactly, self.timeout = rows, cols, exactly, timeout
+        # What `link_text` draws, not a rule of the hunt: not in `config`.
+        self.blank_number = blank_number
         # Which connectivity encoding the uniqueness proof uses; sampling
         # always runs on flow, so a proof on tree is timed on the same
         # networks. A constructor argument for the baseline measurement
@@ -106,8 +111,7 @@ class UbahnFinder:
         }
 
     def sample(self, rng):
-        """One network from the model, steered by `rng`; an `Empty` when
-        the solve timed out or the condition has no network."""
+        """An `Empty` when the solve timed out or the condition has no network."""
         built = model.build(self.rows, self.cols, "flow", exactly=self.exactly)
         status, found = model.sample(built, rng, time_limit=self.timeout)
         if status == "timeout":
@@ -117,8 +121,7 @@ class UbahnFinder:
         return found
 
     def prove(self, found):
-        """Whether the network's full set of outside numbers has no other
-        network: `model.uniqueness`'s "unique", "not_unique" or "timeout"."""
+        """`model.uniqueness`'s "unique", "not_unique" or "timeout"."""
         status, _ = model.uniqueness(
             self.rows,
             self.cols,
@@ -147,12 +150,9 @@ class UbahnFinder:
         why = network.why_not_network(found, rows, cols)
         if why:
             return Verdict(False, why)
-        if exactly and not exactly.on_board(rows, cols):
-            return Verdict(
-                False, f"condition {exactly.text()} is off the {rows}x{cols} board"
-            )
-        if exactly and not exactly.holds(found, rows, cols):
-            return Verdict(False, f"condition {exactly.text()} does not hold")
+        why = exactly.why_not(found, rows, cols) if exactly else ""
+        if why:
+            return Verdict(False, why)
         status, other = model.uniqueness(
             rows,
             cols,
@@ -178,7 +178,6 @@ class UbahnFinder:
             "rows": rows,
             "cols": cols,
             "exactly": exactly.text() if exactly else None,
-            # One string per row of horizontal, then of vertical, edges.
             "h": [
                 "".join(
                     str(int(((r, c), (r, c + 1)) in found)) for c in range(cols - 1)
@@ -190,13 +189,17 @@ class UbahnFinder:
                 for r in range(rows - 1)
             ],
             "drawing": network.drawing(found, rows, cols),
-            # Per row and per column: turns, straights, branches, crosses,
-            # blank cells.
             "numbers": {"rows": row_numbers, "cols": col_numbers},
         }
 
     def key(self, candidate):
         return network.kind_grid(candidate.network, candidate.rows, candidate.cols)
+
+    def link_text(self, candidate):
+        """The Penpa+ link of a hit (`hunt links DIR`, #774), with the fifth
+        outside number when `blank_number` is set."""
+        rows, cols, found, _ = candidate
+        return penpa.link(rows, cols, found, self.blank_number)
 
     def candidate_from_record(self, record):
         """Raises ValueError, naming it, on an edge row that is not the
@@ -228,50 +231,20 @@ class UbahnFinder:
         )
 
 
-def write_links(out, blank_number=False):
-    """Write `out/links/<seed>.txt`, one Penpa+ link per example of the hunt
-    in `out`, each under its seed (`seeded_examples`). Returns how many;
-    raises ValueError, naming it, on a missing or unpaired log or a record
-    `candidate_from_record` refuses."""
-    out = Path(out)
-    examples = seeded_examples(out)
-    finder = UbahnFinder()
-    # Every link is built before any file is touched: a record the finder
-    # refuses leaves links/ as it was, and a rerun replaces the whole set,
-    # so a file left by an earlier example list or variant never stays.
-    built = {}
-    for seed, record in examples:
-        rows, cols, found, _ = finder.candidate_from_record(record)
-        built[seed] = penpa.link(rows, cols, found, blank_number) + "\n"
-    replace_links(out, built)
-    return len(examples)
-
-
 def main(argv):
     if argv[:1] == ["links"]:
         parser = argparse.ArgumentParser(prog="ubahn_finder links")
         parser.add_argument("dir")
         parser.add_argument("--blank-number", action="store_true")
         args = parser.parse_args(argv[1:])
-        try:
-            count = write_links(args.dir, args.blank_number)
-        except ValueError as e:
-            print(f"ubahn_finder links: {e}", file=sys.stderr)
-            return 2
-        variant = "with" if args.blank_number else "without"
-        print(
-            f"wrote {count} links to {Path(args.dir) / 'links'}, "
-            f"{variant} the blank number"
-        )
-        return 0
+        return run(UbahnFinder(blank_number=args.blank_number), ["links", args.dir])
     parser = argparse.ArgumentParser(prog="ubahn_finder", add_help=False)
     parser.add_argument("--rows", type=int, default=DEFAULT_SIDE)
     parser.add_argument("--cols", type=int, default=DEFAULT_SIDE)
-    parser.add_argument("--exactly", metavar="N:PIECE:rK")
+    parser.add_argument("--exactly", metavar="N:KIND:rK")
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT)
     own, rest = parser.parse_known_args(argv)
     if rest[:1] == ["verify"]:
-        # A record carries its own board and condition; only the cap is ours.
         return run(UbahnFinder(timeout=own.timeout), rest)
     if own.rows < 2 or own.cols < 2:
         print("ubahn_finder: the smallest board with a network is 2x2", file=sys.stderr)
@@ -279,16 +252,9 @@ def main(argv):
     exactly = None
     if own.exactly is not None:
         try:
-            exactly = network.Exactly.parse(own.exactly)
+            exactly = network.Exactly.parse_on(own.exactly, own.rows, own.cols)
         except ValueError as e:
             print(f"ubahn_finder: --exactly: {e}", file=sys.stderr)
-            return 2
-        if not exactly.on_board(own.rows, own.cols):
-            print(
-                f"ubahn_finder: --exactly names {own.exactly.split(':')[2]}, "
-                f"off a {own.rows}x{own.cols} board",
-                file=sys.stderr,
-            )
             return 2
     return run(UbahnFinder(own.rows, own.cols, exactly, own.timeout), rest)
 

@@ -1,17 +1,10 @@
-"""The dedupe key holds up under each symmetry group (#484).
-
-Independent of dedupe.py's own transform code: this test rotates and flips
-a 4x4 shape by hand (plain nested-list index arithmetic) and checks
-canonical_key agrees across all eight images under D4, disagrees under
-IDENTITY, and follows a hand-picked custom group instead of the full D4 one.
-
-    uv run finders/hunt/test_dedupe.py
-"""
+"""Rotates and flips a 4x4 shape by hand, independent of dedupe.py's transforms."""
 
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cli_checks import check, finish
 from dedupe import D4, IDENTITY, canonical_key
 
 N = 4
@@ -38,17 +31,6 @@ def eight_images(rows):
         out.append(flip_h(cur))
         cur = rotate90(cur)
     return out
-
-
-ok = True
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
 
 
 # An asymmetric L-tetromino-ish shape: no image of it equals another image
@@ -87,7 +69,7 @@ tiny = [
     [0, 0],
 ]
 tiny_rotated_90 = rotate90(tiny)
-transpose_map = (0, 2, 1, 3)  # (r, c) -> (c, r) on a 2x2 board, flat index
+transpose_map = (0, 2, 1, 3)
 custom_group = [(0, 1, 2, 3), transpose_map]
 
 key_tiny = canonical_key(flat(tiny), custom_group)
@@ -104,10 +86,6 @@ check(
     key_tiny == key_transposed,
 )
 
-# A custom group that isn't a set of permutations must be rejected before
-# any output is written -- a non-bijective map like (0, 0, 0, 0) collapses
-# unrelated grids onto the same key, so a verified candidate would be
-# silently dropped as a false duplicate (#507 review).
 try:
     canonical_key(flat(tiny), [(0, 0, 0, 0)])
     check("a non-permutation cell map is rejected", False)
@@ -126,13 +104,8 @@ try:
 except ValueError:
     check("an empty custom group is rejected", True)
 
-# A custom group must be closed under composition, not merely a list of
-# valid permutations -- otherwise canonicalizing as the minimum image isn't
-# an equivalence relation, and two unrelated grids can collide on the same
-# key (#508). [identity, rotate90] on a 2x2 board is missing rotate180 and
-# rotate270, so composing rotate90 with itself escapes the declared set.
 identity_2x2 = (0, 1, 2, 3)
-rotate90_2x2 = (1, 3, 0, 2)  # (r, c) -> (c, n-1-r) on a 2x2 board, flat index
+rotate90_2x2 = (1, 3, 0, 2)
 rotate180_2x2 = (3, 2, 1, 0)
 
 try:
@@ -153,9 +126,6 @@ try:
 except ValueError:
     check("identity + 180-degree rotation (a valid subgroup) is accepted", False)
 
-# A custom group given as a set (not a list) must fail cleanly, not with an
-# unhandled TypeError from indexing it -- `_normalize_group` must list() it
-# first (#508 correctness review).
 try:
     canonical_key(flat(tiny), {identity_2x2, rotate90_2x2})
     check("a non-closed custom group given as a set is rejected", False)
@@ -164,4 +134,4 @@ except ValueError:
 except TypeError:
     check("a non-closed custom group given as a set is rejected", False)
 
-sys.exit(0 if ok else 1)
+finish()

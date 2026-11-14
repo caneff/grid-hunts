@@ -72,10 +72,6 @@ def no_dead_end(rows, cols):
 
 
 class Space(NamedTuple):
-    """An exhaustively listed space: how many edges were free and how many
-    assignments that makes, its valid networks, how many of them share each
-    full set of outside numbers, and the networks alone under theirs."""
-
     free_edges: int
     assignments: int
     valid: frozenset
@@ -119,12 +115,13 @@ def hybrid_grids(rows, cols, blank_strip=False):
     return frozenset(
         net
         for net in no_dead_end(rows, cols)
-        if not hybrid.why_not_hybrid(net, rows, cols, blank_strip=blank_strip)
+        if not hybrid.why_not_hybrid(
+            net, hybrid.Conditions(rows, cols, blank_strip=blank_strip)
+        )
     )
 
 
 def banana_counts(rows, cols, blank_strip=False):
-    """{a number of banana regions: how many valid hybrid grids have it}."""
     return Counter(
         len(hybrid.bananas(hybrid.values(net, rows, cols, blank_strip)))
         for net in hybrid_grids(rows, cols, blank_strip)
@@ -147,19 +144,19 @@ def classify(
     check's word for it: "infeasible" for none, "unique" for one,
     "not_unique" for more. A condition only ever rules a grid out, so the
     grids with no condition are the ones to ask."""
+    asked = hybrid.Conditions(
+        rows,
+        cols,
+        frozenset(circles),
+        blank_strip=blank_strip,
+        min_bananas=min_bananas,
+        battenberg=frozenset(battenberg),
+        battenberg_only=battenberg_only,
+    )
     count = sum(
         1
         for net in hybrid_grids(rows, cols, blank_strip)
-        if not hybrid.why_not_hybrid(
-            net,
-            rows,
-            cols,
-            circles,
-            blank_strip,
-            min_bananas=min_bananas,
-            battenberg=battenberg,
-            battenberg_only=battenberg_only,
-        )
+        if not hybrid.why_not_hybrid(net, asked)
     )
     return ("infeasible", "unique", "not_unique")[min(count, 2)], count
 
@@ -200,9 +197,10 @@ def main(argv):
         "checkerboard window but the marked ones",
     )
     args = parser.parse_args(argv)
-    if args.min_bananas is not None and args.min_bananas < 1:
-        # The finder's own refusal (`hybrid_finder.parse_conditions`).
-        parser.error(f"--min-bananas takes 1 or more, got {args.min_bananas}")
+    try:
+        hybrid.check_min_bananas(args.min_bananas)
+    except ValueError as e:
+        parser.error(str(e))
     rows, cols, blank_strip = args.rows, args.cols, args.blank_strip
     try:
         marked = [
@@ -211,6 +209,13 @@ def main(argv):
         ]
     except ValueError as e:
         parser.error(f"--battenberg: {e}")
+    try:
+        circled = [
+            (text, hybrid.parse_circles(text, rows, cols, blank_strip))
+            for text in args.circles
+        ]
+    except ValueError as e:
+        parser.error(f"--circles: {e}")
     edges = len(network.all_edges(rows, cols))
     kept = sum(1 for _ in no_dead_end(rows, cols))
     grids = hybrid_grids(rows, cols, blank_strip)
@@ -241,11 +246,8 @@ def main(argv):
 
     if also:
         say(also.removeprefix(", "))
-    for text in args.circles:
-        say(
-            f"circles {text}{also}",
-            frozenset(hybrid.parse_cell(name) for name in text.split()),
-        )
+    for text, cells in circled:
+        say(f"circles {text}{also}", cells)
     for text, windows in marked:
         say(f"Battenberg markings {text}{also}", battenberg=windows)
     if args.draw:

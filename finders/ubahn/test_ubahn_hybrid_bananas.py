@@ -6,7 +6,7 @@ decision log's, § Hybrid: at least N banana regions: of the 18 valid grids
 16 have one banana region and 2 have two, so N = 2 leaves 2 grids, N = 3
 none, and N = 2 with `r2c4` circled exactly one. The rule reader, the brute
 force, each engine and the CLI must all say so. The condition is held to
-the rule reader with a piece count on 5x5, listed in full, and with the
+the rule reader with a kind count on 5x5, listed in full, and with the
 blank strip on 6x6, by seed.
 
 One worker.
@@ -30,7 +30,7 @@ import tempfile
 
 import brute
 import hybrid
-import hybrid_finder
+import hybrid_engines
 import hybrid_sat
 import network
 import time_bananas
@@ -42,8 +42,6 @@ TIME_LIMIT = 20.0
 R2C4 = frozenset({(1, 3)})
 WORDS = ("infeasible", "unique", "not_unique")
 
-# The two 4x4 grids with two banana regions, as `hybrid.drawing` draws their
-# grid cells, and a grid with one.
 TWO_BANANAS = (
     ("┌─────┬──┐", "├──┬──┤  │", "└──┼──┤  │", "   └──┴──┘"),
     ("┌──┬──┐", "│  ├──┼──┐", "├──┴──┴──┤", "└────────┘"),
@@ -52,7 +50,6 @@ ONE_BANANA = ("┌──┬──┬──┐", "├──┼──┼──┤"
 
 
 def drawn(net):
-    """The grid cells of a 4x4 network as `hybrid.drawing` draws them."""
     return tuple(line[13:] for line in hybrid.drawing(net, 4, 4)[4:])
 
 
@@ -69,21 +66,21 @@ def test_reader():
     for net in TWO:
         check(
             "the reader passes a grid with two banana regions asked for two",
-            hybrid.failures(net, 4, 4, min_bananas=2) == [],
+            hybrid.failures(net, hybrid.Conditions(4, 4, min_bananas=2)) == [],
         )
         check(
             "the reader refuses it asked for three, by name",
-            hybrid.failures(net, 4, 4, min_bananas=3)
+            hybrid.failures(net, hybrid.Conditions(4, 4, min_bananas=3))
             == ["2 banana regions, fewer than the 3 asked for"],
         )
     check(
         "the reader refuses a grid with one banana region asked for two",
-        hybrid.why_not_hybrid(ONE, 4, 4, min_bananas=2)
+        hybrid.why_not_hybrid(ONE, hybrid.Conditions(4, 4, min_bananas=2))
         == "1 banana region, fewer than the 2 asked for",
     )
     check(
         "a network that is none is refused on that alone",
-        hybrid.failures(frozenset(), 4, 4, min_bananas=2)
+        hybrid.failures(frozenset(), hybrid.Conditions(4, 4, min_bananas=2))
         == [network.why_not_network(frozenset(), 4, 4)],
     )
 
@@ -114,8 +111,6 @@ def asked(side, n, circles=frozenset(), blank_strip=False, exactly=None):
 
 
 def test_engine(name, engine):
-    """An engine's two calls against the 4x4 answers."""
-
     def classify(conditions):
         return engine.classify(conditions, time_limit=TIME_LIMIT, workers=1)
 
@@ -132,7 +127,13 @@ def test_engine(name, engine):
         f"{name}, 4x4, at least 2 with the blank strip: no grid, proven",
         classify(asked(4, 2, blank_strip=True)) == ("infeasible", None),
     )
-    (only,) = [net for net in TWO if not hybrid.why_not_hybrid(net, 4, 4, R2C4)]
+    (only,) = [
+        net
+        for net in TWO
+        if not hybrid.why_not_hybrid(
+            net, hybrid.Conditions(4, 4, circles=frozenset(R2C4))
+        )
+    ]
     check(
         f"{name}, 4x4, at least 2 with r2c4 circled: the one grid",
         classify(asked(4, 2, R2C4)) == ("unique", only),
@@ -154,10 +155,6 @@ def test_engine(name, engine):
 
 
 def test_larger_board(name, exactly, total):
-    """5x5, which no brute force reaches: every grid with this piece-count
-    condition, `total` of them, split by the reader's own count of banana
-    regions. Each engine must keep exactly the grids with enough of them.
-    Returns {N: the grids with N or more}."""
     every = hybrid_sat.listing(
         hybrid.Conditions(5, 5, exactly=exactly),
         hybrid_sat.LAZY,
@@ -174,7 +171,7 @@ def test_larger_board(name, exactly, total):
     kept = {}
     for n in range(1, most + 2):
         want = kept[n] = {net for net in count if count[net] >= n}
-        for connectivity in (hybrid_sat.LAZY, hybrid_sat.PROPAGATOR):
+        for connectivity in hybrid_engines.PYSAT_CONNECTIVITIES:
             got = hybrid_sat.listing(
                 asked(5, n, exactly=exactly),
                 connectivity,
@@ -188,7 +185,7 @@ def test_larger_board(name, exactly, total):
                 and set(got.grids) == want
                 and len(got.grids) == len(want),
             )
-        status, found = hybrid_finder.ENGINES["cpsat"].classify(
+        status, found = hybrid_engines.ENGINES["cpsat"].classify(
             asked(5, n, exactly=exactly), time_limit=TIME_LIMIT, workers=1
         )
         word = WORDS[min(len(want), 2)]
@@ -214,7 +211,7 @@ def test_blank_strip(name, engine):
             asked(6, 3, blank_strip=True), random.Random(seed), time_limit=TIME_LIMIT
         )
         passed += status == "found" and not hybrid.failures(
-            net, 6, 6, blank_strip=True, min_bananas=3
+            net, hybrid.Conditions(6, 6, blank_strip=True, min_bananas=3)
         )
     check(
         f"{name}, 6x6 with the blank strip, at least 3: the reader passes all "
@@ -224,8 +221,6 @@ def test_blank_strip(name, engine):
 
 
 def hunt(d, name, *flags, seeds=6):
-    """Run a hunt with these flags; returns (the examples' records, the
-    `empty` reasons, summary.json, run.json's config)."""
     out = Path(d) / name
     r = run_cli(
         FINDER,
@@ -255,20 +250,19 @@ def hunt(d, name, *flags, seeds=6):
 
 
 def test_verify():
-    """The finder's `verify`, the rule reader, on the condition."""
-    reader = hybrid_finder.HybridFinder(hybrid.Conditions(4, 4))
+    reader = hybrid_engines.HybridFinder(hybrid.Conditions(4, 4))
     for net in TWO:
         check(
             "verify passes a grid with two banana regions asked for two",
-            reader.verify(hybrid_finder.Candidate(asked(4, 2), net)).ok,
+            reader.verify(hybrid_engines.Candidate(asked(4, 2), net)).ok,
         )
-    verdict = reader.verify(hybrid_finder.Candidate(asked(4, 2), ONE))
+    verdict = reader.verify(hybrid_engines.Candidate(asked(4, 2), ONE))
     check(
         f"verify rejects a grid with one, naming the count ({verdict.reason!r})",
         not verdict.ok
         and verdict.reason == "1 banana region, fewer than the 2 asked for",
     )
-    record = reader.record(hybrid_finder.Candidate(asked(4, 2), ONE))
+    record = reader.record(hybrid_engines.Candidate(asked(4, 2), ONE))
     check("the record carries the condition", record["min_bananas"] == 2)
     check(
         "a record read back asks for what it was found under, so verify rejects it",
@@ -297,7 +291,7 @@ def test_cli(engine, d):
     examples, _, summary, config = hunt(
         d, f"{engine} two", *flags, "--min-bananas", "2"
     )
-    reader = hybrid_finder.HybridFinder(hybrid.Conditions(4, 4))
+    reader = hybrid_engines.HybridFinder(hybrid.Conditions(4, 4))
     nets = {reader.candidate_from_record(ex).network for ex in examples}
     # The two grids are each other's image in the main diagonal, which the
     # hunt dedupes under, so they are one example.
@@ -323,7 +317,8 @@ def test_cli(engine, d):
         len(examples) == 1
         and reader.candidate_from_record(examples[0]).network in TWO
         and not hybrid.why_not_hybrid(
-            reader.candidate_from_record(examples[0]).network, 4, 4, R2C4
+            reader.candidate_from_record(examples[0]).network,
+            hybrid.Conditions(4, 4, circles=frozenset(R2C4)),
         ),
     )
     examples, empty, _, _ = hunt(
@@ -347,6 +342,13 @@ def test_cli(engine, d):
         )
 
 
+def reason(stderr):
+    """A refusal's last line from the flag's name on, less the program's
+    name and argparse's "error:" in front of it."""
+    line = stderr.strip().splitlines()[-1]
+    return line[line.index("--min-bananas") :] if "--min-bananas" in line else line
+
+
 def test_flag():
     for bad in ("0", "-1"):
         r = run_cli(FINDER, *BOARD, "--min-bananas", bad, "classify")
@@ -358,22 +360,20 @@ def test_flag():
         )
     for bad in ("0", "-1"):
         r = run_cli(HERE / "brute.py", "4", "4", "--min-bananas", bad)
+        hybrid_r = run_cli(FINDER, *BOARD, "--min-bananas", bad, "classify")
         check(
             f"brute.py --min-bananas {bad} is refused the same way",
             r.returncode == 2
-            and r.stderr.splitlines()[-1:]
-            == [f"brute.py: error: --min-bananas takes 1 or more, got {bad}"],
+            and reason(r.stderr) == reason(hybrid_r.stderr)
+            and "--min-bananas" in reason(r.stderr),
         )
     check(
-        "the usage text names the condition",
-        "--min-bananas N" in run_cli(FINDER, "--help").stdout,
+        "the usage text names the flag",
+        "--min-bananas" in run_cli(FINDER, "--help").stdout,
     )
 
 
 def test_timing():
-    """`time_bananas.py`, the script behind the decision log's 7x7 table: a
-    row says what the engine answered and what the rule reader makes of it,
-    and the table counts a timeout as a timeout."""
     row = time_bananas.measure(4, 2, 0, "pysat-lazy", TIME_LIMIT)
     check(
         "a timing row for 4x4, at least 2: found, two banana regions, passed "
@@ -408,10 +408,10 @@ def test_timing():
 if __name__ == "__main__":
     test_reader()
     test_brute()
-    for name, engine in hybrid_finder.ENGINES.items():
+    for name, engine in hybrid_engines.ENGINES.items():
         test_engine(name, engine)
         test_blank_strip(name, engine)
-    test_larger_board("no piece count", None, 31)
+    test_larger_board("no kind count", None, 31)
     two_branches = network.Exactly.parse("2:branch:r1")
     kept = test_larger_board("2 branches in r1", two_branches, 8)
     check(
@@ -419,7 +419,7 @@ if __name__ == "__main__":
         "six, so at least 3 leaves exactly one",
         [len(kept[n]) for n in sorted(kept)] == [8, 8, 1, 1, 1, 1, 0],
     )
-    for name, engine in hybrid_finder.ENGINES.items():
+    for name, engine in hybrid_engines.ENGINES.items():
         (only,) = kept[3]
         check(
             f"{name}, 5x5, 2 branches in r1 with at least 3: the one grid",
@@ -432,6 +432,6 @@ if __name__ == "__main__":
     test_timing()
     test_flag()
     with tempfile.TemporaryDirectory() as d:
-        for name in hybrid_finder.ENGINES:
+        for name in hybrid_engines.ENGINES:
             test_cli(name, d)
     finish()

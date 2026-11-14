@@ -13,20 +13,17 @@ exercised:
   that a timing race can't reliably reproduce: a write caught mid-syscall.
 - A hand-truncated last progress.jsonl line, simulating a kill between an
   example's append to examples.jsonl and that seed's own progress event --
-  the orphan-example case (#487, added scope from the Codex pass on #507).
+  the orphan-example case.
 - A hand-rolled-back state.json, simulating a kill between a seed's
-  progress.jsonl event and its state.json save (#812 Codex pass 1).
+  progress.jsonl event and its state.json save.
 - A precisely-timed thread barrier reproducing the fresh-vs-resume
-  classify-before-lock race a real kill/schedule-delay combination can
-  trigger but can't reliably reproduce on demand (#812 Codex pass 1).
-- A hand-truncated progress.jsonl paired with a `_hunt_loop` monkeypatch
-  that stops a resume right after reconciliation's own writes, pinning the
-  state a *second* kill mid-rerun would leave behind -- render-artifact
-  reconciliation, an orphan renders/<seed>.png (#522).
+  classify-before-lock race, which a live kill can't reliably hit.
 
     uv run finders/hunt/test_hunt_resume.py
 """
 
+import contextlib
+import io
 import json
 import os
 import subprocess
@@ -36,10 +33,10 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cli_checks import check, check_refusal, finish, read_jsonl, run_cli
 from dedupe import D4, canonical_key
-from protocol import Verdict
-from render import GridCanvas
 from subprocess_env import pin_idle_load, success_env
+from toy_render_finder import ToyRenderFinder
 from toy_stateful_finder import StatefulToyFinder
 from toy_tiny_key_finder import TinyKeyFinder
 
@@ -51,96 +48,15 @@ STATEFUL_FINDER = HERE / "toy_stateful_finder.py"
 TINY_KEY_FINDER = HERE / "toy_tiny_key_finder.py"
 TOY_FINDER = HERE / "toy_finder.py"
 
-ok = True
 
-
-class TinyKeyRenderFinder(TinyKeyFinder):
-    # toy_render_finder.py's own rule (an even shaded-cell count passes)
-    # isn't a guaranteed accept on any one seed -- the #522 render-orphan
-    # tests below need the same deterministic-accept property the
-    # "orphan-example" case above TinyKeyFinder for, plus a render. Shared
-    # here rather than redefined per block (#522 standards review, S3).
-    def render(self, candidate):
-        return GridCanvas(2, 2, cell=10).image
-
-
-class StatefulRecordRenderFinder(StatefulToyFinder):
-    # A stateful, always-accepting finder with a render and the
-    # `candidate_from_record` hook -- the shared base of the #522/#538
-    # render-orphan blocks (#627 S4).
-    def propose(self, rng):
-        self.seeds_seen += 1
-        return (rng.randint(0, 1),)
-
-    def verify(self, candidate):
-        return Verdict(ok=True)
-
-    def candidate_from_record(self, record):
-        return tuple(record["grid"])
-
-    def render(self, candidate):
-        return GridCanvas(2, 2, cell=10).image
-
-
-def check(name, cond):
-    global ok
-    status = "ok" if cond else "FAIL"
-    if not cond:
-        ok = False
-    print(f"{status}: {name}")
-
-
-def run_cli(finder, out, seeds):
-    # `--seeds`, `seeds` as two argv items reads a negative seeds range
-    # (e.g. "-3:-2") as an unrecognized option on argparse versions that
-    # don't special-case a leading "-" followed by a digit (Python <3.14
-    # here) -- the single `--seeds=<value>` token sidesteps that ambiguity
-    # on every version (#516).
-    return subprocess.run(
-        [sys.executable, str(finder), "--out", str(out), f"--seeds={seeds}"],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
-
-
-def read_jsonl(path):
-    if not path.exists():
-        return []
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+def seeded_hunt(finder, out, seeds):
+    # One `--seeds=<value>` token, so a negative range like "-3:-2" cannot
+    # read as an option (#516). The two-token form has its own test below.
+    return run_cli(finder, "--out", out, f"--seeds={seeds}")
 
 
 def run_verify(finder, out):
-    return subprocess.run(
-        [sys.executable, str(finder), "verify", str(out)],
-        capture_output=True,
-        text=True,
-        env=success_env(),
-    )
-
-
-class _StopBeforeRerun(Exception):
-    pass
-
-
-def resume_stopping_before_hunt_loop(driver_module, finder, argv, what):
-    """Resume in-process and stop right before `_hunt_loop` reruns anything,
-    pinning the state a *second* kill mid-rerun would leave behind. Reaching
-    the rerun anyway is a FAIL named `what`."""
-
-    def _boom(*a, **k):
-        raise _StopBeforeRerun
-
-    orig_hunt_loop = driver_module._hunt_loop
-    driver_module._hunt_loop = _boom
-    try:
-        try:
-            driver_module.run(finder, argv)
-            check(f"resume reached _hunt_loop unexpectedly ({what})", False)
-        except _StopBeforeRerun:
-            pass
-    finally:
-        driver_module._hunt_loop = orig_hunt_loop
+    return run_cli(finder, "verify", out)
 
 
 def kill_partway(finder, out, seeds, min_seed_done_events=3, extra_args=()):
@@ -166,7 +82,7 @@ def kill_partway(finder, out, seeds, min_seed_done_events=3, extra_args=()):
     while time.time() < deadline:
         if (
             progress_path.exists()
-            and len(read_jsonl(progress_path)) >= min_seed_done_events
+            and len(read_jsonl(progress_path, missing_ok=True)) >= min_seed_done_events
         ):
             break
         if proc.poll() is not None:
@@ -178,10 +94,8 @@ def kill_partway(finder, out, seeds, min_seed_done_events=3, extra_args=()):
 
 
 with tempfile.TemporaryDirectory() as tmp:
-    # Reference: an uninterrupted hunt over the same seed range, to compare
-    # the resumed hunt's final output against.
     ref = Path(tmp) / "ref"
-    ref_result = run_cli(TOY_FINDER, ref, "0:60")
+    ref_result = seeded_hunt(TOY_FINDER, ref, "0:60")
     check(
         f"reference hunt exits 0 (stderr: {ref_result.stderr[-300:]})",
         ref_result.returncode == 0,
@@ -197,7 +111,7 @@ with tempfile.TemporaryDirectory() as tmp:
         0 < len(progress_before) < 60,
     )
 
-    resumed = run_cli(SLOW_FINDER, out, "0:60")
+    resumed = seeded_hunt(SLOW_FINDER, out, "0:60")
     check(
         f"resume after a kill exits 0 (stderr: {resumed.stderr[-300:]})",
         resumed.returncode == 0,
@@ -229,7 +143,6 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # A toy finder that saves state (#487 AC: "gets it back on resume").
     # seeds_seen is a counter this finder can only get right by continuing
     # from a saved value, not by restarting at zero.
     out = Path(tmp) / "stateful"
@@ -249,7 +162,7 @@ with tempfile.TemporaryDirectory() as tmp:
         0 <= len(progress_before) - state_before["state"].get("seeds_seen", -1) <= 1,
     )
 
-    resumed = run_cli(STATEFUL_FINDER, out, "0:40")
+    resumed = seeded_hunt(STATEFUL_FINDER, out, "0:40")
     check(
         f"resume of a stateful hunt exits 0 (stderr: {resumed.stderr[-300:]})",
         resumed.returncode == 0,
@@ -271,14 +184,12 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # #812 Codex pass 1, finding 2: a kill between a seed's progress.jsonl
-    # event and its state.json save leaves that seed marked done with its
-    # contribution to state never captured -- and since a done seed never
-    # reruns, that contribution would be lost forever with nothing else
-    # looking wrong. Simulated by hand: progress.jsonl confirms one more
-    # seed than state.json reflects.
+    # A kill between a seed's progress.jsonl event and its state.json save
+    # leaves that seed marked done with its contribution to state never
+    # captured, and a done seed never reruns. Simulated by hand:
+    # progress.jsonl confirms one more seed than state.json reflects.
     out = Path(tmp) / "state-behind"
-    result = run_cli(STATEFUL_FINDER, out, "0:10")
+    result = seeded_hunt(STATEFUL_FINDER, out, "0:10")
     check(
         f"base stateful hunt exits 0 (stderr: {result.stderr[-300:]})",
         result.returncode == 0,
@@ -288,7 +199,6 @@ with tempfile.TemporaryDirectory() as tmp:
     check(
         "the base hunt's state.json reflects the last seed", real_state.get("seed") == 9
     )
-    # Roll state.json back one seed, as if seed 9's save never landed.
     state_path.write_text(json.dumps({"seed": 8, "state": {"seeds_seen": 9}}))
 
     # Mark seed 9's progress event so a rerun is visible: a rerun writes a
@@ -300,7 +210,7 @@ with tempfile.TemporaryDirectory() as tmp:
     ]
     (out / "progress.jsonl").write_text("".join(json.dumps(e) + "\n" for e in marked))
 
-    rerun = run_cli(STATEFUL_FINDER, out, "0:10")
+    rerun = seeded_hunt(STATEFUL_FINDER, out, "0:10")
     check(
         f"resume after a state/progress gap exits 0 (stderr: {rerun.stderr[-300:]})",
         rerun.returncode == 0,
@@ -319,13 +229,12 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # #516: simulates a kill between negative seed -3's progress.jsonl
-    # event and its state.json save by removing state.json after a
-    # completed run, as if that one save never landed. progress.jsonl's
-    # seed_done event for -3 survives either way, so the witness is
-    # whether state.json comes back at all, not whether -3 reappears there.
+    # Removing state.json after a completed run simulates a kill between
+    # negative seed -3's progress event and its state save. progress's
+    # event for -3 survives either way, so the witness is whether
+    # state.json comes back.
     out = Path(tmp) / "negative-seed-no-state"
-    result = run_cli(STATEFUL_FINDER, out, "-3:-2")
+    result = seeded_hunt(STATEFUL_FINDER, out, "-3:-2")
     check(
         f"base negative-seed stateful hunt exits 0 (stderr: {result.stderr[-300:]})",
         result.returncode == 0,
@@ -336,10 +245,9 @@ with tempfile.TemporaryDirectory() as tmp:
         "the base hunt's state.json reflects the negative seed",
         real_state.get("seed") == -3,
     )
-    # Remove state.json entirely, as if seed -3's save never landed.
     state_path.unlink()
 
-    rerun = run_cli(STATEFUL_FINDER, out, "-3:-2")
+    rerun = seeded_hunt(STATEFUL_FINDER, out, "-3:-2")
     check(
         f"resume after a negative-seed state gap exits 0 (stderr: {rerun.stderr[-300:]})",
         rerun.returncode == 0,
@@ -366,13 +274,9 @@ with tempfile.TemporaryDirectory() as tmp:
         )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # #516 Codex pass 2: the CLI itself must accept a negative --seeds
-    # range as two separate argv tokens ("--seeds", "-3:-2"), not only the
-    # "--seeds=-3:-2" single-token form the rest of this file uses -- a
-    # real user invoking the CLI by hand types the two-token form, and
-    # argparse's own heuristic for telling a negative-looking value apart
-    # from an unrecognized option only accepts it on Python 3.14+ without
-    # `_merge_seeds_token`'s help.
+    # The CLI accepts a negative --seeds range as two argv tokens, the form
+    # a user types by hand; argparse alone takes it only on Python 3.14+,
+    # so this needs `_merge_seeds_token`.
     out = Path(tmp) / "two-token-negative-seeds"
     result = subprocess.run(
         [sys.executable, str(TOY_FINDER), "--out", str(out), "--seeds", "-3:-1"],
@@ -393,8 +297,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # Only two possible keys exist for this finder, so a broken dedupe
     # rebuild (e.g. "seen" defaulting to empty on resume) would show up as
     # a real duplicate line, not a coincidence the toy 4x4 finders' bigger
-    # key space could hide (#487 review: the original 4x4-based resume
-    # tests all still passed with dedupe-rebuild removed entirely).
+    # key space could hide.
     out = Path(tmp) / "tiny-key"
     kill_partway(TINY_KEY_FINDER, out, "0:50")
     progress_before = read_jsonl(out / "progress.jsonl")
@@ -407,7 +310,7 @@ with tempfile.TemporaryDirectory() as tmp:
         any(e.get("outcome") == "duplicate" for e in progress_before),
     )
 
-    resumed = run_cli(TINY_KEY_FINDER, out, "0:50")
+    resumed = seeded_hunt(TINY_KEY_FINDER, out, "0:50")
     check(
         f"resume of a tiny-key hunt exits 0 (stderr: {resumed.stderr[-300:]})",
         resumed.returncode == 0,
@@ -425,14 +328,36 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # A half-written trailing line in examples.jsonl, as a real kill
-    # mid-write() can leave -- not reproducible via timing, so it's
-    # hand-corrupted here. progress.jsonl still confirms the seed as an
+    # An unreadable line that is not the last is no kill's work: the resume
+    # refuses it by file and line and leaves the directory as it was.
+    out = Path(tmp) / "bad-middle"
+    check(
+        "base hunt for the bad-middle test exits 0",
+        seeded_hunt(TOY_FINDER, out, "0:30").returncode == 0,
+    )
+    examples_path = out / "examples.jsonl"
+    kept = examples_path.read_text().splitlines()
+    examples_path.write_text("\n".join([kept[0], "{not json", *kept[1:]]) + "\n")
+    before = {p.name: p.read_bytes() for p in out.iterdir() if p.is_file()}
+    rerun = seeded_hunt(TOY_FINDER, out, "0:30")
+    check_refusal(
+        "a bad middle line refuses the resume, naming the file and line",
+        rerun,
+        "examples.jsonl line 2",
+    )
+    check(
+        "a refused resume changes no file",
+        before == {p.name: p.read_bytes() for p in out.iterdir() if p.is_file()},
+    )
+
+with tempfile.TemporaryDirectory() as tmp:
+    # A half-written trailing line in examples.jsonl, hand-corrupted.
+    # progress.jsonl still confirms the seed as an
     # "example", so this is the "file behind progress" reconciliation
     # direction: the confirmed seed must rerun and rewrite the example,
     # not leave summary.json overcounting a line that no longer exists.
     out = Path(tmp) / "corrupted"
-    result = run_cli(TOY_FINDER, out, "0:100")
+    result = seeded_hunt(TOY_FINDER, out, "0:100")
     check(
         f"base hunt for corruption test exits 0 (stderr: {result.stderr[-300:]})",
         result.returncode == 0,
@@ -443,7 +368,7 @@ with tempfile.TemporaryDirectory() as tmp:
     last_line = examples_text.splitlines()[-1]
     examples_path.write_text(examples_text[: -(len(last_line) // 2)])
 
-    rerun = run_cli(TOY_FINDER, out, "0:100")
+    rerun = seeded_hunt(TOY_FINDER, out, "0:100")
     check(
         f"resume after a half-written trailing example line exits 0 (stderr: {rerun.stderr[-300:]})",
         rerun.returncode == 0,
@@ -478,7 +403,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # is only an "example" outcome about half the time, which would make
     # this test flaky rather than exercise the orphan path at all.
     out = Path(tmp) / "orphan"
-    result = run_cli(TINY_KEY_FINDER, out, "0:1")
+    result = seeded_hunt(TINY_KEY_FINDER, out, "0:1")
     check(
         f"base hunt for orphan-example test exits 0 (stderr: {result.stderr[-300:]})",
         result.returncode == 0,
@@ -492,7 +417,7 @@ with tempfile.TemporaryDirectory() as tmp:
     progress_path = out / "progress.jsonl"
     progress_path.write_text("")
 
-    rerun = run_cli(TINY_KEY_FINDER, out, "0:1")
+    rerun = seeded_hunt(TINY_KEY_FINDER, out, "0:1")
     check(
         f"resume after an orphaned example line exits 0 (stderr: {rerun.stderr[-300:]})",
         rerun.returncode == 0,
@@ -516,251 +441,64 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # #522: a kill between an accepted seed's render write and its
-    # progress.jsonl event leaves renders/<seed>.png durable while progress
-    # doesn't confirm it -- the same setup as the orphan-example case above,
-    # but with a render-capable finder. Reconciliation trims that seed's
-    # line back out of examples.jsonl on resume, and the seed then reruns
-    # and overwrites the same PNG (deterministic), self-healing before this
-    # resume process even exits -- so a single real kill followed by a
-    # resume that's allowed to finish can't witness the gap either way. The
-    # only way the PNG stays a genuine orphan is a second kill landing
-    # during that rerun, before it reaches its own render or progress
-    # write again -- not reproducible by timing (the seed's own sleep is
-    # 10ms, far shorter than a subprocess's own startup), so this drives
-    # driver.run() in-process instead, the same exception this file's own
-    # docstring carries for the #812 thread-barrier test below, and stops
-    # it exactly where that second kill would land: after reconciliation's
-    # own writes, before `_hunt_loop` reruns anything.
+    # A hunt and its resume touch no pictures (#119): a picture left in
+    # renders/ -- a stale one, one of a seed the resume reruns, a temp file --
+    # stays byte for byte, and the resume writes no new one.
     import driver as driver_module
 
-    out = Path(tmp) / "render-orphan"
-    argv = ["--out", str(out), "--seeds=0:1"]
-    finder = TinyKeyRenderFinder()
-    code = driver_module.run(finder, argv)
-    check("base hunt for render-orphan test exits 0", code == 0)
-
-    base_progress = read_jsonl(out / "progress.jsonl")
-    check(
-        "the one seed's outcome is deterministically 'example' (render-orphan base)",
-        len(base_progress) == 1 and base_progress[0].get("outcome") == "example",
-    )
-    check(
-        "the base hunt wrote the seed's render",
-        (out / "renders" / "0.png").exists(),
-    )
-
-    # Simulate the first kill landing between the render write and the
-    # progress.jsonl flush.
-    (out / "progress.jsonl").write_text("")
-
-    # #522 correctness review, C2: a stray file that only *looks*
-    # seed-numbered to Python's own permissive `int()` (underscores, here)
-    # must not be swept up as if seed 10 -- no seed anywhere near 10 ran in
-    # this hunt, so a stem-parse that's too loose would delete it as an
-    # unconfirmed "seed 10" the same as a genuine orphan.
-    decoy = out / "renders" / "1_0.png"
-    decoy.write_bytes(b"not a real seed file")
-
-    resume_stopping_before_hunt_loop(driver_module, finder, argv, "render-orphan")
-
-    check(
-        "reconciliation removes a render whose example didn't survive it, "
-        "before the seed gets a chance to rerun and self-heal (#522)",
-        not (out / "renders" / "0.png").exists(),
-    )
-    check(
-        "a stray file that only int()-parses as a seed (underscores) is "
-        "left alone, not swept up as an unconfirmed seed (#522 C2)",
-        decoy.exists(),
-    )
-
-with tempfile.TemporaryDirectory() as tmp:
-    # #522 correctness review, C1: the seed `_reconcile_renders` deletes for
-    # is always about to rerun in this same resume -- but `_render_example`
-    # swallows a render failure into `render_error` rather than raising, so
-    # deleting first is a bet that the rerun's own render succeeds. The bet
-    # is safe even lost when `_repair_renders` can retry the picture on a
-    # *later* resume: `_can_repair_renders` says so. A stateful finder with
-    # no `candidate_from_record` cannot be retried (a second `propose()`
-    # could corrupt state), so deleting its stray render eagerly can turn a
-    # merely-unconfirmed-but-intact picture into a permanently missing one.
-    # This finder has no such hook, so `_reconcile_renders` leaves the stray
-    # file in place, a documented gap (protocol.py, `render`). The next block
-    # covers the finder that has the hook.
-    import driver as driver_module
-
-    class StatefulRenderFinder(StatefulRecordRenderFinder):
-        # StatefulRecordRenderFinder supplies one; this case is the finder
-        # without it.
-        candidate_from_record = None
-
-    out = Path(tmp) / "render-orphan-stateful"
-    argv = ["--out", str(out), "--seeds=0:1"]
-    finder = StatefulRenderFinder()
-    code = driver_module.run(finder, argv)
-    check("base hunt for stateful render-orphan test exits 0", code == 0)
-
-    base_progress = read_jsonl(out / "progress.jsonl")
-    check(
-        "the one seed's outcome is deterministically 'example' (stateful render-orphan base)",
-        len(base_progress) == 1 and base_progress[0].get("outcome") == "example",
-    )
-    check(
-        "the base hunt wrote the seed's render (stateful)",
-        (out / "renders" / "0.png").exists(),
-    )
-    original_png = (out / "renders" / "0.png").read_bytes()
-
-    # Simulate the same kill landing between the render write and the
-    # progress.jsonl flush as the stateless case above.
-    (out / "progress.jsonl").write_text("")
-
-    # A full resume-to-completion reruns seed 0 and rewrites renders/0.png
-    # either way, self-healing regardless of whether reconciliation deleted
-    # it first -- the same masking the render-orphan case above exists to
-    # avoid. Stopping before `_hunt_loop` the same way isolates exactly
-    # what reconciliation itself did to the file.
-    #
-    # #537: the temp sweep runs for every finder, including one
-    # `_can_repair_renders` refuses -- this one has no candidate_from_record.
-    stale_tmp = out / "renders" / "7.tmp-99999.png"
-    stale_tmp.write_bytes(b"a save that died partway")
-
-    resume_finder = StatefulRenderFinder()
-    resume_stopping_before_hunt_loop(
-        driver_module, resume_finder, argv, "stateful render-orphan"
-    )
-
-    check(
-        "a stateful finder with no candidate_from_record keeps its stray render "
-        "through reconciliation -- no repair safety net exists for it (#522 C1)",
-        (out / "renders" / "0.png").exists()
-        and (out / "renders" / "0.png").read_bytes() == original_png,
-    )
-
-    check(
-        "a finder _can_repair_renders refuses still has its stale render "
-        "temp file swept (#537)",
-        not stale_tmp.exists(),
-    )
-
-with tempfile.TemporaryDirectory() as tmp:
-    # A stateful finder that has `candidate_from_record` has a state-safe
-    # repair path, so `_reconcile_renders` deletes the orphan PNG of an
-    # unconfirmed seed, and after a full resume renders/ matches the
-    # confirmed "example" seeds in progress.jsonl (the seed lives there,
-    # not in a record).
-    import driver as driver_module
-
-    out = Path(tmp) / "render-orphan-stateful-hook"
-    argv = ["--out", str(out), "--seeds=0:1"]
-    check(
-        "base hunt for stateful-hook render-orphan test exits 0",
-        driver_module.run(StatefulRecordRenderFinder(), argv) == 0,
-    )
-    (out / "progress.jsonl").write_text("")
-
-    resume_stopping_before_hunt_loop(
-        driver_module, StatefulRecordRenderFinder(), argv, "stateful-hook"
-    )
-    check(
-        "a stateful finder with candidate_from_record loses its orphan render "
-        "at reconciliation (#538)",
-        not (out / "renders" / "0.png").exists(),
-    )
-
-    code = driver_module.run(StatefulRecordRenderFinder(), argv)
-    check("full resume of the stateful-hook hunt exits 0", code == 0)
-    check(
-        "renders/ and examples.jsonl agree after resume (stateful-hook)",
-        {p.stem for p in (out / "renders").glob("*.png")}
-        == {
-            str(e["seed"])
-            for e in read_jsonl(out / "progress.jsonl")
-            if e.get("outcome") == "example"
-        },
-    )
-
-with tempfile.TemporaryDirectory() as tmp:
-    # #522 correctness review, C3/spec P3: nothing above proves
-    # `_reconcile_renders` spares a *confirmed* seed's render -- a version
-    # that deleted every PNG unconditionally would still pass every check
-    # so far. A two-seed range where seed 0's example is confirmed and
-    # untouched, and seed 1's progress event is the one dropped, is meant to
-    # witness both halves in the same resume: seed 0's PNG survives
-    # byte-for-byte, seed 1's stray PNG goes.
-    #
-    # #522 verification pass, disputed: a first version of this block ran
-    # the resume to full completion, and `_resume` calls `_repair_renders`
-    # (#524) right after `_reconcile_renders`, before `_hunt_loop` -- so an
-    # unconditional-delete bug that wrongly deleted seed 0's PNG too would
-    # have `_repair_renders` silently regenerate it (`propose(seed)` is
-    # deterministic, byte-for-byte identical) before this test ever looked,
-    # passing regardless. Neutering `_repair_renders` for this resume
-    # removes that safety net -- the same way the render-orphan case above
-    # stops `_hunt_loop` to remove *its* masking self-heal -- so a wrongly
-    # deleted seed 0 has nothing left to regenerate it (it's already
-    # "done", so `_hunt_loop` skips it too) and the byte-for-byte check
-    # below actually tests what its name claims.
-    import driver as driver_module
-
-    out = Path(tmp) / "render-orphan-mixed"
+    out = Path(tmp) / "stray-renders"
     argv = ["--out", str(out), "--seeds=0:2"]
-    finder = TinyKeyRenderFinder()
-    code = driver_module.run(finder, argv)
-    check("base hunt for mixed render-orphan test exits 0", code == 0)
+    code = driver_module.run(TinyKeyFinder(), argv)
+    check("base hunt for stray-renders test exits 0", code == 0)
+    check("a render-less hunt writes no renders/", not (out / "renders").exists())
 
-    base_progress = read_jsonl(out / "progress.jsonl")
-    base_outcomes = {e["seed"]: e.get("outcome") for e in base_progress}
-    check(
-        "both seeds are deterministically accepted (mixed render-orphan base)",
-        base_outcomes == {0: "example", 1: "example"},
-    )
-    seed0_png = (out / "renders" / "0.png").read_bytes()
-    check(
-        "both seeds wrote their render (mixed render-orphan base)",
-        (out / "renders" / "0.png").exists() and (out / "renders" / "1.png").exists(),
-    )
-
-    # Drop only seed 1's progress event, simulating the kill landing
-    # between its render write and its own progress.jsonl flush -- seed 0's
-    # line stays confirmed.
+    (out / "renders").mkdir()
+    strays = {"0.png": b"stale", "9.png": b"orphan", "7.tmp-1.png": b"temp"}
+    for name, data in strays.items():
+        (out / "renders" / name).write_bytes(data)
     progress_lines = (out / "progress.jsonl").read_text().splitlines(keepends=True)
     (out / "progress.jsonl").write_text(progress_lines[0])
 
-    def _no_repair(finder, out, progress_lines, progress_events, examples_records):
-        return progress_lines, progress_events
-
-    resume_finder = TinyKeyRenderFinder()
-    orig_repair_renders = driver_module._repair_renders
-    driver_module._repair_renders = _no_repair
-    try:
-        code = driver_module.run(resume_finder, argv)
-    finally:
-        driver_module._repair_renders = orig_repair_renders
-    check("resume for mixed render-orphan test exits 0", code == 0)
-
+    code = driver_module.run(TinyKeyFinder(), argv)
+    check("resume over stray pictures exits 0", code == 0)
     check(
-        "seed 0's confirmed render survives resume byte-for-byte with no "
-        "repair step to mask a reconciliation bug that over-deleted -- "
-        "reconciliation only touches the seed that didn't survive it (#522 C3/P3)",
-        (out / "renders" / "0.png").exists()
-        and (out / "renders" / "0.png").read_bytes() == seed0_png,
-    )
-    check(
-        "seed 1's render still matches examples.jsonl after resuming past "
-        "its own dropped progress event",
-        (out / "renders" / "1.png").exists(),
+        "the resume leaves every stray picture untouched and adds none",
+        {p.name: p.read_bytes() for p in (out / "renders").iterdir()} == strays,
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # Argv mismatch refuses to start and writes nothing to any hunt file.
-    # (This block's base hunt already leaves .lock behind, so it can't
-    # witness whether .lock specifically stays absent on a refusal -- see
-    # the next block for that.)
+    # The same for a finder that has `render`: its hunt draws nothing, and a
+    # resume leaves a populated renders/ byte for byte (#119).
+    import driver as driver_module
+
+    out = Path(tmp) / "render-finder-resume"
+    argv = ["--out", str(out), "--seeds=0:6"]
+    code = driver_module.run(ToyRenderFinder(), argv)
+    check("base hunt for the render-finder resume test exits 0", code == 0)
+    check(
+        "a hunt of a finder with render still writes no renders/",
+        not (out / "renders").exists(),
+    )
+
+    (out / "renders").mkdir()
+    pictures = {"0.png": b"drawn", "3.png": b"drawn too"}
+    for name, data in pictures.items():
+        (out / "renders" / name).write_bytes(data)
+    progress_lines = (out / "progress.jsonl").read_text().splitlines(keepends=True)
+    (out / "progress.jsonl").write_text(progress_lines[0])
+
+    code = driver_module.run(ToyRenderFinder(), argv)
+    check("resume of a finder with render exits 0", code == 0)
+    check(
+        "the resume leaves a render finder's pictures untouched and adds none",
+        {p.name: p.read_bytes() for p in (out / "renders").iterdir()} == pictures,
+    )
+
+with tempfile.TemporaryDirectory() as tmp:
+    # This block's base hunt already leaves .lock behind, so it can't
+    # witness whether .lock stays absent on a refusal; the next block does.
     out = Path(tmp) / "mismatch"
-    result = run_cli(TOY_FINDER, out, "0:30")
+    result = seeded_hunt(TOY_FINDER, out, "0:30")
     check(
         f"base hunt for argv-mismatch test exits 0 (stderr: {result.stderr[-300:]})",
         result.returncode == 0,
@@ -769,8 +507,8 @@ with tempfile.TemporaryDirectory() as tmp:
     before = sorted(p.name for p in out.iterdir())
     before_contents = {name: (out / name).read_bytes() for name in before}
 
-    rerun = run_cli(TOY_FINDER, out, "0:99")
-    check("a differing argv (seeds) exits non-zero", rerun.returncode != 0)
+    rerun = seeded_hunt(TOY_FINDER, out, "0:99")
+    check_refusal("a differing argv (seeds) refuses", rerun, "argv differs")
 
     after = sorted(p.name for p in out.iterdir())
     after_contents = {name: (out / name).read_bytes() for name in after}
@@ -780,13 +518,10 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # #812 Codex pass 1, finding 1: classifying --out as fresh or resumed
-    # (and checking argv) *before* acquiring the lock is itself a race, so
-    # the fix moved that classification inside the lock -- meaning a
-    # refusal now does create .lock (an acceptable, harmless side effect of
-    # correctly serializing access), even though it still writes no hunt
-    # data. Hand-written run.json, no CLI run first, so this is a clean
-    # before/after on exactly that.
+    # Classifying --out as fresh or resumed (and checking argv) happens
+    # inside the lock, so a refusal creates .lock (harmless) but writes no
+    # hunt data. Hand-written run.json, no CLI run first, so this is a
+    # clean before/after on exactly that.
     out = Path(tmp) / "mismatch-lock-ok"
     out.mkdir()
     (out / "run.json").write_text(
@@ -794,10 +529,11 @@ with tempfile.TemporaryDirectory() as tmp:
     )
     check("no .lock exists before the refused rerun", not (out / ".lock").exists())
 
-    rerun = run_cli(TOY_FINDER, out, "0:99")
-    check(
-        "a differing argv against a hand-written run.json exits non-zero",
-        rerun.returncode != 0,
+    rerun = seeded_hunt(TOY_FINDER, out, "0:99")
+    check_refusal(
+        "a differing argv against a hand-written run.json refuses",
+        rerun,
+        "argv differs",
     )
     check(
         ".lock may now exist (locking runs before the argv check), "
@@ -808,16 +544,12 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # #812 Codex pass 1, finding 1, reproduced directly: two processes on
-    # the same fresh --out, where the second reads "no run.json" before the
-    # first has even started, but only reaches its own lock acquisition
-    # after the first has finished a complete hunt and released it. A real
-    # timing race (like the pre-existing "racing on a fresh --out" test)
-    # can't reliably land in that exact window, so this drives driver.run()
-    # in-process across two threads and pins the ordering with a barrier:
-    # thread B is paused inside a patched fcntl.flock, right where it would
-    # otherwise acquire the lock, until the main thread has run a complete
-    # hunt (thread A) to completion on the same --out.
+    # Two hunts on the same fresh --out, where the second reads "no
+    # run.json" before the first starts but reaches its lock only after the
+    # first has finished and released it. A real timing race can't reliably
+    # land in that window, so driver.run() runs in-process across two
+    # threads: thread B pauses inside a patched fcntl.flock until thread A
+    # finishes a whole hunt.
     import threading
     from unittest import mock
 
@@ -831,7 +563,9 @@ with tempfile.TemporaryDirectory() as tmp:
 
     b_ready = threading.Event()
     release_b = threading.Event()
-    real_flock = driver_module.fcntl.flock
+    import hunt_files
+
+    real_flock = hunt_files.fcntl.flock
 
     def _patched_flock(fd, op):
         if threading.current_thread().name == "hunt-B":
@@ -839,12 +573,8 @@ with tempfile.TemporaryDirectory() as tmp:
             release_b.wait(timeout=10)
         return real_flock(fd, op)
 
-    driver_module.fcntl.flock = _patched_flock
+    hunt_files.fcntl.flock = _patched_flock
     b_result = {}
-    # This drives driver.run() in-process, so it reads the real
-    # HUNT_FAKE_LOAD1/os.environ at call time, not a subprocess env dict --
-    # force the gate idle here too so a busy box doesn't refuse either
-    # thread's hunt (#526).
     try:
         with mock.patch.dict(os.environ, {"HUNT_FAKE_LOAD1": "0"}):
             b_thread = threading.Thread(
@@ -869,7 +599,7 @@ with tempfile.TemporaryDirectory() as tmp:
             release_b.set()
             b_thread.join(timeout=15)
     finally:
-        driver_module.fcntl.flock = real_flock
+        hunt_files.fcntl.flock = real_flock
 
     check("thread B's call returned", "code" in b_result)
     final_progress = read_jsonl(out / "progress.jsonl")
@@ -886,9 +616,8 @@ with tempfile.TemporaryDirectory() as tmp:
     )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # Git sha mismatch warns but proceeds.
     out = Path(tmp) / "sha-mismatch"
-    result = run_cli(TOY_FINDER, out, "0:30")
+    result = seeded_hunt(TOY_FINDER, out, "0:30")
     check(
         f"base hunt for sha-mismatch test exits 0 (stderr: {result.stderr[-300:]})",
         result.returncode == 0,
@@ -898,26 +627,26 @@ with tempfile.TemporaryDirectory() as tmp:
     run_info["git_sha"] = "0" * 40
     (out / "run.json").write_text(json.dumps(run_info))
 
-    rerun = run_cli(TOY_FINDER, out, "0:30")
+    rerun = seeded_hunt(TOY_FINDER, out, "0:30")
     check(
         f"a differing git sha proceeds (exit 0, stderr: {rerun.stderr[-300:]})",
         rerun.returncode == 0,
     )
-    check("a differing git sha prints a warning", "sha" in rerun.stderr.lower())
+    check(
+        "a differing git sha prints the sha warning",
+        "warning -- git sha differs from the recorded run" in rerun.stderr,
+    )
 
 for base_no_verify, resume_no_verify, label in (
     (True, False, "no-verify-then-verify"),
     (False, True, "verify-then-no-verify"),
 ):
     with tempfile.TemporaryDirectory() as tmp:
-        # #527: a killed --no-verify hunt resumed without the flag would
-        # verify later seeds inline while earlier seeds kept unverified
-        # candidates (and the inverse) -- the resume identity must pin the
-        # verification mode, refusing a mode-changing resume and writing
-        # nothing, the same as a seeds mismatch does above. A genuinely
-        # killed, partial hunt is required here: a base hunt run to
-        # completion has no un-done seed left for a wrongly-accepted resume
-        # to touch, so it can't tell the fix from the bug (#527 review C1).
+        # #527: a resume that flips --no-verify mixes verified and
+        # unverified candidates, so the resume identity pins the
+        # verification mode and refuses, writing nothing, as a seeds
+        # mismatch does above. A killed, partial hunt is needed: a
+        # completed one has no un-done seed for a wrong resume to touch.
         out = Path(tmp) / label
         base_extra = ("--no-verify",) if base_no_verify else ()
         kill_partway(SLOW_FINDER, out, "0:60", extra_args=base_extra)
@@ -944,9 +673,8 @@ for base_no_verify, resume_no_verify, label in (
             text=True,
             env=success_env(),
         )
-        check(
-            f"resuming a mode-changing {label} hunt refuses",
-            resumed.returncode != 0,
+        check_refusal(
+            f"resuming a mode-changing {label} hunt refuses", resumed, "argv differs"
         )
         after = sorted(p.name for p in out.iterdir())
         after_contents = {name: (out / name).read_bytes() for name in after}
@@ -956,19 +684,19 @@ for base_no_verify, resume_no_verify, label in (
         )
 
 with tempfile.TemporaryDirectory() as tmp:
-    # #517: a resume that reconciles or appends to examples.jsonl must
-    # delete verified.jsonl -- its verdicts describe the old file. Same
+    # #517: a resume that reconciles or appends to examples.jsonl deletes
+    # verified.jsonl, whose verdicts describe the old file. Same
     # setup as the orphan-example case above (the one seed reruns after
     # reconciliation trims its example), with `hunt verify` run first.
     out = Path(tmp) / "verify-then-resume"
-    run_cli(TINY_KEY_FINDER, out, "0:1")
+    seeded_hunt(TINY_KEY_FINDER, out, "0:1")
     verified = run_verify(TINY_KEY_FINDER, out)
     check(
         f"hunt verify before the resume exits 0 (stderr: {verified.stderr[-300:]})",
         verified.returncode == 0 and (out / "verified.jsonl").exists(),
     )
     (out / "progress.jsonl").write_text("")
-    rerun = run_cli(TINY_KEY_FINDER, out, "0:1")
+    rerun = seeded_hunt(TINY_KEY_FINDER, out, "0:1")
     check(
         f"resume that reconciles examples.jsonl exits 0 (stderr: {rerun.stderr[-300:]})",
         rerun.returncode == 0,
@@ -982,14 +710,14 @@ with tempfile.TemporaryDirectory() as tmp:
     # #517: a resume with nothing left to run leaves examples.jsonl alone,
     # so a current verified.jsonl survives it byte for byte.
     out = Path(tmp) / "verify-then-noop-resume"
-    run_cli(TINY_KEY_FINDER, out, "0:5")
+    seeded_hunt(TINY_KEY_FINDER, out, "0:5")
     verified = run_verify(TINY_KEY_FINDER, out)
     check(
         f"hunt verify of a finished hunt exits 0 (stderr: {verified.stderr[-300:]})",
         verified.returncode == 0,
     )
     before = (out / "verified.jsonl").read_bytes()
-    rerun = run_cli(TINY_KEY_FINDER, out, "0:5")
+    rerun = seeded_hunt(TINY_KEY_FINDER, out, "0:5")
     check(
         f"resume of a finished hunt exits 0 (stderr: {rerun.stderr[-300:]})",
         rerun.returncode == 0,
@@ -1014,7 +742,7 @@ with tempfile.TemporaryDirectory() as tmp:
         "verify of a killed hunt wrote verified.jsonl",
         (out / "verified.jsonl").exists(),
     )
-    rerun = run_cli(SLOW_FINDER, out, "0:200")
+    rerun = seeded_hunt(SLOW_FINDER, out, "0:200")
     check(
         f"resume of the killed hunt exits 0 (stderr: {rerun.stderr[-300:]})",
         rerun.returncode == 0,
@@ -1040,11 +768,17 @@ with tempfile.TemporaryDirectory() as tmp:
         ("save_state only", "half-save", SaveOnlyFinder),
     ):
         out = Path(tmp) / dirname
-        code = driver_module.run(cls(), ["--out", str(out), "--seeds=0:3"])
-        check(f"a finder with {label} is refused at launch (exit 2)", code == 2)
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            code = driver_module.run(cls(), ["--out", str(out), "--seeds=0:3"])
+        check(
+            f"a finder with {label} is refused at launch (exit 2, stderr: "
+            f"{stderr.getvalue()[-300:]})",
+            code == 2 and "a stateful finder needs both" in stderr.getvalue(),
+        )
         check(
             f"a finder with {label} leaves no hunt file behind",
             not out.exists() or not any(out.iterdir()),
         )
 
-sys.exit(0 if ok else 1)
+finish()

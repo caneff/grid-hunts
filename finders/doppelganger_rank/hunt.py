@@ -1,8 +1,8 @@
 """The Doppelganger + Full Rank hunt (spec #66, #69): add rank clues to a
 board until it has exactly one grid, then drop each added clue it stays
-unique without. The halver hunt's target-grid loop
-(`finders/halver/halver_hunt.py`), on the shared hunt protocol, which gives
-it the output directory, dedupe and resume.
+unique without. The target-grid loop (`finders/hunt/target_loop.py`, the
+halver hunts' too), on the shared hunt protocol, which gives it the output
+directory, dedupe and resume.
 
     uv run finders/doppelganger_rank/hunt.py --board BOARD --out DIR --seeds 0:20
     uv run finders/doppelganger_rank/hunt.py verify DIR
@@ -36,7 +36,7 @@ class, which `summary` splits the seeds by:
 - `no separating clue:` the target and a second grid rank alike at every
   free place, so no rank clue can make this target unique, a proof for it;
 - `timeout:` a solve reached `--time-limit` (no verdict);
-- `capped:` `--max-clues` clues added and still not unique, or the seed's
+- `budget:` `--max-clues` clues added and still not unique, or the seed's
   `--max-seconds` ran out: a budget, never a proof.
 
 A minimiser solve that times out ends the seed `timeout:` too, since the
@@ -70,7 +70,6 @@ measurements behind the defaults are in the decision log,
 
 import argparse
 import sys
-import time
 from collections import Counter
 from pathlib import Path
 from typing import NamedTuple
@@ -84,12 +83,13 @@ import rules
 from check import one_line, read_board
 from dedupe import IDENTITY
 from driver import run
-from hunt_dir import read_hunt, seed_lines, summary_command
-from links import write_links
+from hunt_dir import read_hunt, seed_lines
+from links import link_doc
 from minimizer import strip
 from model import RankModel
 from protocol import Empty, Verdict
 from reprove import reprove
+from target_loop import Budget, Hooks, target_loop
 
 __all__ = [
     "DEFAULTS",
@@ -107,11 +107,12 @@ DEFAULTS = {
     "pool_floor": 4,
     "proof_workers": 1,
 }
-# The Empty reason's class, as `summary` names it in the split.
+# The subcommands that read a hunt directory, not a board.
+DIR_COMMANDS = (["verify"], ["render"], ["summary"], ["links"])
 CLASSES = {
     "infeasible": "proven infeasible",
     "timeout": "timed out",
-    "capped": "capped",
+    "budget": "budget",
     "no separating clue": "no separating clue",
 }
 
@@ -151,7 +152,51 @@ def clue_of(place, rank):
     return {"line": place[0], "end": place[1], "rank": rank}
 
 
+class _Seed(Hooks):
+    """One seed's hooks for `target_loop`: the board, the places taken and
+    the sample the ranked pick reads."""
+
+    def __init__(self, finder, rng):
+        self.finder, self.rng = finder, rng
+        self.board = RankModel(finder.n, finder.box, finder.clues)
+        self.taken = {(c["line"], c["end"]) for c in finder.clues}
+        self.pool = []
+        self.ranks = None
+
+    def sample(self, limit):
+        sample = self.finder.target(self.rng, limit)
+        if sample.status == "infeasible":
+            return Empty("infeasible: the board's clues have no grid")
+        if sample.status == "timeout":
+            return None
+        self.ranks = rules.read(sample.first, self.finder.box).ranks
+        return sample.first
+
+    def check(self, target, limit):
+        return self.board.check(time_limit=limit, hint=target)
+
+    def separate(self, target, second, steps, limit):
+        places = separating(target, second, self.finder.box, self.taken)
+        if not places:
+            return Empty(
+                f"no separating clue: after {steps} clues the target and a "
+                "second grid rank alike at every free place"
+            )
+        if len(self.pool) < self.finder.pool_floor:
+            self.pool = self.finder._draw(self.board, self.rng, limit, target)
+        return most_restricting(places, self.ranks, self.pool, self.rng)
+
+    def add(self, place):
+        rank = self.ranks[place]
+        self.board.add_clue(clue_of(place, rank))
+        self.pool = [grid for grid in self.pool if grid[place] == rank]
+        self.taken.add(place)
+
+
 class DoppelgangerRankFinder:
+    """The hunt's finder for the shared hunt protocol: a target-grid loop that
+    adds rank clues to a board until unique, then minimises them."""
+
     symmetry = IDENTITY
 
     def __init__(
@@ -207,65 +252,19 @@ class DoppelgangerRankFinder:
                 grids.add(drawn.first)
         return [rules.read(grid, self.box).ranks for grid in sorted(grids)]
 
-    def _ran_out(self, limit, what):
-        if limit < self.time_limit:
-            return Empty(f"capped: {self.max_seconds:g} s ran out during {what}")
-        return Empty(f"timeout: {what} ({self.time_limit:g} s)")
-
     def propose(self, rng):
-        deadline = time.monotonic() + self.max_seconds
+        budget = Budget(self.time_limit, self.max_seconds)
+        seed = _Seed(self, rng)
+        found = target_loop(seed, budget, max_steps=self.max_clues, unit="clues")
+        if isinstance(found, Empty):
+            return found
+        return self._minimise(seed.board.clues, found.target, budget)
 
-        def limit():
-            return min(self.time_limit, deadline - time.monotonic())
-
-        sample_limit = limit()
-        sample = self.target(rng, sample_limit)
-        if sample.status == "infeasible":
-            return Empty("infeasible: the board's clues have no grid")
-        if sample.status == "timeout":
-            return self._ran_out(sample_limit, "sampling a target")
-        target = sample.first
-        ranks = rules.read(target, self.box).ranks
-        board = RankModel(self.n, self.box, self.clues)
-        taken = {(c["line"], c["end"]) for c in self.clues}
-        added = 0
-        pool = []
-        while True:
-            check_limit = limit()
-            if check_limit <= 0:
-                return Empty(f"capped: {self.max_seconds:g} s after {added} clues")
-            check = board.check(time_limit=check_limit, hint=target)
-            if check.status == "unique":
-                break
-            if check.status == "timeout":
-                return self._ran_out(check_limit, f"the check after {added} clues")
-            if check.status != "not_unique":
-                raise ValueError(
-                    f"check returned {check.status} on clues the target keeps"
-                )
-            if added >= self.max_clues:
-                return Empty(f"capped: {added} clues added and still not unique")
-            second = check.first if check.first != target else check.second
-            places = separating(target, second, self.box, taken)
-            if not places:
-                return Empty(
-                    f"no separating clue: after {added} clues the target and a "
-                    "second grid rank alike at every free place"
-                )
-            if len(pool) < self.pool_floor:
-                pool = self._draw(board, rng, limit, target)
-            place = most_restricting(places, ranks, pool, rng)
-            board.add_clue(clue_of(place, ranks[place]))
-            pool = [grid for grid in pool if grid[place] == ranks[place]]
-            taken.add(place)
-            added += 1
-        return self._minimise(board.clues, target, limit)
-
-    def _minimise(self, clues, target, limit):
+    def _minimise(self, clues, target, budget):
         timed_out = []
 
         def unique(trial):
-            trial_limit = limit()
+            trial_limit = budget.limit()
             board = RankModel(
                 self.n, self.box, [clue_of(p, r) for p, r in trial.items()]
             )
@@ -282,7 +281,7 @@ class DoppelgangerRankFinder:
         keep = {(c["line"], c["end"]) for c in self.clues}
         kept = strip(items, keep, unique)
         if timed_out:
-            return self._ran_out(min(timed_out), "the minimiser")
+            return budget.ran_out(min(timed_out), "the minimiser")
         kept_clues = tuple(clue_of(p, r) for p, r in kept.items())
         return Hit(
             self.n, self.box, kept_clues, len(kept_clues) - len(self.clues), target
@@ -330,6 +329,71 @@ class DoppelgangerRankFinder:
     def key(self, hit):
         return tuple(sorted((c["line"], c["end"], c["rank"]) for c in hit.clues))
 
+    def link_document(self, hit):
+        return link_doc(self.record(hit))
+
+    @staticmethod
+    def _hit_line(kind, record):
+        clues = ", ".join(
+            f"{rules.place_name((c['line'], c['end']))} {c['rank']}"
+            for c in record["clues"]
+        )
+        return (
+            f"{kind}, {record['added']} added clues: {clues}"
+            f" | solution {' '.join(record['solution'])}"
+        )
+
+    def summary_lines(self, out):
+        """What a hunt in `out` found, as lines of text."""
+        _run, events, hits, unchecked, rejected = read_hunt(out)
+        seeds = sorted(e["seed"] for e in events)
+        span = f"{len(seeds)} seeds" + (f" ({seeds[0]}..{seeds[-1]})" if seeds else "")
+
+        split = Counter()
+        for e in events:
+            if e["outcome"] == "example":
+                split["found"] += 1
+            elif e["outcome"] in ("duplicate", "rejected"):
+                split[e["outcome"]] += 1
+            else:
+                reason = e.get("empty_reason", "")
+                name = reason.split(":")[0]
+                if name not in CLASSES:
+                    raise ValueError(
+                        f"seed {e['seed']} ended with no known reason: {reason!r}"
+                    )
+                split[CLASSES[name]] += 1
+
+        if hits:
+            text = [f"{len(hits)} verified hits in {span}"]
+        elif unchecked or rejected:
+            text = [f"no verified hit in {span}"]
+        else:
+            text = [f"none found in {span}"]
+        text.append(
+            f"{span}: found {split['found']}, duplicate {split['duplicate']}, "
+            f"proven infeasible {split['proven infeasible']}, "
+            f"timed out {split['timed out']}, "
+            f"budget {split['budget']} (a budget ran out: no proof), "
+            f"no separating clue {split['no separating clue']}, "
+            f"rejected {split['rejected']}"
+        )
+        if unchecked:
+            text.append(
+                f"{len(unchecked)} candidates unchecked: the hunt ran with "
+                f"--no-verify and `hunt.py verify {out}` has not run"
+            )
+        if rejected:
+            text.append(f"{len(rejected)} candidates rejected by `hunt.py verify`")
+        text.extend(seed_lines(events))
+        text.extend(
+            self._hit_line("hit", r) for r in sorted(hits, key=lambda r: r["added"])
+        )
+        text.extend(self._hit_line("unchecked candidate", r) for r in unchecked)
+        for record, reason in rejected:
+            text.append(self._hit_line("rejected candidate", record) + f" | {reason}")
+        return text
+
     def candidate_from_record(self, record):
         solution = tuple(tuple(map(int, row)) for row in record["solution"])
         return Hit(
@@ -341,86 +405,8 @@ class DoppelgangerRankFinder:
         )
 
 
-def _hit_line(kind, record):
-    clues = ", ".join(
-        f"{rules.place_name((c['line'], c['end']))} {c['rank']}"
-        for c in record["clues"]
-    )
-    return (
-        f"{kind}, {record['added']} added clues: {clues}"
-        f" | solution {' '.join(record['solution'])}"
-    )
-
-
-def summary(out):
-    """What a hunt in `out` found, as lines of text."""
-    _run, events, hits, unchecked, rejected = read_hunt(out)
-    seeds = sorted(e["seed"] for e in events)
-    span = f"{len(seeds)} seeds" + (f" ({seeds[0]}..{seeds[-1]})" if seeds else "")
-
-    split = Counter()
-    for e in events:
-        if e["outcome"] == "example":
-            split["found"] += 1
-        elif e["outcome"] in ("duplicate", "rejected"):
-            split[e["outcome"]] += 1
-        else:
-            reason = e.get("empty_reason", "")
-            name = reason.split(":")[0]
-            if name not in CLASSES:
-                raise ValueError(
-                    f"seed {e['seed']} ended with no known reason: {reason!r}"
-                )
-            split[CLASSES[name]] += 1
-
-    if hits:
-        text = [f"{len(hits)} verified hits in {span}"]
-    elif unchecked or rejected:
-        text = [f"no verified hit in {span}"]
-    else:
-        text = [f"none found in {span}"]
-    text.append(
-        f"{span}: found {split['found']}, duplicate {split['duplicate']}, "
-        f"proven infeasible {split['proven infeasible']}, "
-        f"timed out {split['timed out']}, "
-        f"capped {split['capped']} (a budget ran out: no proof), "
-        f"no separating clue {split['no separating clue']}, "
-        f"rejected {split['rejected']}"
-    )
-    if unchecked:
-        text.append(
-            f"{len(unchecked)} candidates unchecked: the hunt ran with "
-            f"--no-verify and `hunt.py verify {out}` has not run"
-        )
-    if rejected:
-        text.append(f"{len(rejected)} candidates rejected by `hunt.py verify`")
-    text.extend(seed_lines(events))
-    text.extend(_hit_line("hit", r) for r in sorted(hits, key=lambda r: r["added"]))
-    text.extend(_hit_line("unchecked candidate", r) for r in unchecked)
-    for record, reason in rejected:
-        text.append(_hit_line("rejected candidate", record) + f" | {reason}")
-    return text
-
-
 def main(argv):
-    """`links DIR`, `summary DIR`, or the driver's commands with the finder built from
-    its own flags."""
-    if argv and argv[0] == "links":
-        if len(argv) != 2:
-            print("usage: hunt.py links DIR", file=sys.stderr)
-            return 2
-        out = Path(argv[1])
-        try:
-            written, skipped = write_links(out)
-        except (OSError, ValueError) as error:
-            print(f"hunt.py links: {error}", file=sys.stderr)
-            return 2
-        print(f"wrote {written} links to {out / 'links'}")
-        if skipped:
-            print(f"{skipped} candidates skipped: not verified hits (`summary {out}`)")
-        return 0
-    if argv and argv[0] == "summary":
-        return summary_command(argv, summary)
+    """The driver's commands with the finder built from its own flags."""
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--board")
     for knob, default in DEFAULTS.items():
@@ -444,7 +430,7 @@ def main(argv):
             file=sys.stderr,
         )
         return 2
-    if own.board is None and rest[:1] != ["verify"]:
+    if own.board is None and rest[:1] not in DIR_COMMANDS:
         print("hunt.py: a hunt needs --board BOARD", file=sys.stderr)
         return 2
     try:

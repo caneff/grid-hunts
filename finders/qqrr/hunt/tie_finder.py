@@ -152,12 +152,11 @@ class TieFinder:
             c["hunt"], c["ten"], c["corner"], flags, hits=hits
         )
         cells = {(r, col): q.x[r][col] for r in range(N) for col in range(N)}
-        for i, g in enumerate(self.found):
+        for g in self.found:
             cpsat.forbid(
                 q.m,
                 cells,
                 {rc: int(g[rc[0] * N + rc[1]]) for rc in cells},
-                tag=f"found{i}",
             )
         s = cpsat.solver(c["timeout"], reproducible=False, seed=rng.randrange(2**31))
         s.parameters.num_workers = self.workers

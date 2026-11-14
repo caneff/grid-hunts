@@ -38,6 +38,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import rules
 from model import RankModel
 
+FINDERS = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(FINDERS / "halver"))
+
+# isort: split
+from halver_report import report_marks
+
 BOXES = {4: (2, 2), 6: (2, 3), 9: (3, 3)}
 
 
@@ -62,8 +68,8 @@ def read_board(path):
     for mark in doc["marks"]:
         name = mark_name(mark)
         if mark["kind"] == "digit":
-            r, c = rules.parse_cell(mark["cell"])
-            if not (0 <= r < n and 0 <= c < n and 0 <= mark["digit"] <= n):
+            rules.parse_cell(mark["cell"], n)
+            if not 0 <= mark["digit"] <= n:
                 raise ValueError(f"mark {name} is off a {n}x{n} board")
         elif mark["unit"] not in {**rows, **cols, **boxes} or not (
             1 <= mark["digit"] <= n
@@ -73,7 +79,6 @@ def read_board(path):
 
 
 def mark_name(mark):
-    """The mark in words, as the report prints it."""
     if mark["kind"] == "digit":
         return f"{mark['cell']} = {mark['digit']}"
     if mark["kind"] == "missing":
@@ -110,8 +115,6 @@ def one_line(grid):
 
 
 def report(board, box, marks, time_limit):
-    """Print the status, its solutions and each mark's verdict; the exit
-    status."""
     result = board.check(time_limit=time_limit)
     print(f"{len(board.clues)} rank clues: {result.status}")
     if result.status not in ("unique", "not_unique"):
@@ -122,21 +125,15 @@ def report(board, box, marks, time_limit):
             print(f"solution {k}")
             print("\n".join(describe(grid, box, board.clues)))
 
-    all_held = True
-    for mark in marks:
+    def holds(mark):
         verdict = board.mark_holds(mark, time_limit=time_limit)
-        name = mark_name(mark)
-        if verdict.status == "held":
-            print(f"held      {name}")
-            continue
-        all_held = False
         if verdict.status == "not_held":
+            # Only for its raise: a counterexample that breaks a rule is an
+            # encoding bug, never printed as an answer. one_line prints it.
             describe(verdict.counterexample, box, board.clues)
-            print(f"NOT HELD  {name}")
-            print(f"  broken by: {one_line(verdict.counterexample)}")
-        else:
-            print(f"TIMEOUT   {name} (no verdict in {time_limit:g}s)")
-    return 0 if all_held else 1
+        return verdict
+
+    return report_marks(marks, holds, mark_name, one_line, time_limit)
 
 
 def main(argv):

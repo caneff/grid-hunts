@@ -20,14 +20,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import rules
 
 # isort: split
+import halver_rules
+from conditions import Eq
 from halver_query import holds, uniqueness
-from halver_rules import HalverModel
+from halver_rules import HalverModel, mark_condition, parse_cell
 
 HERE = Path(__file__).resolve().parent
 LINES = rules.load_lines(HERE / "board.json")
 
-# The fixture's lines are the table of Chris's board switch on #39, circles
-# first and last.
+# Chris's board switch on #39.
 assert [rules.line_name(line) for line in LINES] == [
     "r4c3 | r4c4 r5c4 r5c5 r4c5 r4c6 r5c6 r6c6 r6c5 r6c4 | r6c3",
     "r8c3 | r7c3 r6c2 | r6c1",
@@ -40,17 +41,14 @@ assert [rules.line_name(line) for line in LINES] == [
 base = rules.RuleModel(LINES)
 result = uniqueness(base, time_limit=60)
 assert result.status == "not_unique", result.status
-# Both witnesses obey every line, read in plain Python, and they differ.
 for solution in (result.first, result.second):
     assert all(rules.line_holds(solution, line) for line in LINES)
     assert len(solution.halvers) == 9
 assert result.first != result.second
 
-# A check given no time is a timeout, and a timeout is never unique.
 rushed = uniqueness(base, time_limit=1e-6)
 assert rushed.status == "timeout", rushed.status
 
-# A mark check given no time is a timeout too, never "held".
 mark = {"kind": "digit", "cell": "r6c1", "digit": 6}
 assert holds(base, mark, time_limit=10).status == "held"
 rushed_mark = holds(base, mark, time_limit=1e-6)
@@ -75,7 +73,7 @@ assert broken.status == "not_held", broken
 assert broken.counterexample.digits[0][2] == 1, broken
 
 # A sample is a solution, or None when its solve has no time; lines with no
-# solution at all raise rather than read as a timeout. The third line's
+# solution at all raise rather than read as a timeout. The added line's
 # circles are equal in the 4x4 case's one answer, so no solution is left.
 rng = random.Random(39)
 drawn = small.sample(rng, time_limit=10)
@@ -92,5 +90,49 @@ else:
 # One copy of the question logic: the driver's (spec #65 story 21).
 assert not hasattr(HalverModel, "check"), "HalverModel.check is back"
 assert not hasattr(HalverModel, "mark_holds"), "HalverModel.mark_holds is back"
+
+# parse_cell refuses row or column 0 and anything past the board, by name.
+assert parse_cell("r9c9", 9) == (8, 8)
+for bad in ("r0c1", "r1c0", "r10c1", "r1c10"):
+    try:
+        parse_cell(bad, 9)
+    except ValueError as error:
+        assert bad in str(error), error
+    else:
+        raise AssertionError(f"parse_cell({bad!r}, 9) was accepted")
+try:
+    parse_cell("r0c1")
+except ValueError as error:
+    assert "r0c1" in str(error), error
+else:
+    raise AssertionError("parse_cell('r0c1') was accepted")
+# A cell that is no string (a marks file's `"cell": 5`) is a ValueError too,
+# so a report refuses it with exit 2, never 1.
+for bad in (5, None):
+    try:
+        parse_cell(bad, 9)
+    except ValueError as error:
+        assert repr(bad) in str(error), error
+    else:
+        raise AssertionError(f"parse_cell({bad!r}, 9) was accepted")
+
+# A new mark kind is one MARK_KINDS entry: the name and the board-question
+# condition both read it, and an unknown kind is refused once, by name.
+halver_rules.MARK_KINDS["not_digit"] = halver_rules.MarkKind(
+    lambda m: f"{m['cell']} != {m['digit']}", lambda m: Eq(m["cell"], 0)
+)
+try:
+    extra = {"kind": "not_digit", "cell": "r1c1", "digit": 3}
+    assert halver_rules.mark_name(extra) == "r1c1 != 3"
+    assert mark_condition(extra) == Eq("r1c1", 0)
+finally:
+    del halver_rules.MARK_KINDS["not_digit"]
+for read in (halver_rules.mark_name, mark_condition):
+    try:
+        read({"kind": "not_digit", "cell": "r1c1", "digit": 3})
+    except ValueError as error:
+        assert "unknown mark kind 'not_digit'" in str(error), error
+    else:
+        raise AssertionError(f"{read.__name__} accepted an unknown kind")
 
 print("ok")

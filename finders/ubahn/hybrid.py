@@ -5,8 +5,8 @@ The board is the grid plus strips of number cells above it and to its left,
 one strip per kind. A cell is `(r, c)`: a grid cell has both at 0 or more, as
 in `network.py`; `(r, -k)` is row r's number cell in strip k and `(-k, c)` is
 column c's, strip 1 the innermost. From the inside out the strips count turn,
-straight, branch, cross, which is `network.KINDS` order, so strip k counts
-kind k - 1; the blank strip is the optional fifth. The corner where both are
+straight, branch, cross, the reverse of `STRIP_ORDER`, so strip k counts
+`STRIP_KIND[k - 1]`; the blank strip is the optional fifth. The corner where both are
 negative holds the icon cells and the area off the board, and no cell of it
 is on the board.
 
@@ -20,17 +20,37 @@ from typing import NamedTuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import network
-import penpa
 
 # What a grid cell of each kind is worth. A number cell is worth its outside
 # number.
-PIECE_VALUE = {
+KIND_VALUE = {
     network.BLANK: 0,
     network.TURN: 1,
     network.STRAIGHT: 2,
     network.BRANCH: 3,
     network.CROSS: 4,
 }
+
+
+# The strip-kind order of the link and the fixture: the kinds outermost
+# strip first (Chris's ruling, #774). The one statement of it: everything
+# that maps a strip to a kind reads it, through `STRIP_KIND`.
+STRIP_ORDER = (network.CROSS, network.BRANCH, network.STRAIGHT, network.TURN)
+# The kind each strip counts, strip 1 (innermost) first; the blank strip is
+# the optional fifth.
+STRIP_KIND = (*reversed(STRIP_ORDER), network.BLANK)
+
+# The cross icon's four flags are [right, down, left, up] (docs/research/2026-10-10-u-bahn-penpa-link.md § 1.5).
+# Per kind, the icon beside a row of outside numbers and beside a column of
+# them. The turn's icon sits in the one cell the innermost row and column
+# share.
+ICONS = {
+    "cross": ([1, 1, 1, 1], [1, 1, 1, 1]),
+    "branch": ([1, 1, 1, 0], [1, 1, 0, 1]),
+    "straight": ([1, 0, 1, 0], [0, 1, 0, 1]),
+    "turn": ([1, 1, 0, 0], [1, 1, 0, 0]),
+}
+BLANK_ICON = "□"  # a number's text: a blank cell has no arm to draw
 
 
 def strips(blank_strip=False):
@@ -40,7 +60,7 @@ def strips(blank_strip=False):
 
 class Conditions(NamedTuple):
     """What a hybrid grid is asked to meet: the board, the circled cells,
-    the piece-count condition (a `network.Exactly`, or None), whether the
+    the kind-count condition (a `network.Exactly`, or None), whether the
     blank strip is on, the fewest banana regions it may have (0 asks for
     none), how many valid circles on number cells it holds at least (#794),
     the windows that carry a Battenberg marking, each by its top-left cell,
@@ -56,6 +76,20 @@ class Conditions(NamedTuple):
     number_circles: int = 0
     battenberg: frozenset = frozenset()
     battenberg_only: bool = False
+
+    def asking(self, number_circles=None, battenberg=None, battenberg_only=None):
+        """These conditions with the number of circles on number cells, the
+        marked windows (any iterable of them) or the negative constraint
+        changed, whichever is given and nothing else: the one place a search
+        derives the conditions of its next step."""
+        changes = {}
+        if number_circles is not None:
+            changes["number_circles"] = number_circles
+        if battenberg is not None:
+            changes["battenberg"] = frozenset(battenberg)
+        if battenberg_only is not None:
+            changes["battenberg_only"] = battenberg_only
+        return self._replace(**changes)
 
 
 class Sampled(NamedTuple):
@@ -82,9 +116,9 @@ def number_cells(rows, cols, blank_strip=False):
     lines = {}
     for k in range(1, strips(blank_strip) + 1):
         for r in range(rows):
-            lines[r, -k] = (k - 1, [(r, c) for c in range(cols)])
+            lines[r, -k] = (STRIP_KIND[k - 1], [(r, c) for c in range(cols)])
         for c in range(cols):
-            lines[-k, c] = (k - 1, [(r, c) for r in range(rows)])
+            lines[-k, c] = (STRIP_KIND[k - 1], [(r, c) for r in range(rows)])
     return lines
 
 
@@ -96,13 +130,13 @@ def values(net, rows, cols, blank_strip=False):
     row_numbers, col_numbers = network.outside_numbers(net, rows, cols)
     depth = strips(blank_strip)
     board = {
-        (r, c): PIECE_VALUE[kinds[r * cols + c]]
+        (r, c): KIND_VALUE[kinds[r * cols + c]]
         for r in range(rows)
         for c in range(cols)
     }
     for k in range(1, depth + 1):
-        board.update({(r, -k): row_numbers[r][k - 1] for r in range(rows)})
-        board.update({(-k, c): col_numbers[c][k - 1] for c in range(cols)})
+        board.update({(r, -k): row_numbers[r][STRIP_KIND[k - 1]] for r in range(rows)})
+        board.update({(-k, c): col_numbers[c][STRIP_KIND[k - 1]] for c in range(cols)})
     return board
 
 
@@ -111,9 +145,9 @@ def cell_name(cell):
     row 2's turn number cell, `c3:cross` for column 3's cross number cell."""
     r, c = cell
     if r < 0:
-        return f"c{c + 1}:{network.KIND_NAMES[-r - 1]}"
+        return f"c{c + 1}:{network.KIND_NAMES[STRIP_KIND[-r - 1]]}"
     if c < 0:
-        return f"r{r + 1}:{network.KIND_NAMES[-c - 1]}"
+        return f"r{r + 1}:{network.KIND_NAMES[STRIP_KIND[-c - 1]]}"
     return f"r{r + 1}c{c + 1}"
 
 
@@ -125,14 +159,14 @@ def parse_cell(text):
         return int(match[1]) - 1, int(match[2]) - 1
     match = re.fullmatch(r"([rc])([1-9][0-9]*):([a-z]+)", text)
     if not match:
-        raise ValueError(f"a cell is rKcK, rK:PIECE or cK:PIECE, got {text!r}")
+        raise ValueError(f"a cell is rKcK, rK:KIND or cK:KIND, got {text!r}")
     axis, number, name = match.groups()
     if name not in network.KIND_NAMES:
         raise ValueError(
-            f"no piece named {name!r}: a number cell counts "
+            f"no kind named {name!r}: a number cell counts "
             f"{', '.join(network.KIND_NAMES)}"
         )
-    strip = -network.KIND_NAMES.index(name) - 1
+    strip = -STRIP_KIND.index(network.KIND_NAMES.index(name)) - 1
     return (int(number) - 1, strip) if axis == "r" else (strip, int(number) - 1)
 
 
@@ -154,8 +188,7 @@ def regions(board):
             if cell in region or cell not in board or board[cell] % 2 != parity:
                 continue
             region.add(cell)
-            r, c = cell
-            stack += [(r - 1, c), (r, c + 1), (r + 1, c), (r, c - 1)]
+            stack += neighbours(cell)
         seen |= region
         found.append(frozenset(region))
     return found
@@ -198,6 +231,13 @@ def window_cells(window):
     return [(r, c), (r, c + 1), (r + 1, c), (r + 1, c + 1)]
 
 
+def neighbours(cell):
+    """The four cells that share an edge with `cell`, on the board or not:
+    up, right, down, left."""
+    r, c = cell
+    return [(r - 1, c), (r, c + 1), (r + 1, c), (r, c - 1)]
+
+
 def windows(board):
     """Every window of the board, sorted: each cell that has the three cells
     to its right, below it and below right on the board with it."""
@@ -218,8 +258,6 @@ def checkerboard_windows(board):
 
 
 def off_board(window, board):
-    """The first cell of the window that is not on the board, or None when
-    all four are."""
     return next((cell for cell in window_cells(window) if cell not in board), None)
 
 
@@ -253,36 +291,56 @@ def parse_windows(text, rows, cols, blank_strip=False):
     return frozenset(found)
 
 
+def parse_circles(text, rows, cols, blank_strip=False):
+    """The circled cells `text` names, a frozenset. Raises ValueError on a
+    name `parse_cell` refuses, and on a cell that is not on the board, naming
+    it (see `check_circles`)."""
+    found = frozenset(parse_cell(name) for name in text.split())
+    check_circles(found, rows, cols, blank_strip)
+    return found
+
+
+def check_circles(circles, rows, cols, blank_strip=False):
+    """Raises ValueError naming the first of `circles` that is not on the
+    board: the one refusal of an off-board circle, for every finder and
+    brute."""
+    board = board_cells(rows, cols, blank_strip)
+    for cell in sorted(circles):
+        if cell not in board:
+            strip = "" if blank_strip else ", no blank strip"
+            raise ValueError(
+                f"circle {cell_name(cell)} is off the {rows}x{cols} board{strip}"
+            )
+
+
+def check_min_bananas(asked):
+    """Raises ValueError unless `asked`, a `--min-bananas` value, is None or
+    1 or more: the one refusal of it, for the hybrid finder and brute."""
+    if asked is not None and asked < 1:
+        raise ValueError(f"--min-bananas takes 1 or more, got {asked}")
+
+
 def _box(region):
-    """(top, left, height, width) of the smallest box that holds the region."""
     top, left = (min(cell[i] for cell in region) for i in (0, 1))
     bottom, right = (max(cell[i] for cell in region) for i in (0, 1))
     return top, left, bottom - top + 1, right - left + 1
 
 
-def failures(
-    net,
-    rows,
-    cols,
-    circles=(),
-    blank_strip=False,
-    *,
-    min_bananas=0,
-    number_circles=0,
-    battenberg=(),
-    battenberg_only=False,
-):
-    """Every reason these edges and circles are not a hybrid grid, [] when
-    they are one. `circles` are cells of the board. A set of edges that is no
-    U-Bahn network fails on that alone; a network then answers for each
-    region and each circle: an even region is a rectangle, an odd region is
-    not, and a circled cell's value is its region's size. Then a grid with
-    fewer than `min_bananas` banana regions fails on their number, and so
-    does one with fewer than `number_circles` valid circles on number cells.
-    Last, each Battenberg marking, a window of `battenberg`, answers by its
-    window: it is wholly on the board and a checkerboard window. With
-    `battenberg_only`, the negative constraint, every checkerboard window
-    that has no marking is a reason too."""
+def failures(net, asked):
+    """Every reason these edges are not a hybrid grid meeting `asked`, a
+    `Conditions`, [] when they are one. A set of edges that is no U-Bahn
+    network fails on that alone; a network then answers for each region and
+    each circle: an even region is a rectangle, an odd region is not, and a
+    circled cell's value is its region's size. Then a grid with fewer than
+    `min_bananas` banana regions fails on their number, and so does one with
+    fewer than `number_circles` valid circles on number cells. Then each
+    Battenberg marking, a window of `battenberg`, answers by its window: it is
+    wholly on the board and a checkerboard window. With `battenberg_only`, the
+    negative constraint, every checkerboard window that has no marking is a
+    reason too. Last, the `exactly` condition, if any, is on the board and
+    holds."""
+    rows, cols, blank_strip = asked.rows, asked.cols, asked.blank_strip
+    circles, exactly, battenberg = asked.circles, asked.exactly, asked.battenberg
     broken = network.why_not_network(net, rows, cols)
     if broken:
         return [broken]
@@ -315,15 +373,15 @@ def failures(
                 f"region of {size[cell]} cells"
             )
     count = len(bananas(board))
-    if count < min_bananas:
+    if count < asked.min_bananas:
         reasons.append(
             f"{count} banana region{'' if count == 1 else 's'}, "
-            f"fewer than the {min_bananas} asked for"
+            f"fewer than the {asked.min_bananas} asked for"
         )
     held = len(number_cell_circles(board))
-    if held < number_circles:
+    if held < asked.number_circles:
         reasons.append(
-            f"{held} valid circles on number cells, fewer than {number_circles}"
+            f"{held} valid circles on number cells, fewer than {asked.number_circles}"
         )
     checkerboards = checkerboard_windows(board)
     for window in sorted(battenberg):
@@ -334,20 +392,21 @@ def failures(
             reasons.append(
                 f"Battenberg marking at {cell_name(window)}: not a checkerboard window"
             )
-    if battenberg_only:
+    if asked.battenberg_only:
         reasons += [
             f"checkerboard window at {cell_name(window)} has no Battenberg marking"
             for window in checkerboards
             if window not in battenberg
         ]
+    if exactly:
+        reasons += filter(None, [exactly.why_not(net, rows, cols)])
     return reasons
 
 
-def why_not_hybrid(net, rows, cols, circles=(), blank_strip=False, **conditions):
-    """Why these edges and circles are not a hybrid grid, or "" when they
-    are one: the first of `failures`, which takes the same arguments."""
-    reasons = failures(net, rows, cols, circles, blank_strip, **conditions)
-    return next(iter(reasons), "")
+def why_not_hybrid(net, asked):
+    """Why these edges are not a hybrid grid meeting `asked`, a `Conditions`,
+    or "" when they are one: the first of `failures`."""
+    return next(iter(failures(net, asked)), "")
 
 
 def icon_arms(cell):
@@ -358,24 +417,23 @@ def icon_arms(cell):
     r, c = cell
     if -1 not in (r, c) or max(r, c) >= 0:
         return None
-    name = network.KIND_NAMES[-min(r, c) - 1]
+    name = network.KIND_NAMES[STRIP_KIND[-min(r, c) - 1]]
     if name == "blank":
         return (0, 0, 0, 0)
-    right, down, left, up = penpa.ICONS[name][0 if c == -1 else 1]
+    right, down, left, up = ICONS[name][0 if c == -1 else 1]
     return (up, right, down, left)
 
 
 def _icon(cell):
-    """What the icon cell at `cell` shows, or "" when it is none."""
     cell_arms = icon_arms(cell)
     if cell_arms is None:
         return ""
-    return network.DRAWN[cell_arms] if any(cell_arms) else penpa.BLANK_ICON
+    return network.DRAWN[cell_arms] if any(cell_arms) else BLANK_ICON
 
 
 def drawing(net, rows, cols, circles=(), blank_strip=False):
     """The board as one string per board row: a number cell as its value, a
-    grid cell as its piece, an icon cell as the piece its strip counts, and a
+    grid cell as its kind, an icon cell as the kind its strip counts, and a
     circled cell in brackets. Only for a network with no dead end."""
     board = values(net, rows, cols, blank_strip)
     depth = strips(blank_strip)

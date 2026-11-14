@@ -15,11 +15,11 @@ import re
 from typing import NamedTuple
 
 # What a cell can be, in the order a row's or column's outside numbers are
-# given: the four pieces, then blank. This is the one statement of the order.
+# given: the four pieces, then blank. The order of the number-cell strips is
+# not this one: `hybrid.STRIP_ORDER`.
 KIND_NAMES = ("turn", "straight", "branch", "cross", "blank")
 TURN, STRAIGHT, BRANCH, CROSS, BLANK = KINDS = range(len(KIND_NAMES))
 
-# A cell's kind drawn from its (north, east, south, west) arms.
 DRAWN = {
     (0, 0, 0, 0): " ",
     (1, 0, 1, 0): "│",
@@ -168,9 +168,19 @@ class Exactly(NamedTuple):
     axis: str
     index: int
 
-    def on_board(self, rows, cols):
-        """Whether the board has the row or column the condition names."""
-        return self.index < (rows if self.axis == "r" else cols)
+    def why_off_board(self, rows, cols):
+        if self.index < (rows if self.axis == "r" else cols):
+            return ""
+        return f"condition {self.text()} is off the {rows}x{cols} board"
+
+    def why_not(self, network, rows, cols):
+        """Why the network does not meet the condition, or "" when it does:
+        the one wording of both refusals, for every finder's verify."""
+        return self.why_off_board(rows, cols) or (
+            ""
+            if self.holds(network, rows, cols)
+            else f"condition {self.text()} does not hold"
+        )
 
     def cells(self, rows, cols):
         """The cells of the row or column the condition names."""
@@ -186,18 +196,29 @@ class Exactly(NamedTuple):
 
     @classmethod
     def parse(cls, text):
-        """The condition written `N:PIECE:rK` or `N:PIECE:cK`, as in
+        """The condition written `N:KIND:rK` or `N:KIND:cK`, as in
         `2:cross:r2` or `3:blank:c1`. Raises ValueError, naming what is
         wrong."""
         match = re.fullmatch(r"([0-9]+):([a-z]+):([rc])([1-9][0-9]*)", text)
         if not match:
-            raise ValueError(f"a condition is N:PIECE:rK or N:PIECE:cK, got {text!r}")
+            raise ValueError(f"a condition is N:KIND:rK or N:KIND:cK, got {text!r}")
         count, name, axis, number = match.groups()
         if name not in KIND_NAMES:
             raise ValueError(
-                f"no piece named {name!r}: a condition counts {', '.join(KIND_NAMES)}"
+                f"no kind named {name!r}: a condition counts {', '.join(KIND_NAMES)}"
             )
         return cls(int(count), KIND_NAMES.index(name), axis, int(number) - 1)
+
+    @classmethod
+    def parse_on(cls, text, rows, cols):
+        """`parse`, then the board check: the condition `text` names on a
+        `rows`x`cols` board. Raises ValueError, naming what is wrong: the one
+        refusal of a bad `--exactly`, for every finder."""
+        exactly = cls.parse(text)
+        why = exactly.why_off_board(rows, cols)
+        if why:
+            raise ValueError(why)
+        return exactly
 
     def text(self):
         """The condition as `parse` reads it."""

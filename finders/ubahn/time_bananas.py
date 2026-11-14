@@ -29,14 +29,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import hybrid
-import hybrid_finder
+import hybrid_engines
 
 
 def measure(side, wanted, seed, engine, timeout):
     """One row: the engine's grid for a seed, timed and re-read."""
     conditions = hybrid.Conditions(side, side, min_bananas=wanted)
     started = time.monotonic()
-    status, net = hybrid_finder.ENGINES[engine].grid(
+    status, net = hybrid_engines.ENGINES[engine].grid(
         conditions, random.Random(seed), time_limit=timeout
     )
     seconds = time.monotonic() - started
@@ -49,8 +49,7 @@ def measure(side, wanted, seed, engine, timeout):
         "status": status,
         "seconds": round(seconds, 3),
         "bananas": net and len(hybrid.bananas(hybrid.values(net, side, side))),
-        "reader_ok": net is not None
-        and not hybrid.failures(net, side, side, min_bananas=wanted),
+        "reader_ok": net is not None and not hybrid.failures(net, conditions),
     }
 
 
@@ -90,8 +89,8 @@ def main(argv):
     run.add_argument("--timeout", type=float, default=60.0)
     run.add_argument(
         "--engine",
-        default=hybrid_finder.DEFAULT_ENGINE,
-        choices=hybrid_finder.ENGINES,
+        default=hybrid_engines.DEFAULT_ENGINE,
+        choices=hybrid_engines.ENGINES,
     )
     commands.add_parser("report").add_argument("file")
     args = parser.parse_args(argv)

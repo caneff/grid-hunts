@@ -53,7 +53,7 @@ import time
 
 
 class OutOfTime(Exception):
-    """The search passed its deadline before it could count to `limit`."""
+    """Raised when the search passes its deadline before counting to `limit`."""
 
 
 def _houses(n, box):
@@ -73,7 +73,7 @@ class _Contradiction(Exception):
 
 
 def bits(mask):
-    """The set bits of `mask`, lowest first."""
+    """Yield the indices of the set bits of `mask`, lowest first."""
     while mask:
         low = mask & -mask
         yield low.bit_length() - 1
@@ -81,6 +81,10 @@ def bits(mask):
 
 
 def solutions(narrowing, lines, n, box, limit, deadline=None, probe_ends=False):
+    """Up to `limit` solutions of the halver board, each (digits, halver cells), in search order.
+
+    Raises OutOfTime past `deadline`; see the module docstring for `narrowing`.
+    """
     houses = [[r * n + c for r, c in house] for house in _houses(n, box)]
     size = n * n
     digit_bits = (1 << n) - 1
@@ -97,7 +101,6 @@ def solutions(narrowing, lines, n, box, limit, deadline=None, probe_ends=False):
         for (a, ac), body, (b, bc) in lines
     ]
 
-    # Doubled-value masks: bit v set when the doubled value v is possible.
     plain_doubled = [
         sum(1 << (2 * (d + 1)) for d in range(n) if m >> d & 1) for m in range(1 << n)
     ]
@@ -106,8 +109,6 @@ def solutions(narrowing, lines, n, box, limit, deadline=None, probe_ends=False):
         return plain_doubled[mask & digit_bits] | ((mask >> n) << 1)
 
     def choices_with_doubled(keep):
-        """The choice bits whose doubled value is in the doubled-value mask
-        `keep`."""
         bits = ((keep >> 1) & digit_bits) << n
         for d in range(n):
             if keep >> (2 * (d + 1)) & 1:
@@ -126,8 +127,6 @@ def solutions(narrowing, lines, n, box, limit, deadline=None, probe_ends=False):
     ends = sorted({x for a, _, b, _, _ in lines for x in (a, b)}) if probe_ends else []
 
     def narrow_line(cells, line, dirty):
-        # The narrowing depends only on the line's doubled-value masks, which
-        # recur across branches, so each line keeps its answers.
         a, body, b, narrow, memo = line
         key = (
             doubled_values(cells[a]),
@@ -182,8 +181,6 @@ def solutions(narrowing, lines, n, box, limit, deadline=None, probe_ends=False):
                     restrict(cells, i, digit_bits, dirty)
 
     def propagate(cells, settled, dirty):
-        """Narrow to a fixpoint, re-reading only the houses and lines of the
-        cells in `dirty`, the cells changed since the last fixpoint."""
         while dirty:
             changed = list(dirty)
             dirty.clear()
@@ -219,8 +216,6 @@ def solutions(narrowing, lines, n, box, limit, deadline=None, probe_ends=False):
                 narrow_line(cells, lines[k], dirty)
 
     def probe(cells, settled):
-        """Drop each value of an open line end whose narrowing fails, to a
-        fixpoint."""
         while True:
             dirty = set()
             for i in ends:
@@ -246,7 +241,7 @@ def solutions(narrowing, lines, n, box, limit, deadline=None, probe_ends=False):
             probe(cells, settled)
         except _Contradiction:
             return False
-        best = None  # (option count, children)
+        best = None
         for i in ends:
             count = cells[i].bit_count()
             if count > 1 and (best is None or count < best[0]):

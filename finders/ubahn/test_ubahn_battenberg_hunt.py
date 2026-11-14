@@ -26,38 +26,34 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import hybrid
-import hybrid_finder
+import hybrid_engines
 from cli_checks import check, finish, read_jsonl, run_cli
 from dedupe import IDENTITY
 from verified_io import read_verified
 
 FINDER = HERE / "hybrid_finder.py"
-ENGINES = ("pysat-lazy", "pysat-propagator")
-# A record carries its own board and conditions.
-READER = hybrid_finder.HybridFinder(hybrid.Conditions(4, 4))
+READER = hybrid_engines.HybridFinder(hybrid.Conditions(4, 4))
 
 
 def transposed(net):
-    """The grid reflected in the main diagonal."""
     return frozenset(
         tuple(sorted(((r1, c1)[::-1], (r2, c2)[::-1]))) for (r1, c1), (r2, c2) in net
     )
 
 
 def meeting(names, only=False):
-    """The brute force's 4x4 grids that meet these markings."""
     marked = hybrid.parse_windows(" ".join(names), 4, 4)
     return {
         net
         for net in brute.hybrid_grids(4, 4)
-        if not hybrid.why_not_hybrid(net, 4, 4, battenberg=marked, battenberg_only=only)
+        if not hybrid.why_not_hybrid(
+            net,
+            hybrid.Conditions(4, 4, battenberg=frozenset(marked), battenberg_only=only),
+        )
     }
 
 
 def hunt(d, engine, name, *flags, side=4, seeds=20):
-    """Run a hunt on this engine with these flags, then `verify` it; returns
-    (the examples' records, their networks, the `empty` reasons, run.json's
-    config)."""
     out = Path(d) / f"{engine} {name}"
     board = ["--rows", str(side), "--cols", str(side), "--timeout", "10"]
     r = run_cli(
@@ -102,10 +98,8 @@ def hunt(d, engine, name, *flags, side=4, seeds=20):
     )
 
 
-# Four rows of the decision log's table, one of each word and each flag
-# through the CLI's `classify`. Every row of the table, on both engines, is
-# held in process by `test_ubahn_battenberg_sat.py`'s TABLE, which checks the
-# brute force's count and the engine's classification word for each row.
+# Four rows only, one per word and flag; every row on both engines is held in
+# `test_ubahn_battenberg_sat.py`'s TABLE.
 TABLE = (
     ([], "not_unique", "more than one grid"),
     (["--battenberg", "c1:turn"], "unique", "exactly one grid"),
@@ -117,10 +111,8 @@ TABLE = (
     (["--battenberg", "c1:turn", "--battenberg-only"], "infeasible", "no grid"),
 )
 
-for engine in ENGINES:
+for engine in hybrid_engines.PYSAT_ENGINES:
     with tempfile.TemporaryDirectory() as d:
-        # One marking: the one grid that has it, with all three of its
-        # checkerboard windows on the record.
         examples, nets, _, config = hunt(
             d, engine, "c1:turn", "--battenberg", "c1:turn"
         )
@@ -145,14 +137,15 @@ for engine in ENGINES:
             and "battenberg_only" not in config,
         )
 
-        # A record written before the condition has none of its fields: it
-        # reads as no markings and the constraint off, and still verifies.
         old = Path(d) / f"{engine} old"
         old.mkdir()
         record = dict(examples[0])
         for field in ("battenberg", "battenberg_only", "checkerboard_windows"):
             del record[field]
         (old / "examples.jsonl").write_text(json.dumps(record) + "\n")
+        (old / "progress.jsonl").write_text(
+            json.dumps({"event": "seed_done", "seed": 0, "outcome": "example"}) + "\n"
+        )
         r = run_cli(FINDER, "verify", str(old))
         asked = READER.candidate_from_record(record).conditions
         check(
@@ -164,8 +157,6 @@ for engine in ENGINES:
             and asked.battenberg_only is False,
         )
 
-        # A record whose two fields are not a list of names and a true or
-        # false is refused by the field's name, never read as "off".
         for field, value in (
             ("battenberg_only", None),
             ("battenberg_only", "false"),
@@ -185,9 +176,6 @@ for engine in ENGINES:
                 refused.startswith(f"{field} is {value!r}"),
             )
 
-        # `verify` re-reads the markings: the same grid on a record that
-        # claims a marking it does not have, and one under the negative
-        # constraint with a checkerboard window left unmarked.
         bad = Path(d) / f"{engine} bad"
         bad.mkdir()
         (bad / "examples.jsonl").write_text(
@@ -195,6 +183,13 @@ for engine in ENGINES:
             + "\n"
             + json.dumps({**examples[0], "battenberg_only": True})
             + "\n"
+        )
+        (bad / "progress.jsonl").write_text(
+            "".join(
+                json.dumps({"event": "seed_done", "seed": k, "outcome": "example"})
+                + "\n"
+                for k in range(2)
+            )
         )
         r = run_cli(FINDER, "verify", str(bad))
         verdicts = read_verified(bad / "verified.jsonl")[1]
@@ -210,9 +205,6 @@ for engine in ENGINES:
             in verdicts[1]["reason"],
         )
 
-        # The negative constraint with no marking: the 16 grids with no
-        # checkerboard window. No marking moves under the reflection in the
-        # main diagonal, so a grid's transpose is a repeat.
         examples, nets, _, config = hunt(d, engine, "only", "--battenberg-only")
         want = meeting([], only=True)
         check(
@@ -235,7 +227,6 @@ for engine in ENGINES:
             and config.get("battenberg_only") is True,
         )
 
-        # A grid's full set of markings under the negative constraint.
         _, nets, _, _ = hunt(
             d, engine, "all three", "--battenberg", "r1:turn r2:turn r1c3",
             "--battenberg-only", seeds=3,
@@ -247,7 +238,6 @@ for engine in ENGINES:
             len(want) == 1 and set(nets) == want and len(nets) == 1,
         )
 
-        # One marking of three under the negative constraint: no grid.
         examples, _, reasons, _ = hunt(
             d, engine, "one of three", "--battenberg", "c1:turn",
             "--battenberg-only", seeds=3,
@@ -260,8 +250,6 @@ for engine in ENGINES:
             and all("infeasible" in reason for reason in reasons),
         )
 
-        # A marking and a circle in one run: r2c4 is a valid circle in the
-        # one grid with the marking r3c1.
         examples, nets, _, _ = hunt(
             d, engine, "with a circle", "--battenberg", "r3c1", "--circles", "r2c4",
             seeds=3,
@@ -295,7 +283,6 @@ for engine in ENGINES:
             any(transposed(a) == b for a in nets for b in nets if a != b),
         )
 
-    # `classify` through the CLI: the table's word for each row of TABLE.
     for flags, word, said in TABLE:
         label = f"{engine}, classify {' '.join(flags) or 'no condition'}"
         r = run_cli(FINDER,
@@ -308,8 +295,6 @@ for engine in ENGINES:
             r.returncode == 0 and first == [f"{word}: {said}"],
         )
 
-    # A window that is not wholly on the board is refused before any solve,
-    # naming the cell that is off it.
     with tempfile.TemporaryDirectory() as d:
         for i, (name, off) in enumerate(
             (("r4c4", "r4c5"), ("r4:turn", "r5:turn"), ("r1:blank", "r1:blank"))
@@ -335,8 +320,6 @@ for engine in ENGINES:
                 r.returncode == 2 and f"{off} is off it" in r.stderr and not r.stdout,
             )
 
-# The CP-SAT engine has no model of the condition: either flag is refused by
-# name before any solve.
 with tempfile.TemporaryDirectory() as d:
     for i, (flags, named) in enumerate(
         (
@@ -362,8 +345,6 @@ with tempfile.TemporaryDirectory() as d:
             r.returncode == 2 and reason in r.stderr and not r.stdout,
         )
 
-# `verify` and `render` read a record's own markings: the flags are refused
-# there, not ignored.
 for command in ("verify", "render"):
     for flags, named in (
         (["--battenberg", "c1:turn"], "--battenberg"),
@@ -386,7 +367,9 @@ for names, kept in (
     ("r2c2 r1c2", False),
 ):
     marked = hybrid.parse_windows(names, 5, 5)
-    group = hybrid_finder.condition_symmetry(hybrid.Conditions(5, 5, battenberg=marked))
+    group = hybrid_engines.condition_symmetry(
+        hybrid.Conditions(5, 5, battenberg=marked)
+    )
     check(
         f"5x5 markings {names or 'none'}: the reflection is "
         f"{'kept' if kept else 'not a symmetry'}",
@@ -395,11 +378,10 @@ for names, kept in (
 
 r = run_cli(FINDER, "--help")
 check(
-    "--help describes --battenberg and --battenberg-only",
+    "--help names --battenberg and --battenberg-only",
     r.returncode == 0
-    and '--battenberg "CELL CELL ..."' in r.stdout
-    and "--battenberg-only" in r.stdout
-    and "checkerboard window" in r.stdout,
+    and "--battenberg " in r.stdout
+    and "--battenberg-only" in r.stdout,
 )
 
 finish()

@@ -55,14 +55,13 @@ def inflate(text):
 
 
 def unabbreviate(text):
+    """Undo the abbreviation table, last entry first."""
     for plain, token in reversed(TABLE):
         text = text.replace(token, plain)
     return text
 
 
 def unescape(field):
-    """A header field's `%2C`, `%2D`, `%2E` and `%2F` read back as the comma,
-    newline, ampersand and equals sign they stand for (§ 1.3)."""
     for plain, escaped in ((",", "%2C"), ("\n", "%2D"), ("&", "%2E"), ("=", "%2F")):
         field = field.replace(escaped, plain)
     return field
@@ -74,8 +73,7 @@ def parameter(url, name):
 
 
 class Decoded:
-    """A link read back: the payload's lines, the header fields, the question
-    layer, the centerlist and the answer's edge strings."""
+    """A link read back; `answer` is None when the link carries none."""
 
     def __init__(self, url):
         self.url = url
@@ -106,7 +104,6 @@ class Decoded:
 
     @property
     def mode(self):
-        """The `mode` object, payload line 11, read when asked for."""
         return json.loads(self.lines[11])
 
     @property
@@ -114,13 +111,13 @@ class Decoded:
         return self.nx + 4
 
     def xy(self, index):
-        """Padded (x, y) of a cell-centre index; the first real cell is 2, 2."""
+        """The table is padded: the first real cell is (2, 2)."""
         return index % self.nx0, index // self.nx0
 
 
 def edges_of(decoded, strips):
     """The answer's edges as ((r, c), (r2, c2)), counted from the grid's
-    first cell, which sits `strips` cells in from the board's corner."""
+    first cell, `strips` cells in from the board's corner."""
     edges = set()
     for entry in decoded.answer[1]:
         a, b, style = entry.split(",")
@@ -132,10 +129,8 @@ def edges_of(decoded, strips):
 
 
 def numbers_of(decoded, strips, rows, cols):
-    """(per row, per column) lists of the outside numbers as written: for
-    each strip from the outside in, the number beside the grid, None where
-    the cell holds none. A row reads the strips that are columns of numbers,
-    a column the strips that are rows."""
+    """(per row, per column) outside numbers as written, from the outside in,
+    None where a cell holds none."""
     g = 2 + strips
 
     def num(x, y):
@@ -148,8 +143,8 @@ def numbers_of(decoded, strips, rows, cols):
 
 
 def battenberg_vertices(decoded, strips):
-    """The cells whose bottom-right corner carries a `sudokuetc` symbol, the
-    Battenberg marking's, as (r, c) counted from the grid's first cell: a vertex's index is the
+    """The cells whose bottom-right corner carries a `sudokuetc` (Battenberg)
+    symbol, as (r, c) from the grid's first cell. A vertex's index is the
     padded table's size plus the index of the cell it is the bottom-right
     corner of (§ 1.4)."""
     size = decoded.nx0 * (decoded.ny + 4)

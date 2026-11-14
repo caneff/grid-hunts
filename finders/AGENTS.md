@@ -1,7 +1,7 @@
 # finders/AGENTS.md
 
-Grid finders: JavaScript-adjacent Python code that hunts, verifies, and
-renders candidate grids for constraint prototypes. The `.py` finder code
+Grid finders: Python code that hunts, verifies, and
+renders candidate grids. The `.py` finder code
 lives here; notes, hunt outputs, precomputed catalogues, and the `.sh`
 drivers that launch a hunt overnight stay under `docs/research/` (#469).
 A finder's own input fixture stays beside its code: `finders/qqrr/` holds
@@ -22,10 +22,24 @@ README before reusing anything there.
 - Before writing a new finder, start from `finders/hunt/`: the shared hunt
   protocol (a `typing.Protocol` of `propose`/`verify`/`record`/`key`/
   `symmetry`, and the `hunt` CLI's `run(finder, argv)`) that gives a fresh
-  hunt its output directory and dedupe for free. `finders/hunt/toy_finder.py`
-  is a minimal worked example; `finders/qqrr/hunt/tie_finder.py`, a new finder
-  over `chan_big.py`'s model, is the first real one. Other existing finders
-  are not ported onto it. A new finder folder needs a BUILD file before
+  hunt its output directory and dedupe for free. A hunt and its resume draw
+  no pictures: `render DIR`, a driver subcommand beside `verify DIR`, does,
+  for a finder that has `render(candidate)` (swap mechanics: `hunt_files.swap_dir`).
+  `summary DIR` and `links DIR` are driver subcommands too (#121); the split
+  between driver and finder, including `describe_hit` (or `summary_lines`, a
+  finder's whole summary wording, which the halver and Doppelganger rank hunts
+  supply), `link_document` and `finish`, is stated in `finders/hunt/protocol.py`.
+  `toy_summary_finder.py` is the worked example. `finders/hunt/toy_finder.py`
+  is a minimal worked example. `finders/hunt/hunt_files.py` owns every file a
+  hunt writes and every read of one: the lock, JSONL logs whose read drops a
+  torn last line and refuses any other bad line, atomic writes, `swap_dir`
+  and `run_log(path, config)`, a locked resumable log for any search; finder
+  code reads and writes hunt files only through it (a test may read them with
+  `cli_checks.read_jsonl`). `finders/qqrr/hunt/tie_finder.py`, a new finder
+  over `chan_big.py`'s model, is the first real one. On the protocol (they
+  call `driver.run`): halver, doppelganger_rank, ubahn, hybrid and qqrr's
+  `tie_finder`. Not on it: counting_shaded and qqrr's checker and sweep
+  scripts. A new finder folder needs a BUILD file before
   the gate passes: `docs/pants.md`.
 - `finders/query/` is the board-question driver (spec #65), CP-SAT only:
   `query.py FINDER BOARD QUESTION... --out DIR`, run under `job-run`, asks
@@ -44,8 +58,8 @@ README before reusing anything there.
 - `finders/ubahn/` is the U-Bahn finder (a pencil puzzle, no sudoku), on the
   hunt protocol: `ubahn_finder.py` its docstring and flags, `model.py` the
   CP-SAT model, `network.py` the solver-free rules `verify` reads;
-  `sat_model.py` is a prototype second uniqueness check on PySAT (#776), which
-  the plain finder does not call. `measure_baseline.py` times a hunt's proposal
+  `sat_model.py` is the PySAT base (#776) both PySAT engines build on
+  (`hybrid_sat.py` imports it); the plain finder does not call it. `measure_baseline.py` times a hunt's proposal
   step per seed and cause (#777; by hand, outside both gates). Conditions
   arrive one at a time as finder rules. Preflight answers and measurements:
   `docs/research/2026-10-10-u-bahn-finder-decision-log.md`. The five
@@ -59,9 +73,19 @@ README before reusing anything there.
   with `--min-bananas N` under that condition too; `--battenberg "CELLS"`
   classifies a set of Battenberg markings, each window by its top-left cell,
   and `--battenberg-only` adds the negative constraint (#21);
-  the 4x4 answers every engine must match are in the decision log, § Hybrid.
+  the 4x4 answers every engine must match are in the decision log, § Hybrid;
+  `test_ubahn_engine_conformance.py` runs them through every `ENGINES` entry
+  (a new engine joins it by joining `ENGINES`).
+  The hybrid finder is three files (spec #117, #133): `hybrid_engines.py`
+  holds `ENGINES`, `HybridFinder` and `Candidate`, `hybrid_searches.py` the
+  `climb` and `fewest_markings` searches (both take `engines=`, so a test
+  calls them with a fake engine: `test_ubahn_hybrid_searches.py`), and
+  `hybrid_finder.py` is the command line over them, one table of
+  subcommands and one error path. A timing tool or test imports the engines
+  module, never the command line, and `Conditions.asking(...)` derives the
+  conditions of a search's next step.
   `hybrid_finder.py` is the hybrid finder on the hunt protocol (#783): the
-  conditions `--circles "r6:turn r2c3"`, `--exactly N:PIECE:rK`,
+  conditions `--circles "r6:turn r2c3"`, `--exactly N:KIND:rK`,
   `--blank-strip` and `--min-bananas N` (at least N banana regions, #792,
   on every engine) in, valid grids out, one per seed, each re-read by
   `hybrid.py` in `verify`; `hybrid_finder.py classify` takes the same
@@ -114,7 +138,7 @@ README before reusing anything there.
   #29 end to end. The 4x4 answer
   and the 7x7 run of record: the decision log, § Hybrid: the fewest Battenberg
   markings.
-  `hybrid_finder.py render DIR` draws each example of a hunt as a picture,
+  `hybrid_finder.py render DIR` (the driver's, on `HybridFinder.render`) draws each example of a hunt as a picture,
   `DIR/renders/<seed>.png` (`hybrid_render.py`, #791): the board with its
   outside numbers and network, chocolate in one colour and a tint per banana,
   a heavy ring in a second colour on a circle that is a condition and no ring
@@ -133,7 +157,9 @@ README before reusing anything there.
   by hand, outside both gates). The run of record is in the decision log,
   § Hybrid: at least N banana regions, and its rows in
   `docs/research/2026-10-11-u-bahn-min-bananas-timing/`.
-  `ubahn_finder.py links DIR [--blank-number]` writes a Penpa+ link per example
+  `ubahn_finder.py links DIR [--blank-number]` writes a Penpa+ link per verified example
+  (the driver's `links DIR`, on the finder's `link_text`, which a finder with
+  Penpa+ links supplies instead of `link_document`)
   to `DIR/links/<seed>.txt` (`penpa.py`, #774; wire format
   `docs/research/2026-10-10-u-bahn-penpa-link.md`). The three published links
   it is tested against are `finders/ubahn/fixtures/`.
@@ -162,15 +188,18 @@ README before reusing anything there.
   `halver_brute_c.py` the same search in C (`halver_brute.c`, built with
   the system gcc into a git-ignored `target/`), which the lockout check
   runs on (#59); `halver_shapes.py` the drawing rules every line type
-  shares and the cell counts a hunt ranks lines by, which each finder's
-  `candidates.py` re-exports beside its own separating-line walk. A line
+  shares, the cell counts a hunt ranks lines by, and the one separating-line
+  walk (`separating_paths`, #126), which each finder's `candidates.py` calls
+  with its line type's `closes` and `extend` rules. A line
   type plugs
   in through three pieces: a `post` that puts one line on the model, a plain
   `line_holds` reading of one line on a solution, and a `narrowing` step for
   the search. `halver_report.py` prints a board's status and its marks'
   verdicts. `halver_hunt.py` is the target-grid hunt both finders run
-  (#56): the loop, its ranking, `verify` on the line type's backtracking
-  check, the record, `summary` and the CLI; a finder's `hunt.py` names its
+  (#56): the hooks it gives the shared loop (`finders/hunt/target_loop.py`,
+  #130), its ranking, `verify` on the line type's backtracking
+  check, the record, its `summary_lines` wording, the `link_document` and the
+  `finish` that stamps `ended.json`; the CLI is the driver's; a finder's `hunt.py` names its
   line type's modules, its starting board and its link. A change here
   runs the suites that import it, both finders' among them (Pants,
   `docs/pants.md`).
@@ -193,8 +222,9 @@ README before reusing anything there.
   lockout pieces of the CP-SAT model (diamonds at least 4 apart in value,
   each body cell below the smaller or above the larger) and the reader of
   SudokuMaker's type-407 lines, `brute.py` the lockout narrowing of the
-  backtracking check, `candidates.py` the separating-line walk (#55): every
-  legal line that holds in a target and fails in a second solution.
+  backtracking check, `candidates.py` the lockout rules for the shared
+  separating-line walk (#55, #126): every legal line that holds in a target
+  and fails in a second solution.
   `hunt.py` is its hunt (#56), on the shared `halver_hunt.py`, from an
   empty 9x9 with no givens: the target-grid loop adds lockout lines until
   the board is unique, `verify` re-reads each hit with `brute.py` (a search
@@ -229,7 +259,8 @@ README before reusing anything there.
   file format. `fixtures/` holds the test boards, among them
   `opening_9x9.json`, Chris's opening, which `test_opening.py` checks in the
   gate (#68). `hunt.py --board BOARD --out DIR --seeds A:B` is its hunt
-  on the hunt protocol (#69): the halver hunt's target-grid loop adds rank
+  on the hunt protocol (#69): the target-grid loop the halver hunts run
+  (`finders/hunt/target_loop.py`, #130) adds rank
   clues from `separating`'s list until the board is unique, each check
   hinted with the target (#72), picked uniformly (`--pool 0`, the default
   since #72) or the most restricting first by a sample of the board's
@@ -241,8 +272,8 @@ README before reusing anything there.
   compared digit by digit in clauses; #70), refusing a second grid or a
   time limit reached, and `hunt.py summary DIR` lists hits fewest clues
   first and splits the seeds into found, proven infeasible, timed out and
-  capped; `test_hunt.py` runs it at 4x4 in the gate. The 9x9 hunt of
-  record, 16 hits in 120 seeds, is
+  budget (the loop's `budget:` reason); `test_hunt.py` runs it at 4x4 in
+  the gate. The 9x9 hunt of record, 16 hits in 120 seeds, is
   `docs/research/2026-10-22-doppelganger-rank-9x9-hunt/`; its fewest-clue
   hit is `fixtures/hit_9x9.json`, which `test_spec_66_e2e.py` re-checks in
   the gate and `test_hunt_9x9.py` hunts again in `just test-slow` (#72).

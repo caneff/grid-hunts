@@ -38,9 +38,6 @@ from sudoku_kit.link_codec import SHORT_LINK
 
 SCRIPT = HERE / "hunt.py"
 
-# Rows and columns from 1 on the canvas: its side, the row notespace's cells
-# (row k's missing digit at the k-th), the column notespace's, and the box
-# notespace's, boxes numbered across, then down.
 LAYOUT = {
     4: {
         "side": 8,
@@ -58,7 +55,6 @@ LAYOUT = {
 
 
 def text_at(place, n):
-    """The (x, y) of a clue's text: the centre of the cell past its end."""
     line, end = place
     k = int(line[1:]) - 0.5
     return {
@@ -132,16 +128,12 @@ def check(doc, record):
 
 
 def text_of(path):
-    """A link file's one line."""
     text = path.read_text()
     assert text.count("\n") == 1 and SHORT_LINK.fullmatch(text.strip()), text
     return text.strip()
 
 
 def links_of(out, fake):
-    """Each hit's seed and record, and its link's document: `links DIR` run on
-    `out`, every file under `out/links` read as a short link and rebuilt from
-    the offline mint's directory `fake`."""
     result = run_cli(SCRIPT, "links", out)
     assert result.returncode == 0, result.stderr
     seeds = [
@@ -175,9 +167,7 @@ with short_link.fake_mint() as fake, tempfile.TemporaryDirectory() as tmp:
     for _seed, record, doc in found:
         check(doc, record)
 
-    # Chris's 9x9 layout, on the hit of a 9x9 hunt from his opening (seed 1
-    # of two, 14 added clues, run 2026-10-22); `links` writes into the
-    # directory, so it reads a copy.
+    # `links` writes into the directory, so it reads a copy.
     nine = tmp / "links_9x9"
     shutil.copytree(HERE / "fixtures" / "links_9x9", nine)
     ((seed, record, doc),) = links_of(nine, fake)

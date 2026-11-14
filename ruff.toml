@@ -1,6 +1,4 @@
-# Gate for the finders. They are scripts, not a typed package. This select is
-# the bug-and-clarity core -- pyflakes, imports, bugbear, pyupgrade, simplify,
-# comprehensions, perf, returns, pathlib, ruff-native -- plus the formatter.
+# The finders are scripts, not a typed package.
 #
 # Deliberately OUT: the rules that would rewrite the scripts' hand-chosen style
 # rather than catch a bug -- ANN (annotate every function), E501 (line length),
@@ -10,7 +8,6 @@
 # ty cannot follow.
 line-length = 88
 
-# Retired finders are untested and unlinted from the move (archive/finders/).
 extend-exclude = ["archive"]
 
 [lint]
@@ -21,5 +18,4 @@ select = ["F", "I", "B", "UP", "SIM", "C4", "PIE", "PERF", "RET", "PTH", "RUF"]
 # handling are waived, not the pyflakes, import, B905 or RUF059 checks.
 [lint.per-file-ignores]
 "finders/qqrr/hunt/*.py" = ["SIM115", "PTH", "PERF401", "RUF001", "RUF005"]
-# tests/pants_prelude.py: Pants runs it with its BUILD-file names in scope.
 "tests/pants_prelude.py" = ["F821"]

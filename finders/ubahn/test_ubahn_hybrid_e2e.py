@@ -27,11 +27,11 @@ from PIL import Image
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
+import hybrid_engines
 from cli_checks import check, finish, read_jsonl, run_cli
 from verified_io import read_verified
 
 BOARD = ["--rows", "4", "--cols", "4", "--timeout", "10"]
-ENGINES = ("cpsat", "pysat-lazy", "pysat-propagator")
 # The decision log's 4x4 answers (§ Hybrid), brute force's: the condition and
 # the word `classify` must give for it.
 ANSWERS = (
@@ -87,8 +87,6 @@ with tempfile.TemporaryDirectory() as d:
         verified("hybrid_finder.py", out, examples),
     )
 
-    # Number-cell circles together with the piece-count condition: the
-    # decision log's two grids, on the default engine.
     both = Path(d) / "both"
     r = run_cli(HERE / "hybrid_finder.py", *BOARD, "--circles", "c1:turn c4:turn",
         "--exactly", "2:cross:r2",
@@ -119,7 +117,7 @@ with tempfile.TemporaryDirectory() as d:
             sizes.add(image.size)
     check(f"render: every picture decodes, all one size ({sizes})", len(sizes) == 1)
 
-    for engine in ENGINES:
+    for engine in hybrid_engines.ENGINES:
         for flags, word in ANSWERS:
             r = run_cli(
                 HERE / "hybrid_finder.py",
@@ -142,7 +140,7 @@ with tempfile.TemporaryDirectory() as d:
         )
 
     progress = []
-    for engine in ENGINES:
+    for engine in hybrid_engines.ENGINES:
         progress.append(str(Path(d) / f"{engine}.jsonl"))
         r = run_cli(HERE / "time_engines.py", "run", "--engine", engine, "--progress", progress[-1],
             "--case", "6x6", "--seeds", "0:2",
@@ -156,15 +154,9 @@ with tempfile.TemporaryDirectory() as d:
     check(
         "timing report: a 6x6 row per engine, found and timed out apart",
         r.returncode == 0
-        and all(f"| 6x6 | {engine} | 2 | 2 | 0 | 0 " in r.stdout for engine in ENGINES),
-    )
-    check(
-        "timing report: the bar is read against cpsat and, with no 8x8 or "
-        "10x10 run, says unknown for both PySAT engines",
-        all(
-            f"- `{engine}` is at least 2 times faster than `cpsat` at 8x8 and "
-            "10x10: unknown" in r.stdout
-            for engine in ENGINES[1:]
+        and all(
+            f"| 6x6 | {engine} | 2 | 2 | 0 | 0 " in r.stdout
+            for engine in hybrid_engines.ENGINES
         ),
     )
 

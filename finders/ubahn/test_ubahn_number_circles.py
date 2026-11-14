@@ -20,7 +20,7 @@ import random
 
 import brute
 import hybrid
-import hybrid_finder
+import hybrid_engines
 import hybrid_model
 import hybrid_sat
 import network
@@ -35,24 +35,23 @@ TIME_LIMIT = 20.0
 
 
 def split(net):
-    """(valid circles on number cells, valid circles on grid cells), counted
-    here from `valid_circles` alone."""
     cells = hybrid.valid_circles(hybrid.values(net, ROWS, COLS))
     on_numbers = sum(1 for r, c in cells if r < 0 or c < 0)
     return on_numbers, len(cells) - on_numbers
 
 
 def meeting(k):
-    """The brute force's grids with at least k valid circles on number cells."""
     return {net for net in GRIDS if split(net)[0] >= k}
 
 
 def candidate(net, k):
-    return hybrid_finder.Candidate(hybrid.Conditions(ROWS, COLS, number_circles=k), net)
+    return hybrid_engines.Candidate(
+        hybrid.Conditions(ROWS, COLS, number_circles=k), net
+    )
 
 
 GRIDS = brute.hybrid_grids(ROWS, COLS)
-READER = hybrid_finder.HybridFinder(hybrid.Conditions(ROWS, COLS))
+READER = hybrid_engines.HybridFinder(hybrid.Conditions(ROWS, COLS))
 
 check(
     "the 18 grids: 6 with 2 valid circles on number cells, 12 with none",
@@ -74,7 +73,6 @@ check(
         for k in range(MOST + 2)
     ),
 )
-# Four grids have 4 valid circles, all on grid cells: they count for nothing.
 grid_only = [net for net in GRIDS if split(net) == (0, 4)]
 verdict = READER.verify(candidate(grid_only[0], 1))
 check(
@@ -85,9 +83,7 @@ check(
     and verdict.reason == "0 valid circles on number cells, fewer than 1",
 )
 
-# Each PySAT engine lists exactly the brute force's grids at every K, and one
-# above the most there is lists none, the time limit not reached.
-for connectivity in (hybrid_sat.LAZY, hybrid_sat.PROPAGATOR):
+for connectivity in hybrid_engines.PYSAT_CONNECTIVITIES:
     for k in range(MOST + 2):
         found = hybrid_sat.listing(
             hybrid.Conditions(ROWS, COLS, number_circles=k),
@@ -112,7 +108,6 @@ for connectivity in (hybrid_sat.LAZY, hybrid_sat.PROPAGATOR):
 
 
 def takes(net, side, k):
-    """Whether the clauses for "at least k" on this board allow this grid."""
     clauses, edge, _ = hybrid_sat.rules(hybrid.Conditions(side, side, number_circles=k))
     with Cadical195(bootstrap_with=clauses) as solver:
         return solver.solve(
@@ -121,7 +116,6 @@ def takes(net, side, k):
 
 
 def cpsat_takes(net, side, k):
-    """The same question of the CP-SAT model."""
     built = hybrid_model.build(hybrid.Conditions(side, side, number_circles=k))
     for e, var in built.edge.items():
         built.m.add(var == (e in net))
@@ -133,14 +127,11 @@ def cpsat_takes(net, side, k):
     return status != cp_model.INFEASIBLE
 
 
-# Past any enumeration: a grid is pinned in the clauses edge by edge, and
-# both sets of rules must take it at the reader's own count and refuse it one
-# above. Two grids an engine found with no condition hold no such cell, so
-# for them only the refusal at 1 says anything. The other three are grids of
-# the climbs of record (docs/research/2026-10-11-u-bahn-number-circles), with
-# what 4x4 never has: a circle in an odd region, and the most a board holds.
-# 4x4 only ever circles a 2 or a 4.
-MOST_OF_6X6 = [  # 14: six 2s, five 3s, three 4s
+# Two of the grids hold no number-cell circle, so for them only the refusal at
+# 1 says anything. The other three, from the climbs of record
+# (docs/research/2026-10-11-u-bahn-number-circles), hold what 4x4 never has: a
+# circle in an odd region (4x4 only circles a 2 or a 4) and the most a board holds.
+MOST_OF_6X6 = [
     "┌┬┬─┬┐",
     "├┼┤┌┼┤",
     "│└┤├┼┘",
@@ -148,7 +139,7 @@ MOST_OF_6X6 = [  # 14: six 2s, five 3s, three 4s
     "┌┬┘┌┼┐",
     "└┘ └┴┘",
 ]
-A_FIVE = [  # 14: thirteen 2s and a 5
+A_FIVE = [
     "┌┬┬─┬─┐",
     "├┼┼┐└─┘",
     "├┘├┼─┬┐",
@@ -157,7 +148,7 @@ A_FIVE = [  # 14: thirteen 2s and a 5
     "├┘├┐│└┤",
     "└─┴┴┴─┘",
 ]
-MOST_OF_7X7 = [  # 18, all 2s
+MOST_OF_7X7 = [
     "┌┬──┬─┐",
     "├┼┬┐│┌┤",
     "│├┼┘├┼┤",
@@ -200,9 +191,8 @@ check(
 
 
 def cpsat_grids(k):
-    """Every grid the CP-SAT model allows at "at least k": solve, forbid the
-    grid on its edge variables, solve again, until there is none. It stops
-    once it holds more grids than the board has."""
+    """Stops once it holds more grids than the board has, so a model that lost
+    a rule cannot list forever."""
     built = hybrid_model.build(hybrid.Conditions(ROWS, COLS, number_circles=k))
     solver = cp_model.CpSolver()
     solver.parameters.num_workers = 1

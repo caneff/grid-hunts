@@ -36,13 +36,13 @@ from typing import NamedTuple
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 # isort: split
 import network
+from hybrid import BLANK_ICON, ICONS, STRIP_ORDER, marking_off_board, window_cells
 
 PAGE = "https://swaroopg92.github.io/penpa-edit/"
 CELL_SIZE = 38
 MARGIN = 2  # hidden cells on every side of the table (§ 1.4)
 
-# The kinds from the outside in, as `network.KIND_NAMES` spells them.
-PIECE_ORDER = ("cross", "branch", "straight", "turn")
+PIECE_ORDER = tuple(network.KIND_NAMES[k] for k in STRIP_ORDER)
 KINDS_WITH_BLANK = ("blank", *PIECE_ORDER)
 
 # Abbreviations applied to the whole payload text, in this order (§ 1.2).
@@ -117,7 +117,8 @@ _LAYER_EMPTY = {
     "nobulbthermo": [],
 }
 
-# The answer check: lines only, in the one style the check counts (§ 3).
+# The answer check's flags: the "all constraints" checkbox ids, all twenty,
+# of which a link switches on one, `sol_loopline` (§ 3).
 CHECK_FLAGS = (
     "sol_surface_exact",
     "sol_surface",
@@ -195,17 +196,9 @@ _MODE = {
     },
 }
 
-# The cross icon's four flags are [right, down, left, up] (§ 1.5). Per piece,
-# the icon beside a row of outside numbers and beside a column of them.
-# The turn's icon sits in the one cell the innermost row and column share.
-ICONS = {
-    "cross": ([1, 1, 1, 1], [1, 1, 1, 1]),
-    "branch": ([1, 1, 1, 0], [1, 1, 0, 1]),
-    "straight": ([1, 0, 1, 0], [0, 1, 0, 1]),
-    "turn": ([1, 1, 0, 0], [1, 1, 0, 0]),
-}
-BLANK_ICON = "□"  # a number's text: a blank cell has no arm to draw
-CIRCLE = [1, "circle_L", 1]  # a symbol: the plain white ring, under the lines
+# A symbol: the large ring, white with a black outline, drawn under the lines
+# (§ 9).
+CIRCLE = [1, "circle_L", 1]
 # A symbol: Penpa+'s 2x2 checkerboard, in the layer drawn over the grid
 # lines, as Penpa+'s own Battenberg import writes it (§ 10).
 BATTENBERG = [1, "sudokuetc", 2]
@@ -252,17 +245,14 @@ BATTENBERG_ONLY_RULE = (
     "All possible checkerboard symbols are given: no other 2x2 group of "
     "cells, grid cells or clue cells, forms such a checkerboard."
 )
-DOTTED_GRID = ["2", "2", "1"]  # dotted gridlines, no lattice points, a frame
+# The `grid` value for dotted inner gridlines and a thick frame (§ 9).
+DOTTED_GRID = ["2", "2", "1"]
 _ESCAPES = ((",", "%2C"), ("\n", "%2D"), ("&", "%2E"), ("=", "%2F"))
-# What the rules text calls a kind, where it is not the kind's own name.
 _KIND_WORDS = {"blank": "no arm at all"}
 
 
 class Hybrid(NamedTuple):
-    """What the hybrid link shows: the cells that carry a circle and the
-    number cells whose outside number is printed, in `hybrid.py`'s cells,
-    the windows that carry a Battenberg marking, each by its top-left cell,
-    and whether the rules say every checkerboard window is marked."""
+    """What the hybrid link shows; the module docstring has the cell scheme."""
 
     circles: frozenset
     numbers: frozenset
@@ -275,16 +265,13 @@ def _json(value):
 
 
 def _escape(text):
-    """A header field: the characters the header's own syntax uses, spelt
-    the way Penpa+ reads them back (§ 1.3)."""
     for plain, escaped in _ESCAPES:
         text = text.replace(plain, escaped)
     return text
 
 
 def deflate_base64(text):
-    """Raw deflate, then base64 without padding: Penpa+'s `encrypt_data`
-    (§ 1.2)."""
+    """Penpa+'s `encrypt_data` (§ 1.2)."""
     deflater = zlib.compressobj(9, zlib.DEFLATED, -15)
     packed = deflater.compress(text.encode("utf-8")) + deflater.flush()
     return base64.b64encode(packed).decode("ascii").rstrip("=")
@@ -292,10 +279,8 @@ def deflate_base64(text):
 
 def center_point(nx, ny):
     """The index of the point nearest the middle of an `nx` by `ny` table
-    (§ 1.4): a vertex where both counts are even, a cell centre where both
-    are odd, an edge midpoint when they differ. Checked against the five
-    published headers for square tables only; the mixed case is read from
-    the same geometry."""
+    (§ 1.4). Checked against published headers for square tables only; the
+    mixed case is read from the same geometry."""
     nx0, ny0 = nx + 2 * MARGIN, ny + 2 * MARGIN
     size = nx0 * ny0
     x, y = MARGIN + nx // 2, MARGIN + ny // 2
@@ -304,9 +289,7 @@ def center_point(nx, ny):
     if nx % 2 == 1 and ny % 2 == 1:
         return x + y * nx0
     if nx % 2 == 0:
-        # Middle of a vertical edge: the right edge of the cell left of it.
         return 3 * size + (x - 1) + y * nx0
-    # Middle of a horizontal edge: the bottom edge of the cell above it.
     return 2 * size + x + (y - 1) * nx0
 
 
@@ -321,10 +304,6 @@ def _layer(**filled):
 
 
 class _Table(NamedTuple):
-    """The board's geometry: `strips` rows and columns of outside numbers
-    round a `rows` by `cols` grid, on an `nx` by `ny` table padded to
-    `nx0` wide (§ 1.4)."""
-
     strips: int
     nx: int
     ny: int
@@ -336,15 +315,12 @@ class _Table(NamedTuple):
 
     @property
     def grid_origin(self):
-        """Padded x and y of the grid's first cell."""
         return MARGIN + self.strips
 
     def cell(self, x, y):
-        """Cell-centre index of padded (x, y)."""
         return x + y * self.nx0
 
     def grid_cell(self, r, c):
-        """Cell-centre index of grid cell (r, c)."""
         g = self.grid_origin
         return self.cell(g + c, g + r)
 
@@ -353,9 +329,8 @@ class _Table(NamedTuple):
         return self.size + self.cell(x, y)
 
     def board_cell(self, cell):
-        """Cell-centre index of a cell in `hybrid.py`'s scheme: a grid cell
-        `(r, c)`, or a number cell `(r, -k)` or `(-k, c)`. Raises ValueError
-        on a cell this table does not hold."""
+        """A cell in `hybrid.py`'s scheme. Raises ValueError on a cell this
+        table does not hold."""
         r, c = cell
         rows, cols = self.ny - self.strips, self.nx - self.strips
         in_grid = 0 <= r < rows and 0 <= c < cols
@@ -367,28 +342,30 @@ class _Table(NamedTuple):
         return self.cell(g + c, g + r)
 
     def window_centre(self, window):
-        """Vertex index of the centre of the window named by its top-left
-        cell, in `hybrid.py`'s scheme: the bottom-right corner of that cell.
-        Raises ValueError when one of the window's four cells is off the
+        """Raises ValueError when one of the window's four cells is off the
         board, giving the window and that cell as (r, c)."""
         r, c = window
-        for cell in ((r, c), (r, c + 1), (r + 1, c), (r + 1, c + 1)):
+        board = set()
+        for cell in window_cells(window):
             try:
                 self.board_cell(cell)
-            except ValueError as e:
-                raise ValueError(f"Battenberg marking at {window}: {e}") from e
+            except ValueError:
+                continue
+            board.add(cell)
+        reason = marking_off_board(window, board)
+        if reason is not None:
+            raise ValueError(reason)
         g = self.grid_origin
         return self.vertex(g + c, g + r)
 
     def number_cell(self, cell):
-        """Cell-centre index of a number cell `(r, -k)` or `(-k, c)`. Raises
-        ValueError on a grid cell or a cell this table does not hold."""
+        """Raises ValueError on a grid cell or a cell this table does not
+        hold."""
         if min(cell) >= 0:
             raise ValueError(f"cell {cell} is a grid cell, not a number cell")
         return self.board_cell(cell)
 
     def cell_list(self):
-        """Cell-centre indices of the table, row by row, without the notch."""
         k = self.strips
         return [
             self.cell(x, y)
@@ -405,7 +382,6 @@ def _table(rows, cols, blank_number):
 
 
 def _deltas(indices):
-    """The first index, then each step to the next (§ 1.4)."""
     return [indices[0]] + [b - a for a, b in pairwise(indices)]
 
 
@@ -414,9 +390,6 @@ def _rules_text(kinds):
 
 
 def _hybrid_rules(hybrid):
-    """The combined puzzle's rules, with the marking's sentence when the
-    link shows a marking or says they are all given, and then that
-    sentence too."""
     lines = [HYBRID_RULES]
     if hybrid.battenberg or hybrid.battenberg_only:
         lines.append(BATTENBERG_RULE)
@@ -426,16 +399,11 @@ def _hybrid_rules(hybrid):
 
 
 def payload(rows, cols, found, blank_number=False, hybrid=None):
-    """The inflated, unabbreviated text of the `p` parameter: 19 lines. A
-    `hybrid` draws only its numbers, circles and Battenberg markings,
-    dotted, under the combined rules; none draws every number, solid, under
-    the U-Bahn rules."""
     kinds = KINDS_WITH_BLANK if blank_number else PIECE_ORDER
     t = _table(rows, cols, blank_number)
     g = t.grid_origin
 
     row_numbers, col_numbers = network.outside_numbers(found, rows, cols)
-    # The table cells whose number is printed; None prints every one.
     shown = None if hybrid is None else {t.number_cell(c) for c in hybrid.numbers}
     number = {}
     for j, name in enumerate(kinds):
@@ -462,8 +430,7 @@ def payload(rows, cols, found, blank_number=False, hybrid=None):
         symbol[t.cell(g - 1, MARGIN + j)] = [beside_rows, "cross", 1]
         symbol[t.cell(MARGIN + j, g - 1)] = [beside_cols, "cross", 1]
 
-    # Thick dividers along the right of the last number column and the bottom
-    # of the last number row, in vertex indices (§ 1.4), style 21.
+    # Thick dividers (style 21) in vertex indices (§ 1.4).
     divider = {}
     for y in range(MARGIN, t.ny + MARGIN):
         divider[f"{t.vertex(g - 1, y - 1)},{t.vertex(g - 1, y)}"] = 21
@@ -528,9 +495,8 @@ def payload(rows, cols, found, blank_number=False, hybrid=None):
 
 
 def answer(rows, cols, found, blank_number=False):
-    """The inflated text of the `a` parameter: the network's segments as
-    `"<low>,<high>,1"` between cell-centre indices, sorted the way
-    JavaScript sorts strings, in the second of six arrays (§ 3, § 5 step 9)."""
+    """Sorted as strings, the way JavaScript sorts them, to match Penpa+
+    (§ 3, § 5 step 9)."""
     t = _table(rows, cols, blank_number)
     segments = sorted(
         "{},{},1".format(*sorted((t.grid_cell(*a), t.grid_cell(*b)))) for a, b in found
@@ -546,12 +512,10 @@ def abbreviate(text):
 
 
 def link(rows, cols, found, blank_number=False, hybrid=None):
-    """The Penpa+ solve link for a network on a `rows` by `cols` board: its
-    outside numbers as the numbers round the grid, its edges as the embedded
-    answer. With a `Hybrid`, only its numbers, circles and Battenberg
-    markings are shown; the answer is the same. Raises ValueError, giving the
-    cell as (r, c), on a circle, a number or a cell of a marked window that
-    is not on the board."""
+    """With a `Hybrid`, only its numbers, circles and Battenberg markings are
+    shown; the answer is the same. Raises ValueError, giving the cell as
+    (r, c), on a circle, a number or a cell of a marked window that is not on
+    the board."""
     text = abbreviate(payload(rows, cols, found, blank_number, hybrid))
     return (
         f"{PAGE}#m=solve&p={deflate_base64(text)}"

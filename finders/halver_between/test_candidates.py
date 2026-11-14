@@ -7,12 +7,14 @@ what a naive walk over every king path finds.
     uv run finders/halver_between/test_candidates.py
 """
 
+import random
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import candidates
+import halver_shapes
 import rules
 from halver_query import uniqueness
 from rules import parse_cell
@@ -36,7 +38,6 @@ assert violation("r4c3", "r3c4", "r2c5") is None
 assert violation("r8c3", "r8c4", "r9c4") is None
 
 
-# Rejected, one rule each, with the reason naming it.
 def rejects(reason, *names):
     got = violation(*names)
     assert got is not None and reason in got, (names, got)
@@ -45,19 +46,12 @@ def rejects(reason, *names):
 rejects("king step", "r1c4", "r1c6", "r1c7")
 rejects("revisits", "r1c4", "r1c5", "r2c4", "r1c5", "r1c6")
 rejects("no body", "r1c4", "r1c5")
-# A body cell already in L1's body.
 rejects("r4c4 is already on a line", "r3c3", "r4c4", "r3c5")
-# A body cell that is L1's circle.
 rejects("r4c3 is already on a line", "r3c3", "r4c3", "r5c3")
-# A circle on L1's body.
 rejects("circle r4c4", "r4c4", "r3c4", "r2c4")
-# Crossing L2's r7c3 -> r6c2 step diagonally.
 rejects("crosses line r8c3 | r7c3 r6c2 | r6c1", "r6c3", "r7c2", "r8c3")
-# Crossing itself: r1c5 -> r2c6 and r2c5 -> r1c6 are the two diagonals of
-# one 2x2.
 rejects("crosses itself", "r1c5", "r2c6", "r2c5", "r1c6")
 
-# The enumeration, on the board's own two witnesses.
 check = uniqueness(rules.RuleModel(BOARD), time_limit=60)
 assert check.status == "not_unique", check.status
 target, second = check.first, check.second
@@ -75,13 +69,9 @@ def legal_separating(found):
 found = list(candidates.separating_paths(target, second, BOARD, max_cells=5))
 assert found, "no separating line on the board"
 assert all(legal_separating(p) for p in found)
-# One entry per line: a path and its reverse are the same line.
 assert len({frozenset((p, p[::-1])) for p in found}) == len(found)
-# Short first.
 assert [len(p) for p in found] == sorted(len(p) for p in found)
 
-# Up to four cells (so bodies of one and two cells), the pruned walk finds
-# exactly the lines a naive walk over every king path does.
 cells = [(r, c) for r in range(9) for c in range(9)]
 
 
@@ -108,5 +98,80 @@ pruned = {
 }
 assert any(len(next(iter(line))) == 4 for line in naive), "no four-cell line"
 assert pruned == naive, (len(pruned), len(naive))
+
+# A 6x6 board: stub solutions with doubled values 1..12 give exactly the
+# lines a naive walk finds. The walk's value range only prunes, so a looser
+# range (the old 9x9 constant, 18) finds the same lines; the range itself is
+# pinned below, from what the walk passes its `extend` rule.
+
+
+class Stub:
+    def __init__(self, values):
+        self.digits = values
+        self.values = values
+
+    def doubled(self, cell):
+        return self.values[cell[0]][cell[1]]
+
+
+rng = random.Random(6)
+cells6 = [(r, c) for r in range(6) for c in range(6)]
+grid_a = [[rng.randint(1, 12) for _ in range(6)] for _ in range(6)]
+grid_b = [[rng.randint(1, 12) for _ in range(6)] for _ in range(6)]
+target6, second6 = Stub(grid_a), Stub(grid_b)
+
+
+def legal6(p):
+    line = rules.Line(p[0], tuple(p[1:-1]), p[-1])
+    return (
+        candidates.shape_violation(p, [], n=6) is None
+        and rules.line_holds(target6, line)
+        and not rules.line_holds(second6, line)
+    )
+
+
+def king_paths6(prefix, length):
+    if len(prefix) == length:
+        yield prefix
+        return
+    last = prefix[-1]
+    for q in cells6:
+        if q not in prefix and abs(q[0] - last[0]) <= 1 and abs(q[1] - last[1]) <= 1:
+            yield from king_paths6((*prefix, q), length)
+
+
+naive6 = {
+    frozenset((p, p[::-1]))
+    for length in (3, 4)
+    for a in cells6
+    for p in king_paths6((a,), length)
+    if legal6(p)
+}
+pruned6 = {
+    frozenset((p, p[::-1]))
+    for p in candidates.separating_paths(target6, second6, [], max_cells=4)
+}
+assert naive6, "no 6x6 line"
+assert pruned6 == naive6, (len(pruned6), len(naive6))
+
+ranges = set()
+
+
+def recording_extend(start, v, state, lowest, highest):
+    ranges.add((lowest, highest))
+    return candidates._extend(start, v, state, lowest, highest)
+
+
+halver_shapes.separating_paths(
+    target6,
+    second6,
+    [],
+    4,
+    holds=rules.line_holds,
+    initial=candidates._initial,
+    closes=candidates._closes,
+    extend=recording_extend,
+)
+assert ranges == {(1, 12)}, f"a 6x6 walk's doubled values are 1..12, got {ranges}"
 
 print("ok")

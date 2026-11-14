@@ -1,9 +1,7 @@
-"""Toy finder for the hunt protocol's own tests (#484/#487): random 4x4 shadings.
+"""Toy finder: random 4x4 shadings, for test_toy_hunt.py (#484/#487).
 
-Not a real finder rule -- it exists so test_toy_hunt.py can drive the `hunt`
-CLI end to end without a real search. `verify` is trivial: an even number of
-shaded cells passes, odd is rejected, so a fresh hunt has real rejects to
-prove `examples.jsonl` never gets one.
+Odd shaded-cell counts are rejected, so a fresh hunt has real rejects to keep
+out of examples.jsonl.
 
     uv run finders/hunt/toy_finder.py --out DIR --seeds START:END
 """

@@ -77,7 +77,7 @@ assert "b1 holds 0 twice" in k.violations, k.violations
 assert "b1 holds 1 twice" in k.violations, k.violations
 assert "r1 and r2 both miss 4" in k.violations, k.violations
 assert "c1 and c2 both miss 4" in k.violations, k.violations
-assert k.missing["b1"] is None, k.missing  # two 0s: no single missing digit
+assert k.missing["b1"] is None, k.missing
 
 GRID_Z = ((0, 1, 2, 3), (2, 3, 0, 4), (1, 0, 4, 2), (3, 4, 1, 0))
 z = rules.read(GRID_Z, BOX)
@@ -91,5 +91,29 @@ no_zero = ((1, 3, 4, 2), *GRID_A[1:])
 assert "r1 has no 0" in rules.read(no_zero, BOX).violations
 too_big = ((0, 3, 5, 2), *GRID_A[1:])
 assert "r1c3 holds 5, outside 0..4" in rules.read(too_big, BOX).violations
+
+# parse_cell refuses row or column 0 and anything past the board, by name.
+assert rules.parse_cell("r1c4", 4) == (0, 3)
+for bad in ("r0c1", "r1c0", "r5c1", "r1c5"):
+    try:
+        rules.parse_cell(bad, 4)
+    except ValueError as error:
+        assert bad in str(error), error
+    else:
+        raise AssertionError(f"parse_cell({bad!r}, 4) was accepted")
+try:
+    rules.parse_cell("r0c1")
+except ValueError as error:
+    assert "r0c1" in str(error), error
+else:
+    raise AssertionError("parse_cell('r0c1') was accepted")
+# A cell that is no string is a ValueError too, so check.py exits 2.
+for bad in (5, None):
+    try:
+        rules.parse_cell(bad, 4)
+    except ValueError as error:
+        assert repr(bad) in str(error), error
+    else:
+        raise AssertionError(f"parse_cell({bad!r}, 4) was accepted")
 
 print("test_rules: ok")

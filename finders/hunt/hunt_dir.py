@@ -1,20 +1,15 @@
-"""A hunt directory read back: its examples by seed and the `links/` a
-finder writes beside them (#774, #71), shared by the U-Bahn finders and
-`doppelganger_rank`; and the seeds and verdicts a hunt's `summary DIR`
-reports (`read_hunt`, `summary_command`), shared by the halver hunts and
-`doppelganger_rank`."""
+"""A hunt directory read back: examples by seed, the `links/` beside them
+(#774, #71), and the seeds and verdicts `summary DIR` reports."""
 
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import NamedTuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import hunt_files
 from verified_io import example_verdicts
-
-
-def _jsonl(path):
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
 class HuntRead(NamedTuple):
@@ -32,11 +27,9 @@ class HuntRead(NamedTuple):
 def read_hunt(out):
     """The hunt in `out`, its examples split by `example_verdicts`."""
     out = Path(out)
-    events = [
-        e for e in _jsonl(out / "progress.jsonl") if e.get("event") == "seed_done"
-    ]
-    examples = _jsonl(out / "examples.jsonl")
-    run = json.loads((out / "run.json").read_text())
+    all_events, examples = hunt_files.read_logs(out)
+    events = [e for e in all_events if e.get("event") == "seed_done"]
+    run = hunt_files.read_json(out / "run.json")
     found = example_verdicts(out, run["argv"], examples)
     verdicts = list(zip(examples, found, strict=True))
     return HuntRead(
@@ -63,9 +56,8 @@ def seed_lines(events):
 
 
 def summary_command(argv, summary):
-    """`hunt.py summary DIR`: print `summary(DIR)`'s lines. Exit 2, naming
-    why, on a wrong argument list, a directory with no run.json, or a
-    ValueError from `summary`."""
+    """`hunt.py summary DIR`: print `summary(DIR)`'s lines; exit 2 on a bad
+    argument list, a directory with no run.json, or a ValueError."""
     if len(argv) != 2:
         print("usage: hunt.py summary DIR", file=sys.stderr)
         return 2
@@ -82,37 +74,60 @@ def summary_command(argv, summary):
     return 0
 
 
-def seeded_examples(out):
-    """[(seed, record)] for every example of the hunt in `out`, paired the
-    way the driver pairs renders: the k-th "example" event of progress.jsonl
-    is the k-th examples.jsonl record. Raises ValueError, naming it, on a
-    missing or unpaired log."""
-    out = Path(out)
-
-    def lines(name):
-        path = out / name
-        if not path.is_file():
-            raise ValueError(f"{out} has no {name}: not a hunt directory")
-        return [json.loads(line) for line in path.read_text().splitlines() if line]
-
-    records = lines("examples.jsonl")
-    seeds = [
-        e["seed"] for e in lines("progress.jsonl") if e.get("outcome") == "example"
+def hunt_summary(out, describe_hit=None):
+    """The lines `hunt summary DIR` prints for the driver's protocol: the seed
+    span, the outcome counts (found, empty, timed out, duplicate, rejected --
+    an empty seed whose reason starts `timeout` counts as timed out), the
+    unchecked and rejected candidates, each non-finding seed's reason and one
+    line per verified hit, worded by the finder's `describe_hit(record)` (its
+    record as JSON without one)."""
+    _run, events, hits, unchecked, rejected = read_hunt(out)
+    seeds = sorted(e["seed"] for e in events)
+    span = f"{len(seeds)} seeds" + (f" ({seeds[0]}..{seeds[-1]})" if seeds else "")
+    outcome = Counter(e["outcome"] for e in events)
+    timed_out = sum(
+        1
+        for e in events
+        if e["outcome"] == "empty"
+        and e.get("empty_reason", "").split(":")[0] == "timeout"
+    )
+    describe = describe_hit or _record_json
+    if hits:
+        headline = f"{len(hits)} verified hits in {span}"
+    elif unchecked or rejected:
+        headline = f"no verified hit in {span}"
+    else:
+        headline = f"none found in {span}"
+    text = [
+        headline,
+        f"found {outcome['example']}, empty {outcome['empty'] - timed_out}, "
+        f"timed out {timed_out}, duplicate {outcome['duplicate']}, "
+        f"rejected {outcome['rejected']}",
     ]
-    if len(seeds) != len(records):
-        raise ValueError(
-            f"{len(records)} examples but {len(seeds)} example events in progress.jsonl"
+    if unchecked:
+        text.append(
+            f"{len(unchecked)} candidates unchecked: the hunt ran with "
+            "--no-verify and `verify DIR` has not run"
         )
-    return list(zip(seeds, records, strict=True))
+    if rejected:
+        text.append(f"{len(rejected)} candidates rejected by `verify DIR`")
+    text.extend(seed_lines(events))
+    text.extend(describe(record) for record in hits)
+    return text
+
+
+def _record_json(record):
+    shown = {k: v for k, v in record.items() if k != "__dedupe_key__"}
+    return "hit " + json.dumps(shown, sort_keys=True)
 
 
 def replace_links(out, built):
-    """Replace `out/links/` with `{seed: link text}`: a file left by an
-    earlier example list or variant never stays. Returns the directory."""
+    """Replace `out/links/` with `{seed: link text}` as one set; returns it."""
+
+    def write(directory):
+        for seed, text in built.items():
+            (directory / f"{seed}.txt").write_text(text)
+
     links = Path(out) / "links"
-    links.mkdir(exist_ok=True)
-    for stale in links.glob("*.txt"):
-        stale.unlink()
-    for seed, text in built.items():
-        (links / f"{seed}.txt").write_text(text)
+    hunt_files.swap_dir(links, write)
     return links

@@ -1,14 +1,4 @@
-"""`short_link.mint` (#90): a SudokuMaker document in, a short link out.
-
-- Live, it hands `shorten_link` the document's full link and returns what
-  it answers.
-- With `GRID_HUNTS_FAKE_MINT_DIR` set (the way a subprocess test keeps off
-  the network), it mints `https://sudokumaker.app/p/<id>` offline, the id
-  fixed by the document, and keeps the full link in that directory so the
-  test can rebuild the document with `fake_doc`.
-
-    uv run finders/hunt/test_short_link.py
-"""
+"""Pins `short_link.mint` (one network call per document) and `fake_mint`, the offline stand-in that never reaches the network."""
 
 import os
 import sys
@@ -34,7 +24,6 @@ DOC = {
 }
 OTHER = {**DOC, "puzzle": {**DOC["puzzle"], "cells": [{}, {}, {}, {}]}}
 
-# Live: the full link goes to shorten_link, its answer comes back.
 os.environ.pop(short_link.FAKE_DIR_ENV, None)
 sent = []
 real = short_link.shorten_link
@@ -47,7 +36,6 @@ finally:
     short_link.shorten_link = real
 assert sent == [encode_link(DOC)], sent
 
-# Offline: a short link, stable per document, and the document comes back.
 short_link.shorten_link = lambda link: (_ for _ in ()).throw(
     AssertionError("the network was reached")
 )

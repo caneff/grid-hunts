@@ -22,23 +22,18 @@ and carries no answer check and no rule constraint.
 
     uv run finders/doppelganger_rank/hunt.py links DIR
 
-writes `DIR/links/<seed>.txt` for each verified hit of the hunt in DIR
-(`hunt_dir.seeded_examples`), replacing what was there.
+writes `DIR/links/<seed>.txt` for each verified hit of the hunt in DIR, the
+driver's `links DIR` on this module's `link_doc`.
 """
 
-import json
 import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-sys.path.insert(0, str(HERE.parent / "hunt"))
 
 # isort: split
 import rules
-from hunt_dir import replace_links, seeded_examples
-from short_link import mint
-from verified_io import example_verdicts
 
 TEXT = {
     "type": "text",
@@ -68,7 +63,6 @@ def notespaces(n, box):
 
 
 def text_point(place, n):
-    """The [x, y] of a clue's text, in cell units from the grid's corner."""
     line, end = place
     k = int(line[1:]) - 0.5
     return {
@@ -129,19 +123,3 @@ def link_doc(record):
             ],
         },
     }
-
-
-def write_links(out):
-    """Write one link per verified hit of the hunt in `out`, under its
-    seed. Returns (links written, examples skipped as not verified hits)."""
-    out = Path(out)
-    examples = seeded_examples(out)
-    run_json = json.loads((out / "run.json").read_text())
-    verdicts = example_verdicts(out, run_json["argv"], [r for _, r in examples])
-    built = {
-        seed: mint(link_doc(record)) + "\n"
-        for (seed, record), verdict in zip(examples, verdicts, strict=True)
-        if verdict == "hit"
-    }
-    replace_links(out, built)
-    return len(built), len(examples) - len(built)

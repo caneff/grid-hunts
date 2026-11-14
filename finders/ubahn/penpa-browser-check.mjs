@@ -7,7 +7,7 @@
 //       [--circles "CELLS"] [--numbers "CELLS"] [--battenberg "CELLS"]
 //
 // A hybrid link (hybrid_finder.py links, #795) is checked with the cells it
-// was asked to show, in the finder's names (rKcK, rK:PIECE, cK:PIECE): any
+// was asked to show, in the finder's names (rKcK, rK:KIND, cK:KIND): any
 // of the three flags, even empty, adds checks on the opened page: the circles
 // are exactly the cells named, the printed numbers are exactly the number
 // cells named, the grid is dotted, and the Battenberg markings (#24) are
@@ -59,14 +59,14 @@ const hybrid = askedCircles !== null || askedNumbers !== null || askedBattenberg
 // strips and the table's width: a grid cell sits `strips` in from the
 // corner, a number cell of strip k is k cells in from the grid's edge,
 // the order turn, straight, branch, cross, blank from the inside out.
-const PIECES = ['turn', 'straight', 'branch', 'cross', 'blank']
+const KINDS = ['turn', 'straight', 'branch', 'cross', 'blank']
 function cellIndex (name, strips, nx0) {
   const g = 2 + strips
   let m = /^r([1-9][0-9]*)c([1-9][0-9]*)$/.exec(name)
   if (m) return (g + Number(m[2]) - 1) + (g + Number(m[1]) - 1) * nx0
   m = /^([rc])([1-9][0-9]*):([a-z]+)$/.exec(name)
-  if (!m || !PIECES.includes(m[3])) refuse(`not a cell name: ${name}`)
-  const k = PIECES.indexOf(m[3]) + 1
+  if (!m || !KINDS.includes(m[3])) refuse(`not a cell name: ${name}`)
+  const k = KINDS.indexOf(m[3]) + 1
   const n = Number(m[2]) - 1
   return m[1] === 'r' ? (g - k) + (g + n) * nx0 : (g + n) + (g - k) * nx0
 }

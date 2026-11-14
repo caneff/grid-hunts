@@ -15,6 +15,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 import candidates
+import halver_shapes
 import rules
 from halver_query import uniqueness
 from rules import Line, parse_cell
@@ -89,7 +90,7 @@ def king_paths(prefix, n, cap):
     if len(prefix) == cap:
         return
     r, c = prefix[-1]
-    for q in ((r + dr, c + dc) for dr, dc in candidates.STEPS):
+    for q in ((r + dr, c + dc) for dr, dc in halver_shapes.STEPS):
         if 0 <= q[0] < n and 0 <= q[1] < n and q not in prefix:
             yield from king_paths((*prefix, q), n, cap)
 

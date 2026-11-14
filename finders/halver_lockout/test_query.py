@@ -19,8 +19,6 @@ QUERY = HERE.parent / "query" / "query.py"
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 
-import check
-import hunt
 import short_link
 from sudoku_kit.link_codec import SHORT_LINK
 
@@ -73,20 +71,35 @@ def main():
             json.loads(x) for x in (out / "answers.jsonl").read_text().splitlines()
         ]
         (solution,) = answer["solutions"]
-        expected = hunt.link_doc(check.read_board(board))
-        expected["puzzle"]["cells"] = [
-            {"value": solution[f"r{i // 9 + 1}c{i % 9 + 1}"]} for i in range(81)
-        ]
+        # Built from the fixture's own file, not from `hunt.link_doc`: its
+        # constraints as saved (the lines solver-ignored), cells empty but for
+        # the solution.
+        saved = json.loads((HERE / "fixtures" / "unique.json").read_text())
+        expected = {
+            "formatVersion": saved["formatVersion"],
+            "puzzle": {
+                "name": "",
+                "author": "",
+                "cells": [
+                    {"value": solution[f"r{i // 9 + 1}c{i % 9 + 1}"]} for i in range(81)
+                ],
+                "constraints": saved["puzzle"]["constraints"],
+            },
+        }
         (link,) = (out / answer["links"]).read_text().split()
         assert short_link.fake_doc(fake, link) == expected, link
-        print("ok: the link is the hunt's link_doc with the solution entered")
+        print("ok: the link is the board file's own document with the solution entered")
 
         bad = json.loads((HERE / "fixtures" / "unique.json").read_text())
         bad["puzzle"]["cells"][0] = {"value": 5, "given": True}
         board = Path(tmp) / "given.json"
         board.write_text(json.dumps(bad))
         r = ask(board, Path(tmp) / "given")
-        assert r.returncode != 0 and "given digit in r1c1" in r.stderr, r.stderr
+        assert r.returncode == 2, (r.returncode, r.stderr)
+        assert r.stderr.splitlines()[-1] == "query.py: error: given digit in r1c1", (
+            r.stderr
+        )
+        assert not (Path(tmp) / "given").exists(), "a refused board writes nothing"
         print("ok: a board check.py refuses is refused")
     return 0
 

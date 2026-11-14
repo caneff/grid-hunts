@@ -1,7 +1,7 @@
 """The halver + between-line hunt (spec #39, #41): add between lines to Chris's
 board until it has exactly one (digits, halvers) solution.
 
-The loop, its ranking, `verify`, `summary` and the CLI are the shared
+The loop, its ranking, `verify`, `summary_lines` and the driver's CLI are the shared
 target-grid hunt (`finders/halver/halver_hunt.py`, whose docstring states
 them); this module gives it the between line type, Chris's board as the
 start, and the link. `verify` re-reads a hit with `brute.py`. `record`
@@ -56,8 +56,7 @@ DEFAULTS = {
 
 
 def link_doc(added):
-    """Chris's document with `added` drawn as more between lines in his line's
-    style, and every cell's entered digits, colours and pencil marks cleared."""
+    """Chris's document plus `added` as more between lines, entries cleared."""
     doc = copy.deepcopy(BOARD_DOC)
     doc["puzzle"]["cells"] = [{} for _ in doc["puzzle"]["cells"]]
     (group,) = [
@@ -69,7 +68,7 @@ def link_doc(added):
 
 
 class HalverBetweenFinder(TargetLoopFinder):
-    """The between hunt's finder, from Chris's board."""
+    """The between hunt's finder."""
 
     rules, candidates, brute = rules, candidates, brute
     board = tuple(BOARD)

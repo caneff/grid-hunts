@@ -25,18 +25,26 @@ n x n board with boxes `box` tall and wide: 4x4 (2x2), 6x6 (2x3), 9x9 (3x3).
   numbers are compared only when they are equal.
 
 `check` is `sudoku_kit`'s five-status uniqueness over the grid's digits
-alone, since the missing digits follow from them. `mark_holds` solves once
-with the mark negated, so a mark holds exactly when that solve is
-infeasible. Neither reads a timeout as unique or as held. `sample` is one
+alone, since the missing digits follow from them. `mark_holds` asks the
+board-question driver's `forced_on` (#128), so a mark holds exactly when the
+solve with it negated is infeasible. Neither reads a timeout as unique or as held. `sample` is one
 solve steered by a random digit hint per cell: the hunt's target grid.
 """
 
+import sys
+from pathlib import Path
 from typing import NamedTuple
 
 import rules
 from ortools.sat.python import cp_model
 from sudoku_kit import cpsat
 from sudoku_kit.uniqueness import check_uniqueness
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "query"))
+
+# isort: split
+import query
+from conditions import Eq
 
 
 class RuleCheck(NamedTuple):
@@ -56,6 +64,9 @@ class MarkCheck(NamedTuple):
 
 
 class RankModel:
+    """The Doppelganger + Full Rank board as a CP-SAT model, with its rank
+    clues, uniqueness check, target sampler and mark check."""
+
     def __init__(self, n, box, clues):
         self.n = n
         self.model = m = cp_model.CpModel()
@@ -138,8 +149,6 @@ class RankModel:
         self.clues.append(clue)
 
     def _copy(self, hints=None):
-        """A copy of the model and its grid variables, in `self.x`'s order,
-        with no hint but `hints`, one value per variable in that order."""
         m = self.model.clone()
         m.ClearHints()
         x = [m.GetIntVarFromProtoIndex(v.Index()) for v in self.x.values()]
@@ -187,23 +196,19 @@ class RankModel:
     def mark_holds(self, mark, time_limit=10.0):
         """Whether every solution keeps `mark`, a board file's
         `{"kind": "digit", "cell", "digit"}` or `{"kind": "missing", "unit",
-        "digit"}`: one solve of a copy of the model with the mark negated."""
+        "digit"}`: the board-question driver's `forced_on` on a copy of the
+        model, so a timeout is never read as held."""
         m, grid = self._copy()
-        x = dict(zip(self.x, grid, strict=True))
+        variables = dict(zip(self.x, grid, strict=True))
+        for name, var in self.miss.items():
+            variables[name] = m.GetIntVarFromProtoIndex(var.Index())
         if mark["kind"] == "digit":
-            r, c = rules.parse_cell(mark["cell"])
-            m.Add(x[r, c] != mark["digit"])
+            key = rules.parse_cell(mark["cell"], self.n)
         else:
-            miss = m.GetIntVarFromProtoIndex(self.miss[mark["unit"]].Index())
-            m.Add(miss != mark["digit"])
-        solver = cpsat.solver(time_limit)
-        status = solver.Solve(m)
-        if status == cp_model.INFEASIBLE:
-            return MarkCheck("held")
-        if status in cpsat.SOLVED:
-            return MarkCheck(
-                "not_held", self._grid([solver.Value(v) for v in x.values()])
-            )
-        if status == cpsat.UNKNOWN:
-            return MarkCheck("timeout")
-        raise ValueError(f"mark check got solver status {solver.StatusName(status)}")
+            key = mark["unit"]
+        status, solutions = query.forced_on(
+            m, variables, Eq(key, mark["digit"]), time_limit
+        )
+        if not solutions:
+            return MarkCheck(status)
+        return MarkCheck(status, self._grid([solutions[0][cell] for cell in self.x]))

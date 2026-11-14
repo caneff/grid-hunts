@@ -194,7 +194,6 @@ def run(
             m,
             cells,
             {rc: sol.grid[rc[0]][rc[1]] for rc in cells},
-            tag=str(len(solutions)),
         )
     if status is None:
         status = "multiple"
