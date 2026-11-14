@@ -32,7 +32,6 @@ from dedupe import IDENTITY
 from verified_io import read_verified
 
 FINDER = HERE / "hybrid_finder.py"
-ENGINES = ("pysat-lazy", "pysat-propagator")
 # A record carries its own board and conditions.
 READER = hybrid_engines.HybridFinder(hybrid.Conditions(4, 4))
 
@@ -120,7 +119,7 @@ TABLE = (
     (["--battenberg", "c1:turn", "--battenberg-only"], "infeasible", "no grid"),
 )
 
-for engine in ENGINES:
+for engine in hybrid_engines.PYSAT_ENGINES:
     with tempfile.TemporaryDirectory() as d:
         # One marking: the one grid that has it, with all three of its
         # checkerboard windows on the record.

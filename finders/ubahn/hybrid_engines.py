@@ -32,6 +32,13 @@ ENGINES = {
     "pysat-lazy": hybrid_sat.Engine(hybrid_sat.LAZY),
     "pysat-propagator": hybrid_sat.Engine(hybrid_sat.PROPAGATOR),
 }
+# The engines that take Battenberg markings: every one but cpsat.
+PYSAT_ENGINES = tuple(
+    name for name, engine in ENGINES.items() if isinstance(engine, hybrid_sat.Engine)
+)
+# The same engines by the connectivity they were built with, for a test that
+# lists grids through `hybrid_sat.listing`.
+PYSAT_CONNECTIVITIES = tuple(ENGINES[name].connectivity for name in PYSAT_ENGINES)
 # Chris ruled PySAT with lazy cuts the default on 2026-10-11, on the timing
 # in docs/research/2026-10-10-u-bahn-optimization-queue.md (#786).
 DEFAULT_ENGINE = "pysat-lazy"

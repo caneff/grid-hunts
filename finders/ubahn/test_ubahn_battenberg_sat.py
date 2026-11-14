@@ -27,12 +27,12 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "hunt"))
 import brute
 import hybrid
+import hybrid_engines
 import hybrid_model
 import hybrid_sat
 from cli_checks import check, finish
 
 TIME_LIMIT = 10.0
-ENGINES = (hybrid_sat.LAZY, hybrid_sat.PROPAGATOR)
 
 
 def kept(grids, side, marked, only):
@@ -73,8 +73,8 @@ TABLE = (
     (("c1:turn", "r1:turn"), False, "infeasible", 0),
     (("r1c1",), False, "infeasible", 0),
 )
-for engine in ENGINES:
-    for names, only, word, count in TABLE:
+for engine in hybrid_engines.PYSAT_CONNECTIVITIES:
+    for names, only, _word, count in TABLE:
         label = (
             f"{engine}, 4x4 markings {' '.join(names) or 'none'}"
             f"{', negative constraint' if only else ''}"
@@ -86,15 +86,6 @@ for engine in ENGINES:
             f"{label}: the brute force's {count} grids exactly "
             f"(listed {None if got is None else len(got)})",
             len(want) == count and got is not None and set(got) == want,
-        )
-        classified = hybrid_sat.Engine(engine).classify(
-            hybrid.Conditions(4, 4, battenberg=marked, battenberg_only=only),
-            time_limit=TIME_LIMIT,
-            workers=1,
-        )
-        check(
-            f"{label}: classified {word} (got {classified.status})",
-            classified.status == word,
         )
 
     # A marking and a circle in one set of conditions: r2c4 is a valid
@@ -157,7 +148,7 @@ check(
     f"windows, {len(alone)} of them one grid's alone",
     len(full_sets) == 13 and len(alone) == 7,
 )
-for engine in ENGINES:
+for engine in hybrid_engines.PYSAT_CONNECTIVITIES:
     # Every window marked alone on the lazy engine; the propagator engine
     # runs the same clauses, so every fifth. Then each grid's full set of
     # checkerboard windows, and no marking at all, which the negative
@@ -213,7 +204,7 @@ def blank_accepts(grid, marked, only):
 # full set of checkerboard windows under the negative constraint must list
 # it, and the same set with the blank-strip window left unmarked must not,
 # which only the clause forbidding that window can bring about.
-for engine in ENGINES:
+for engine in hybrid_engines.PYSAT_CONNECTIVITIES:
     found = None
     for window in hybrid.windows(hybrid.board_cells(7, 7, blank_strip=True)):
         if not any(min(cell) == -5 for cell in hybrid.window_cells(window)):

@@ -39,7 +39,6 @@ from cli_checks import check, finish, read_jsonl, run_cli
 from verified_io import read_verified
 
 FINDER = HERE / "hybrid_finder.py"
-ENGINES = ("pysat-lazy", "pysat-propagator")
 BOARD = ["--rows", "4", "--cols", "4", "--timeout", "20"]
 # A 4x4 board's windows (decision log, § Hybrid: Battenberg markings, the 4x4
 # answers).
@@ -122,7 +121,7 @@ check(
 
 finished = {}
 with tempfile.TemporaryDirectory() as d:
-    for engine in ENGINES:
+    for engine in hybrid_engines.PYSAT_ENGINES:
         out = Path(d) / engine
         r = run_cli(FINDER, "fewest-markings", *BOARD, "--engine", engine, "--out", out)
         finished[engine] = r
@@ -257,7 +256,7 @@ with tempfile.TemporaryDirectory() as d:
 
     # A run stopped partway and started again: the per-set file of the
     # finished run cut off inside the last size, as a killed run leaves it.
-    engine = ENGINES[0]
+    engine = hybrid_engines.PYSAT_ENGINES[0]
     done = Path(d) / engine
     whole = (done / "sets.jsonl").read_text().splitlines(keepends=True)
     # A set and its mirror are one write, so the cut falls before a solved set.
@@ -405,7 +404,7 @@ with tempfile.TemporaryDirectory() as d:
     for flags, why in (
         (["--rows", 4, "--cols", 4, "--timeout", 5], "another time limit"),
         ([*BOARD, "--circles", "r2c4"], "another condition"),
-        ([*BOARD, "--engine", ENGINES[1]], "another engine"),
+        ([*BOARD, "--engine", hybrid_engines.PYSAT_ENGINES[1]], "another engine"),
     ):
         r = run_cli(FINDER, "fewest-markings", *flags, "--out", done)
         check(
