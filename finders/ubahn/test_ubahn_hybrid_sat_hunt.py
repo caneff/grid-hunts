@@ -28,7 +28,6 @@ from cli_checks import check, finish, read_jsonl, run_cli
 
 FINDER = HERE / "hybrid_finder.py"
 BOARD = ["--rows", "4", "--cols", "4", "--timeout", "10"]
-ENGINES = ("pysat-lazy", "pysat-propagator")
 # A record carries its own board and conditions.
 READER = hybrid_engines.HybridFinder(hybrid.Conditions(4, 4))
 
@@ -89,7 +88,7 @@ def hunt(d, engine, name, *flags, seeds=40):
     )
 
 
-for engine in ENGINES:
+for engine in hybrid_engines.PYSAT_ENGINES:
     with tempfile.TemporaryDirectory() as d:
         examples, nets, _, config = hunt(d, engine, "no condition")
         want = meeting([])
@@ -191,8 +190,8 @@ check(
 )
 r = run_cli(FINDER, "--help")
 check(
-    f"--help names every engine ({', '.join(ENGINES)})",
-    r.returncode == 0 and all(engine in r.stdout for engine in ENGINES),
+    f"--help names every engine ({', '.join(hybrid_engines.ENGINES)})",
+    r.returncode == 0 and all(engine in r.stdout for engine in hybrid_engines.ENGINES),
 )
 
 finish()
