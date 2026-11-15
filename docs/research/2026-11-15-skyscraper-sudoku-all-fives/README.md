@@ -140,3 +140,30 @@ Grids (rows, in order):
 - six-two1: `234586179 571294368 698317542 719843625 862975431 345162897 123459786 987631254 456728913`
 - six-two2: `491387652 582146973 673529814 764298135 235614798 819735426 927863541 156472389 348951267`
 - six-two3: `791685432 683492175 245713896 526348917 134579268 978261543 867954321 452136789 319827654`
+
+## Middle-edge boxes, and duplicates (2026-11-15)
+
+Score: how many of the 4 middle-edge boxes (not corners) are the first box of 2 or more clues (`scripts/sky5e.py`, `scripts/sky6e.py`). Maxima from an OPTIMAL master solve: **3 of 4** for 5s (16 outside), **1 of 4** for 6s (11 outside).
+
+| id | score | link | outside |
+|---|---|---|---|
+| mid1 | 3 of 4 middle-edge boxes (max) | https://sudokumaker.app/p/RD7n6h7KKb | c1B c2B r3L c3T r4R c4T r5L c5T r6L r6R c6B r7R c7T r8L r9R c9T |
+| mid5 | 3 of 4 middle-edge boxes (max) | https://sudokumaker.app/p/CgzG7mjkrW | r1R c1T r3L c3B r4L r4R c4T r5R c5B r6L c6B r7R c7B r8L c8T c9T |
+| six-mid1 | 1 of 4 middle-edge boxes (max) | https://sudokumaker.app/p/QBFGWnftgf | r2L r3R c3T c4B r5R c5T r6L c6B r7L r8R c8B |
+| six-mid2 | 1 of 4 middle-edge boxes (max) | https://sudokumaker.app/p/WNwJHW7mzP | r2L r3R c3T r4L r5R c5T r6R c6B r7L c7B r8R |
+| six-mid3 | 1 of 4 middle-edge boxes (max) | https://sudokumaker.app/p/ptbftNqg7T | r1L c2T r3R r4L c4T r5R c5B c6T r7L r8R c8B |
+
+Grids:
+
+- mid1: `674529183 985137246 231648597 892713654 143256978 567894321 758961432 426375819 319482765`
+- mid5: `589374621 617285943 234169857 123498765 798652314 456731298 861947532 345826179 972513486`
+- six-mid1: `671349285 234658197 985721643 816932574 597864312 342517869 123476958 769285431 458193726`
+- six-mid2: `741239865 235648917 986751243 412563789 567984321 398127654 123476598 679815432 854392176`
+- six-mid3: `235174896 816295374 947386521 352467189 679851432 481923765 123648957 598712643 764539218`
+
+Hunts with different scores land on the same board. Up to rotation and reflection (grid and clue layout together), these are one board each:
+
+- 5s: adj1 = two2; adj3 = mid2; two1 = mid3; two3 = mid4 (mid2-mid4 are rotations, no separate links).
+- 6s: six1 = six-adj2 = six-box1; six-adj1 = six-box4; six-box2 = six-two3.
+
+No two boards share a clue layout up to symmetry with different grids. That leaves 29 distinct boards: 17 for 5s, 12 for 6s.
