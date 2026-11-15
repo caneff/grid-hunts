@@ -167,3 +167,25 @@ Hunts with different scores land on the same board. Up to rotation and reflectio
 - 6s: six1 = six-adj2 = six-box1; six-adj1 = six-box4; six-box2 = six-two3.
 
 No two boards share a clue layout up to symmetry with different grids. That leaves 29 distinct boards: 17 for 5s, 12 for 6s.
+
+## Outside 5s with box-numbered givens (2026-11-15)
+
+Testers found the all-5s and all-6s boards too hard. Chris's next theme: outside clues all 5, and inside each box k shows only its own digit k, one given per box. With all 9 box givens and the 16 outside 5s the hunt (`scripts/sky5k.py`) finds unique boards at once: 5 in about 2 minutes, each its first or second pass. A rotation moves the box numbers, so rotations count as different puzzles here; found boards are banned by clue layout only.
+
+All 5 re-checked unique on the custom-constraints `add_visibility` model (`scripts/skyk_all.py`). Not rated for difficulty: no whole-board difficulty rater exists in these repos yet.
+
+| id | link | outside 5s |
+|---|---|---|
+| box-k1 | https://sudokumaker.app/p/pQPfHgntBH | r1R r2R r3L c3B r4L c4B r5L c5T c5B r6R c6T r7L c7B r8R c8B c9T |
+| box-k2 | https://sudokumaker.app/p/7hBMPwf7dH | r1L c1T c2B r3R c3T r4L r5L c5T r6R c6B r7L r7R c7T r8L r9R c9B |
+| box-k3 | https://sudokumaker.app/p/TDGdHgCCcC | r1L c1T r2R r3L c3B r4R c4T c4B c5T r6L c6B r7R c7T r8L c8T c9B |
+| box-k4 | https://sudokumaker.app/p/ntJD6CbcqL | r1R r2L c2T c3B r4R c4T r5L r5R r6L c6B r7R c7T r8R c8B r9L c9T |
+| box-k5 | https://sudokumaker.app/p/zt9KdNg7hP | r1L c1B r2R c2T r3L c3B r4R c4T r5L r6L r6R c6B r7R c7T c8B r9L |
+
+Grids:
+
+- box-k1: `569843721 718962543 342175896 156284937 234791685 897356412 425638179 981527364 673419258`
+- box-k2: `452738169 693541278 781962543 235489617 146327985 879156432 567894321 314275896 928613754`
+- box-k3: `467158329 598237461 231469578 759813642 846925137 123746985 985674213 314582796 672391854`
+- box-k4: `829376154 357418296 614259387 978531642 246897531 135624978 781965423 492183765 563742819`
+- box-k5: `145269378 928374165 367158294 879615423 516432789 234897651 781946532 693521847 452783916`
