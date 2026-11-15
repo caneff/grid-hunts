@@ -189,3 +189,27 @@ Grids:
 - box-k3: `467158329 598237461 231469578 759813642 846925137 123746985 985674213 314582796 672391854`
 - box-k4: `829376154 357418296 614259387 978531642 246897531 135624978 781965423 492183765 563742819`
 - box-k5: `145269378 928374165 367158294 879615423 516432789 234897651 781946532 693521847 452783916`
+
+## Outside clues equal to their box number (2026-11-15)
+
+Each outside clue must equal the number of the box it looks into first (rows 1-3 from the left read 1, columns 4-6 from the top read 2, ... columns 7-9 from the bottom read 9); inside, each box k shows its own digit k. `scripts/skybx.py` maximises the outside clues: **17** is the most (OPTIMAL on the first pass), so 26 clues in all, and unique boards come at once (5 found, 56 passes). No board uses a clue of 8 or 9. bx2 and bx3 share their outside clues but differ inside.
+
+Hand reasoning: a box-1 clue of 1 puts a 9 on the edge, and two 9s in box 1 clash unless one 9 at r1c1 serves both a row and a column, so box 1 takes at most 2 clues; a box-9 clue of 9 means the line climbs 1-9, at most one row and one column.
+
+All 5 re-checked unique on the custom-constraints `add_visibility` model (`scripts/skybx_all.py`).
+
+| id | link | outside |
+|---|---|---|
+| bx1 | https://sudokumaker.app/p/7tgpTcwbFr | r1L r1R c1T c1B r2R r3R r4R c4T r5L r5R c5T r6L c6T c7T c8T r9L c9T |
+| bx2 | https://sudokumaker.app/p/jfBmTdQjPG | r1L r1R c1T c1B r2R r3R r4L r4R c4T r5R c5T r6L c6T c7T r8L c8T c9T |
+| bx3 | https://sudokumaker.app/p/K9qpLcwgzh | r1L r1R c1T c1B r2R r3R r4L r4R c4T r5R c5T r6L c6T c7T r8L c8T c9T |
+| bx4 | https://sudokumaker.app/p/G9tkCNcNG6 | r1L r1R c1T c1B r2R r3R r4L r4R c4T r5R c5T r6L c6T r7L c7T c8T c9T |
+| bx5 | https://sudokumaker.app/p/WPJDj6P9Lb | r1L r1R c1T c1B r2R r3R r4R c4T r5L r5R c5T r6L c6T c7T r8L c8T c9T |
+
+Grids:
+
+- bx1: `953748126 647291583 812536974 789165432 234987651 561324798 496852317 378419265 125673849`
+- bx2: `952783146 746219835 813546972 678954321 391872654 524631798 469328517 235167489 187495263`
+- bx3: `916783245 824569713 753421986 678954321 392817654 541236879 467192538 135678492 289345167`
+- bx4: `963781245 852349716 714526983 678954321 329817654 541263879 135678492 497132568 286495137`
+- bx5: `954728136 726193485 813465972 391287654 678954321 542316798 469832517 235671849 187549263`
