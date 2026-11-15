@@ -213,3 +213,17 @@ Grids:
 - bx3: `916783245 824569713 753421986 678954321 392817654 541236879 467192538 135678492 289345167`
 - bx4: `963781245 852349716 714526983 678954321 329817654 541263879 135678492 497132568 286495137`
 - bx5: `954728136 726193485 813465972 391287654 678954321 542316798 469832517 235671849 187549263`
+
+## The same with 7s (2026-11-15)
+
+Every 7 in the grid given, every outside clue a 7. Hand bound **12**: a 7 read from the left puts that row's 9 in columns 7-9, which hold only three 9s, so at most 3 rows per side, and no line takes a 7 at both ends. Solver bound **7** (OPTIMAL on the first pass of `scripts/sky7.py`, the rival-batching hunt). The one unique 7-clue board the hunt reached, after 37 passes, has 16 clues; re-checked unique on the custom-constraints `add_visibility` model (`scripts/sky7_all.py`).
+
+- seven1: https://sudokumaker.app/p/Q8pfzLWfQp
+- outside 7s: r1L c3B r4L c4T r5R r7R r8L
+- grid: `234167895 719385462 568249137 123458976 987621543 456793218 695874321 342516789 871932654`
+
+| digit | most outside clues | clues in all |
+|---|---|---|
+| 5 | 16 | 25 |
+| 6 | 11 | 20 |
+| 7 | 7 | 16 |
