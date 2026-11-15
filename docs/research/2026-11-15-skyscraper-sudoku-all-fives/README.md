@@ -92,3 +92,51 @@ Grids (rows, in order):
 - two3: `649387152 817452396 235169487 123598764 456273918 978641523 384916275 792835641 561724839`
 - two4: `983247165 671359284 254168397 892471653 367895421 145632978 738916542 516724839 429583716`
 - two5: `928471365 367582419 145693287 879364521 234159678 516728934 453217896 782946153 691835742`
+
+## The same with 6s (2026-11-15)
+
+Every 6 in the grid given, every outside clue a 6. A line cannot read 6 from both ends (5 visible buildings each side of the 9 needs 11 cells), so the hand bound is 18 outside.
+The solver bound is **11 outside 6s** (20 clues), and a unique board reaches it (`scripts/sky6.py`, which cuts up to 20 rival grids per pass).
+
+Clumping at 11 outside, maxima from an OPTIMAL master solve:
+
+- **Neighbouring clued frame cells**: max 5, but every score-5 frame (16 of them) has a second solution; the best unique boards score 4 (`scripts/sky6b.py`).
+- **Clues into one corner box**: max 2 (`scripts/sky6c.py`).
+- **Edge boxes with 2 or more clues**: max 4 of 8 (`scripts/sky6d.py`, 20-minute cap, 3 boards found).
+- six-adj2 and six-box1 are the same board, found by both hunts.
+
+All re-checked unique on the custom-constraints `add_visibility` model (`scripts/sky6_all.py`).
+
+| id | group | score | link | outside 6s |
+|---|---|---|---|---|
+| six1 | Most outside 6s | 11 outside (max) | https://sudokumaker.app/p/gbR79KC9LK | r1L r2R r3R c3T r4R c4B r6L c6T r7L r9R c9B |
+| six-adj1 | Most neighbouring clues | neighbours 4 (max 5, none unique) | https://sudokumaker.app/p/JgB7Bj9nwP | r1L r2R r3R c3T r4R c4B c5T r6L r7L r9R c9B |
+| six-adj2 | Most neighbouring clues | neighbours 4 (max 5, none unique) — same board as six-box1 | https://sudokumaker.app/p/hTLMHwKTD6 | r1R c1B c2T c3T r4L c4T r6R c6B r7L c7B c9T |
+| six-adj3 | Most neighbouring clues | neighbours 3 | https://sudokumaker.app/p/LMGRcDCzN9 | c1T c2B r3L c3B r4R c4B r6L c6T c8T r9R c9B |
+| six-adj4 | Most neighbouring clues | neighbours 3 | https://sudokumaker.app/p/bCGkf6fdKf | r1R r3L c3B r4L c4T r5R c5B r7R r8R r9L c9T |
+| six-adj5 | Most neighbouring clues | neighbours 3 | https://sudokumaker.app/p/Kn7NpwjDtj | r1L c1T c2B c3B r4R c4B c5T r6L c7T r8R c8B |
+| six-box1 | Most clues into one corner box | 2 into one box (max) — same board as six-adj2 | https://sudokumaker.app/p/hTLMHwKTD6 | r1R c1B c2T c3T r4L c4T r6R c6B r7L c7B c9T |
+| six-box2 | Most clues into one corner box | 2 into one box (max) | https://sudokumaker.app/p/HCD7CRnw6G | r1R c1T c2B c3T c4T r5L c5B r7R c7B r8L c9T |
+| six-box3 | Most clues into one corner box | 2 into one box (max) | https://sudokumaker.app/p/PJRdnnmQMT | r1L c1B r2R r3L c4B r5R c5T r6L r7R c7T r9L |
+| six-box4 | Most clues into one corner box | 2 into one box (max) | https://sudokumaker.app/p/KwJpHNhGJM | r1R c1B r2L r3L r4L c5T r6R c6B r7R c7T r9L |
+| six-box5 | Most clues into one corner box | 2 into one box (max) | https://sudokumaker.app/p/Ct8DzKFGmd | r1R c1B c2T c3T r4L c4T r6R c6B r7L c8B r9R |
+| six-two1 | Most edge boxes with two clues | 4 of 8 boxes (max) | https://sudokumaker.app/p/89dDpTqKBT | r1L c1T r3R r5R c5B r6L r7L c7T r8R r9L c9B |
+| six-two2 | Most edge boxes with two clues | 4 of 8 boxes (max) | https://sudokumaker.app/p/bznLHnTjgQ | r1R c1T c2B c3T c4T r5L c6B r7R c7B r8L c9T |
+| six-two3 | Most edge boxes with two clues | 4 of 8 boxes (max) | https://sudokumaker.app/p/CbmHLndDqT | r1R c2B r3L c3T r5L c5B r6R r7R r8L r9R c9T |
+
+Grids (rows, in order):
+
+- six1: `452631789 913872654 786954321 891726543 567493218 234518967 125347896 348269175 679185432`
+- six-adj1: `452613789 913827654 786954321 897261543 365749218 124538967 231475896 648392175 579186432`
+- six-adj2: `941387652 852416973 763529814 124638795 375291468 689745321 236174589 518963247 497852136`
+- six-adj3: `418962537 597813246 236754819 689475321 375291468 124638975 763529184 852146793 941387652`
+- six-adj4: `579186432 648392175 231475896 124538967 897261543 365749218 786954321 913827654 452613789`
+- six-adj5: `235648197 496751283 187923456 579864312 628139574 314572869 763415928 952387641 841296735`
+- six-box1: `941387652 852416973 763529814 124638795 375291468 689745321 236174589 518963247 497852136`
+- six-box2: `491387652 582461973 673529814 764198325 235674198 819253746 927846531 156732489 348915267`
+- six-box3: `456728139 987631254 123459678 865943712 792816543 341572896 679385421 518294367 234167985`
+- six-box4: `987316254 456728319 123459687 345162798 812947563 769835421 698574132 571293846 234681975`
+- six-box5: `941287653 852346197 763519284 124638975 375192468 689475321 236754819 518923746 497861532`
+- six-two1: `234586179 571294368 698317542 719843625 862975431 345162897 123459786 987631254 456728913`
+- six-two2: `491387652 582146973 673529814 764298135 235614798 819735426 927863541 156472389 348951267`
+- six-two3: `791685432 683492175 245713896 526348917 134579268 978261543 867954321 452136789 319827654`
