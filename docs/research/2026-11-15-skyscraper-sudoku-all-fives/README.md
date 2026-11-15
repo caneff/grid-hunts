@@ -42,4 +42,6 @@ exactly 16 fives, and the board is unique. The hunt model itself
 Run from the custom-constraints checkout:
 `uv run --project ~/src/grid-hunts python <path>/sky5_verify.py`.
 
-Not built into a SudokuMaker link yet.
+SudokuMaker link (built with the skyscraper example's `RingGlobal` lane, so it carries the two-clue DP component; opens with nothing entered, 16 of 40 frame cells shown, 25 givens):
+
+https://sudokumaker.app/p/jhdKnQBbk8
