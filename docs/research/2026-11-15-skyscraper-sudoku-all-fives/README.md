@@ -227,3 +227,20 @@ Every 7 in the grid given, every outside clue a 7. Hand bound **12**: a 7 read f
 | 5 | 16 | 25 |
 | 6 | 11 | 20 |
 | 7 | 7 | 16 |
+
+## With no givens inside the grid (2026-11-15)
+
+Question (Chris): the same boards with nothing given inside, outside clues only. Blank outside cells carry no information, so each board shows every line of its grid that reads the clue value; the most-clues bounds (16 / 11 / 7, jigsaw 10) do not depend on givens.
+
+A whole-grid 1-2 swap is always another sudoku and changes only a line that starts `12` or `21`, so a unique no-givens board needs a clued line starting with that pair.
+
+Every board on the page was re-solved with its inside givens removed (`scripts/nogiv.py` on the custom-constraints `add_visibility` model, solutions counted to 20), and each unique result re-checked on an independent visibility encoding (`scripts/nogiv_x.py`, counted to 3). The two agree on every board checked. Board data: `scripts/page_boards.json`.
+
+Unique with outside clues only:
+
+- **5s, 16 clues** (11 of 16): adj2, adj3, box1, box3, box5, two1, two3, two4, two5, mid1, mid5. orig, box2, box4 have 2 solutions; adj1, adj4 have 3.
+- **6s, 11 clues** (10 of 13): six1, six-adj1, six-adj3, six-adj4, six-box2, six-box3, six-box5, six-two1, six-two2, six-mid2. six-mid1 has 2, six-mid3 5, six-adj5 6.
+- **7s on a jigsaw, 10 clues**: jig1 is unique. On 3x3 boxes seven1 (7 clues) has 2.
+- **Box-numbered themes**: none. box-k1..k5 have 2 to 20+; bx1..bx5 all 20+.
+
+So the givens were never needed for most of the 5s and 6s boards: an 11-clue all-6s board is unique on its frame alone. The links on the page still carry the givens; no-givens links are not built yet.
