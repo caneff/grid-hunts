@@ -267,3 +267,36 @@ What worked (Chris's rule: valid Latin squares, any tiling with at most one stra
 - `sky7Jng.py` is that hunt with no inside givens: the 10 outside 7s alone must make the board unique.
 
 The scripts read `sky5lib.py` and `sky7J2s.py` from this directory and run from the grid-hunts checkout (`uv run python <path>`).
+
+## Jigsaw boards with no givens (2026-11-15)
+
+Chris's rules: nothing given inside (the 10 outside 7s and the regions alone fix the grid), at most one straight region (all nine cells in one row or column), and no other region with 8 or more cells in one row or column; the last pass tightened that to 7 or more.
+Each board below has exactly 1 solution on an independent encoding with no givens.
+
+| id | link | straight region | most cells of another region in a line |
+|---|---|---|---|
+| jng1 | https://sudokumaker.app/p/WJJtMPGKPB | none (row 1 short by one cell) | 8 |
+| jng2 | https://sudokumaker.app/p/mLKGbmpMrL | column 1 | 8 |
+| jng3 | https://sudokumaker.app/p/Tg6g9GpPjm | row 1 | 6 |
+| jng4 | https://sudokumaker.app/p/khfTTTBtGB | column 1 | 6 |
+| jng5 | https://sudokumaker.app/p/DwLmmGDgFc | column 9 | 6 |
+| jng6 | https://sudokumaker.app/p/ntQNJcR7HQ | column 9 | 6 |
+
+Regions (rows), grid (rows), outside 7s:
+
+- jng1: `AAAAAAAAB CCCABBBBB CCDDBEEBB FCCDEEEGG FCCDEGGGG FFFDEHHGG FFDDEEHHG FDDIIIIHH FIIIIIHHH`; `345621789 476912358 529843167 698754231 213467895 134578926 752389614 861295473 987136542`; r1L c1T r4R c4B r5L c5T r6L c6T r9R c9B
+- jng2: `ABBBBBBBC ADDEBEEFC ADGEBEFFC ADGEEEFFC ADGGHEFCC ADDGHHFFC ADGGIHHFC ADGGIIHHC AIIIIIIHH`; `745391268 426983175 659874321 398765412 987612543 134527689 213456897 572148936 861239754`; r3R c3B r4R c4B r5R c5B r6L c6T r7L c7T
+- jng3: `AAAAAAAAA BBBCCCCCC BBDDCEECC FBBDEEEGG FBBDEEEEG FFFDGGGGG FFDDHHHHG FDDIIHIHH FIIIIIIHH`; same grid and outside 7s as jng1
+- jng4: `ABCCCCCCD ABBCBCDDD ABBBBCDDE AFFBDDDEE AFFFFGEEE AFHHHGGGE AFHIHHGGE AFHIIHHGE AIIIIIIGG`; `345621789 452913678 569834217 698745321 214567893 123478956 736289145 871392564 987156432`; r1L c1T r4R c4B r5L c5T r6L c6T r9R c9B
+- jng5: `AAAAAABBC DAEEEAEBC DAFFEEEBC DDDFEEBBC DDFFFFBGC DFFHHHBGC DHHHIIBGC HHIIIIIGC HIIGGGGGC`; `487592163 716983254 569874321 698715432 345621789 234167895 123458976 852349617 971236548`; r3R c3B r4R c4B r5L c5B r6L c6T r7L c7T
+- jng6: `AAABCCCCD AAABCBBCD EAABBBCCD EEAFBBCGD HEEFGGGGD HHEFGIGGD HHEFIIIGD HHEFIFIID HHEFFFIID`; `754293168 216984375 639875421 498716532 987651243 345162789 123547896 562438917 871329654`; r3R c3B r4R c4B r5R c5B r6L c6T r7L c7T
+
+The hunts (`sky7Jng.py`, `sky7Jng2.py`, `sky7Jng3.py`, each reading `sky7J2s.py`) take a Latin square showing 10 outside 7s with a clued line starting 12 or 21, then search tilings of it, cutting each rival solution by putting two of its equal digits in one region:
+
+| run | rule on other regions | grids tried | grids with a unique tiling | time |
+|---|---|---|---|---|
+| sky7Jng | none | 10 | 5 | 88 s |
+| sky7Jng2 | at most 7 cells in a line | 14 | 5 | 191 s |
+| sky7Jng3 | at most 6 cells in a line | 41 | 5 (one repeats jng4) | 357 s |
+
+Without the line limit the solver hides straightness in near-straight regions (8 of 9 cells in one row or column); each tightening rejects more grids but still finds boards in minutes.

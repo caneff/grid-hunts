@@ -40,7 +40,7 @@ def nbrs(r, c):
     for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
         if 0 <= r + dr < N and 0 <= c + dc < N: yield r + dr, c + dc
 
-def region_model(G, maxdeg=None, span=True, span_axes=(0, 1), span_min=3, nobox=True, asym=True):
+def region_model(G, maxdeg=None, maxline=None, span=True, span_axes=(0, 1), span_min=3, nobox=True, asym=True):
     m = cp_model.CpModel()
     reg = {(p, k): m.NewBoolVar("") for p in cells for k in range(K)}
     root = {(p, k): m.NewBoolVar("") for p in cells for k in range(K)}
@@ -70,6 +70,7 @@ def region_model(G, maxdeg=None, span=True, span_axes=(0, 1), span_min=3, nobox=
                 for i in range(N):
                     whole = [reg[p, k] for p in cells if p[axis] == i]
                     w = m.NewBoolVar(""); m.Add(sum(whole) == N).OnlyEnforceIf(w); m.Add(sum(whole) < N).OnlyEnforceIf(w.Not())
+                    if maxline is not None: m.Add(sum(whole) <= maxline).OnlyEnforceIf(w.Not())  # near-straight ban
                     m.AddImplication(w, d)
                     degs.append((d, w))
                 d_any = d
