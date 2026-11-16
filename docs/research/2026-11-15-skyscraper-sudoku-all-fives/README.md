@@ -244,3 +244,26 @@ Unique with outside clues only:
 - **Box-numbered themes**: none. box-k1..k5 have 2 to 20+; bx1..bx5 all 20+.
 
 So the givens were never needed for most of the 5s and 6s boards: an 11-clue all-6s board is unique on its frame alone. The links on the page still carry the givens; no-givens links are not built yet.
+
+## Jigsaw boards, all 7s (2026-11-15)
+
+Every 7 given, every outside clue a 7, but the 9 regions are drawn too: 9 connected 9-cell regions each holding 1-9, in place of the 3x3 boxes.
+A plain 9x9 Latin square shows at most **10** outside 7s (OPTIMAL), so 10 is the ceiling on any layout; on 3x3 boxes it is 7.
+
+- **jig1** (19 clues): https://sudokumaker.app/p/qTKjJdp7nd. Unique, and still unique with no givens inside (https://sudokumaker.app/p/LmJL8D77MG). Chris rejected its look: rows 1 and 9 are whole regions, and the layout is too symmetric.
+- **jig2** (19 clues): https://sudokumaker.app/p/PjfnRCJzbq. Exactly one straight region (column 9). Regions `AAAABBBBC DAAEBBFBC DGAEEBFHC DGAAEBFHC DGGGEFFHC DDGEEFHHC DGGEIFFHC DIGEIIFHC DIIIIIHHC`, grid `345791268 426983175 659874321 798165432 987612543 134527689 213456897 572348916 861239754`, outside `r3R c3B r4R c4B r5R c5B r6L c6T r7L c7T`. Unique on an independent encoding.
+
+What did not work, so the next hunt does not repeat it:
+
+- **One model for grid, regions and clues** (`sky7J.py`, the other session's): finds boards, but the regions come out as straight rows and columns.
+- **The same with region rules** (each region spans at least 3 rows and 3 columns, no 3x3 box, no rotation or reflection symmetry): its first 15-minute pass reached only 7 outside 7s.
+- **Grid first, then regions with those rules** (`sky7J2s.py`): none of 60 grids (30 at 10 outside, 30 at 9) has such a tiling. On jig1's grid, a tiling needs at least 2 straight regions; with span 2 or more in both directions it is infeasible. The rules themselves are not the bug: the same model tiles a regular sudoku solution under all three rules at once. Why these grids resist is not established; a line reading 7 is nearly increasing, which pushes the grid toward shifted rows.
+- **Regions first, drawn without digits**: 61 layouts in a row could not be filled as a sudoku at all.
+
+What worked (Chris's rule: valid Latin squares, any tiling with at most one straight region):
+
+- `sky7Jlat.py` tiles the first 5 grids it tries in 61 seconds, but the other regions come out as near-straight stripes.
+- `sky7Jloop.py` keeps a grid and its 10 clues and lets the tiling change, cutting each rival by putting two of its equal digits in one region. One grid had no unique tiling (proved in 12 s); the next gave jig2 on pass 2. `sky7Jhunt` (the same over many grids) found 3 more unique boards in 38 seconds; they were not kept, because Chris switched the hunt to no givens.
+- `sky7Jng.py` is that hunt with no inside givens: the 10 outside 7s alone must make the board unique.
+
+The scripts read `sky5lib.py` and `sky7J2s.py` from this directory and run from the grid-hunts checkout (`uv run python <path>`).
