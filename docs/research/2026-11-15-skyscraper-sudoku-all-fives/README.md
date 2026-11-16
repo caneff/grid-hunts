@@ -354,7 +354,7 @@ Open: a grid that takes regions with at most 5 cells in a line was not found; mo
 Question (Chris): maximize the 7s closest to their 7 clue.
 Over all 9! orderings of a line that reads 7, the 7 sits in cell 5 (180 orderings), 6 (198), 7 (112), 8 (28) or 9 (28) counted from the clue; never in cells 1-4.
 Cell 5 is always column 5 (row clue) or row 5 (column clue), and each holds one 7, so at most 2 clued lines have their 7 in cell 5. Every all-7s board on the page, boxes and jigsaw, already has 2.
-Cell 6 is columns 4 and 6 or rows 4 and 6, so at most 4. Every jigsaw grid on the page except jig2's already has 4; the 3x3-box boards reach at most 3.
+Cell 6 is columns 4 and 6 or rows 4 and 6, so at most 4. On the jigsaw grids: jig1, jng1-jng8 and jcx1-jcx6 have 4; jig2 and jng9 have 2. So both jigsaw kinds already reach the cap: with inner 7s given (jig1, jcx1-jcx6) and with no givens (jng1-jng8, and jcx1-jcx5, which are unique without givens too). The 3x3-box boards reach at most 3 before six6c1 below.
 The least total cell count over 10 clues is 62 (each side: one 5, two 6s, two 7s); jig1, jng1, jng3, jng4, jng6, jng7, jng8 and jcx1-jcx6 reach it.
 
 `sky7c6.py` (from `sky7.py`: 3x3 boxes, every 7 given, exactly 7 outside 7s, at least 4 clued lines with the 7 in cell 6, cut loop for a unique solution) found one in 45 s, on pass 10. It has 1 solution on an independent encoding (`sky7c6_verify.py`), its 7 clues are the only lines of the grid reading 7, and its c7B and r3R 7s are in cell 5, so 6 clued lines have the 7 in cell 5 or 6, the most possible.
