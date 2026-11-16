@@ -314,3 +314,37 @@ Without the line limit the solver hides straightness in near-straight regions (8
 - jng7: `AAABBBBBB AAAAABBBC DEEAEEEEC DDEEECCCC DDDFFFFCC DFFFGHFFC DIIIGHHHH DIGGGGHHH IIIIIGGGH`; `751289643 862395174 123478965 234517896 987164532 498756321 619843257 576932418 345621789`; r3L c3T r4L c4T r5R c5B r6R c6B r9L c9T
 - jng8: `AAABBBBBC AAADBBDBC AEADDBDDC FEAGDDDGC FEEGGGGGC FEEHHHHGC FFEHHIHGC FFEIHIHIC FFEIIIIIC`; `546193278 712984365 369875421 498761532 987652143 125346789 234517896 653428917 871239654`; r3R c3B r4R c4B r5R c5B r6L c6T r7L c7T
 - jng9: `ABBBBBBCC ADBEBEBCC ADDEEEEFC AGDEEEFFC AGDDDFFCC AGDGDHFFC AGGGHHHFF AGHHHIHII AGHIIIIII`; `145793268 436982175 659874321 798165432 987621543 324516789 213457896 562348917 871239654`; r3R c3B r4R c4B r5R c5B r6L c6T r7L c7T
+
+## Jigsaw boards with complex regions, inner 7s given (2026-11-16)
+
+Question (Chris): more jigsaw all-7s boards with complex regions, every inner 7 given.
+Rules applied: no straight region, no region with more than 6 cells in one row or column, every region spanning at least 2 rows and 2 columns. Complexity is counted as region edges: cell sides that are region borders (3x3 boxes have 36; the earlier jigsaw boards have 62 to 69, mostly from long stripes).
+
+What the 10-outside grids allow (`sky7Jcxp.py`, `sky7Jcxk.py`; tiling only, no uniqueness check):
+
+- 8 fresh Latin squares from stage 1: none can be tiled under these rules (each INFEASIBLE in 6-15 s).
+- The 10 grids on the page: jig2, jng1, jng7 and jng8 can; jig1, jng2, jng4, jng5, jng6 and jng9 cannot. None of the 10 can be tiled with at most 5 cells of a region in a line (each INFEASIBLE in 6-20 s).
+- One model for grid and regions together (`sky7Jcxj.py`) returned UNKNOWN in 300 s at every level, including the one jng7 shows is feasible, so it settles nothing.
+
+`sky7Jcx.py` then hunts on the four tileable grids with the inner 7s given: it cuts each rival by putting two of its equal digits in one region, and after each unique board demands more region edges. On jig2's grid no tiling is unique (proved in 26 s). Each other grid's chain ends INFEASIBLE, so its last board has the most region edges any unique board on that grid reaches under these rules.
+Every board below has exactly 1 solution on an independent encoding (`sky7Jcx_verify.py`); "no givens" is the count with the inner 7s removed.
+
+| id | link | region edges | narrowest region span | no givens |
+|---|---|---|---|---|
+| jcx1 | https://sudokumaker.app/p/Qtg9jHmjWm | 64 | 3 | unique |
+| jcx2 | https://sudokumaker.app/p/LPPBGDNB66 | 66 | 2 | unique |
+| jcx3 | https://sudokumaker.app/p/T9GJk8ncHf | 67 | 3 | unique |
+| jcx4 | https://sudokumaker.app/p/btTbLdctRq | 68 | 3 | unique |
+| jcx5 | https://sudokumaker.app/p/QPPqgKLwht | 64 | 2 | unique |
+| jcx6 | https://sudokumaker.app/p/PWqM7WCTbG | 66 | 2 | 2 solutions |
+
+jcx1-jcx4 are on jng1's grid (outside r1L c1T r4R c4B r5L c5T r6L c6T r9R c9B), jcx5 on jng7's, jcx6 on jng8's. Regions (rows):
+
+- jcx1: `AAAAABBBB CCCAABDBE CCCADBDBE FFCADBDEE FCCGDDDDE FFFGHIEEE FFGGHIIIE FGGHHIIII GGGHHHHHI`
+- jcx2: `AAAAABBBB CACAABDBE CCCABBDBE FFCCDDDEE FCCGDHIEE FFFGDHIEE FFGGDHIIE FGGHDHHII GGGHHHIII`
+- jcx3: `AAAAABBBB CACAABDBE CCCADBDBE FFCCDBDEE FCCGDDDDE FFFGHIEEE FFGGHIIIE FGGHHIHII GGGHHHHII`
+- jcx4: `AAAAABBBB CACAABDBE CCCADBDBE FFCCDBDEE FCCGDDDDE FFFGGHEEE FFGGIHHHE FGGIIHIHH GGIIIIIHH`
+- jcx5: `AAABBBBBB AAAAABBBC DEEAEEEEC DDEEECCCC DDDFFFFCC DGGFHIFFC DGFFHIIII DGHHHHIII GGGGGHHHI`
+- jcx6: `AABBCCCCC AAABBCBCC AADDBBBBC EAADDDDDF EEEEEDGDF EGGGGGGFF EEHHHHGGF IIHIHHHFF IIIIIIHFF`
+
+Open: a grid that takes regions with at most 5 cells in a line was not found; more stage-1 grids, or 9 outside 7s, would be the next places to look.
