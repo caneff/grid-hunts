@@ -300,3 +300,17 @@ The hunts (`sky7Jng.py`, `sky7Jng2.py`, `sky7Jng3.py`, each reading `sky7J2s.py`
 | sky7Jng3 | at most 6 cells in a line | 41 | 5 (one repeats jng4) | 357 s |
 
 Without the line limit the solver hides straightness in near-straight regions (8 of 9 cells in one row or column); each tightening rejects more grids but still finds boards in minutes.
+
+### More, from a second hour of the same hunt (2026-11-16)
+
+`sky7Jng4.py` is `sky7Jng3.py` started from other seeds: 301 grids in an hour, 6 with a unique tiling, all checked on the independent encoding. Chris kept three; one of the others was a near-twin of jng9.
+
+| id | link | straight region | most cells of another region in a line |
+|---|---|---|---|
+| jng7 | https://sudokumaker.app/p/jjDCBHJ6cq | none | 6 |
+| jng8 | https://sudokumaker.app/p/g6bWBmDGGb | column 9 | 6 |
+| jng9 | https://sudokumaker.app/p/FPgfRrCwpQ | column 1 | 6 |
+
+- jng7: `AAABBBBBB AAAAABBBC DEEAEEEEC DDEEECCCC DDDFFFFCC DFFFGHFFC DIIIGHHHH DIGGGGHHH IIIIIGGGH`; `751289643 862395174 123478965 234517896 987164532 498756321 619843257 576932418 345621789`; r3L c3T r4L c4T r5R c5B r6R c6B r9L c9T
+- jng8: `AAABBBBBC AAADBBDBC AEADDBDDC FEAGDDDGC FEEGGGGGC FEEHHHHGC FFEHHIHGC FFEIHIHIC FFEIIIIIC`; `546193278 712984365 369875421 498761532 987652143 125346789 234517896 653428917 871239654`; r3R c3B r4R c4B r5R c5B r6L c6T r7L c7T
+- jng9: `ABBBBBBCC ADBEBEBCC ADDEEEEFC AGDEEEFFC AGDDDFFCC AGDGDHFFC AGGGHHHFF AGHHHIHII AGHIIIIII`; `145793268 436982175 659874321 798165432 987621543 324516789 213457896 562348917 871239654`; r3R c3B r4R c4B r5R c5B r6L c6T r7L c7T
