@@ -348,3 +348,15 @@ jcx1-jcx4 are on jng1's grid (outside r1L c1T r4R c4B r5L c5T r6L c6T r9R c9B), 
 - jcx6: `AABBCCCCC AAABBCBCC AADDBBBBC EAADDDDDF EEEEEDGDF EGGGGGGFF EEHHHHGGF IIHIHHHFF IIIIIIHFF`
 
 Open: a grid that takes regions with at most 5 cells in a line was not found; more stage-1 grids, or 9 outside 7s, would be the next places to look.
+
+## Where the 7 sits in a line reading 7 (2026-11-16)
+
+Question (Chris): maximize the 7s closest to their 7 clue.
+Over all 9! orderings of a line that reads 7, the 7 sits in cell 5 (180 orderings), 6 (198), 7 (112), 8 (28) or 9 (28) counted from the clue; never in cells 1-4.
+Cell 5 is always column 5 (row clue) or row 5 (column clue), and each holds one 7, so at most 2 clued lines have their 7 in cell 5. Every all-7s board on the page, boxes and jigsaw, already has 2.
+Cell 6 is columns 4 and 6 or rows 4 and 6, so at most 4. Every jigsaw grid on the page except jig2's already has 4; the 3x3-box boards reach at most 3.
+The least total cell count over 10 clues is 62 (each side: one 5, two 6s, two 7s); jig1, jng1, jng3, jng4, jng6, jng7, jng8 and jcx1-jcx6 reach it.
+
+`sky7c6.py` (from `sky7.py`: 3x3 boxes, every 7 given, exactly 7 outside 7s, at least 4 clued lines with the 7 in cell 6, cut loop for a unique solution) found one in 45 s, on pass 10. It has 1 solution on an independent encoding (`sky7c6_verify.py`), its 7 clues are the only lines of the grid reading 7, and its c7B and r3R 7s are in cell 5, so 6 clued lines have the 7 in cell 5 or 6, the most possible.
+
+- six6c1: https://sudokumaker.app/p/HRzjJ9pkQ7, grid `285631947 317924856 469875321 598716432 642593718 731482695 124367589 956148273 873259164`, outside `c1T r3R r4R c4B c6T r7L c7B`, cell-6 lines `c1T r4R c4B r7L`.
