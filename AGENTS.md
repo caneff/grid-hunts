@@ -49,10 +49,12 @@ Retiring a finder is `git mv` to `archive/finders/` plus its README; reviving on
 
 ## Commands
 
-- **Gate — run before each commit and before opening a PR:** `just check`,
-  the full seam (CI runs it nightly; a local run needs the Pants launcher,
-  `docs/pants.md`). A pull request and a push to main run the narrowed gate
-  instead: see **Narrowed** above.
+- **Gate — run before each commit and before opening a PR:** the narrowed
+  gate, `bash tests/all.sh --changed origin/main` (see **Narrowed** above); a
+  pull request and a push to main run it too. The full seam, `just check`,
+  is the backstop: CI runs it nightly, and a local run is by hand (it needs
+  the Pants launcher, `docs/pants.md`). Chris's ruling, 2026-11-17
+  (agent-skills `docs/research/2026-11-17-pr-test-cost-survey.md`).
 - Suites run one at a time. `GATE_JOBS=<n>` (or `bash tests/all.sh --jobs <n>`)
   runs n at once; CI sets 4 on its 4-vCPU runner, and a local run leaves it
   unset because the box is shared.
