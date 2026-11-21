@@ -55,7 +55,9 @@ name resolves. It also holds a short table of known edges, each with the
 suites a change must and must not select.
 
 Files a suite reads under `docs/` belong to no target, so a change to one
-widens the run.
+widens the run. Under `docs/research` that is decided per file by `tests/all.sh`:
+a file no non-`.md` file under `finders/` names (by file name) changes nothing,
+and one it names widens (#186).
 
 ## What was measured
 
