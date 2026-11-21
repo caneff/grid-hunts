@@ -85,7 +85,6 @@ Retiring a finder is `git mv` to `archive/finders/` plus its README; reviving on
 - Finder rules and the guide to each finder → `finders/AGENTS.md`
 - Coding + testing standards → `CODING_STANDARDS.md`
 - Before writing the next finder → `docs/agents/grid-finder-lessons.md`
-- Before checking a board Chris drew → `docs/agents/drawn-board.md`
 - Before adding a finder folder or a test that starts a script → `docs/pants.md`
 - Terms → `GLOSSARY.md`
 - Notes, hunt outputs and precomputed catalogues → `docs/research/`
