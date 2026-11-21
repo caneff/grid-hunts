@@ -42,7 +42,7 @@ SudokuMaker link. `summary DIR` (the driver's, worded by `summary_lines`) prints
 with the seeds, the wall clock (run.json's start to the end a returning
 hunt records in `ended.json`; "not recorded" without one) and each seed's
 reason; a `--no-verify`
-hunt's candidates are counted as unchecked until `hunt.py verify DIR` has
+hunt's candidates are counted as unchecked until `verify DIR` has
 run, and then as hits or as rejected by its verdicts.
 
 A line type's hunt subclasses `TargetLoopFinder`, naming its `rules`,
@@ -71,7 +71,7 @@ import halver_query
 from dedupe import IDENTITY
 from driver import run
 from halver_rules import Line, Solution, cell_name, line_name, parse_cell
-from hunt_dir import read_hunt, seed_lines
+from hunt_dir import Wording, read_hunt, summary_layout
 from protocol import Empty, Verdict
 from short_link import mint
 from target_loop import Budget, Hooks, target_loop
@@ -320,50 +320,39 @@ class TargetLoopFinder:
 
     def summary_lines(self, out):
         """The summary of the hunt in `out`, as lines of text."""
-        run_json, events, hits, unchecked, rejected = read_hunt(out)
-        clock = "wall clock not recorded"
-        if (out / ENDED).exists():
+        return summary_layout(read_hunt(out), self._wording(out))
+
+    def _wording(self, out):
+        def tail(run_json):
+            if not (out / ENDED).exists():
+                return ", wall clock not recorded"
             started = datetime.fromisoformat(run_json["start_time"])
             ended = datetime.fromisoformat(json.loads((out / ENDED).read_text())["end"])
-            clock = f"wall clock {(ended - started).total_seconds():.0f} s"
-        seeds = sorted(e["seed"] for e in events)
-        span = f"{len(seeds)} seeds" + (f" ({seeds[0]}..{seeds[-1]})" if seeds else "")
-        outcomes = Counter(e["outcome"] for e in events)
-        text = []
-        if hits:
-            text.append(f"{len(hits)} hits in {span}, {clock}")
-        elif unchecked or rejected:
-            text.append(f"no verified hit in {span}, {clock}")
-        else:
-            text.append(
-                f"none found in {span}, {clock}: a search result, "
-                "not a proof that no finish exists"
+            return f", wall clock {(ended - started).total_seconds():.0f} s"
+
+        def outcomes(events):
+            counts = Counter(e["outcome"] for e in events)
+            return "outcomes: " + ", ".join(
+                f"{k} {v}" for k, v in sorted(counts.items())
             )
-        if unchecked:
-            text.append(
-                f"{len(unchecked)} candidates unchecked: the hunt ran with "
-                f"--no-verify and `hunt.py verify {out}` has not run"
-            )
-        if rejected:
-            text.append(f"{len(rejected)} candidates rejected by `hunt.py verify`")
-        text.append(
-            "outcomes: " + ", ".join(f"{k} {v}" for k, v in sorted(outcomes.items()))
+
+        def record(kind, tail_of):
+            def describe(record, *reason):
+                head = f"{kind}, {len(record['lines'])} added lines: {tail_of(record, *reason)}"
+                return [head, *(f"  {row}" for row in record["table"])]
+
+            return describe
+
+        return Wording(
+            hit_noun="hits",
+            tail=tail,
+            none_note=": a search result, not a proof that no finish exists",
+            counts=outcomes,
+            counts_last=True,
+            describe_hit=record("hit", lambda r: r["link"]),
+            describe_unchecked=record("unchecked candidate", lambda r: r["link"]),
+            describe_rejected=record("rejected candidate", lambda r, why: why),
         )
-        text.extend(seed_lines(events))
-        for record in hits:
-            text.append(f"hit, {len(record['lines'])} added lines: {record['link']}")
-            text.extend(f"  {row}" for row in record["table"])
-        for record in unchecked:
-            text.append(
-                f"unchecked candidate, {len(record['lines'])} added lines: {record['link']}"
-            )
-            text.extend(f"  {row}" for row in record["table"])
-        for record, reason in rejected:
-            text.append(
-                f"rejected candidate, {len(record['lines'])} added lines: {reason}"
-            )
-            text.extend(f"  {row}" for row in record["table"])
-        return text
 
     def candidate_from_record(self, record):
         a, b = f"{self.end}_a", f"{self.end}_b"

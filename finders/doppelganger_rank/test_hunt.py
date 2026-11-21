@@ -254,7 +254,7 @@ with short_link.fake_mint(), tempfile.TemporaryDirectory() as tmp:
     _, keep = brute.classify(loose["clues"])
     assert second in keep and second != grid(record), (second, record)
     _, lines = split(planted)
-    assert "3 candidates rejected by `hunt.py verify`" in lines, lines
+    assert "3 candidates rejected by `verify DIR`" in lines, lines
 
     rushed = finder_with(None, time_limit=1e-9)
     verdict = rushed.verify(rushed.candidate_from_record(record))
@@ -270,7 +270,7 @@ with short_link.fake_mint(), tempfile.TemporaryDirectory() as tmp:
     )
     assert run("verify", reverified).returncode == 0
     _, lines = split(reverified)
-    assert "1 candidates rejected by `hunt.py verify`" in lines, lines
+    assert "1 candidates rejected by `verify DIR`" in lines, lines
     result = run("links", reverified)
     assert result.returncode == 0, result.stderr
     assert "1 candidates skipped" in result.stdout, result.stdout

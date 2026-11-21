@@ -83,7 +83,7 @@ import rules
 from check import one_line, read_board
 from dedupe import IDENTITY
 from driver import run
-from hunt_dir import read_hunt, seed_lines
+from hunt_dir import Wording, read_hunt, seed_span, summary_layout
 from links import link_doc
 from minimizer import strip
 from model import RankModel
@@ -345,10 +345,21 @@ class DoppelgangerRankFinder:
 
     def summary_lines(self, out):
         """What a hunt in `out` found, as lines of text."""
-        _run, events, hits, unchecked, rejected = read_hunt(out)
-        seeds = sorted(e["seed"] for e in events)
-        span = f"{len(seeds)} seeds" + (f" ({seeds[0]}..{seeds[-1]})" if seeds else "")
+        return summary_layout(
+            read_hunt(out),
+            Wording(
+                counts=self._counts,
+                describe_hit=lambda r: self._hit_line("hit", r),
+                describe_unchecked=lambda r: self._hit_line("unchecked candidate", r),
+                describe_rejected=lambda r, why: (
+                    self._hit_line("rejected candidate", r) + f" | {why}"
+                ),
+                hit_key=lambda r: r["added"],
+            ),
+        )
 
+    @staticmethod
+    def _counts(events):
         split = Counter()
         for e in events:
             if e["outcome"] == "example":
@@ -363,36 +374,15 @@ class DoppelgangerRankFinder:
                         f"seed {e['seed']} ended with no known reason: {reason!r}"
                     )
                 split[CLASSES[name]] += 1
-
-        if hits:
-            text = [f"{len(hits)} verified hits in {span}"]
-        elif unchecked or rejected:
-            text = [f"no verified hit in {span}"]
-        else:
-            text = [f"none found in {span}"]
-        text.append(
-            f"{span}: found {split['found']}, duplicate {split['duplicate']}, "
+        return (
+            f"{seed_span(events)}: found {split['found']}, "
+            f"duplicate {split['duplicate']}, "
             f"proven infeasible {split['proven infeasible']}, "
             f"timed out {split['timed out']}, "
             f"budget {split['budget']} (a budget ran out: no proof), "
             f"no separating clue {split['no separating clue']}, "
             f"rejected {split['rejected']}"
         )
-        if unchecked:
-            text.append(
-                f"{len(unchecked)} candidates unchecked: the hunt ran with "
-                f"--no-verify and `hunt.py verify {out}` has not run"
-            )
-        if rejected:
-            text.append(f"{len(rejected)} candidates rejected by `hunt.py verify`")
-        text.extend(seed_lines(events))
-        text.extend(
-            self._hit_line("hit", r) for r in sorted(hits, key=lambda r: r["added"])
-        )
-        text.extend(self._hit_line("unchecked candidate", r) for r in unchecked)
-        for record, reason in rejected:
-            text.append(self._hit_line("rejected candidate", record) + f" | {reason}")
-        return text
 
     def candidate_from_record(self, record):
         solution = tuple(tuple(map(int, row)) for row in record["solution"])
