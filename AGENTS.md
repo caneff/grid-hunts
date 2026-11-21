@@ -30,6 +30,14 @@ issue number in a commit message from before the cut is that repo's.
   record is the source of truth, and the full link is rebuilt from it when
   needed. (Chris, 2026-10-23.)
 
+## Chris's drawn board (always on)
+
+- **A board Chris drew is checked as drawn**: every mark, colour, digit and
+  pencil mark held, under the rule set he names and no other (negative rule
+  only when he says "negative"; marks alone means no digit logic). Dropping
+  or toggling any of these answered a different question four times in one
+  hunt. Before you check one: read `docs/agents/drawn-board.md`.
+
 ## Finder rules
 
 `finders/AGENTS.md` holds the rules and the guide to each finder: the
@@ -77,6 +85,7 @@ Retiring a finder is `git mv` to `archive/finders/` plus its README; reviving on
 - Finder rules and the guide to each finder → `finders/AGENTS.md`
 - Coding + testing standards → `CODING_STANDARDS.md`
 - Before writing the next finder → `docs/agents/grid-finder-lessons.md`
+- Before checking a board Chris drew → `docs/agents/drawn-board.md`
 - Before adding a finder folder or a test that starts a script → `docs/pants.md`
 - Terms → `GLOSSARY.md`
 - Notes, hunt outputs and precomputed catalogues → `docs/research/`
