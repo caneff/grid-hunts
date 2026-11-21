@@ -288,9 +288,12 @@ def test_both_shape_models_agree_on_feasibility(force, ban, feasible):
 
 
 def test_lazy_connectivity_cuts_return_a_connected_shape():
+    # One worker keeps the solve deterministic and short; the 60 s limit is only
+    # a backstop that ends the run when the cuts are broken.
     m, g = connected.build(10, 30, [], [], False)
-    shape, _cuts = connected.solve_connected(m, g, 60, 4, lambda msg: None)
-    assert shape is not None, "control: connected admissible shapes exist"
+    log = []
+    shape, _cuts = connected.solve_connected(m, g, 60, 1, log.append)
+    assert shape is not None, f"control: connected admissible shapes exist ({log})"
     assert len(connected.components(shape)) == 1
     assert shapes.connected(shape)
     assert shapes.givens(shape) is not None
