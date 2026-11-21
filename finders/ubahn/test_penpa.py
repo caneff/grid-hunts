@@ -374,8 +374,10 @@ with tempfile.TemporaryDirectory() as tmp:
 
     r = run_cli(FINDER, "links", str(Path(tmp) / "nowhere"))
     check(
-        "`links` on a missing directory exits 2 and says it has no run.json",
-        r.returncode == 2 and "has no run.json" in r.stderr,
+        "`links` on a missing directory exits 2 and says it is not an existing directory",
+        r.returncode == 2
+        and "not an existing directory" in r.stderr
+        and not (Path(tmp) / "nowhere").exists(),
     )
 
     # A progress log with one example event too many is a kill between the

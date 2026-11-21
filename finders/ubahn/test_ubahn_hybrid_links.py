@@ -260,8 +260,8 @@ with tempfile.TemporaryDirectory() as tmp:
     )
     r = run_cli(FINDER, "links", str(Path(tmp) / "nowhere"))
     check(
-        "a missing directory exits 2, naming the missing run.json",
-        r.returncode == 2 and "has no run.json" in r.stderr,
+        "a missing directory exits 2, saying it is not an existing directory",
+        r.returncode == 2 and "not an existing directory" in r.stderr,
     )
 
     outcomes = set()
