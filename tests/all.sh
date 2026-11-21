@@ -28,12 +28,18 @@
 #     the scripts a file starts;
 #   - a `.md` file and a path under `archive/` change nothing and are not
 #     asked about, so a docs-only diff runs lint and the always-run suites;
+#     so does any other file under `docs/research/` (a script, data, a
+#     picture), unless a non-`.md` file under `finders/` names that file by
+#     its name (`git grep -F`, read from the tree on each run): then it widens
+#     as an unplaceable path does; a deleted research file is judged the same
+#     way (#186);
 #   - the run widens to every suite of the selected group, and the count line
 #     ends `(widened: <why>)`, on: a change to `pyproject.toml`, `uv.lock`,
 #     `pants.toml`, `justfile`, `tests/` or `.github/` (named first in diff
 #     order); a deleted or renamed-away file (Pants answers from the tree as it
 #     is now, where nothing imports it any more); a changed file Pants cannot
-#     place, which no target owns (anything under `docs/` but `.md`, a loose
+#     place, which no target owns (anything under `docs/` but `.md` and the unread
+#     `docs/research/` files above, a loose
 #     `finders/*.py`, a top-level dotfile); no `pants` on the PATH; and an
 #     answer from Pants that is missing or cannot be read. A path names
 #     itself as the why.
@@ -146,6 +152,11 @@ ask_pants() {
   for f in "$@"; do placed "$f" || { widened=$f; return; }; done
 }
 
+# Does finder code name this research file? Reads HEAD's tree, the one the diff
+# ends at: the file's name as a fixed string in a non-`.md` file under
+# `finders/`. Exit 0 named, 1 not named, anything else git could not answer.
+research_read() { git grep -qF -e "${1##*/}" HEAD -- finders ':(exclude)*.md'; }
+
 if [ -n "$base" ]; then
   files=$(git -c core.quotepath=off diff --name-only --no-renames "$base...HEAD" 2>&1) || usage "git cannot diff $base...HEAD: $files"
   widened="" ask=() affected=""
@@ -153,6 +164,9 @@ if [ -n "$base" ]; then
     case $f in
       '' | *.md | archive/*) ;;
       pyproject.toml | uv.lock | pants.toml | justfile | tests/* | .github/*) widened=${widened:-$f} ;;
+      docs/research/*)
+        research_read "$f"
+        case $? in 1) ;; *) widened=${widened:-$f} ;; esac ;;
       *) if [ -e "$f" ] || [ -L "$f" ]; then ask+=("$f"); else widened=${widened:-$f}; fi ;;
     esac
   done <<<"$files"
