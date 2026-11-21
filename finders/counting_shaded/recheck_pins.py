@@ -43,10 +43,10 @@ def model(force, ban):
     return m, g
 
 
-def solve(force, ban, seconds=60):
+def solve(force, ban, seconds=60, workers=8):
     m, g = model(force, ban)
     s = cp_model.CpSolver()
-    s.parameters.num_workers = 8
+    s.parameters.num_workers = workers
     s.parameters.max_time_in_seconds = seconds
     st = s.solve(m)
     shape = (

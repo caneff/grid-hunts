@@ -279,14 +279,16 @@ def test_both_shape_models_agree_on_feasibility(force, ban, feasible):
     s.parameters.max_time_in_seconds = 60
     st = s.solve(m)
     got_a = st in (cp_model.OPTIMAL, cp_model.FEASIBLE)
-    status_b, shape_b = recheck_pins.solve(list(force), list(ban), seconds=60)
+    status_b, shape_b = recheck_pins.solve(
+        list(force), list(ban), seconds=60, workers=1
+    )
     got_b = shape_b is not None
     assert got_a == got_b == feasible, (s.status_name(st), status_b)
     if not feasible:
         # A timeout also reads as "no shape"; only a proof is an infeasible verdict.
         assert st == cp_model.INFEASIBLE, s.status_name(st)
         assert status_b == "INFEASIBLE", status_b
-    if feasible:
+    else:
         assert recheck_pins.admissible(shape_b)
         assert all(i in shape_b for i in force) and not any(i in shape_b for i in ban)
 
@@ -303,8 +305,8 @@ def test_lazy_connectivity_cuts_return_a_connected_shape():
     assert shapes.givens(shape) is not None
 
 
-def test_lazy_cut_keeps_a_shape_that_is_only_the_cut_component():
-    """The witness term keeps a cut sound for a shape that is just one component.
+def test_connectivity_cut_keeps_a_shape_that_is_only_the_cut_component():
+    """The witness term keeps a connectivity cut sound for a shape that is just one component.
 
     A bare model (no sudoku rules: {0,1} is inadmissible under `build`). Cells
     0,1 are forced and 80 is the only other cell allowed; maximising the
