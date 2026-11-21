@@ -174,12 +174,12 @@ def _parse_dir_args(prog, argv):
 @contextlib.contextmanager
 def _held_lock(prog, dir_arg):
     """Hold DIR's lock for the block and yield True, or print the refusal and
-    yield False when a hunt or another subcommand holds it, or when DIR does
-    not exist (taking the lock would create it, #169)."""
+    yield False when a hunt or another subcommand holds it, or when DIR is not an
+    existing directory (taking the lock would create it, #169)."""
     if not Path(dir_arg).is_dir():
         print(
             f"{prog}: refusing -- {dir_arg} is not a hunt directory "
-            "(no such directory)",
+            "(not an existing directory)",
             file=sys.stderr,
         )
         yield False
