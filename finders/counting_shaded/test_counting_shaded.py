@@ -275,13 +275,17 @@ def test_both_shape_models_agree_on_feasibility(force, ban, feasible):
     """connected.build (pairwise !=) against recheck_pins.model (all_different)."""
     m, _g = connected.build(3, 81, list(force), list(ban), False)
     s = cp_model.CpSolver()
-    s.parameters.num_workers = 4
+    s.parameters.num_workers = 1
     s.parameters.max_time_in_seconds = 60
     st = s.solve(m)
     got_a = st in (cp_model.OPTIMAL, cp_model.FEASIBLE)
     status_b, shape_b = recheck_pins.solve(list(force), list(ban), seconds=60)
     got_b = shape_b is not None
     assert got_a == got_b == feasible, (s.status_name(st), status_b)
+    if not feasible:
+        # A timeout also reads as "no shape"; only a proof is an infeasible verdict.
+        assert st == cp_model.INFEASIBLE, s.status_name(st)
+        assert status_b == "INFEASIBLE", status_b
     if feasible:
         assert recheck_pins.admissible(shape_b)
         assert all(i in shape_b for i in force) and not any(i in shape_b for i in ban)
@@ -297,6 +301,28 @@ def test_lazy_connectivity_cuts_return_a_connected_shape():
     assert len(connected.components(shape)) == 1
     assert shapes.connected(shape)
     assert shapes.givens(shape) is not None
+
+
+def test_lazy_cut_keeps_a_shape_that_is_only_the_cut_component():
+    """The witness term keeps a cut sound for a shape that is just one component.
+
+    A bare model (no sudoku rules: {0,1} is inadmissible under `build`). Cells
+    0,1 are forced and 80 is the only other cell allowed; maximising the
+    size makes the first solve {0,1,80}, two components. The cut for {0,1} must
+    still admit {0,1} alone. Without its `g[witness].Not()` term it forbids it,
+    and the solve reports no shape.
+    """
+    m = cp_model.CpModel()
+    g = [m.new_bool_var(f"g{i}") for i in range(81)]
+    for i in range(2, 80):
+        m.add(g[i] == 0)
+    m.add(g[0] == 1)
+    m.add(g[1] == 1)
+    m.maximize(sum(g))
+    log = []
+    shape, cuts = connected.solve_connected(m, g, 60, 1, log.append)
+    assert cuts >= 1, "control: the first solve must have been disconnected"
+    assert shape == {0, 1}, log
 
 
 def test_gridenum_six_by_six_counter_and_size_12(tmp_path):
