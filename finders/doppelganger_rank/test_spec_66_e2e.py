@@ -104,7 +104,7 @@ with short_link.fake_mint() as fake, tempfile.TemporaryDirectory() as tmp:
     assert second != solution and not other.violations, second
     assert not other.broken_clues(loose["clues"]), other.broken_clues(loose["clues"])
     lines = run_cli(HUNT, "summary", refused).stdout.splitlines()
-    assert "1 candidates rejected by `hunt.py verify`" in lines, lines
+    assert "1 candidates rejected by `verify DIR`" in lines, lines
     done = run_cli(HUNT, "links", refused)
     assert "wrote 0 links" in done.stdout and "1 candidates skipped" in done.stdout
 

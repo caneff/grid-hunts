@@ -90,7 +90,7 @@ with tempfile.TemporaryDirectory() as tmp:
     assert status == 0, err
     lines = text.splitlines()
     assert lines[0].startswith("1 hits in 2 seeds (0..1)"), text
-    assert lines[1] == "1 candidates rejected by `hunt.py verify`", text
+    assert lines[1] == "1 candidates rejected by `verify DIR`", text
     assert f"hit, 11 added lines: {good['link']}" in text, text
     assert (
         "rejected candidate, 12 added lines: r5c1 | r5c2 | r4c2: "

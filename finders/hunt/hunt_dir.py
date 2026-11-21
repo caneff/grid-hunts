@@ -4,6 +4,7 @@
 import json
 import sys
 from collections import Counter
+from collections.abc import Callable
 from pathlib import Path
 from typing import NamedTuple
 
@@ -74,16 +75,15 @@ def summary_command(argv, summary):
     return 0
 
 
-def hunt_summary(out, describe_hit=None):
-    """The lines `hunt summary DIR` prints for the driver's protocol: the seed
-    span, the outcome counts (found, empty, timed out, duplicate, rejected --
-    an empty seed whose reason starts `timeout` counts as timed out), the
-    unchecked and rejected candidates, each non-finding seed's reason and one
-    line per verified hit, worded by the finder's `describe_hit(record)` (its
-    record as JSON without one)."""
-    _run, events, hits, unchecked, rejected = read_hunt(out)
+def seed_span(events):
+    """`N seeds (first..last)`, or `0 seeds` with none."""
     seeds = sorted(e["seed"] for e in events)
-    span = f"{len(seeds)} seeds" + (f" ({seeds[0]}..{seeds[-1]})" if seeds else "")
+    return f"{len(seeds)} seeds" + (f" ({seeds[0]}..{seeds[-1]})" if seeds else "")
+
+
+def default_counts(events):
+    """The driver's outcome line: found, empty, timed out, duplicate, rejected
+    -- an empty seed whose reason starts `timeout` counts as timed out."""
     outcome = Counter(e["outcome"] for e in events)
     timed_out = sum(
         1
@@ -91,29 +91,83 @@ def hunt_summary(out, describe_hit=None):
         if e["outcome"] == "empty"
         and e.get("empty_reason", "").split(":")[0] == "timeout"
     )
-    describe = describe_hit or _record_json
-    if hits:
-        headline = f"{len(hits)} verified hits in {span}"
-    elif unchecked or rejected:
-        headline = f"no verified hit in {span}"
-    else:
-        headline = f"none found in {span}"
-    text = [
-        headline,
+    return (
         f"found {outcome['example']}, empty {outcome['empty'] - timed_out}, "
         f"timed out {timed_out}, duplicate {outcome['duplicate']}, "
-        f"rejected {outcome['rejected']}",
-    ]
+        f"rejected {outcome['rejected']}"
+    )
+
+
+def _lines(text):
+    return [text] if isinstance(text, str) else list(text)
+
+
+class Wording(NamedTuple):
+    """What a finder says in `summary DIR`; the layout is `summary_layout`'s.
+
+    `hit_noun` and `tail(run)` and `none_note` word the headline; `counts(events)`
+    is the outcome line, placed after the unchecked/rejected lines when
+    `counts_last`. `describe_hit(record)`, `describe_unchecked(record)` and
+    `describe_rejected(record, reason)` return a line or lines, and one left
+    None lists nothing (`describe_hit` None prints the record as JSON);
+    `hit_key` orders the hits."""
+
+    hit_noun: str = "verified hits"
+    tail: Callable = lambda run: ""
+    none_note: str = ""
+    counts: Callable = default_counts
+    counts_last: bool = False
+    describe_hit: Callable | None = None
+    describe_unchecked: Callable | None = None
+    describe_rejected: Callable | None = None
+    hit_key: Callable | None = None
+
+
+def summary_layout(hunt, wording):
+    """The lines `summary DIR` prints for a `HuntRead`, in one order for every
+    finder: the headline, the outcome line, the unchecked and rejected
+    counts, each non-finding seed's reason, then the hit, unchecked and
+    rejected records as `wording` words them. The verify hint is the driver's
+    `verify DIR` whoever words the rest."""
+    run, events, hits, unchecked, rejected = hunt
+    span = seed_span(events)
+    tail = wording.tail(run)
+    if hits:
+        headline = f"{len(hits)} {wording.hit_noun} in {span}{tail}"
+    elif unchecked or rejected:
+        headline = f"no verified hit in {span}{tail}"
+    else:
+        headline = f"none found in {span}{tail}{wording.none_note}"
+    flags = []
     if unchecked:
-        text.append(
+        flags.append(
             f"{len(unchecked)} candidates unchecked: the hunt ran with "
             "--no-verify and `verify DIR` has not run"
         )
     if rejected:
-        text.append(f"{len(rejected)} candidates rejected by `verify DIR`")
+        flags.append(f"{len(rejected)} candidates rejected by `verify DIR`")
+    counts = [wording.counts(events)]
+    text = [headline, *(flags + counts if wording.counts_last else counts + flags)]
     text.extend(seed_lines(events))
-    text.extend(describe(record) for record in hits)
+    describe = wording.describe_hit or _record_json
+    ordered = sorted(hits, key=wording.hit_key) if wording.hit_key else hits
+    for record in ordered:
+        text.extend(_lines(describe(record)))
+    if wording.describe_unchecked:
+        for record in unchecked:
+            text.extend(_lines(wording.describe_unchecked(record)))
+    if wording.describe_rejected:
+        for record, reason in rejected:
+            text.extend(_lines(wording.describe_rejected(record, reason)))
     return text
+
+
+def hunt_summary(out, describe_hit=None):
+    """The lines `hunt summary DIR` prints for the driver's protocol: the
+    layout of `summary_layout` with the default wording, each verified hit
+    worded by the finder's `describe_hit(record)` (its record as JSON
+    without one)."""
+    return summary_layout(read_hunt(out), Wording(describe_hit=describe_hit))
 
 
 def _record_json(record):
