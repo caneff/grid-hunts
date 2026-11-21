@@ -396,4 +396,28 @@ with tempfile.TemporaryDirectory() as tmp:
         unblocked.returncode == 0,
     )
 
+# #169: a read subcommand on a DIR that does not exist refuses it and leaves
+# no directory behind (it used to create an empty one through the lock).
+for subcommand, finder_script in (
+    ("verify", TOY_FINDER),
+    ("render", HERE / "toy_render_finder.py"),
+    ("links", HERE / "toy_summary_finder.py"),
+):
+    with tempfile.TemporaryDirectory() as tmp:
+        missing = Path(tmp) / "no-such-dir"
+        result = subprocess.run(
+            [sys.executable, str(finder_script), subcommand, str(missing)],
+            capture_output=True,
+            text=True,
+        )
+        check_refusal(
+            f"hunt {subcommand} on a missing DIR refuses",
+            result,
+            "not a hunt directory",
+        )
+        check(
+            f"hunt {subcommand} on a missing DIR leaves no directory behind",
+            not missing.exists(),
+        )
+
 finish()
