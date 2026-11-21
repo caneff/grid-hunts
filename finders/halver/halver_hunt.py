@@ -336,12 +336,9 @@ class TargetLoopFinder:
                 f"{k} {v}" for k, v in sorted(counts.items())
             )
 
-        def record(kind, tail_of):
-            def describe(record, *reason):
-                head = f"{kind}, {len(record['lines'])} added lines: {tail_of(record, *reason)}"
-                return [head, *(f"  {row}" for row in record["table"])]
-
-            return describe
+        def hit_lines(kind, record, detail):
+            head = f"{kind}, {len(record['lines'])} added lines: {detail}"
+            return [head, *(f"  {row}" for row in record["table"])]
 
         return Wording(
             hit_noun="hits",
@@ -349,9 +346,9 @@ class TargetLoopFinder:
             none_note=": a search result, not a proof that no finish exists",
             counts=outcomes,
             counts_last=True,
-            describe_hit=record("hit", lambda r: r["link"]),
-            describe_unchecked=record("unchecked candidate", lambda r: r["link"]),
-            describe_rejected=record("rejected candidate", lambda r, why: why),
+            describe_hit=lambda r: hit_lines("hit", r, r["link"]),
+            describe_unchecked=lambda r: hit_lines("unchecked candidate", r, r["link"]),
+            describe_rejected=lambda r, why: hit_lines("rejected candidate", r, why),
         )
 
     def candidate_from_record(self, record):

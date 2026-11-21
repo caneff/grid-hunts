@@ -99,7 +99,7 @@ class Finder(Protocol):
     # Optional -- what a finder supplies for `summary DIR`, `links DIR` and the
     # end of a hunt (#121). The driver owns the rest: the seed span, the
     # found/empty/timed-out/duplicate/rejected counts and the hit list of
-    # `summary DIR` (`hunt_dir.hunt_summary`; an `Empty` reason starting
+    # `summary DIR` (`hunt_dir.summary_layout`, one layout for every finder; an `Empty` reason starting
     # `timeout` counts as timed out), and for `links DIR` the choice of
     # verified hits, the minting (`short_link.mint`) and the swap of
     # `links/<seed>.txt` (`hunt_dir.replace_links`). `links DIR` refuses a
@@ -112,8 +112,10 @@ class Finder(Protocol):
 
     def summary_lines(self, out: Path) -> list[str]:
         """Instead of `describe_hit`: the whole of `summary DIR` as lines, for
-        a finder whose headline and counts have wording of their own. It reads
-        the hunt with `hunt_dir.read_hunt`."""
+        a finder whose headline and counts have wording of their own. It
+        returns `hunt_dir.summary_layout(hunt_dir.read_hunt(out), Wording(...))`,
+        never a layout of its own: the layout and the `verify DIR` hint are
+        the driver's, the `Wording` is the finder's."""
         ...
 
     def link_document(self, candidate: Any) -> dict:

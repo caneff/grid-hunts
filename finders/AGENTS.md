@@ -26,9 +26,9 @@ README before reusing anything there.
   no pictures: `render DIR`, a driver subcommand beside `verify DIR`, does,
   for a finder that has `render(candidate)` (swap mechanics: `hunt_files.swap_dir`).
   `summary DIR` and `links DIR` are driver subcommands too (#121); the split
-  between driver and finder, including `describe_hit` (or `summary_lines`, a
-  finder's whole summary wording, which the halver and Doppelganger rank hunts
-  supply), `link_document` and `finish`, is stated in `finders/hunt/protocol.py`.
+  between driver and finder, including `describe_hit` (or `summary_lines`, which the halver and Doppelganger rank hunts
+  supply by passing their wording, a `hunt_dir.Wording`, to the one
+  `hunt_dir.summary_layout`), `link_document` and `finish`, is stated in `finders/hunt/protocol.py`.
   `toy_summary_finder.py` is the worked example. `finders/hunt/toy_finder.py`
   is a minimal worked example. `finders/hunt/hunt_files.py` owns every file a
   hunt writes and every read of one: the lock, JSONL logs whose read drops a
