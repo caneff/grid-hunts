@@ -258,9 +258,15 @@ def changed_tree(root):
         "finders/fake/README.md": "",
         "finders/fake/reader.py": (
             "DATA = ROOT / 'docs' / 'research' / 'fake' / 'kept-by-finder.jsonl'\n"
+            "OTHER = ROOT / 'docs' / 'research' / 'fake' / 'données.jsonl'\n"
         ),
         "docs/research/fake/kept-by-finder.jsonl": "",
         "docs/research/fake/gone-unread.png": "",
+        "docs/research/fake/données.jsonl": "",
+        "docs/research/fake/md-only-name.json": "",
+        "docs/research/fake/outside-only-name.json": "",
+        "finders/fake/NOTES.md": "see md-only-name.json\n",
+        "docs/elsewhere.txt": "see outside-only-name.json\n",
         "finders/fake-two/test_f.py": "pass\n",
         "archive/finders/old/test_o.py": "pass\n",
     }
@@ -485,6 +491,7 @@ with tempfile.TemporaryDirectory() as d:
     )
 
     for path in (
+        "docs/research/fake/données.jsonl",
         "docs/research/fake/kept-by-finder.jsonl",
         "docs/research/moved-away/kept-by-finder.jsonl",
     ):
@@ -495,9 +502,7 @@ with tempfile.TemporaryDirectory() as d:
             got == (0, f"6 of 6 suites passed (group: test) (widened: {path})"),
         )
 
-    touch_on_branch(
-        root, "docs/research/other/gone-unread.png", "docs/research/fake/pic.png"
-    )
+    git(root, "checkout", "-q", "-B", "work", "main")
     git(root, "rm", "-q", "docs/research/fake/gone-unread.png")
     git(root, "commit", "-q", "-m", "delete")
     got = listing(script)
@@ -520,7 +525,42 @@ with tempfile.TemporaryDirectory() as d:
         ),
     )
 
-    touch_on_branch(root, "docs/other.json", "docs/research/fake/pic.png")
+    touch_on_branch(root, "docs/research/fake/md-only-name.json")
+    got = listing(script)
+    check(
+        f"a research file named only in a .md file under finders/ is unread ({got})",
+        got == (0, [*LINT, *ALWAYS]),
+    )
+    touch_on_branch(root, "docs/research/fake/outside-only-name.json")
+    got = listing(script)
+    check(
+        f"a research file named only outside finders/ is unread ({got})",
+        got == (0, [*LINT, *ALWAYS]),
+    )
+
+    # git cannot answer "does a finder name it" (exit 128, not 1): widen.
+    real_git = subprocess.check_output(["which", "git"], text=True).strip()
+    stub = root.parent / "gitbin" / "git"
+    stub.parent.mkdir()
+    stub.write_text(f'#!/bin/sh\n[ "$1" = grep ] && exit 128\nexec {real_git} "$@"\n')
+    stub.chmod(0o755)
+    touch_on_branch(root, "docs/research/fake/md-only-name.json")
+    got = changed(
+        script,
+        "--group",
+        "test",
+        path=f"{stub.parent}:{root.parent / 'bin'}:{BASE_ENV['PATH']}",
+    )
+    last = got.stdout.splitlines()[-1] if got.stdout else got.stderr
+    check(
+        f"a git grep that errors widens, naming the file ({last})",
+        got.returncode == 0
+        and last
+        == "6 of 6 suites passed (group: test) "
+        "(widened: docs/research/fake/md-only-name.json)",
+    )
+
+    touch_on_branch(root, "docs/other.json")
     got = count_line(script)
     check(
         "an unplaceable path outside docs/research still widens, whatever "

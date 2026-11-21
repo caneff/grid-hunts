@@ -152,13 +152,10 @@ ask_pants() {
   for f in "$@"; do placed "$f" || { widened=$f; return; }; done
 }
 
-# A research file (scripts, data, pictures; Pants places none of them) changes
-# nothing unless finder code names it. "Names it" is read off the tree each
-# run, so the list cannot drift: the file's name, as a fixed string, appears in
-# a non-`.md` file under `finders/`. A path built from pieces still carries the
-# file name whole, and a name only mentioned in a comment widens too, the safe
-# side.
-research_read() { git grep -qF -e "${1##*/}" -- finders ':(exclude)*.md'; }
+# Does finder code name this research file? Reads HEAD's tree, the one the diff
+# ends at: the file's name as a fixed string in a non-`.md` file under
+# `finders/`. Exit 0 named, 1 not named, anything else git could not answer.
+research_read() { git grep -qF -e "${1##*/}" HEAD -- finders ':(exclude)*.md'; }
 
 if [ -n "$base" ]; then
   files=$(git -c core.quotepath=off diff --name-only --no-renames "$base...HEAD" 2>&1) || usage "git cannot diff $base...HEAD: $files"
@@ -167,7 +164,9 @@ if [ -n "$base" ]; then
     case $f in
       '' | *.md | archive/*) ;;
       pyproject.toml | uv.lock | pants.toml | justfile | tests/* | .github/*) widened=${widened:-$f} ;;
-      docs/research/*) ! research_read "$f" || widened=${widened:-$f} ;;
+      docs/research/*)
+        research_read "$f"
+        case $? in 1) ;; *) widened=${widened:-$f} ;; esac ;;
       *) if [ -e "$f" ] || [ -L "$f" ]; then ask+=("$f"); else widened=${widened:-$f}; fi ;;
     esac
   done <<<"$files"
