@@ -30,6 +30,14 @@ issue number in a commit message from before the cut is that repo's.
   record is the source of truth, and the full link is rebuilt from it when
   needed. (Chris, 2026-10-23.)
 
+## Solution paths (always on)
+
+- **Never publish a solution path.** This repo is public, so a solve path for
+  a puzzle never goes into a commit, PR, issue, gist or artifact, here or
+  anywhere else. Work it in the git-ignored `.scratch/` and open the file for
+  Chris. (Chris, 2026-10-13: "Never ever publish solution paths"; the ruling
+  covers every repo, agent-skills#1627.)
+
 ## Chris's drawn board (always on)
 
 - **A board Chris drew is checked as drawn**: every mark, colour, digit and
